@@ -1,0 +1,29 @@
+spring:
+  flyway:
+    enabled: true
+    baselineOnMigrate: true
+    validateOnMigrate: true
+    locations: classpath:db/migration
+    table: migrations
+  datasource:
+    url: jdbc:mariadb://127.0.0.1:3306/ojobpub_publisher_dev?createDatabaseIfNotExist=true
+    driver-class-name: org.mariadb.jdbc.Driver
+    username: root
+    password: root
+  jpa:
+    generate-ddl: false
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: true
+    hibernate.ddl-auto: none
+  sql:
+    init:
+      mode: always
+logging:
+  level:
+    org:
+      springframework:
+        security: INFO
+      hibernate:
+        SQL: INFO

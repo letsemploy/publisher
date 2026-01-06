@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<!--
+  Server-rendered confirmation modal (spec 7.4). hx-confirm is deliberately not used:
+  the browser's confirm() cannot be translated, styled, or made to state consequences.
+  Fetched into #modal-container; shown by Tabler's modal JS via the autoshow attribute.
+-->
+<div th:fragment="confirm(titleKey, body, action, submitKey, danger)"
+     class="modal modal-blur fade show d-block" tabindex="-1" role="dialog" aria-modal="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" th:text="#{${titleKey}}">Are you sure?</h5>
+                <button type="button" class="btn-close" th:aria-label="#{label.close}"
+                        _="on click remove closest .modal"></button>
+            </div>
+            <div class="modal-body">
+                <p th:utext="${body}">This cannot be undone.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-link link-secondary me-auto"
+                        _="on click remove closest .modal" th:text="#{label.cancel}">Cancel</button>
+                <form th:action="${action}" method="post">
+                    <button type="submit" class="btn"
+                            th:classappend="${danger} ? 'btn-danger' : 'btn-primary'"
+                            th:text="#{${submitKey}}">Confirm</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

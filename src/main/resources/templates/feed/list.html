@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout}">
+<head><title th:text="#{nav.feeds}">Feeds</title></head>
+<body>
+<div layout:fragment="page-actions">
+    <a class="btn btn-primary" th:href="@{/feeds/create}">
+        <svg th:replace="~{fragments/icon :: i('plus','icon')}"></svg>
+        <span th:text="#{feed.create}">New feed</span>
+    </a>
+</div>
+<div layout:fragment="content">
+    <div class="card">
+        <div th:if="${feeds.isEmpty()}"
+             th:replace="~{fragments/empty :: state('rss','feed.empty.title','feed.empty.subtitle','/feeds/create','feed.create')}"></div>
+
+        <div class="table-responsive" th:unless="${feeds.isEmpty()}">
+            <table class="table table-vcenter card-table">
+                <thead>
+                <tr>
+                    <th th:text="#{label.name}">Name</th>
+                    <th th:text="#{feed.publishedJobs}">Published</th>
+                    <th th:text="#{label.lastModifiedAt}">Changed</th>
+                    <th></th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="f : ${feeds}">
+                    <td>
+                        <a th:href="@{'/feeds/' + ${f.id}}" class="text-reset fw-bold" th:text="${f.name}">Feed</a>
+                        <div class="text-secondary small" th:text="${f.slug}">slug</div>
+                    </td>
+                    <td>
+                        <span class="badge bg-green-lt" th:text="${f.publishedCount}">0</span>
+                        <span class="text-secondary ms-1" th:text="#{feed.ofMembers(${f.memberCount})}">of 0</span>
+                        <span class="badge bg-yellow-lt ms-1" th:if="${f.excludedCount > 0}"
+                              th:text="#{feed.excluded(${f.excludedCount})}">omitted</span>
+                    </td>
+                    <td class="text-secondary" th:text="${f.lastChanged}">date</td>
+                    <td>
+                        <a class="btn btn-sm" th:href="${f.publicUrl}" target="_blank" rel="noopener">
+                            <svg th:replace="~{fragments/icon :: i('external-link','icon')}"></svg>
+                            <span th:text="#{label.open}">Open</span>
+                        </a>
+                        <a class="btn btn-sm" th:href="@{'/feeds/' + ${f.id}}">
+                            <svg th:replace="~{fragments/icon :: i('eye','icon')}"></svg>
+                            <span th:text="#{label.details}">Details</span>
+                        </a>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+</body>
+</html>

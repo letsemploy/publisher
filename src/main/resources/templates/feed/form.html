@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout}">
+<head><title th:text="${form.id != null} ? #{feed.edit} : #{feed.create}">Feed</title></head>
+<body>
+<div layout:fragment="content">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <form th:action="${form.id != null} ? @{'/feeds/' + ${form.id} + '/update'} : @{/feeds/create}" method="post">
+                <div th:replace="~{fragments/form :: errorSummary(${errors})}"></div>
+                <div class="card">
+                    <div class="card-body">
+                        <div th:replace="~{fragments/form :: input('name','label.name',${form.name},'text',true,null,${fieldErrors['name']},255)}"></div>
+                        <div th:replace="~{fragments/form :: input('slug','label.slug',${form.slug},'text',true,'feed.slug.hint',${fieldErrors['slug']},64)}"></div>
+                        <div class="mb-3">
+                            <label class="form-label" th:text="#{feed.url.preview}">Resulting URL</label>
+                            <div class="form-control-plaintext font-monospace text-secondary text-break"
+                                 th:text="${form.urlPreview}">https://…</div>
+                        </div>
+                        <div th:replace="~{fragments/form :: input('description','label.description',${form.description},'text',false,null,${fieldErrors['description']},255)}"></div>
+                    </div>
+                    <div th:replace="~{fragments/form :: actions('label.save','/feeds')}"></div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+</body>
+</html>

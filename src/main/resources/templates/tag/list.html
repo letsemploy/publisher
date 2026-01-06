@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout}">
+<head><title th:text="#{nav.tags}">Tags</title></head>
+<body>
+<div layout:fragment="page-actions">
+    <a class="btn btn-primary" th:href="@{/tags/create}">
+        <svg th:replace="~{fragments/icon :: i('plus','icon')}"></svg>
+        <span th:text="#{tag.create}">New tag</span>
+    </a>
+</div>
+<div layout:fragment="content">
+    <div class="card">
+        <div class="card-body border-bottom py-3">
+            <input class="form-control" type="search" name="q" th:placeholder="#{tag.search.placeholder}"
+                   th:aria-label="#{label.search}"
+                   th:attr="hx-get=@{/tags},hx-target='#tag-list',hx-push-url='true',
+                            hx-trigger='input changed delay:300ms, search'"/>
+        </div>
+        <div id="tag-list" class="region">
+            <div th:replace="~{tag/fragments/table :: table}"></div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,9 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<!-- Usage: <svg th:replace="~{fragments/icon :: i('briefcase','icon')}"></svg> -->
+<svg th:fragment="i(name, cls)" th:class="${cls}" aria-hidden="true">
+    <use th:attr="href=@{/vendor/icons.svg} + '#ti-' + ${name}"></use>
+</svg>
+</body>
+</html>

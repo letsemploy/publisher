@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout}">
+<head><title th:text="#{nav.dashboard}">Dashboard</title></head>
+<body>
+<div layout:fragment="content">
+
+    <!-- A quiet dashboard must mean the feeds are healthy (spec 7.10) -->
+    <div class="alert alert-warning" role="alert" th:if="${!dashboard.unhealthyFeeds.isEmpty()}">
+        <div class="d-flex">
+            <svg th:replace="~{fragments/icon :: i('alert-triangle','icon alert-icon')}"></svg>
+            <div class="mx-3">
+                <h4 class="alert-title" th:text="#{dashboard.excluded.title}">Jobs are being omitted</h4>
+                <div class="text-secondary">
+                    <ul class="mb-0">
+                        <li th:each="f : ${dashboard.unhealthyFeeds}">
+                            <a th:href="@{'/feeds/' + ${f.id}}" th:text="${f.name}">feed</a>
+                            <span th:text="#{dashboard.excluded.count(${f.excludedCount})}">1 job omitted</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row row-cards">
+        <div class="col-sm-6 col-lg-3" th:each="stat : ${ {
+                {'published', dashboard.published, 'green'},
+                {'draft', dashboard.draft, 'secondary'},
+                {'expired', dashboard.expired, 'yellow'},
+                {'inactive', dashboard.inactive, 'dark'} } }">
+            <a class="card card-link" th:href="@{/jobs(status=${stat[0]})}">
+                <div class="card-body">
+                    <div class="subheader" th:text="#{'status.' + ${stat[0]}}">Published</div>
+                    <div class="h1 mb-0" th:text="${stat[1]}">0</div>
+                </div>
+                <div class="card-progress" th:classappend="'bg-' + ${stat[2]}" style="height:3px"></div>
+            </a>
+        </div>
+    </div>
+
+    <div class="card mt-3">
+        <div class="card-header">
+            <h3 class="card-title" th:text="#{nav.feeds}">Feeds</h3>
+        </div>
+        <div th:if="${dashboard.feeds.isEmpty()}"
+             th:replace="~{fragments/empty :: state('rss','feed.empty.title','feed.empty.subtitle','/feeds/create','feed.create')}"></div>
+        <div class="table-responsive" th:unless="${dashboard.feeds.isEmpty()}">
+            <table class="table table-vcenter card-table">
+                <thead>
+                <tr>
+                    <th th:text="#{label.name}">Name</th>
+                    <th th:text="#{feed.publishedJobs}">Published</th>
+                    <th th:text="#{feed.publicUrl}">URL</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="f : ${dashboard.feeds}">
+                    <td><a th:href="@{'/feeds/' + ${f.id}}" th:text="${f.name}">Feed</a></td>
+                    <td>
+                        <span class="badge bg-green-lt" th:text="${f.publishedCount}">0</span>
+                        <span class="text-secondary ms-1" th:text="#{feed.ofMembers(${f.memberCount})}">of 0</span>
+                    </td>
+                    <td class="text-secondary text-truncate" style="max-width:24rem">
+                        <a th:href="${f.publicUrl}" th:text="${f.publicUrl}" target="_blank" rel="noopener">url</a>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<!--
+  Server-rendered pagination. Links are real hrefs so they work without JS;
+  htmx picks them up through hx-boost and the list region target (spec 7.4, 7.6).
+-->
+<div th:fragment="bar(page, target)" class="card-footer d-flex align-items-center"
+     th:if="${page.totalPages > 1 or page.totalElements > 0}">
+    <p class="m-0 text-secondary"
+       th:with="from=${page.totalElements == 0 ? 0 : page.number * page.size + 1},
+                to=${page.number * page.size + page.numberOfElements}"
+       th:text="#{page.showing(${from}, ${to}, ${page.totalElements})}">Showing 1 to 20 of 0</p>
+    <ul class="pagination m-0 ms-auto" th:if="${page.totalPages > 1}">
+        <li class="page-item" th:classappend="${page.number == 0} ? 'disabled'">
+            <a class="page-link" th:href="${page.uriForPage(page.number - 1)}"
+               th:attr="hx-get=${page.uriForPage(page.number - 1)},hx-target=${target},hx-push-url='true'"
+               th:aria-disabled="${page.number == 0}" rel="prev">
+                <svg th:replace="~{fragments/icon :: i('chevron-down','icon rotate-90')}"></svg>
+                <span th:text="#{page.prev}">prev</span>
+            </a>
+        </li>
+        <li class="page-item" th:each="p : ${page.pageNumbers()}"
+            th:classappend="${p == page.number} ? 'active'">
+            <a class="page-link" th:href="${page.uriForPage(p)}"
+               th:attr="hx-get=${page.uriForPage(p)},hx-target=${target},hx-push-url='true',
+                        aria-current=${p == page.number} ? 'page' : null"
+               th:text="${p + 1}">1</a>
+        </li>
+        <li class="page-item" th:classappend="${page.number + 1 >= page.totalPages} ? 'disabled'">
+            <a class="page-link" th:href="${page.uriForPage(page.number + 1)}"
+               th:attr="hx-get=${page.uriForPage(page.number + 1)},hx-target=${target},hx-push-url='true'"
+               rel="next">
+                <span th:text="#{page.next}">next</span>
+                <svg th:replace="~{fragments/icon :: i('chevron-down','icon rotate-270')}"></svg>
+            </a>
+        </li>
+    </ul>
+</div>
+</body>
+</html>

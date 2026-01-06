@@ -1,0 +1,40 @@
+/*
+ * The only custom stylesheet (spec 7.1 rule 5).
+ * Tabler is used as published; this file holds what Tabler does not provide.
+ */
+
+.skip-link {
+    position: absolute;
+    top: .5rem;
+    left: .5rem;
+    z-index: 2000;
+    padding: .5rem .75rem;
+    background: var(--tblr-bg-surface);
+    border-radius: var(--tblr-border-radius);
+}
+
+/* Rotated chevrons for pagination, so one sprite symbol serves both directions. */
+.rotate-90  { transform: rotate(90deg); }
+.rotate-270 { transform: rotate(270deg); }
+
+/* htmx: dim a region only while its own request is in flight (spec 7.4). */
+.htmx-request.region,
+.region.htmx-request {
+    opacity: .55;
+    transition: opacity .15s ease-in;
+}
+
+/* Keep focus visible everywhere; never removed (spec 7.9). */
+:focus-visible {
+    outline: 2px solid var(--tblr-primary);
+    outline-offset: 2px;
+}
+
+/* JSON preview panel (spec 7.12) - scrollable, monospaced, no highlighting library. */
+.json-preview {
+    max-height: 26rem;
+    overflow: auto;
+    font-size: .8125rem;
+    line-height: 1.5;
+    tab-size: 2;
+}

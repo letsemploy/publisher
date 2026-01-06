@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<!-- The tag list region: swapped on search (spec 7.4). -->
+<div th:fragment="table" th:remove="tag">
+            <div th:if="${tags.isEmpty()}"
+                 th:replace="~{fragments/empty :: state('tag','tag.empty.title','tag.empty.subtitle','/tags/create','tag.create')}"></div>
+            <div class="table-responsive" th:unless="${tags.isEmpty()}">
+                <table class="table table-vcenter card-table">
+                    <thead>
+                    <tr>
+                        <th th:text="#{label.name}">Name</th>
+                        <th th:text="#{label.jobCount}">Jobs</th>
+                        <th class="w-1"></th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="t : ${tags}">
+                        <td><span class="badge bg-blue-lt" th:text="${t.name}">tag</span></td>
+                        <td th:text="${t.jobCount}">0</td>
+                        <td>
+                            <div class="btn-list flex-nowrap">
+                                <a class="btn btn-sm" th:href="@{'/tags/' + ${t.id} + '/update'}" th:text="#{label.edit}">Edit</a>
+                                <button class="btn btn-sm btn-ghost-danger"
+                                        th:attr="hx-get=@{'/tags/' + ${t.id} + '/delete'},hx-target='#modal-container'"
+                                        th:text="#{label.delete}">Delete</button>
+                            </div>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+</div>
+</body>
+</html>

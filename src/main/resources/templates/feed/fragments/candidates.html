@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<div th:fragment="candidates" th:remove="tag">
+    <div class="card-body border-bottom py-2">
+        <input class="form-control" type="search" name="q" th:placeholder="#{feed.candidates.search}"
+               th:aria-label="#{feed.candidates.search}"
+               th:attr="hx-get=@{'/feeds/' + ${feed.id} + '/candidates'},hx-target='#feed-panels',
+                        hx-trigger='input changed delay:300ms, search'"/>
+    </div>
+    <div th:if="${feed.candidates.isEmpty()}"
+         th:replace="~{fragments/empty :: state('check','feed.candidates.empty',null,null,null)}"></div>
+    <div class="list-group list-group-flush" th:unless="${feed.candidates.isEmpty()}">
+        <div class="list-group-item d-flex align-items-center" th:each="job : ${feed.candidates}">
+            <div class="me-auto">
+                <a th:href="@{'/jobs/' + ${job.id}}" th:text="${job.title}">job</a>
+                <div class="small"><span th:replace="~{fragments/status :: badge(${job.status})}"></span></div>
+            </div>
+            <form th:action="@{'/feeds/' + ${feed.id} + '/jobs/' + ${job.id} + '/add'}" method="post">
+                <button type="submit" class="btn btn-sm"
+                        th:attr="hx-post=@{'/feeds/' + ${feed.id} + '/jobs/' + ${job.id} + '/add'},
+                                 hx-target='#feed-panels'"
+                        th:text="#{label.add}">Add</button>
+            </form>
+        </div>
+    </div>
+</div>
+</body>
+</html>

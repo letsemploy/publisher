@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout}">
+<head><title th:text="${form.id != null} ? #{job.edit} : #{job.create}">Job</title></head>
+<body>
+<div layout:fragment="content">
+    <form th:action="${form.id != null} ? @{'/jobs/' + ${form.id} + '/update'} : @{/jobs/create}" method="post">
+        <div th:replace="~{fragments/form :: errorSummary(${errors})}"></div>
+
+        <div class="row row-cards">
+            <div class="col-lg-8">
+                <div class="card" id="basics">
+                    <div class="card-header"><h3 class="card-title" th:text="#{job.section.basics}">Basics</h3></div>
+                    <div class="card-body">
+                        <div th:replace="~{fragments/form :: input('title','label.title',${form.title},'text',true,null,${fieldErrors['title']},255)}"></div>
+                        <div th:replace="~{fragments/form :: textarea('description','label.description',${form.description},false,1000,${fieldErrors['description']})}"></div>
+                        <div th:replace="~{fragments/form :: input('url','label.url',${form.url},'url',true,'job.url.hint',${fieldErrors['url']},null)}"></div>
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div th:replace="~{fragments/form :: select('language','label.language',${form.language},${languages},true,'label.pleaseChoose',${fieldErrors['language']})}"></div>
+                            </div>
+                            <div class="col-md-4">
+                                <div th:replace="~{fragments/form :: input('referenceId','label.referenceId',${form.referenceId},'text',false,null,${fieldErrors['referenceId']},255)}"></div>
+                            </div>
+                            <div class="col-md-4">
+                                <div th:replace="~{fragments/form :: input('category','label.category',${form.category},'text',false,null,${fieldErrors['category']},255)}"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card mt-3" id="classification">
+                    <div class="card-header"><h3 class="card-title" th:text="#{job.section.classification}">Classification</h3></div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div th:replace="~{fragments/form :: select('jobType','label.jobType',${form.jobType},${jobTypeOptions},true,'label.pleaseChoose',${fieldErrors['jobType']})}"></div>
+                            </div>
+                            <div class="col-md-4">
+                                <div th:replace="~{fragments/form :: select('workType','label.workType',${form.workType},${workTypeOptions},false,'filter.none',${fieldErrors['workType']})}"></div>
+                            </div>
+                            <div class="col-md-4">
+                                <div th:replace="~{fragments/form :: select('experienceLevel','label.experienceLevel',${form.experienceLevel},${experienceOptions},false,'filter.none',${fieldErrors['experienceLevel']})}"></div>
+                            </div>
+                        </div>
+                        <label class="form-label" th:text="#{label.tags}">Tags</label>
+                        <div id="tags-chips"><div th:replace="~{fragments/picker :: chips('tags', ${tagChips}, true)}"></div></div>
+                        <div th:replace="~{fragments/picker :: search('tagSearch','/jobs/tags/search','tag-results','tag.search.placeholder')}"></div>
+                        <small class="form-hint" th:text="#{job.tags.hint}">At most 16 tags.</small>
+                    </div>
+                </div>
+
+                <div class="card mt-3" id="salary">
+                    <div class="card-header"><h3 class="card-title" th:text="#{job.section.workloadSalary}">Workload &amp; salary</h3></div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-6 col-md-3">
+                                <div th:replace="~{fragments/form :: input('workLoadPercentMin','label.workLoadMin',${form.workLoadPercentMin},'number',false,null,${fieldErrors['workLoadPercentMin']},null)}"></div>
+                            </div>
+                            <div class="col-6 col-md-3">
+                                <div th:replace="~{fragments/form :: input('workLoadPercentMax','label.workLoadMax',${form.workLoadPercentMax},'number',false,null,${fieldErrors['workLoadPercentMax']},null)}"></div>
+                            </div>
+                        </div>
+                        <!-- Currency and interval become required as soon as an amount is entered (spec 3.3) -->
+                        <div class="row">
+                            <div class="col-6 col-md-3">
+                                <div th:replace="~{fragments/form :: input('salaryMin','label.salaryMin',${form.salaryMin},'number',false,null,${fieldErrors['salaryMin']},null)}"></div>
+                            </div>
+                            <div class="col-6 col-md-3">
+                                <div th:replace="~{fragments/form :: input('salaryMax','label.salaryMax',${form.salaryMax},'number',false,null,${fieldErrors['salaryMax']},null)}"></div>
+                            </div>
+                            <div class="col-6 col-md-3">
+                                <div th:replace="~{fragments/form :: input('salaryCurrency','label.currency',${form.salaryCurrency},'text',${form.salaryPresent},'job.salary.hint',${fieldErrors['salaryCurrency']},3)}"></div>
+                            </div>
+                            <div class="col-6 col-md-3">
+                                <div th:replace="~{fragments/form :: select('salaryInterval','label.salaryInterval',${form.salaryInterval},${intervalOptions},${form.salaryPresent},'label.pleaseChoose',${fieldErrors['salaryInterval']})}"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card mt-3" id="dates">
+                    <div class="card-header"><h3 class="card-title" th:text="#{job.section.dates}">Dates</h3></div>
+                    <div class="card-body row">
+                        <div class="col-md-4">
+                            <div th:replace="~{fragments/form :: input('startDate','label.startDate',${form.startDate},'date',false,null,${fieldErrors['startDate']},null)}"></div>
+                        </div>
+                        <div class="col-md-4">
+                            <div th:replace="~{fragments/form :: input('endDate','label.endDate',${form.endDate},'date',false,null,${fieldErrors['endDate']},null)}"></div>
+                        </div>
+                        <div class="col-md-4">
+                            <div th:replace="~{fragments/form :: input('applyBefore','label.applyBefore',${form.applyBefore},'date',false,'job.applyBefore.hint',${fieldErrors['applyBefore']},null)}"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card mt-3" id="locations">
+                    <div class="card-header"><h3 class="card-title" th:text="#{label.locations}">Locations</h3></div>
+                    <div class="card-body">
+                        <div id="locations-chips"><div th:replace="~{fragments/picker :: chips('locations', ${locationChips}, true)}"></div></div>
+                        <div th:replace="~{fragments/picker :: search('locationSearch','/jobs/locations/search','location-results','location.search.placeholder')}"></div>
+                        <small class="form-hint" th:text="#{job.locations.hint}">At least one location is required to publish.</small>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-4">
+                <div class="card">
+                    <div class="card-body">
+                        <p class="text-secondary" th:text="#{job.save.hint}">A new job is saved as a draft.</p>
+                        <div class="btn-list">
+                            <button type="submit" name="action" value="draft" class="btn w-100" th:text="#{job.saveDraft}">Save draft</button>
+                            <button type="submit" name="action" value="activate" class="btn btn-primary w-100" th:text="#{job.saveActivate}">Save and activate</button>
+                            <a th:href="@{/jobs}" class="btn btn-link w-100" th:text="#{label.cancel}">Cancel</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+</body>
+</html>

@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout}">
+<head><title th:text="${form.id != null} ? #{employer.edit} : #{employer.create}">Employer</title></head>
+<body>
+<div layout:fragment="content">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <form th:action="${form.id != null} ? @{'/employers/' + ${form.id} + '/update'} : @{/employers/create}" method="post">
+                <div th:replace="~{fragments/form :: errorSummary(${errors})}"></div>
+                <div class="card">
+                    <div class="card-body">
+                        <div th:replace="~{fragments/form :: input('name','label.name',${form.name},'text',true,null,${fieldErrors['name']},255)}"></div>
+                        <div th:replace="~{fragments/form :: input('slug','label.slug',${form.slug},'text',true,'employer.slug.hint',${fieldErrors['slug']},64)}"></div>
+                        <div th:replace="~{fragments/form :: input('url','label.website',${form.url},'url',false,null,${fieldErrors['url']},255)}"></div>
+                        <div th:replace="~{fragments/form :: input('industry','label.industry',${form.industry},'text',false,null,${fieldErrors['industry']},255)}"></div>
+                        <div th:replace="~{fragments/form :: select('headquarters','employer.headquarters',${form.headquarters},${locationOptions},true,'label.pleaseChoose',${fieldErrors['headquarters']})}"></div>
+                        <small class="form-hint" th:text="#{employer.hq.hint}">Required by the published schema.</small>
+                    </div>
+                    <div th:replace="~{fragments/form :: actions('label.save','/employers')}"></div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+</body>
+</html>

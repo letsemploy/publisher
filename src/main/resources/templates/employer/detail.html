@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout}">
+<head><title th:text="${employer.name}">Employer</title></head>
+<body>
+<div layout:fragment="page-actions">
+    <a class="btn" th:href="@{'/employers/' + ${employer.id} + '/update'}">
+        <svg th:replace="~{fragments/icon :: i('pencil','icon')}"></svg>
+        <span th:text="#{label.edit}">Edit</span>
+    </a>
+</div>
+<div layout:fragment="content">
+    <div class="row row-cards">
+        <div class="col-lg-7">
+            <div class="card">
+                <div class="card-body">
+                    <dl class="row mb-0">
+                        <dt class="col-5 col-md-4" th:text="#{label.name}">Name</dt>
+                        <dd class="col-7 col-md-8" th:text="${employer.name}">x</dd>
+                        <dt class="col-5 col-md-4" th:text="#{label.slug}">Slug</dt>
+                        <dd class="col-7 col-md-8 font-monospace" th:text="${employer.slug}">x</dd>
+                        <dt class="col-5 col-md-4" th:text="#{label.industry}">Industry</dt>
+                        <dd class="col-7 col-md-8" th:text="${employer.industry ?: '—'}">x</dd>
+                        <dt class="col-5 col-md-4" th:text="#{employer.headquarters}">HQ</dt>
+                        <dd class="col-7 col-md-8" th:text="${employer.headquarters}">x</dd>
+                    </dl>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-5">
+            <div class="card">
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col">
+                            <div class="subheader" th:text="#{nav.jobs}">Jobs</div>
+                            <div class="h1 mb-0" th:text="${employer.jobCount}">0</div>
+                        </div>
+                        <div class="col">
+                            <div class="subheader" th:text="#{nav.feeds}">Feeds</div>
+                            <div class="h1 mb-0" th:text="${employer.feedCount}">0</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

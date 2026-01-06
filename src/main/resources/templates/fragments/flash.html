@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<!-- Flash region. Delivered out-of-band so any htmx response can raise a message (spec 7.4). -->
+<div th:fragment="region" id="flash" class="mb-3" aria-live="polite" aria-atomic="true">
+    <div th:replace="~{fragments/flash :: items}"></div>
+</div>
+
+<div th:fragment="items" th:remove="tag">
+    <div th:if="${successMsg != null}" class="alert alert-success alert-dismissible" role="status">
+        <div class="d-flex">
+            <svg th:replace="~{fragments/icon :: i('circle-check','icon alert-icon')}"></svg>
+            <div th:text="${#messages.msgOrNull(successMsg) ?: successMsg}">Saved.</div>
+        </div>
+        <a class="btn-close" data-bs-dismiss="alert" th:aria-label="#{label.close}"></a>
+    </div>
+    <div th:if="${errorMsg != null}" class="alert alert-danger alert-dismissible" role="alert">
+        <div class="d-flex">
+            <svg th:replace="~{fragments/icon :: i('alert-triangle','icon alert-icon')}"></svg>
+            <div th:text="${#messages.msgOrNull(errorMsg) ?: errorMsg}">Error.</div>
+        </div>
+        <a class="btn-close" data-bs-dismiss="alert" th:aria-label="#{label.close}"></a>
+    </div>
+</div>
+
+<!-- Out-of-band variant: any fragment response may include this to update the flash region -->
+<div th:fragment="oob" id="flash" hx-swap-oob="innerHTML" th:remove="tag">
+    <div th:replace="~{fragments/flash :: items}"></div>
+</div>
+</body>
+</html>

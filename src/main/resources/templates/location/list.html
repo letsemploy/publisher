@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout}">
+<head><title th:text="#{nav.locations}">Locations</title></head>
+<body>
+<div layout:fragment="page-actions">
+    <a class="btn btn-primary" th:href="@{/locations/create}">
+        <svg th:replace="~{fragments/icon :: i('plus','icon')}"></svg>
+        <span th:text="#{location.create}">New location</span>
+    </a>
+</div>
+<div layout:fragment="content">
+    <div class="card">
+        <div th:if="${locations.isEmpty()}"
+             th:replace="~{fragments/empty :: state('map-pin','location.empty.title','location.empty.subtitle','/locations/create','location.create')}"></div>
+        <div class="table-responsive" th:unless="${locations.isEmpty()}">
+            <table class="table table-vcenter card-table">
+                <thead>
+                <tr>
+                    <th th:text="#{label.city}">City</th>
+                    <th th:text="#{label.country}">Country</th>
+                    <th th:text="#{location.usedBy}">Used by</th>
+                    <th class="w-1"></th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="l : ${locations}">
+                    <td th:text="${l.city}">Bern</td>
+                    <td>
+                        <span th:text="${l.countryName}">Switzerland</span>
+                        <code class="ms-1" th:text="${l.country}">CH</code>
+                    </td>
+                    <td>
+                        <span class="text-secondary" th:if="${l.usageCount > 0}"
+                              th:text="#{location.usageCount(${l.usageCount})}">used</span>
+                        <span class="text-secondary" th:unless="${l.usageCount > 0}" th:text="#{location.unused}">unused</span>
+                    </td>
+                    <td>
+                        <div class="btn-list flex-nowrap">
+                            <a class="btn btn-sm" th:href="@{'/locations/' + ${l.id} + '/update'}" th:text="#{label.edit}">Edit</a>
+                            <!-- A location in use cannot be deleted; the UI says what references it (spec 7.14) -->
+                            <button class="btn btn-sm btn-ghost-danger" th:if="${l.deletable}"
+                                    th:attr="hx-get=@{'/locations/' + ${l.id} + '/delete'},hx-target='#modal-container'"
+                                    th:text="#{label.delete}">Delete</button>
+                            <span class="btn btn-sm disabled" th:unless="${l.deletable}"
+                                  th:title="#{location.inUse}" th:text="#{label.delete}">Delete</span>
+                        </div>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+</body>
+</html>

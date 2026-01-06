@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout}">
+<head><title th:text="#{nav.jobs}">Jobs</title></head>
+<body>
+<div layout:fragment="page-actions">
+    <a class="btn btn-primary" th:href="@{/jobs/create}">
+        <svg th:replace="~{fragments/icon :: i('plus','icon')}"></svg>
+        <span th:text="#{job.create}">New job</span>
+    </a>
+</div>
+
+<div layout:fragment="content">
+    <div class="card">
+        <div class="card-body border-bottom py-3">
+            <form class="row g-2 align-items-end" th:action="@{/jobs}" method="get"
+                  th:attr="hx-get=@{/jobs},hx-target='#job-list',hx-push-url='true',
+                           hx-trigger='change from:select, input changed delay:300ms from:input[type=search], submit'">
+                <div class="col-12 col-md">
+                    <label class="form-label" for="q" th:text="#{label.search}">Search</label>
+                    <input class="form-control" type="search" id="q" name="q" th:value="${filter.q}"
+                           th:placeholder="#{job.search.placeholder}"/>
+                </div>
+                <div class="col-6 col-md-auto">
+                    <label class="form-label" for="status" th:text="#{label.status}">Status</label>
+                    <select class="form-select" id="status" name="status">
+                        <option value="" th:text="#{filter.any}">Any</option>
+                        <option th:each="s : ${statuses}" th:value="${s}" th:selected="${s == filter.status}"
+                                th:text="#{'status.' + ${s}}">s</option>
+                    </select>
+                </div>
+                <div class="col-6 col-md-auto">
+                    <label class="form-label" for="jobType" th:text="#{label.jobType}">Type</label>
+                    <select class="form-select" id="jobType" name="jobType">
+                        <option value="" th:text="#{filter.any}">Any</option>
+                        <option th:each="t : ${jobTypes}" th:value="${t}" th:selected="${t == filter.jobType}"
+                                th:text="#{'jobType.' + ${t}}">t</option>
+                    </select>
+                </div>
+                <div class="col-auto">
+                    <noscript><button class="btn" type="submit" th:text="#{label.apply}">Apply</button></noscript>
+                </div>
+            </form>
+        </div>
+
+        <div id="job-list" class="region">
+            <div th:replace="~{job/fragments/table :: table}"></div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

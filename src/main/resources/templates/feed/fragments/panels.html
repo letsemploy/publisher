@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<!--
+  Both selection panels in one fragment: adding or removing a job changes what the
+  other panel may offer, so they are swapped together (spec 7.12).
+-->
+<div th:fragment="panels" th:remove="tag">
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title" th:text="#{feed.members.title}">In this feed</h3>
+                <div class="card-actions">
+                    <span class="badge bg-green-lt"
+                          th:text="#{feed.publishedOf(${feed.publishedCount}, ${feed.members.size()})}">0 of 0</span>
+                </div>
+            </div>
+            <div th:replace="~{feed/fragments/members :: members}"></div>
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-header"><h3 class="card-title" th:text="#{feed.candidates.title}">Available jobs</h3></div>
+            <div th:replace="~{feed/fragments/candidates :: candidates}"></div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

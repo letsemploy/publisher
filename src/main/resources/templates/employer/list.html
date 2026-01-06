@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout}">
+<head><title th:text="#{nav.employers}">Employers</title></head>
+<body>
+<div layout:fragment="page-actions" th:if="${ui.admin}">
+    <a class="btn btn-primary" th:href="@{/employers/create}">
+        <svg th:replace="~{fragments/icon :: i('plus','icon')}"></svg>
+        <span th:text="#{employer.create}">New employer</span>
+    </a>
+</div>
+<div layout:fragment="content">
+    <div class="card">
+        <div th:if="${employers.content.isEmpty()}"
+             th:replace="~{fragments/empty :: state('building','employer.empty.title','employer.empty.subtitle',null,null)}"></div>
+        <div class="table-responsive" th:unless="${employers.content.isEmpty()}">
+            <table class="table table-vcenter card-table">
+                <thead>
+                <tr>
+                    <th th:text="#{label.name}">Name</th>
+                    <th th:text="#{label.industry}">Industry</th>
+                    <th th:text="#{employer.headquarters}">Headquarters</th>
+                    <th th:text="#{nav.jobs}">Jobs</th>
+                    <th th:text="#{nav.feeds}">Feeds</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="e : ${employers.content}">
+                    <td>
+                        <a th:href="@{'/employers/' + ${e.id}}" class="text-reset fw-bold" th:text="${e.name}">Acme</a>
+                        <div class="text-secondary small" th:text="${e.slug}">slug</div>
+                    </td>
+                    <td th:text="${e.industry ?: '—'}">x</td>
+                    <td th:text="${e.headquarters}">Bern, CH</td>
+                    <td th:text="${e.jobCount}">0</td>
+                    <td th:text="${e.feedCount}">0</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+        <div th:replace="~{fragments/pagination :: bar(${employers}, '#main')}"></div>
+    </div>
+</div>
+</body>
+</html>

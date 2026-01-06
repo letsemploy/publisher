@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout}">
+<head><title th:text="${feed.name}">Feed</title></head>
+<body>
+<div layout:fragment="page-actions">
+    <div class="btn-list">
+        <a class="btn" th:href="@{'/feeds/' + ${feed.id} + '/update'}">
+            <svg th:replace="~{fragments/icon :: i('pencil','icon')}"></svg>
+            <span th:text="#{label.edit}">Edit</span>
+        </a>
+        <a class="btn btn-primary" th:href="${feed.publicUrl}" target="_blank" rel="noopener">
+            <svg th:replace="~{fragments/icon :: i('external-link','icon')}"></svg>
+            <span th:text="#{label.open}">Open</span>
+        </a>
+    </div>
+</div>
+
+<div layout:fragment="content">
+
+    <div class="card mb-3">
+        <div class="card-body">
+            <label class="form-label" th:text="#{feed.publicUrl}">Public URL</label>
+            <div class="input-group input-group-flat">
+                <input type="text" class="form-control font-monospace" readonly th:value="${feed.publicUrl}"
+                       th:aria-label="#{feed.publicUrl}"/>
+                <span class="input-group-text">
+                    <!-- Reads the adjacent input rather than interpolating the URL into code. -->
+                    <a href="#" class="link-secondary" th:title="#{label.copy}"
+                       _="on click call navigator.clipboard.writeText(previous <input/>'s value)">
+                        <svg th:replace="~{fragments/icon :: i('copy','icon')}"></svg>
+                    </a>
+                </span>
+            </div>
+            <small class="form-hint" th:text="#{feed.url.hint}">Anyone with this link can read the feed.</small>
+        </div>
+    </div>
+
+    <!-- Jobs omitted at serving time must be visible to a human, not only logged (spec 5.3) -->
+    <div class="alert alert-warning" role="alert" th:if="${!feed.exclusions.isEmpty()}">
+        <h4 class="alert-title" th:text="#{feed.exclusions.title}">Omitted from the published document</h4>
+        <ul class="mb-0">
+            <li th:each="x : ${feed.exclusions}">
+                <a th:href="@{'/jobs/' + ${x.jobId}}" th:text="${x.jobTitle}">job</a>
+                — <span th:text="#{${x.reasonKey}}">reason</span>
+            </li>
+        </ul>
+    </div>
+
+    <div class="row row-cards" id="feed-panels">
+        <div th:replace="~{feed/fragments/panels :: panels}"></div>
+    </div>
+
+    <div class="card mt-3">
+        <div class="card-header">
+            <h3 class="card-title" th:text="#{feed.preview.title}">Published document</h3>
+            <div class="card-actions">
+                <span class="badge" th:classappend="${feed.schemaValid} ? 'bg-green-lt' : 'bg-red-lt'">
+                    <span th:text="${feed.schemaValid} ? #{feed.schema.valid} : #{feed.schema.invalid}">valid</span>
+                </span>
+            </div>
+        </div>
+        <div class="card-body">
+            <pre class="json-preview bg-surface-secondary p-3 rounded" th:text="${feed.jsonPreview}">{}</pre>
+        </div>
+    </div>
+</div>
+</body>
+</html>

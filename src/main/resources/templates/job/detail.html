@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout}">
+<head><title th:text="${job.title}">Job</title></head>
+<body>
+<div layout:fragment="page-actions">
+    <div class="btn-list">
+        <a class="btn" th:href="@{'/jobs/' + ${job.id} + '/update'}">
+            <svg th:replace="~{fragments/icon :: i('pencil','icon')}"></svg>
+            <span th:text="#{label.edit}">Edit</span>
+        </a>
+        <form th:each="t : ${job.availableTransitions}" th:action="@{'/jobs/' + ${job.id} + '/status'}" method="post" class="d-inline">
+            <input type="hidden" name="to" th:value="${t}"/>
+            <button type="submit" class="btn"
+                    th:classappend="${t == 'ACTIVE'} ? 'btn-primary' : ''"
+                    th:text="#{'job.transition.' + ${t.toLowerCase()}}">Activate</button>
+        </form>
+    </div>
+</div>
+
+<div layout:fragment="content">
+    <div class="row row-cards">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title" th:text="#{job.section.basics}">Basics</h3>
+                    <div class="card-actions"><span th:replace="~{fragments/status :: badge(${job.status})}"></span></div>
+                </div>
+                <div class="card-body">
+                    <dl class="row">
+                        <dt class="col-5 col-md-3" th:text="#{label.title}">Title</dt>
+                        <dd class="col-7 col-md-9" th:text="${job.title}">x</dd>
+                        <dt class="col-5 col-md-3" th:text="#{label.url}">URL</dt>
+                        <dd class="col-7 col-md-9 text-truncate">
+                            <a th:href="${job.url}" th:text="${job.url}" target="_blank" rel="noopener">x</a>
+                        </dd>
+                        <dt class="col-5 col-md-3" th:text="#{label.language}">Language</dt>
+                        <dd class="col-7 col-md-9" th:text="${job.language}">en</dd>
+                        <dt class="col-5 col-md-3" th:text="#{label.referenceId}">Reference</dt>
+                        <dd class="col-7 col-md-9" th:text="${job.referenceId ?: '—'}">x</dd>
+                        <dt class="col-5 col-md-3" th:text="#{label.category}">Category</dt>
+                        <dd class="col-7 col-md-9" th:text="${job.category ?: '—'}">x</dd>
+                        <dt class="col-5 col-md-3" th:text="#{label.description}">Description</dt>
+                        <dd class="col-7 col-md-9" th:text="${job.description ?: '—'}">x</dd>
+                    </dl>
+                </div>
+            </div>
+
+            <div class="card mt-3">
+                <div class="card-header"><h3 class="card-title" th:text="#{job.section.classification}">Classification</h3></div>
+                <div class="card-body">
+                    <dl class="row">
+                        <dt class="col-5 col-md-3" th:text="#{label.jobType}">Type</dt>
+                        <dd class="col-7 col-md-9" th:text="#{'jobType.' + ${job.jobType}}">x</dd>
+                        <dt class="col-5 col-md-3" th:text="#{label.workType}">Mode</dt>
+                        <dd class="col-7 col-md-9" th:text="${job.workType != null} ? #{'workType.' + ${job.workType}} : '—'">x</dd>
+                        <dt class="col-5 col-md-3" th:text="#{label.experienceLevel}">Level</dt>
+                        <dd class="col-7 col-md-9" th:text="${job.experienceLevel != null} ? #{'experienceLevel.' + ${job.experienceLevel}} : '—'">x</dd>
+                        <dt class="col-5 col-md-3" th:text="#{label.workLoad}">Workload</dt>
+                        <dd class="col-7 col-md-9" th:text="${job.workLoad ?: '—'}">x</dd>
+                        <dt class="col-5 col-md-3" th:text="#{label.salary}">Salary</dt>
+                        <dd class="col-7 col-md-9" th:text="${job.salary ?: '—'}">x</dd>
+                        <dt class="col-5 col-md-3" th:text="#{label.locations}">Locations</dt>
+                        <dd class="col-7 col-md-9" th:text="${#strings.listJoin(job.locations, ', ')}">x</dd>
+                        <dt class="col-5 col-md-3" th:text="#{label.tags}">Tags</dt>
+                        <dd class="col-7 col-md-9">
+                            <span th:each="t : ${job.tags}" class="badge bg-blue-lt me-1" th:text="${t}">tag</span>
+                            <span th:if="${job.tags.isEmpty()}">—</span>
+                        </dd>
+                    </dl>
+                </div>
+            </div>
+
+            <div class="card mt-3">
+                <div class="card-header"><h3 class="card-title" th:text="#{job.section.history}">Status history</h3></div>
+                <div class="card-body">
+                    <ul class="list-timeline" th:if="${!job.history.isEmpty()}">
+                        <li th:each="h : ${job.history}" class="mb-2">
+                            <span th:text="${h.at}">date</span> —
+                            <strong th:text="${h.actor}">who</strong>
+                            <span th:text="#{job.history.changed(${h.from}, ${h.to})}">changed</span>
+                        </li>
+                    </ul>
+                    <p class="text-secondary mb-0" th:if="${job.history.isEmpty()}" th:text="#{job.history.none}">No changes yet.</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <!-- Publication readiness: why this job is or is not in a feed (spec 7.11) -->
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title" th:text="#{job.readiness.title}">Publication readiness</h3>
+                </div>
+                <div class="card-body">
+                    <p class="text-secondary" th:if="${job.publishable}" th:text="#{job.readiness.ok}">Ready.</p>
+                    <p class="text-secondary" th:unless="${job.publishable}"
+                       th:text="#{job.readiness.unmet(${job.unmetCount})}">Not ready.</p>
+                    <ul class="list-unstyled mb-0">
+                        <li th:each="c : ${job.readiness}" class="d-flex align-items-center mb-2">
+                            <svg th:if="${c.satisfied}" th:replace="~{fragments/icon :: i('circle-check','icon text-green me-2')}"></svg>
+                            <svg th:unless="${c.satisfied}" th:replace="~{fragments/icon :: i('alert-triangle','icon text-yellow me-2')}"></svg>
+                            <a th:if="${!c.satisfied and c.fixAnchor != null}"
+                               th:href="@{'/jobs/' + ${job.id} + '/update'} + ${c.fixAnchor}"
+                               th:text="#{${c.labelKey}}">fix</a>
+                            <span th:unless="${!c.satisfied and c.fixAnchor != null}" th:text="#{${c.labelKey}}">check</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="card mt-3">
+                <div class="card-header"><h3 class="card-title" th:text="#{job.feeds.title}">Feed membership</h3></div>
+                <div class="list-group list-group-flush" th:if="${!job.feeds.isEmpty()}">
+                    <div class="list-group-item" th:each="m : ${job.feeds}">
+                        <div class="d-flex align-items-center">
+                            <a th:href="@{'/feeds/' + ${m.feedId}}" th:text="${m.feedName}">feed</a>
+                            <span class="ms-auto" th:replace="~{fragments/status :: badge(${m.status})}"></span>
+                        </div>
+                        <div class="text-secondary small" th:if="${m.reasonKey != null}" th:text="#{${m.reasonKey}}"></div>
+                    </div>
+                </div>
+                <div class="card-body text-secondary" th:if="${job.feeds.isEmpty()}" th:text="#{job.feeds.none}">
+                    In no feed.
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

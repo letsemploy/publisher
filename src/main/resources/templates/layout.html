@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      th:lang="${#locale.language}"
+      th:attr="data-bs-theme=${ui.theme}">
+<head>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+    <title layout:title-pattern="$CONTENT_TITLE · $LAYOUT_TITLE" th:text="#{app.name}">ojobpub publisher</title>
+    <link rel="stylesheet" th:href="@{/vendor/tabler.min.css}"/>
+    <link rel="stylesheet" th:href="@{/css/app.css}"/>
+    <script defer th:src="@{/vendor/htmx.min.js}"></script>
+    <script defer th:src="@{/vendor/hyperscript.min.js}"></script>
+    <script defer th:src="@{/vendor/tabler.min.js}"></script>
+</head>
+<body hx-boost="true"
+      th:attr="hx-headers=${_csrf != null} ? '{&quot;' + ${_csrf.headerName} + '&quot;:&quot;' + ${_csrf.token} + '&quot;}' : null">
+
+<a class="visually-hidden-focusable skip-link" th:href="@{#main}" th:text="#{a11y.skipToContent}">Skip to content</a>
+
+<div class="page">
+    <th:block th:replace="~{fragments/nav :: sidebar}"/>
+
+    <div class="page-wrapper">
+        <div th:replace="~{fragments/nav :: devBanner}"></div>
+
+        <header class="page-header d-print-none">
+            <div class="container-xl">
+                <div class="row g-2 align-items-center">
+                    <div class="col">
+                        <nav aria-label="breadcrumb" th:if="${page.breadcrumb != null and !page.breadcrumb.isEmpty()}">
+                            <ol class="breadcrumb breadcrumb-arrows">
+                                <li class="breadcrumb-item" th:each="crumb : ${page.breadcrumb}"
+                                    th:classappend="${crumb.href == null} ? 'active'">
+                                    <a th:if="${crumb.href != null}" th:href="${crumb.href}" th:text="${crumb.label}">x</a>
+                                    <span th:unless="${crumb.href != null}" th:text="${crumb.label}">x</span>
+                                </li>
+                            </ol>
+                        </nav>
+                        <h1 class="page-title" id="main" tabindex="-1" th:text="${page.title}">Title</h1>
+                        <div class="text-secondary mt-1" th:if="${page.subtitle != null}" th:text="${page.subtitle}"></div>
+                    </div>
+                    <div class="col-auto ms-auto d-print-none">
+                        <div layout:fragment="page-actions"></div>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <div class="page-body">
+            <div class="container-xl">
+                <div th:replace="~{fragments/flash :: region}"></div>
+                <div layout:fragment="content"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Shared container for server-rendered modals (spec 7.4) -->
+<div id="modal-container"></div>
+
+</body>
+</html>

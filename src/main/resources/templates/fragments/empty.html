@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<!-- Empty state: icon, one-line explanation, and the action that resolves it (spec 7.5) -->
+<div th:fragment="state(icon, titleKey, subtitleKey, actionHref, actionKey)" class="empty">
+    <div class="empty-icon">
+        <svg th:replace="~{fragments/icon :: i(${icon},'icon icon-lg text-secondary')}"></svg>
+    </div>
+    <p class="empty-title" th:text="#{${titleKey}}">Nothing here</p>
+    <p class="empty-subtitle text-secondary" th:if="${subtitleKey != null}" th:text="#{${subtitleKey}}"></p>
+    <div class="empty-action" th:if="${actionHref != null}">
+        <a class="btn btn-primary" th:href="${actionHref}">
+            <svg th:replace="~{fragments/icon :: i('plus','icon')}"></svg>
+            <span th:text="#{${actionKey}}">Create</span>
+        </a>
+    </div>
+</div>
+</body>
+</html>

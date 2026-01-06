@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<!-- The list region: swapped on search, filter, sort and paging (spec 7.4) -->
+<div th:fragment="table" th:remove="tag">
+    <div th:if="${jobs.content.isEmpty()}"
+         th:replace="~{fragments/empty :: state('briefcase','job.empty.title','job.empty.subtitle','/jobs/create','job.create')}"></div>
+
+    <div class="table-responsive" th:unless="${jobs.content.isEmpty()}">
+        <table class="table table-vcenter card-table">
+            <thead>
+            <tr>
+                <th>
+                    <a th:href="@{/jobs(sort='title')}" th:text="#{label.title}"
+                       th:attr="hx-get=@{/jobs(sort='title')},hx-target='#job-list',hx-push-url='true',
+                                aria-sort=${filter.sort == 'title'} ? 'ascending' : 'none'">Title</a>
+                </th>
+                <th th:text="#{label.status}">Status</th>
+                <th th:text="#{label.locations}">Locations</th>
+                <th th:text="#{label.jobType}">Type</th>
+                <th th:text="#{nav.feeds}">Feeds</th>
+                <th class="w-1"></th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="job : ${jobs.content}">
+                <td>
+                    <a th:href="@{'/jobs/' + ${job.id}}" class="text-reset fw-bold" th:text="${job.title}">Title</a>
+                    <div class="text-secondary small" th:if="${job.referenceId != null}" th:text="${job.referenceId}"></div>
+                </td>
+                <td><span th:replace="~{fragments/status :: badge(${job.status})}"></span></td>
+                <td class="text-secondary" th:text="${#strings.listJoin(job.locations, ', ')}">Bern</td>
+                <td th:text="#{'jobType.' + ${job.jobType}}">Permanent</td>
+                <td><span class="badge bg-blue-lt" th:text="${job.feedCount}">0</span></td>
+                <td>
+                    <div class="dropdown">
+                        <a href="#" class="btn btn-sm btn-ghost-secondary" data-bs-toggle="dropdown"
+                           th:aria-label="#{label.actions}">
+                            <svg th:replace="~{fragments/icon :: i('dots-vertical','icon')}"></svg>
+                        </a>
+                        <div class="dropdown-menu dropdown-menu-end">
+                            <a class="dropdown-item" th:href="@{'/jobs/' + ${job.id}}" th:text="#{label.viewDetails}">View</a>
+                            <a class="dropdown-item" th:href="@{'/jobs/' + ${job.id} + '/update'}" th:text="#{label.edit}">Edit</a>
+                            <a class="dropdown-item text-danger" th:href="@{'/jobs/' + ${job.id} + '/delete'}"
+                               th:attr="hx-get=@{'/jobs/' + ${job.id} + '/delete'},hx-target='#modal-container'"
+                               th:text="#{label.delete}">Delete</a>
+                        </div>
+                    </div>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div th:replace="~{fragments/pagination :: bar(${jobs}, '#job-list')}"></div>
+</div>
+</body>
+</html>

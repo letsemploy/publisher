@@ -1,0 +1,12 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<!--
+  Status badge. Colour is never the only signal - every badge carries a word (spec 7.6).
+  status: PUBLISHED | EXPIRED | INCOMPLETE | DRAFT | INACTIVE
+-->
+<span th:fragment="badge(status)" class="badge"
+      th:classappend="${ {'PUBLISHED':'bg-green-lt','EXPIRED':'bg-yellow-lt','INCOMPLETE':'bg-yellow-lt','DRAFT':'bg-secondary-lt','INACTIVE':'bg-dark-lt'}.get(status.name()) }"
+      th:text="#{'status.' + ${status.name().toLowerCase()}}">Draft</span>
+</body>
+</html>

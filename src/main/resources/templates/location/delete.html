@@ -1,0 +1,11 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<div th:replace="~{fragments/modal :: confirm(
+        'location.delete.title',
+        ${message},
+        @{'/locations/' + ${location.id} + '/delete'},
+        'label.delete',
+        true)}"></div>
+</body>
+</html>

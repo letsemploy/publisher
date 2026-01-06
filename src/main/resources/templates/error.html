@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout}">
+<head><title th:text="#{label.error}">Error</title></head>
+<body>
+<div layout:fragment="content">
+    <div class="empty">
+        <div class="empty-icon">
+            <svg th:replace="~{fragments/icon :: i('alert-triangle','icon icon-lg text-danger')}"></svg>
+        </div>
+        <p class="empty-title" th:text="${errorTitle} ?: #{msg.unexpectedError}">Something went wrong</p>
+        <p class="empty-subtitle text-secondary" th:if="${correlationId != null}"
+           th:text="#{error.correlationId(${correlationId})}">Reference</p>
+        <div class="empty-action">
+            <a class="btn btn-primary" th:href="@{/}">
+                <svg th:replace="~{fragments/icon :: i('arrow-left','icon')}"></svg>
+                <span th:text="#{error.backHome}">Back to dashboard</span>
+            </a>
+        </div>
+    </div>
+</div>
+</body>
+</html>

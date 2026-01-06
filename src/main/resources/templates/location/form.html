@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout}">
+<head><title th:text="${form.id != null} ? #{location.edit} : #{location.create}">Location</title></head>
+<body>
+<div layout:fragment="content">
+    <div class="row justify-content-center">
+        <div class="col-lg-6">
+            <form th:action="${form.id != null} ? @{'/locations/' + ${form.id} + '/update'} : @{/locations/create}" method="post">
+                <div th:replace="~{fragments/form :: errorSummary(${errors})}"></div>
+                <div class="card">
+                    <div class="card-body">
+                        <div th:replace="~{fragments/form :: input('city','label.city',${form.city},'text',true,null,${fieldErrors['city']},255)}"></div>
+                        <!-- Native select: browsers already provide type-ahead, so no library (spec 7.8) -->
+                        <div th:replace="~{fragments/form :: select('country','label.country',${form.country},${countryOptions},true,'label.pleaseChoose',${fieldErrors['country']})}"></div>
+                    </div>
+                    <div th:replace="~{fragments/form :: actions('label.save','/locations')}"></div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+</body>
+</html>

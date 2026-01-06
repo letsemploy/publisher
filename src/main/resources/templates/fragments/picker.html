@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<!--
+  Many-to-many picker without a JavaScript library (spec 7.8).
+  Chips are backed by hidden inputs, so the selection posts with a plain form
+  and the screen still works with JavaScript disabled.
+-->
+<div th:fragment="chips(name, items, removable)" class="mb-2">
+    <span th:each="it : ${items}" class="badge bg-blue-lt me-1 mb-1">
+        <input type="hidden" th:name="${name}" th:value="${it.id}"/>
+        <span th:text="${it.label}">item</span>
+        <button th:if="${removable}" type="button" class="btn-close btn-close-white ms-1"
+                th:aria-label="#{label.remove}"
+                _="on click remove closest .badge"></button>
+    </span>
+    <span th:if="${items.isEmpty()}" class="text-secondary" th:text="#{picker.none}">None selected</span>
+</div>
+
+<div th:fragment="search(id, searchUrl, targetId, placeholderKey)" class="mb-2">
+    <label class="form-label visually-hidden" th:for="${id}" th:text="#{${placeholderKey}}"></label>
+    <input class="form-control" type="search" th:id="${id}" name="q"
+           th:placeholder="#{${placeholderKey}}"
+           th:attr="hx-get=@{${searchUrl}},hx-target='#' + ${targetId},
+                    hx-trigger='input changed delay:300ms, search'"/>
+    <div th:id="${targetId}" class="list-group mt-1"></div>
+</div>
+
+<!--
+  Search results. Choosing one appends a chip; with JavaScript off the same list
+  renders on submit of the search field and the choice is an ordinary link.
+-->
+<div th:fragment="results" th:remove="tag">
+    <button type="button" class="list-group-item list-group-item-action"
+            th:each="r : ${results}"
+            th:attr="_='on click make a <span.badge.bg-blue-lt/> called chip then ' +
+                       'put `&lt;input type=hidden name=' + ${targetName} + ' value=' + ${r.id} + '&gt;' +
+                       ${r.label} + '` into chip then put chip at the end of #' + ${targetName} + '-chips ' +
+                       'then remove me'">
+        <span th:text="${r.label}">label</span>
+    </button>
+    <div class="list-group-item text-secondary" th:if="${results.isEmpty()}"
+         th:text="#{picker.noResults}">No matches.</div>
+</div>
+</body>
+</html>

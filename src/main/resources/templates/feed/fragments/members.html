@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<div th:fragment="members" th:remove="tag">
+    <div th:if="${feed.members.isEmpty()}"
+         th:replace="~{fragments/empty :: state('briefcase','feed.members.empty','feed.members.emptyHint',null,null)}"></div>
+    <div class="list-group list-group-flush" th:unless="${feed.members.isEmpty()}">
+        <div class="list-group-item d-flex align-items-center" th:each="job : ${feed.members}">
+            <div class="me-auto">
+                <a th:href="@{'/jobs/' + ${job.id}}" th:text="${job.title}">job</a>
+                <div class="small"><span th:replace="~{fragments/status :: badge(${job.status})}"></span></div>
+            </div>
+            <form th:action="@{'/feeds/' + ${feed.id} + '/jobs/' + ${job.id} + '/remove'}" method="post">
+                <button type="submit" class="btn btn-sm btn-ghost-danger"
+                        th:attr="hx-post=@{'/feeds/' + ${feed.id} + '/jobs/' + ${job.id} + '/remove'},
+                                 hx-target='#feed-panels'"
+                        th:text="#{label.remove}">Remove</button>
+            </form>
+        </div>
+    </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,14 @@
+FROM docker.io/maven:3-eclipse-temurin-25 AS build
+
+WORKDIR /home/app/
+COPY . .
+RUN mvn -f pom.xml package -Dmaven.test.skip
+RUN mv ./target/*.jar /app.jar
+
+#
+# Package stage
+#
+FROM docker.io/eclipse-temurin:25-jre-alpine
+COPY --from=build /app.jar /opt/app/
+EXPOSE 8080
+ENTRYPOINT ["java","-jar","/opt/app/app.jar"]

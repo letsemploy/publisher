@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+
+<!-- Error summary at the top of a form, linking to each field (spec 7.7) -->
+<div th:fragment="errorSummary(errors)" th:if="${errors != null and !errors.isEmpty()}"
+     class="alert alert-danger" role="alert">
+    <h4 class="alert-title" th:text="#{form.errorSummary(${errors.size()})}">There are errors</h4>
+    <ul class="mb-0">
+        <li th:each="e : ${errors}">
+            <a th:href="'#' + ${e.field}" th:text="${e.message}">message</a>
+        </li>
+    </ul>
+</div>
+
+<!-- Text-like input -->
+<div th:fragment="input(id, labelKey, value, type, required, hintKey, error, maxlength)" class="mb-3">
+    <label class="form-label" th:for="${id}" th:classappend="${required} ? 'required'">
+        <span th:text="#{${labelKey}}">Label</span>
+    </label>
+    <input class="form-control" th:id="${id}" th:name="${id}" th:value="${value}"
+           th:type="${type ?: 'text'}"
+           th:required="${required}"
+           th:maxlength="${maxlength}"
+           th:classappend="${error != null} ? 'is-invalid'"
+           th:attr="aria-invalid=${error != null} ? 'true' : null,
+                    aria-describedby=${error != null} ? ${id} + '-err' : (${hintKey != null} ? ${id} + '-hint' : null)"/>
+    <small class="form-hint" th:if="${hintKey != null}" th:id="${id} + '-hint'" th:text="#{${hintKey}}"></small>
+    <div class="invalid-feedback" th:if="${error != null}" th:id="${id} + '-err'" th:text="${error}"></div>
+</div>
+
+<!-- Textarea with a server-rendered character counter (spec 7.7) -->
+<div th:fragment="textarea(id, labelKey, value, required, maxlength, error)" class="mb-3">
+    <label class="form-label" th:for="${id}" th:classappend="${required} ? 'required'" th:text="#{${labelKey}}">Label</label>
+    <textarea class="form-control" rows="6" th:id="${id}" th:name="${id}"
+              th:required="${required}" th:maxlength="${maxlength}"
+              th:classappend="${error != null} ? 'is-invalid'"
+              th:text="${value}"></textarea>
+    <small class="form-hint" th:text="#{form.maxChars(${maxlength})}">Max</small>
+    <div class="invalid-feedback" th:if="${error != null}" th:text="${error}"></div>
+</div>
+
+<!-- Select over a map of value -> label -->
+<div th:fragment="select(id, labelKey, value, options, required, blankKey, error)" class="mb-3">
+    <label class="form-label" th:for="${id}" th:classappend="${required} ? 'required'" th:text="#{${labelKey}}">Label</label>
+    <select class="form-select" th:id="${id}" th:name="${id}" th:required="${required}"
+            th:classappend="${error != null} ? 'is-invalid'">
+        <option value="" th:if="${blankKey != null}" th:text="#{${blankKey}}">Please choose</option>
+        <option th:each="o : ${options}" th:value="${o.key}" th:text="${o.value}"
+                th:selected="${o.key == value}">Option</option>
+    </select>
+    <div class="invalid-feedback" th:if="${error != null}" th:text="${error}"></div>
+</div>
+
+<!-- Form action bar: primary left, cancel as a link, destructive kept apart (spec 7.7) -->
+<div th:fragment="actions(submitKey, cancelHref)" class="card-footer d-flex align-items-center">
+    <a th:href="${cancelHref}" class="btn btn-link" th:text="#{label.cancel}">Cancel</a>
+    <button type="submit" class="btn btn-primary ms-auto" th:text="#{${submitKey}}">Save</button>
+</div>
+
+</body>
+</html>

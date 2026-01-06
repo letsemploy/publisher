@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+
+<!-- Dev-mode banner: authentication bypassed (spec 2.3, 7.3) -->
+<div th:fragment="devBanner" th:if="${ui.devMode}" class="alert alert-important alert-warning m-0 rounded-0 d-print-none" role="alert">
+    <div class="container-xl d-flex align-items-center">
+        <svg th:replace="~{fragments/icon :: i('alert-triangle','icon alert-icon')}"></svg>
+        <strong class="mx-2" th:text="#{dev.banner.title}">Development mode</strong>
+        <span th:text="#{dev.banner.detail}">Authentication is disabled.</span>
+    </div>
+</div>
+
+<!-- Sidebar (spec 7.3): brand, employer switcher, primary nav, user footer -->
+<aside th:fragment="sidebar" class="navbar navbar-vertical navbar-expand-lg d-print-none">
+    <div class="container-fluid">
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
+                data-bs-target="#sidebar-menu" aria-controls="sidebar-menu"
+                aria-expanded="false" th:aria-label="#{a11y.toggleNav}">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <div class="navbar-brand navbar-brand-autodark">
+            <a th:href="@{/}" class="d-flex align-items-center text-reset text-decoration-none">
+                <span th:text="#{app.name}">oJobPub Publisher</span>
+            </a>
+        </div>
+
+        <!-- Employer switcher: hidden when the user has exactly one employer (spec 2.5) -->
+        <div class="mt-2 mb-3 d-none d-lg-block" th:if="${ui.employers.size() > 1 or ui.admin}">
+            <div class="dropdown w-100">
+                <a href="#" class="btn btn-outline-secondary w-100 d-flex align-items-center dropdown-toggle"
+                   data-bs-toggle="dropdown" aria-expanded="false">
+                    <svg th:replace="~{fragments/icon :: i('building','icon me-2')}"></svg>
+                    <span class="text-truncate"
+                          th:text="${ui.activeEmployer != null} ? ${ui.activeEmployer.label} : #{employer.all}">Acme</span>
+                </a>
+                <div class="dropdown-menu w-100">
+                    <form th:action="@{/context/employer}" method="post" th:each="e : ${ui.employers}">
+                        <input type="hidden" name="employerId" th:value="${e.id}"/>
+                        <button type="submit" class="dropdown-item"
+                                th:classappend="${ui.activeEmployer != null and ui.activeEmployer.id == e.id} ? 'active'"
+                                th:text="${e.label}">Acme</button>
+                    </form>
+                    <div class="dropdown-divider" th:if="${ui.admin}"></div>
+                    <form th:action="@{/context/employer}" method="post" th:if="${ui.admin}">
+                        <input type="hidden" name="employerId" value=""/>
+                        <button type="submit" class="dropdown-item"
+                                th:classappend="${ui.activeEmployer == null} ? 'active'"
+                                th:text="#{employer.all}">All employers</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="collapse navbar-collapse" id="sidebar-menu">
+            <ul class="navbar-nav pt-lg-3">
+                <li class="nav-item" th:each="item : ${ui.navItems}"
+                    th:classappend="${item.active} ? 'active'">
+                    <a class="nav-link" th:href="@{${item.href}}"
+                       th:attr="aria-current=${item.active} ? 'page' : null">
+                        <span class="nav-link-icon d-md-none d-lg-inline-block">
+                            <svg th:replace="~{fragments/icon :: i(${item.icon},'icon')}"></svg>
+                        </span>
+                        <span class="nav-link-title" th:text="#{${item.labelKey}}">Item</span>
+                    </a>
+                </li>
+            </ul>
+
+            <div class="mt-auto pb-3">
+                <div class="dropdown">
+                    <a href="#" class="nav-link d-flex align-items-center text-reset dropdown-toggle"
+                       data-bs-toggle="dropdown" aria-expanded="false">
+                        <span class="nav-link-icon">
+                            <svg th:replace="~{fragments/icon :: i('user','icon')}"></svg>
+                        </span>
+                        <span class="nav-link-title ms-1 text-truncate" th:text="${ui.userName}">User</span>
+                    </a>
+                    <div class="dropdown-menu">
+                        <h6 class="dropdown-header" th:text="#{label.language}">Language</h6>
+                        <a class="dropdown-item" th:each="l : ${ui.languages}"
+                           th:href="@{''(lang=${l})}"
+                           th:classappend="${l == #locale.language} ? 'active'"
+                           th:text="#{'lang.' + ${l}}">English</a>
+                        <div class="dropdown-divider"></div>
+                        <form th:action="@{/context/theme}" method="post">
+                            <input type="hidden" name="theme" th:value="${ui.theme == 'dark'} ? 'light' : 'dark'"/>
+                            <button type="submit" class="dropdown-item">
+                                <svg th:replace="~{fragments/icon :: i('moon','icon dropdown-item-icon')}"></svg>
+                                <span th:text="${ui.theme == 'dark'} ? #{theme.light} : #{theme.dark}">Dark mode</span>
+                            </button>
+                        </form>
+                        <div class="dropdown-divider"></div>
+                        <form th:action="@{/logout}" method="post">
+                            <button type="submit" class="dropdown-item">
+                                <svg th:replace="~{fragments/icon :: i('logout','icon dropdown-item-icon')}"></svg>
+                                <span th:text="#{label.logout}">Log out</span>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</aside>
+</body>
+</html>

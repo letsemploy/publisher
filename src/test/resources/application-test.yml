@@ -1,0 +1,50 @@
+# Test configuration (profile: test).
+#
+# Profile-specific files outrank the non-profile application.properties, which is
+# why the JobRunr overrides below actually take effect here - a plain
+# src/test/resources/application.yml would lose to src/main/resources/application.properties
+# and the dashboard would silently keep its fixed port.
+#
+# Tests that exercise the back-office also activate the dev profile, whose security
+# bypass removes the need for an identity provider. This file is listed after it in
+# @ActiveProfiles, so the datasource below wins over the dev one.
+spring:
+  datasource:
+    url: jdbc:mariadb://127.0.0.1:3306/publisher_test?createDatabaseIfNotExist=true
+    driver-class-name: org.mariadb.jdbc.Driver
+    username: root
+    password: root
+  flyway:
+    enabled: true
+    baselineOnMigrate: true
+    validateOnMigrate: true
+    locations: classpath:db/migration
+    table: migrations
+  jpa:
+    generate-ddl: false
+    show-sql: false
+    hibernate:
+      ddl-auto: none
+    defer-datasource-initialization: true
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MariaDBDialect
+  sql:
+    init:
+      mode: always
+  thymeleaf:
+    cache: false
+
+# Nothing in a test may bind a port: the dashboard's is fixed and would collide
+# with a locally running instance.
+jobrunr:
+  dashboard:
+    enabled: false
+  background-job-server:
+    enabled: false
+
+logging:
+  level:
+    org.springframework: WARN
+    org.hibernate: WARN
+    org.flywaydb: WARN

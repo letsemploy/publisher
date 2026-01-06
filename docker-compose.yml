@@ -1,0 +1,15 @@
+version: "3.5"
+services:
+  db:
+    image: docker.io/mariadb
+    restart: always
+    environment:
+      MARIADB_ROOT_PASSWORD: root
+    ports:
+      - '3306:3306'
+
+  adminer:
+    image: docker.io/adminer
+    restart: always
+    ports:
+      - '8081:8080'
