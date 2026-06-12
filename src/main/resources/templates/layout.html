@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title layout:title-pattern="$CONTENT_TITLE · publisher">publisher</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/core@1.4.0/dist/css/tabler.min.css">
+    <script src="https://unpkg.com/htmx.org@2.0.7"></script>
+    <script src="https://unpkg.com/hyperscript.org@0.9.14"></script>
+</head>
+<body>
+<div class="page">
+    <aside class="navbar navbar-vertical navbar-expand-lg" data-bs-theme="dark">
+        <div class="container-fluid">
+            <a class="navbar-brand" th:href="@{/}">publisher</a>
+            <div class="navbar-nav">
+                <a class="nav-link" th:href="@{/users}">Users</a>
+                <a class="nav-link" th:href="@{/tenants}">Tenants</a>
+                <a class="nav-link" th:href="@{/domains}">Domains</a>
+                <a class="nav-link" th:href="@{/locations}">Locations</a>
+                <a class="nav-link" th:href="@{/categories}">Categories</a>
+                <a class="nav-link" th:href="@{/employers}">Employers</a>
+                <a class="nav-link" th:href="@{/tags}">Tags</a>
+                <a class="nav-link" th:href="@{/jobs}">Jobs</a>
+                <a class="nav-link" th:href="@{/exports}">Exports</a>
+            </div>
+        </div>
+    </aside>
+    <div class="page-wrapper">
+        <div class="page-header d-print-none"><div class="container-xl"><h2 class="page-title" layout:fragment="pageTitle">publisher</h2></div></div>
+        <div class="page-body"><div class="container-xl" layout:fragment="content"></div></div>
+    </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/@tabler/core@1.4.0/dist/js/tabler.min.js"></script>
+</body>
+</html>

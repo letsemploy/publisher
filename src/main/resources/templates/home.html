@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout" layout:decorate="~{layout}">
+<body>
+<section layout:fragment="content">
+    <div class="row row-deck row-cards">
+        <div class="col-sm-6 col-lg-3"><div class="card"><div class="card-body"><div class="h1" th:text="${userCount}">0</div><div>Users</div></div></div></div>
+        <div class="col-sm-6 col-lg-3"><div class="card"><div class="card-body"><div class="h1" th:text="${tenantCount}">0</div><div>Tenants</div></div></div></div>
+        <div class="col-sm-6 col-lg-3"><div class="card"><div class="card-body"><div class="h1" th:text="${domainCount}">0</div><div>Domains</div></div></div></div>
+        <div class="col-sm-6 col-lg-3"><div class="card"><div class="card-body"><div class="h1" th:text="${jobCount}">0</div><div>Jobs</div></div></div></div>
+    </div>
+    <div class="card mt-4"><div class="card-body"><h3>Public exports</h3><p>Manage active job feeds per domain and expose them at <code>/public/domains/{domain-slug}/ojobpub.json</code>.</p><p th:text="|${exportCount} exports configured.|">0 exports configured.</p></div></div>
+</section>
+</body>
+</html>
