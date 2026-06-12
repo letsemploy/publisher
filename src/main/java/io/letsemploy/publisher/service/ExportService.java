@@ -94,7 +94,7 @@ public class ExportService {
                 lowercase(job.getWorkType()).replace('_', '-'),
                 job.getMinSalary() == null && job.getMaxSalary() == null && !StringUtils.hasText(job.getSalaryCurrency()) && job.getSalaryInterval() == null ? null :
                         new ExportPayload.SalaryPayload(job.getMinSalary(), job.getMaxSalary(), job.getSalaryCurrency(), lowercase(job.getSalaryInterval())),
-                job.getTags().stream().map(tag -> tag.getName()).toList(),
+                job.getTags().stream().map(io.letsemploy.publisher.domain.Tag::getName).toList(),
                 job.getLocations().stream().map(this::toLocation).toList(),
                 job.getUrl()
         );
