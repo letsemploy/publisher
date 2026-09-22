@@ -323,6 +323,42 @@ class ScreenRenderingTest {
     }
 
     /**
+     * The same URL answers with a fragment when htmx asks for one and with a
+     * whole page otherwise (spec 9.2). Routing between the two is done by
+     * htmx-spring-boot's {@code @HxRequest(boosted = false)}, a third-party
+     * annotation carrying a rule this application depends on, and nothing else
+     * here exercises it - a library upgrade could change the matching and every
+     * other test would still pass.
+     */
+    @Test
+    void htmxAsksForAFragmentAndGetsOne() throws Exception {
+        String fragment = mvc.perform(get("/jobs").header("HX-Request", "true"))
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString();
+        assertThat(fragment)
+                .as("a fragment carries the table but not the page shell")
+                .doesNotContain("<html")
+                .doesNotContain("navbar")
+                .contains("table-responsive")
+                .contains("Senior Backend Engineer");
+    }
+
+    /**
+     * A boosted navigation is an htmx request that still wants a whole page,
+     * which is exactly what {@code boosted = false} exists to say. Get this
+     * wrong and every link in the application returns a bare fragment.
+     */
+    @Test
+    void aBoostedNavigationStillGetsTheWholePage() throws Exception {
+        String page = mvc.perform(get("/jobs")
+                        .header("HX-Request", "true")
+                        .header("HX-Boosted", "true"))
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString();
+        assertThat(page).contains("<html").contains("navbar");
+    }
+
+    /**
      * A missing record renders the error page. Regression guard: the error view
      * decorates with the shell, and @ModelAttribute does not reach @ExceptionHandler,
      * so the handler must supply `ui` itself or every 404 becomes a 500.
