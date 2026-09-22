@@ -9,8 +9,11 @@ import org.letsemploy.ojobpub_publisher.employer.Employer;
 import org.letsemploy.ojobpub_publisher.feed.Feed;
 import org.letsemploy.ojobpub_publisher.job.Job;
 import org.letsemploy.ojobpub_publisher.job.JobStatusEvent;
+import org.letsemploy.ojobpub_publisher.invitation.Invitation;
 import org.letsemploy.ojobpub_publisher.job.Publication;
 import org.letsemploy.ojobpub_publisher.location.Location;
+import org.letsemploy.ojobpub_publisher.membership.Membership;
+import org.letsemploy.ojobpub_publisher.security.UserEntity;
 import org.letsemploy.ojobpub_publisher.tag.Tag;
 import org.letsemploy.ojobpub_publisher.web.view.*;
 import org.springframework.beans.factory.annotation.Value;
@@ -135,6 +138,36 @@ public class Views {
 
     public TagRow tagRow(Tag tag, long jobCount) {
         return new TagRow(String.valueOf(tag.getId()), tag.getName(), (int) jobCount);
+    }
+
+    public InvitationRow invitationRow(Invitation invitation) {
+        return new InvitationRow(invitation.getId().toString(),
+                invitation.getEmployer().getName(),
+                invitation.getRole().name().toLowerCase(),
+                displayName(invitation.getInvitedBy()),
+                TIMESTAMP.format(invitation.getCreatedAt()));
+    }
+
+    public PendingInvitationRow pendingInvitationRow(Invitation invitation) {
+        return new PendingInvitationRow(invitation.getId().toString(),
+                displayName(invitation.getInvitee()),
+                invitation.getInvitee().getEmail(),
+                invitation.getRole().name().toLowerCase(),
+                displayName(invitation.getInvitedBy()),
+                TIMESTAMP.format(invitation.getCreatedAt()));
+    }
+
+    public MemberRow memberRow(Membership membership, boolean lastOwner) {
+        UserEntity user = membership.getUser();
+        return new MemberRow(user.getId().toString(), displayName(user), user.getEmail(),
+                membership.getRole().name().toLowerCase(), lastOwner);
+    }
+
+    private String displayName(UserEntity user) {
+        if (user.getDisplayName() != null && !user.getDisplayName().isBlank()) {
+            return user.getDisplayName();
+        }
+        return user.getEmail() != null ? user.getEmail() : user.getSubject();
     }
 
     public Ref ref(Employer employer) {

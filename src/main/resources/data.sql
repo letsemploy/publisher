@@ -80,3 +80,33 @@ INSERT INTO feed_jobs (feed_id, job_id) VALUES
   -- In the feed but not publishable: the feed screen must explain the omission.
   ('cd58289d-022e-4a1e-df83-7e5f60718293', 'de69390e-133f-4b2f-e094-8f6071829301')
 ON DUPLICATE KEY UPDATE feed_id = feed_id;
+
+-- The development administrator (spec 2.3): a real record, because anything keyed
+-- on user identity is otherwise unreachable locally and in the tests.
+INSERT INTO users (id, created_at, last_modified_at, issuer, subject, email, display_name, role) VALUES
+  ('11111111-1111-4111-8111-111111111111', now(), now(), 'dev', 'dev@localhost',
+   'dev@localhost', 'dev@localhost', 'ADMIN'),
+  -- A registered colleague with no memberships, so the invite flow has a real target.
+  ('22222222-2222-4222-8222-222222222222', now(), now(), 'dev', 'editor@example.com',
+   'editor@example.com', 'Edith Editor', 'USER'),
+  -- An actual member, so the People screen has a member to list and remove.
+  ('44444444-4444-4444-8444-444444444444', now(), now(), 'dev', 'member@example.com',
+   'member@example.com', 'Mara Member', 'USER')
+ON DUPLICATE KEY UPDATE id = id;
+
+-- The dev admin owns Acme, so the People screen has an owner and the last-owner
+-- rule has something to protect; Mara is an editor alongside them (spec 2.7).
+INSERT INTO memberships (id, created_at, last_modified_at, user_id, employer_id, role) VALUES
+  ('55555555-5555-4555-8555-555555555555', now(), now(),
+   '11111111-1111-4111-8111-111111111111', '003d6aec-021b-11f1-aefa-f649a5d91690', 'OWNER'),
+  ('66666666-6666-4666-8666-666666666666', now(), now(),
+   '44444444-4444-4444-8444-444444444444', '003d6aec-021b-11f1-aefa-f649a5d91690', 'EDITOR')
+ON DUPLICATE KEY UPDATE id = id;
+
+-- A pending invitation waiting for the colleague, so the screens have something to show.
+INSERT INTO invitations (id, created_at, last_modified_at, employer_id, invitee_id, invited_by_id,
+                         role, status, responded_at) VALUES
+  ('33333333-3333-4333-8333-333333333333', now(), now(), '003d6aec-021b-11f1-aefa-f649a5d91690',
+   '22222222-2222-4222-8222-222222222222', '11111111-1111-4111-8111-111111111111',
+   'EDITOR', 'PENDING', NULL)
+ON DUPLICATE KEY UPDATE id = id;

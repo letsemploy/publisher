@@ -1,8 +1,15 @@
 package org.letsemploy.ojobpub_publisher.security;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.UUID;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
+import org.letsemploy.ojobpub_publisher.membership.Membership;
+import org.letsemploy.ojobpub_publisher.membership.MembershipRepo;
+import org.letsemploy.ojobpub_publisher.membership.MembershipRole;
 import org.springframework.core.env.Environment;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -15,7 +22,12 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class CurrentUserService {
 
+    /** The seeded development administrator (spec 2.3). */
+    public static final String DEV_ISSUER = "dev";
+    public static final String DEV_SUBJECT = "dev@localhost";
+
     private final UserRepo userRepo;
+    private final MembershipRepo membershipRepo;
     private final Environment environment;
 
     public boolean isDevMode() {
@@ -26,26 +38,47 @@ public class CurrentUserService {
     public AppUser current() {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
 
-        // Development mode: a fixed synthetic administrator, no identity provider (spec 2.3).
+        // Development mode: no identity provider, but a real user record all the same -
+        // anything keyed on user identity is otherwise unreachable locally (spec 2.3).
         if (isDevMode() && (auth == null || !(auth.getPrincipal() instanceof OidcUser))) {
-            return new AppUser("dev@localhost", true, List.of());
+            return toAppUser(devUser());
         }
 
         if (auth != null && auth.getPrincipal() instanceof OidcUser oidc) {
             UserEntity user = userRepo
                     .findByIssuerAndSubject(String.valueOf(oidc.getIssuer()), oidc.getSubject())
                     .orElseGet(() -> provision(oidc));
-            String name = Optional.ofNullable(user.getDisplayName())
-                    .orElse(Optional.ofNullable(user.getEmail()).orElse(user.getSubject()));
-            return new AppUser(name, user.getRole() == UserEntity.Role.ADMIN,
-                    List.copyOf(user.getEmployerIds()));
+            return toAppUser(user);
         }
-        return new AppUser("anonymous", false, List.of());
+        return new AppUser(null, "anonymous", null, false, Map.of());
+    }
+
+    /** Seeded by data.sql, but provisioned on demand so dev works on an empty database. */
+    private UserEntity devUser() {
+        return userRepo.findByIssuerAndSubject(DEV_ISSUER, DEV_SUBJECT).orElseGet(() -> {
+            UserEntity user = new UserEntity();
+            user.setIssuer(DEV_ISSUER);
+            user.setSubject(DEV_SUBJECT);
+            user.setEmail(DEV_SUBJECT);
+            user.setDisplayName("dev@localhost");
+            user.setRole(UserEntity.Role.ADMIN);
+            return userRepo.save(user);
+        });
+    }
+
+    private AppUser toAppUser(UserEntity user) {
+        String name = Optional.ofNullable(user.getDisplayName())
+                .orElse(Optional.ofNullable(user.getEmail()).orElse(user.getSubject()));
+        Map<UUID, MembershipRole> memberships = membershipRepo.findByUserId(user.getId()).stream()
+                .collect(Collectors.toMap(m -> m.getEmployer().getId(), Membership::getRole,
+                        (a, b) -> a));
+        return new AppUser(user.getId(), name, user.getEmail(),
+                user.getRole() == UserEntity.Role.ADMIN, memberships);
     }
 
     /**
      * A newly provisioned user is an editor with no employer memberships: they can
-     * log in and see an empty state until an administrator grants access (spec 2.2).
+     * log in and see an empty state until someone invites them (spec 2.2).
      */
     private UserEntity provision(OidcUser oidc) {
         UserEntity user = new UserEntity();
@@ -53,7 +86,7 @@ public class CurrentUserService {
         user.setSubject(oidc.getSubject());
         user.setEmail(oidc.getEmail());
         user.setDisplayName(oidc.getFullName() != null ? oidc.getFullName() : oidc.getEmail());
-        user.setRole(UserEntity.Role.EDITOR);
+        user.setRole(UserEntity.Role.USER);
         return userRepo.save(user);
     }
 }

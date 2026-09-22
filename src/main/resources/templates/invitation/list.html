@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout}">
+<head><title th:text="#{nav.invitations}">Invitations</title></head>
+<body>
+<div layout:fragment="content">
+    <div class="card">
+        <!-- For a user with no memberships this is the whole application, so the
+             empty state must not read like an error (spec 7.16). -->
+        <div th:if="${invitations.isEmpty()}"
+             th:replace="~{fragments/empty :: state('mail','invitation.empty.title','invitation.empty.subtitle','/employers/create','employer.create')}"></div>
+
+        <div class="list-group list-group-flush" th:unless="${invitations.isEmpty()}">
+            <div class="list-group-item" th:each="inv : ${invitations}">
+                <div class="row align-items-center">
+                    <div class="col">
+                        <div class="fw-bold">
+                            <span th:text="${inv.employerName}">Acme AG</span>
+                            <!-- Being asked to own an employer is a different proposition
+                                 from being asked to help edit it (spec 7.16). -->
+                            <span class="badge ms-1"
+                                  th:classappend="${inv.role == 'owner'} ? 'bg-azure-lt' : 'bg-secondary-lt'"
+                                  th:text="#{'role.' + ${inv.role}}">Editor</span>
+                        </div>
+                        <div class="text-secondary small"
+                             th:text="#{invitation.invitedBy(${inv.invitedBy}, ${inv.invitedAt})}">
+                            Invited by someone
+                        </div>
+                    </div>
+                    <div class="col-auto">
+                        <div class="btn-list">
+                            <form th:action="@{'/invitations/' + ${inv.id} + '/decline'}" method="post">
+                                <button type="submit" class="btn" th:text="#{invitation.decline}">Decline</button>
+                            </form>
+                            <form th:action="@{'/invitations/' + ${inv.id} + '/accept'}" method="post">
+                                <button type="submit" class="btn btn-primary">
+                                    <svg th:replace="~{fragments/icon :: i('check','icon')}"></svg>
+                                    <span th:text="#{invitation.accept}">Accept</span>
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <p class="text-secondary mt-3" th:unless="${invitations.isEmpty()}"
+       th:text="#{invitation.decline.hint}">Declining is reversible only by a new invitation.</p>
+</div>
+</body>
+</html>

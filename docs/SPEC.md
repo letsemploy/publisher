@@ -53,12 +53,32 @@ between this document and the schema must be resolved in favour of the schema.
 
 ### 2.1 Roles
 
+Roles are **two independent axes**. A user's *platform* role says what they are to the installation; a
+*membership* role says what they are to one employer. A plain user may own their own employer while
+having no standing anywhere else.
+
+**Platform role** — one per user, on the user record:
+
 | Role | Sees | May do |
 |---|---|---|
-| **Editor** | Only the employers they are a member of | Full create/read/update/delete on those employers' jobs, feeds and locations; edit the employer record; manage tags (tags are global) |
-| **Admin** | All employers | Everything an editor may do, on any employer; create and delete employers; manage user↔employer membership; override `publishedAt` |
+| **User** | The employers they are a member of | Create an employer, becoming its owner (§2.7); work on employers they belong to, as their membership role allows |
+| **Admin** | All employers | Everything, on any employer, without being a member: platform staff who keep the installation working. Delete employers; override `publishedAt` |
 
-There is no read-only role in v1. A user with access to an employer has full editing rights on it.
+**Membership role** — one per (user, employer) pair, on the membership:
+
+| Role | May do within that employer |
+|---|---|
+| **Editor** | Full create/read/update/delete on the employer's jobs, feeds and locations |
+| **Owner** | Everything an editor may do, plus: edit the employer record, invite people (§2.6), change a member's role, and remove members (§2.7) |
+
+There is no read-only role in v1. Every member may edit that employer's jobs and feeds; the difference
+between owner and editor is authority over **the employer and its people**, not over its content.
+
+Tags are global and every signed-in user may manage them.
+
+An admin is not automatically a member. They act on any employer by virtue of the platform role, and
+when they need to belong to one — to be listed as a person responsible for it — they are invited or
+they create it, like anyone else.
 
 ### 2.2 Authentication
 
@@ -69,9 +89,15 @@ There is no read-only role in v1. A user with access to an employer has full edi
 - On first successful login the application **must** provision a local user record from the ID token
   claims (issuer, subject, email, preferred display name). This record holds the application's own
   authorization data: role and employer memberships.
-- A newly provisioned user has the **Editor** role and **no employer memberships**. They can log in and
-  see an empty state explaining that an administrator must grant them access. Self-service employer
-  creation is not permitted; only admins create employers.
+- A newly provisioned user has the **User** platform role and **no employer memberships**. They can log
+  in, and from an empty state they may either **create an employer** — becoming its owner (§2.7) — or
+  wait for an invitation (§7.16). Neither path is privileged over the other.
+- Membership is created by **exactly two acts**: creating an employer, and accepting an invitation
+  (§2.6, §2.7). No other path grants access to an employer, and neither can be performed on someone
+  else's behalf without their consent. Removal is the owner's or an admin's to perform and needs none.
+- The authenticated user **must** expose a stable **user identity** and their **email address**, not
+  merely a display name and a set of employer ids. An invitation is addressed to a person, so a
+  principal that cannot be identified as a specific user has nothing to attach one to.
 - Role and membership are **local** data. The application should not depend on custom OIDC claims, so
   that it works against any standards-compliant provider. It *may* optionally map a configured group
   claim onto the Admin role, and this mapping must be off by default.
@@ -83,8 +109,12 @@ There is no read-only role in v1. A user with access to an employer has full edi
 Running with the `dev` profile **must** bypass authentication entirely — no OIDC provider is needed to
 develop or run the application locally.
 
-- With `dev` active, every request is treated as authenticated by a fixed synthetic principal
-  (`dev@localhost`) holding the **Admin** role and access to all employers.
+- With `dev` active, every request is treated as authenticated by a fixed principal (`dev@localhost`)
+  holding the **Admin** role and access to all employers.
+- That development user **must be a real, seeded record**, not a synthetic object invented per request.
+  Anything keyed on user identity — invitations first among them — is otherwise unreachable in
+  development and untestable, because the tests run under this same bypass. The seed data therefore
+  contains the development administrator, and the bypass resolves to it.
 - The login and logout routes are inert in this mode; there is no redirect to an identity provider.
 - The UI **must** display a persistent, unmistakable banner stating that authentication is disabled.
 - This bypass **must** be bound to the `dev` profile only, must never be reachable through a
@@ -102,8 +132,9 @@ develop or run the application locally.
 | Everything else (the entire back-office) | Authenticated |
 
 Authorization **must** be enforced server-side on every request, on the data access path — not by hiding
-navigation. An editor requesting a job belonging to an employer they are not a member of **must**
-receive `404 Not Found` (not `403`), so that the existence of other employers' records is not disclosed.
+navigation. A user requesting a job belonging to an employer they are not a member of **must** receive
+`404 Not Found` (not `403`), so that the existence of other employers' records is not disclosed. The
+same applies to an action their **membership role** does not permit (§2.1).
 
 ### 2.5 Employer context
 
@@ -118,11 +149,91 @@ pre-fills the employer on every create form.
   switcher is hidden.
 - An admin's switcher also offers an "all employers" option, which is the default for admins.
 
+### 2.6 Invitations
+
+Access to an employer is granted by invitation and taken up by consent.
+
+**Sending**
+
+- An **owner** of the employer may invite, and so may an **admin** (§2.1). An editor may not: they work
+  on the content, not on who else gets in.
+- An invitation **carries the membership role** the invitee will receive, `OWNER` or `EDITOR`. Inviting
+  someone straight to owner is ordinary — a founder handing over, a colleague taking the workspace on.
+- The invitee **must already be registered**. There is no sign-up-by-invitation and no account
+  creation flow; an unregistered colleague must sign in once before they can be invited.
+- An invitation is addressed by **exact email address**, matched case-insensitively against existing
+  users. Email is not the user's identity (§2.2) — it is only how a human addresses the invitation. The
+  invitation itself is bound to the resolved **user**, so a later email change does not orphan it.
+- At most **one pending invitation** per (employer, user). Resolved invitations are retained as history.
+
+**Non-disclosure**
+
+When the address matches no account, the screen **must** report exactly what it reports on success. The
+invite form must never become an oracle for which addresses have accounts here, and an administrator of
+one employer has no business learning who is registered elsewhere.
+
+There is one deliberate exception. If the address belongs to someone **already a member** of this
+employer, or who **already has a pending invitation** to it, the screen says so. Both of those people
+are listed on the very same screen (§7.13), so naming them discloses nothing the admin cannot already
+see — and a silent no-op there would look like a bug.
+
+**Responding**
+
+- Only the **invitee** may accept or decline. An **owner** of that employer, or an admin, may revoke a
+  pending invitation.
+- **Accepting creates the membership**, with the role the invitation carried.
+- Declining and revoking create nothing. A declined invitation may be sent again later; people change
+  jobs and teams.
+- Invitations **do not expire**. Nothing here requires a scheduler.
+- Removing an existing member is an owner's or an admin's action and requires no consent. A removed
+  member may be invited again. The last owner cannot be removed (§2.7).
+
+**Notification**
+
+No email is sent — the application has no mail infrastructure. The invitee sees pending invitations
+when they next sign in (§7.3 surfaces the count in the sidebar). Delivery is recorded as an open
+question (§11).
+
+### 2.7 Ownership and role changes
+
+**Becoming an owner**
+
+- Any signed-in user **may create an employer**, and the creator **becomes its first owner**. Creating
+  an employer is therefore also the act of joining one; there is no moment at which an employer exists
+  without anyone responsible for it.
+- The other route is an invitation that carries the `OWNER` role (§2.6).
+
+**Changing a role**
+
+- An owner of an employer, or an admin, **may change any member's role** between `OWNER` and `EDITOR`
+  within that employer. Ownership is not exclusive: an employer may have as many owners as it likes,
+  and they are equal — any owner may promote or demote any other.
+- A role change takes effect immediately and needs no consent. It grants no access that the member did
+  not already have; it only changes their authority over the employer and its people.
+- The platform role (§2.1) is **not** editable here. Making someone platform staff is a different
+  decision with a different blast radius, and no employer-scoped screen may do it.
+
+**The last owner**
+
+An employer **must** always have at least one owner. The application **must** refuse to demote or
+remove the last one, and the screen **must** say why rather than simply disabling the control with no
+explanation — "promote someone else first" is actionable, a greyed-out button is not.
+
+This is the one rule here that protects against a state nobody can repair from inside the employer. An
+ownerless employer would still be reachable by platform admins, but its own people could no longer
+invite, change roles, or edit the record — the workspace would be frozen to everyone who actually uses
+it.
+
+**What an owner may not do**
+
+Deleting an employer remains an **admin** action (§7.13). Ownership is authority over a workspace, not
+the power to destroy it along with every feed URL its consumers depend on.
+
 ---
 
 ## 3. Domain model
 
-Five entities. Every entity except `Tag` carries a UUID primary key, `createdAt` and `lastModifiedAt`
+Eight entities. Every entity except `Tag` carries a UUID primary key, `createdAt` and `lastModifiedAt`
 (UTC instants, maintained automatically).
 
 ```
@@ -131,6 +242,9 @@ Employer 1 ──── * Job            Job * ──── * Location
    │                              Job's employer is fixed at creation
    └── * Feed  * ──── * Job  (membership; both sides same employer)
 Employer 1 ──── 1 Location (headquarters)
+
+User  1 ──── * Membership * ──── 1 Employer   (carries the role: OWNER or EDITOR)
+User  1 ──── * Invitation * ──── 1 Employer   (carries the role it will grant)
 ```
 
 ### 3.1 Employer
@@ -260,6 +374,63 @@ Generation and normalization:
 - Renaming a record **should** offer to update its slug to match, defaulting to yes. This is safe by
   §5.1 — old URLs keep working and redirect.
 
+### 3.7 User
+
+A person who signs in to the back-office. The record is provisioned on first login (§2.2) and holds the
+application's own authorization data; the identity provider owns everything else about them.
+
+| Field | Type | Required | Rules |
+|---|---|---|---|
+| `id` | UUID | yes | generated; the application's own handle for the person |
+| `issuer` | string | **yes** | the OIDC issuer; with `subject`, uniquely identifies the user |
+| `subject` | string | **yes** | the OIDC subject claim; **immutable** |
+| `email` | string | no | from the ID token. Mutable, and **never** an identity — only how a human addresses an invitation |
+| `displayName` | string | no | for display; falls back to email, then subject |
+| `role` | enum | **yes** | the **platform** role (§2.1): `USER` (default) or `ADMIN` |
+| `memberships` | set of Membership | no | the employers this user belongs to, and with what role (§3.9) |
+
+The development administrator (§2.3) is an ordinary row of this table, seeded rather than provisioned.
+
+### 3.8 Invitation
+
+An offer of access to one employer, made to one registered user.
+
+| Field | Type | Required | Rules |
+|---|---|---|---|
+| `id` | UUID | yes | generated |
+| `employer` | Employer | **yes** | immutable |
+| `invitee` | User | **yes** | resolved from the email when the invitation is created; immutable |
+| `invitedBy` | User | **yes** | the admin who sent it; kept even if they later lose the admin role |
+| `role` | enum | **yes** | the membership role acceptance will grant: `OWNER` or `EDITOR` (§2.6) |
+| `status` | enum | **yes** | `PENDING`, `ACCEPTED`, `DECLINED`, `REVOKED` |
+| `respondedAt` | instant | conditional | set when the invitation leaves `PENDING`, and **immutable** thereafter |
+
+Permitted transitions: `PENDING → ACCEPTED`, `PENDING → DECLINED`, `PENDING → REVOKED`. Nothing else —
+a resolved invitation is history and is never reopened. Wanting someone back after a decline or a
+removal means sending a **new** invitation, which keeps the record of what happened intact.
+
+Deleting an employer deletes its invitations. Deleting a user deletes the invitations addressed to them.
+
+### 3.9 Membership
+
+One person's standing in one employer. Previously a bare pair of ids; it now carries a role, which is
+why it is an entity of its own rather than a set of employer references on the user.
+
+| Field | Type | Required | Rules |
+|---|---|---|---|
+| `id` | UUID | yes | generated |
+| `user` | User | **yes** | immutable |
+| `employer` | Employer | **yes** | immutable |
+| `role` | enum | **yes** | `OWNER` or `EDITOR` (§2.1) |
+
+At most one membership per (user, employer). A membership is created only by creating an employer or by
+accepting an invitation (§2.2), and its `role` is the one thing about it that may change (§2.7).
+
+**Invariant:** every employer has at least one membership with role `OWNER`. Creating an employer
+establishes it, and §2.7 forbids the demotion or removal that would break it.
+
+Deleting an employer or a user deletes their memberships.
+
 ---
 
 ## 4. Job lifecycle
@@ -287,7 +458,8 @@ it is deactivated and reactivated. Consumers use it to order and age postings; a
 every edit makes every posting look permanently new.
 
 An admin may correct `publishedAt` manually (for example when migrating postings that were first
-published elsewhere). Editors may not.
+published elsewhere). Nobody else may — not even an owner: the publication date is part of the
+published contract (§6.4), not of the workspace.
 
 ### 4.3 Publication requirements
 
@@ -670,7 +842,7 @@ Rules:
 ### 7.3 Layout
 
 A fixed left sidebar, a slim top bar and a content area — the conventional administration shell, chosen
-because the navigation is a flat set of six destinations that must stay visible and reachable in one
+because the navigation is a flat set of seven destinations that must stay visible and reachable in one
 click while the user works down a long job list.
 
 ```
@@ -685,6 +857,7 @@ click while the user works down a long job list.
 │ ◻ Employers  │                                                  │
 │ ◻ Locations  │                                                  │
 │ ◻ Tags       │                                                  │
+│ ◻ Invites ②  │                                                  │
 │              │                                                  │
 │ ─────────────│                                                  │
 │ ◻ User ▾     │                                                  │
@@ -701,8 +874,12 @@ Implemented with Tabler's vertical navbar (`navbar navbar-vertical navbar-expand
   employer's name. Hidden when the user has exactly one employer. For admins it also offers *All
   employers*. Switching posts to the server, which stores the choice in the session and redirects back
   to the current screen.
-- The primary navigation: **Dashboard, Jobs, Feeds, Employers, Locations, Tags**, each with a Tabler
-  icon and label. *Employers* is visible to everyone but only offers create/delete to admins.
+- The primary navigation: **Dashboard, Jobs, Feeds, Employers, Locations, Tags, Invitations**, each
+  with a Tabler icon and label. *Employers* is visible to everyone but only offers create/delete to
+  admins.
+- **Invitations** (§7.16) carries a count badge when any are pending. It stays visible when there are
+  none: a user with no employer memberships has nothing else to do, and an entry that disappears when
+  empty cannot be found by someone who wants to check whether an invitation ever arrived.
 - A footer block with the current user, and a dropdown holding *Language*, *Theme* and *Log out*.
 
 The sidebar **must** mark the active destination with `aria-current="page"` and a visual state, derived
@@ -904,12 +1081,31 @@ receive `404`. Jobs are not deleted.
 
 ### 7.13 Employers
 
-**List** — an editor's own employers; for an admin, all of them, searchable and paginated.
+**List** — a user's own employers; for an admin, all of them, searchable and paginated. The empty state
+offers **creating** an employer, because that is now a thing any user may do (§2.2) — it is no longer a
+dead end that only an administrator can resolve.
 **Detail** — the record, its headquarters, its feeds and its job counts.
-**Create / edit** — name, slug, url, industry, headquarters location; slug behaviour per §7.12.
-Creating an employer also creates its `all` feed (§3.5). Create and delete are admin-only; editors may
-edit the employers they belong to.
-**Membership** (admin only) — the users with access, with add and remove, each confirmed.
+**Create** — open to every signed-in user. Creating an employer also creates its `all` feed (§3.5) and
+makes the creator its **owner** (§2.7).
+**Edit** — name, slug, url, industry, headquarters location; slug behaviour per §7.12. **Owners and
+admins only**; an editor works on jobs and feeds, not on the employer record.
+**Delete** — **admins only**, unchanged. An owner may hand a workspace on but not destroy it along with
+the feed URLs its consumers depend on.
+**People** (owners and admins) — a screen of its own at the employer, in three parts:
+
+- **Members** — everyone with access and their **role**, with a control to change it between *Owner*
+  and *Editor*, and a *Remove* action. Removing needs no consent (§2.6) but confirms through the §7.4
+  modal, naming the person and the employer, and states that they may be invited again.
+- **The last owner** — the demote and remove controls **must** be refused for the last remaining owner,
+  with a sentence saying to promote someone else first (§2.7). A control that is merely greyed out
+  leaves the user guessing.
+- **Pending invitations** — who was invited, with which role, by whom, when, and a *Revoke* action.
+- **Invite** — an email field and a **role choice** (Editor by default). The invitee must already be
+  registered, which the form says up front so a failure is not a surprise.
+
+The invite form's feedback obeys §2.6: an address that matches no account produces the **same** message
+as a successful invitation, while "already a member" and "already invited" are named, because both
+people are listed directly above the form.
 
 ### 7.14 Locations
 
@@ -923,6 +1119,29 @@ List of all tags with the number of jobs carrying each, searchable, sorted by na
 apply the §3.4 normalization and surface the 28-character and uniqueness rules as field errors. Delete
 confirms through a modal stating how many jobs will lose the tag.
 
+### 7.16 Invitations
+
+The invitee's screen, and the one screen that must work for a user with no employers at all.
+
+**List** — every invitation still pending for the signed-in user: the employer, **the role being
+offered**, who invited them, and when. Each row offers **Accept** and **Decline**. Being asked to take
+on an employer as its owner is a materially different proposition from being asked to help edit it, so
+the role is stated before the decision, not discovered after it.
+
+- **Accept** creates the membership (§2.6), makes that employer the active one (§2.5) and lands the
+  user on its dashboard — they asked to get in, so put them inside rather than back on a list.
+- **Decline** resolves the invitation and returns to the list with a confirmation. It is not
+  destructive to anything the user owns, so it needs no modal; it is reversible only by a new
+  invitation, and the confirmation says so.
+- Resolved invitations are **not** listed. This screen is a to-do list, not an archive; the history
+  lives on the employer's People screen (§7.13).
+- Only the signed-in user's own invitations ever appear here. A request to respond to someone else's
+  **must** answer `404` (§2.4).
+
+**Empty state** — per §7.6. For a user with no memberships this is one of only two things they can do,
+so it explains both: wait for an invitation, or **create an employer of their own** (§2.2), with a link
+that does it. It must not read like an error, and it must not imply they are stuck.
+
 ---
 
 ## 8. Cross-cutting behaviour
@@ -931,6 +1150,9 @@ confirms through a modal stating how many jobs will lose the tag.
 
 - The back-office UI ships in **English and German**; English is the fallback.
 - Language is switchable at any time via `?lang=` and persists in the session.
+- New screens add their keys to **both** bundles: `nav.invitations`, the `invitation.*` family for §7.16
+  and the People screen, and `role.*` for the membership roles of §2.1. The bundles are asserted at parity, so a key added to one and not the
+  other fails the build.
 - **Every** user-visible string comes from a message bundle. There must be no hard-coded text in
   templates, and no enum constant may render as its raw name — `DIRECTOR`, every `SalaryInterval` value
   and every status value need labels in both bundles. A missing key must fail the build, not render as
@@ -1007,7 +1229,13 @@ than aspirational.
 - Every association that is not needed for the common read path is lazy. The feed serving path must load
   its jobs with their locations and tags in a bounded number of queries; an N+1 on feed serving is a
   defect.
-- Seed/demo data is loaded only under the `dev` profile and must be idempotent.
+- Membership has **exactly two write sites**: creating an employer, and accepting an invitation
+  (§2.2). A third would mean access had been granted without consent. Changing an existing membership's
+  `role` is a separate, narrower operation (§2.7) and must not be able to create one.
+- Every employer **must** have at least one owner (§3.9). Creating an employer and the role-change path
+  are the only places this can be violated, so both enforce it.
+- Seed/demo data is loaded only under the `dev` profile and must be idempotent. It includes the
+  development administrator (§2.3), without which nothing keyed on user identity works locally.
 
 ### 9.4 Security configuration
 
@@ -1082,7 +1310,19 @@ user records (issuer, subject, email, display name), which are deleted with the 
 6. **Feed visibility.** Every feed URL is public to anyone holding the link (§5.1). Whether a feed may
    be marked private and require a rotatable token is deferred; the UUID in the path makes a link
    impractical to guess, but it is not a secret and may appear in referrer headers and proxy logs.
-7. **hyperscript versus `unsafe-eval`.** §7.2 permits hyperscript for trivial DOM behaviour, but it
+7. **Invitation delivery.** No email is sent; an invitee learns of an invitation only by signing in
+   (§2.6). If invitations should reach people who are not already in the habit of logging in, a mail
+   transport and its templates, bounce handling and opt-outs need specification — and it would be the
+   first thing here to require a delivery channel at all.
+8. **Leaving an employer.** A member can be removed by an owner (§2.6) but cannot currently remove
+   themselves, and an owner cannot hand over and walk away in one action. Whether "leave" and "transfer
+   ownership" should exist as first-class actions is deferred; today the sequence is promote, then ask
+   the new owner to remove you.
+9. **Self-serve and abuse.** Any signed-in user may now create an employer (§2.2). Nothing limits how
+   many, and every employer publishes a public feed URL. Whether creation needs a quota, review or
+   verification is unspecified, and matters more here than for most back-offices because the output is
+   public by design.
+10. **hyperscript versus `unsafe-eval`.** §7.2 permits hyperscript for trivial DOM behaviour, but it
    needs a CSP relaxation that §9.4 otherwise forbids. Three ways out, none yet chosen: allow
    `'unsafe-eval'` and keep the convenience; drop hyperscript and let the copy control merely select
    the URL text, which needs no script at all; or ship one small audited script file and relax the

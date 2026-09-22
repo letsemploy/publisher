@@ -4,7 +4,7 @@
       layout:decorate="~{layout}">
 <head><title th:text="#{nav.employers}">Employers</title></head>
 <body>
-<div layout:fragment="page-actions" th:if="${ui.admin}">
+<div layout:fragment="page-actions">
     <a class="btn btn-primary" th:href="@{/employers/create}">
         <svg th:replace="~{fragments/icon :: i('plus','icon')}"></svg>
         <span th:text="#{employer.create}">New employer</span>
@@ -13,7 +13,7 @@
 <div layout:fragment="content">
     <div class="card">
         <div th:if="${employers.content.isEmpty()}"
-             th:replace="~{fragments/empty :: state('building','employer.empty.title','employer.empty.subtitle',null,null)}"></div>
+             th:replace="~{fragments/empty :: state('building','employer.empty.title','employer.empty.subtitle','/employers/create','employer.create')}"></div>
         <div class="table-responsive" th:unless="${employers.content.isEmpty()}">
             <table class="table table-vcenter card-table">
                 <thead>

@@ -63,6 +63,10 @@
                             <svg th:replace="~{fragments/icon :: i(${item.icon},'icon')}"></svg>
                         </span>
                         <span class="nav-link-title" th:text="#{${item.labelKey}}">Item</span>
+                        <!-- Pending-invitation count; hidden at zero (spec 7.3). -->
+                        <span class="badge bg-red text-white ms-2"
+                              th:if="${item.href == '/invitations' and ui.pendingInvitations > 0}"
+                              th:text="${ui.pendingInvitations}">0</span>
                     </a>
                 </li>
             </ul>

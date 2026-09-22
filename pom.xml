@@ -102,11 +102,6 @@
 			<version>4.0.0</version>
 		</dependency>
 		<dependency>
-			<groupId>org.modelmapper</groupId>
-			<artifactId>modelmapper</artifactId>
-			<version>3.2.6</version>
-		</dependency>
-		<dependency>
 			<!-- Schema conformance is a build gate (spec 10); the schema copy lives in resources. -->
 			<groupId>com.networknt</groupId>
 			<artifactId>json-schema-validator</artifactId>

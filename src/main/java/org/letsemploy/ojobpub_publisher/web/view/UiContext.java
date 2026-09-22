@@ -14,4 +14,6 @@ public class UiContext {
     List<Ref> employers;
     List<NavItem> navItems;
     List<String> languages;
+    /** Drives the sidebar badge; 0 hides it (spec 7.3). */
+    long pendingInvitations;
 }

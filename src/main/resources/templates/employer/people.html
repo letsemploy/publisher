@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout}">
+<head><title th:text="#{employer.people.title}">People</title></head>
+<body>
+<div layout:fragment="content">
+    <div class="row row-cards">
+        <div class="col-lg-7">
+            <div class="card">
+                <div class="card-header"><h3 class="card-title" th:text="#{employer.people.members}">Members</h3></div>
+                <div th:if="${people.members.isEmpty()}"
+                     th:replace="~{fragments/empty :: state('users','employer.people.noMembers','employer.people.noMembersHint',null,null)}"></div>
+                <div class="table-responsive" th:unless="${people.members.isEmpty()}">
+                    <table class="table table-vcenter card-table">
+                        <thead>
+                        <tr>
+                            <th th:text="#{label.name}">Name</th>
+                            <th th:text="#{label.email}">Email</th>
+                            <th th:text="#{label.role}">Role</th>
+                            <th class="w-1"></th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr th:each="m : ${people.members}">
+                            <td th:text="${m.displayName}">Name</td>
+                            <td class="text-secondary" th:text="${m.email ?: '—'}">a@b.c</td>
+                            <td>
+                                <span class="badge" th:classappend="${m.role == 'owner'} ? 'bg-azure-lt' : 'bg-secondary-lt'"
+                                      th:text="#{'role.' + ${m.role}}">Editor</span>
+                                <span class="badge bg-yellow-lt ms-1" th:if="${m.lastOwner}"
+                                      th:text="#{employer.people.onlyOwner}">only owner</span>
+                            </td>
+                            <td>
+                                <div class="btn-list flex-nowrap justify-content-end">
+                                    <!-- The last owner cannot be demoted or removed (spec 2.7);
+                                         the screen says why instead of greying a control out. -->
+                                    <form th:unless="${m.lastOwner}"
+                                          th:action="@{'/employers/' + ${people.employerId} + '/people/members/' + ${m.id} + '/role'}"
+                                          method="post">
+                                        <input type="hidden" name="role"
+                                               th:value="${m.role == 'owner'} ? 'EDITOR' : 'OWNER'"/>
+                                        <button type="submit" class="btn btn-sm"
+                                                th:text="${m.role == 'owner'} ? #{employer.people.makeEditor} : #{employer.people.makeOwner}">
+                                            Make owner
+                                        </button>
+                                    </form>
+                                    <button class="btn btn-sm btn-ghost-danger" th:unless="${m.lastOwner}"
+                                            th:attr="hx-get=@{'/employers/' + ${people.employerId} + '/people/members/' + ${m.id} + '/remove'},
+                                                     hx-target='#modal-container'"
+                                            th:text="#{label.remove}">Remove</button>
+                                    <span class="text-secondary small" th:if="${m.lastOwner}"
+                                          th:text="#{employer.people.lastOwnerHint}">Promote someone else first.</span>
+                                </div>
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="card mt-3">
+                <div class="card-header">
+                    <h3 class="card-title" th:text="#{employer.people.pending}">Pending invitations</h3>
+                </div>
+                <div class="card-body text-secondary" th:if="${people.pending.isEmpty()}"
+                     th:text="#{employer.people.noPending}">None pending.</div>
+                <div class="table-responsive" th:unless="${people.pending.isEmpty()}">
+                    <table class="table table-vcenter card-table">
+                        <thead>
+                        <tr>
+                            <th th:text="#{label.name}">Name</th>
+                            <th th:text="#{invitation.invitedByColumn}">Invited by</th>
+                            <th class="w-1"></th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr th:each="p : ${people.pending}">
+                            <td>
+                                <div th:text="${p.inviteeName}">Name</div>
+                                <div class="text-secondary small" th:text="${p.inviteeEmail}">a@b.c</div>
+                                <span class="badge bg-secondary-lt mt-1" th:text="#{'role.' + ${p.role}}">Editor</span>
+                            </td>
+                            <td class="text-secondary">
+                                <div th:text="${p.invitedBy}">Admin</div>
+                                <div class="small" th:text="${p.invitedAt}">2026-09-22 09:00</div>
+                            </td>
+                            <td>
+                                <form th:action="@{'/employers/' + ${people.employerId} + '/people/invitations/' + ${p.id} + '/revoke'}"
+                                      method="post">
+                                    <button type="submit" class="btn btn-sm" th:text="#{invitation.revoke}">Revoke</button>
+                                </form>
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-5">
+            <div class="card">
+                <div class="card-header"><h3 class="card-title" th:text="#{employer.people.invite}">Invite</h3></div>
+                <form th:action="@{'/employers/' + ${people.employerId} + '/people/invite'}" method="post">
+                    <div class="card-body">
+                        <div th:replace="~{fragments/form :: errorSummary(${errors})}"></div>
+                        <!-- The invitee must already be registered; say so up front so a
+                             failure is not a surprise (spec 7.13). -->
+                        <p class="text-secondary" th:text="#{employer.people.invite.hint}">
+                            The person must already have an account.
+                        </p>
+                        <div th:replace="~{fragments/form :: input('email','label.email',${email},'email',true,'employer.people.invite.fieldHint',${fieldErrors['email']},255)}"></div>
+                        <div class="mb-3">
+                            <label class="form-label" for="role" th:text="#{label.role}">Role</label>
+                            <select class="form-select" id="role" name="role">
+                                <option value="EDITOR" th:text="#{role.editor}">Editor</option>
+                                <option value="OWNER" th:text="#{role.owner}">Owner</option>
+                            </select>
+                            <small class="form-hint" th:text="#{employer.people.invite.roleHint}">Owners can invite others.</small>
+                        </div>
+                    </div>
+                    <div class="card-footer">
+                        <button type="submit" class="btn btn-primary w-100">
+                            <svg th:replace="~{fragments/icon :: i('user-plus','icon')}"></svg>
+                            <span th:text="#{employer.people.invite.submit}">Send invitation</span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

@@ -36,6 +36,7 @@ class ScreenRenderingTest {
     private static final String JOB_DRAFT = "bc47178c-f11d-490d-ce72-6d4e5f607182";
     private static final String JOB_INCOMPLETE = "de69390e-133f-4b2f-e094-8f6071829301";
     private static final String FEED_ALL = "cd58289d-022e-4a1e-df83-7e5f60718293";
+    private static final String MEMBER = "44444444-4444-4444-8444-444444444444";
 
     @Autowired
     private MockMvc mvc;
@@ -55,7 +56,10 @@ class ScreenRenderingTest {
                 "/employers", "/employers/create", "/employers/" + EMPLOYER,
                 "/employers/" + EMPLOYER + "/update",
                 "/locations", "/locations/create",
-                "/tags", "/tags/create", "/tags?q=jav");
+                "/tags", "/tags/create", "/tags?q=jav",
+                "/invitations",
+                "/employers/" + EMPLOYER + "/people",
+                "/employers/" + EMPLOYER + "/people/members/" + MEMBER + "/remove");
     }
 
     private String html(String path) throws Exception {
@@ -150,6 +154,27 @@ class ScreenRenderingTest {
                 .contains("/ojobpub.json")
                 .contains("Omitted from the published document")
                 .contains("Schema valid");
+    }
+
+    /** The seed data leaves an invitation pending, so the sidebar badge has a value. */
+    @Test
+    void pendingInvitationsAreSurfacedOnThePeopleScreen() throws Exception {
+        assertThat(html("/employers/" + EMPLOYER + "/people"))
+                .contains("Pending invitations")
+                .contains("editor@example.com")
+                .contains("Mara Member")
+                .contains("Send invitation");
+    }
+
+    /**
+     * A missing record renders the error page. Regression guard: the error view
+     * decorates with the shell, and @ModelAttribute does not reach @ExceptionHandler,
+     * so the handler must supply `ui` itself or every 404 becomes a 500.
+     */
+    @Test
+    void notFoundRendersTheErrorPage() throws Exception {
+        mvc.perform(get("/jobs/11111111-2222-3333-4444-555555555555"))
+                .andExpect(status().isNotFound());
     }
 
     @Test

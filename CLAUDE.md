@@ -4,129 +4,68 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project
 
-Spring Boot 4 / Java 25 server-rendered web app (Thymeleaf + htmx) for managing job postings and
-publishing them as an "ojobpub" JSON feed. Maven artifact is `ojobpub-app`, Java package root is
-`org.letsemploy.ojobpub_publisher`.
+Spring Boot 4 / Java 25 server-rendered web app (Thymeleaf + htmx). Employers manage job postings here
+and publish selected ones as a machine-readable `ojobpub.json` feed. Maven artifact is `ojobpub-app`,
+Java package root is `org.letsemploy.ojobpub_publisher`.
+
+**`docs/SPEC.md` is the authoritative specification** — purpose, roles, domain model, job lifecycle, the
+published feed contract and the user interface. Where it disagrees with the code, the spec wins. Code
+comments cite it as `spec 4.3`, and that is the fastest way to find the rule behind a piece of code.
 
 ## Commands
 
-A MariaDB instance is required for *both* running and testing — `docker compose up -d` starts MariaDB
-on 3306 (root/root) plus adminer on 8081.
+MariaDB is required to run *and* to test — `docker compose up -d` starts it on 3306 (root/root) plus
+adminer on 8081.
 
 ```bash
-./mvnw spring-boot:run -Dspring-boot.run.profiles=dev   # run app (http://localhost:8080)
+./mvnw spring-boot:run -Dspring-boot.run.profiles=dev   # http://localhost:8080
 ./mvnw package                                          # build jar (runs tests)
 ./mvnw test                                             # all tests
-./mvnw test -Dtest=TagServiceTest                       # single test class
-./mvnw test -Dtest=TagServiceTest#updateShouldAllowChangingTagName
+./mvnw test -Dtest=MembershipServiceTest                # one class
+./mvnw test -Dtest=TagServiceTest#namesAreNormalised    # one method
 ./mvnw versions:display-dependency-updates              # or: make check-mvn-updates
 ```
 
-The `dev` profile (`application-dev.yml`) is not active by default; without it there is no datasource
-config and the app will not start against MariaDB. It points at `ojobpub_publisher_dev` and — important —
-sets `spring.thymeleaf.prefix: classpath:/templates_v2/`.
+The `dev` profile is not active by default and the app will not start without it: `application-dev.yml`
+holds the only datasource configuration (database `ojobpub_publisher_dev`). It also bypasses
+authentication (§2.3) — see **Authentication** below.
 
-Tests use `src/test/resources/application.yml` → database `publisher_test` on the same MariaDB.
-`ApplicationTests` is a full `@SpringBootTest`; slice tests like `TagServiceTest` use `@DataJpaTest` with
-`@AutoConfigureTestDatabase(replace = NONE)` (real MariaDB, not H2) and must disable JobRunr via
-properties, as that test does.
+JobRunr's dashboard binds port 8000 whenever the app runs. Actuator and the Prometheus registry are on
+the main port.
 
-JobRunr's dashboard runs on port 8000 when the app is up. Actuator + Prometheus registry are on the
-main port.
-
-Container builds use `Dockerfile.multistage` (this is what CI pushes to ghcr.io); the plain
+Container builds use `Dockerfile.multistage`, which is what CI pushes to ghcr.io. The plain
 `Containerfile`/`Dockerfile` expects a pre-built `target/app.jar`.
 
 ## Architecture
 
-### Package-by-feature
+### Package by feature
 
-Each domain lives in its own package with the same shape:
-`Entity` / `Dto` / `Repo` (Spring Data) / `Service` / `Controller` (+ optional `HxController`).
-Features: `employer`, `job`, `location`, `tag`, `feed`. Plus `common` (shared base classes),
-`config` (beans), and `ojobpub/v1` (the public feed API).
+`employer`, `job`, `location`, `tag`, `feed`, `invitation`, `membership` — each owns its entity,
+repository, service, form objects and controllers. Plus `common` (shared base types, slugs,
+exceptions), `config` (beans), `security` (users, roles, filter chains), `web` (shell context, view
+models, error handling) and `ojobpub/v1` (the published contract).
 
-### Two controllers per feature: full page vs. htmx fragment
+Controllers are thin: they resolve the actor, call a service, and put view models on the model.
+**Authorization lives in services, never in controllers or templates** (§2.4) — hiding a button is not
+authorization, and a route that forgets a check would otherwise be exploitable.
 
-`XController` returns whole pages (`"tag/list"`, `"redirect:/tags"`). `XHxController` is annotated
-`@HxRequest(boosted = false)` from `htmx-spring-boot-thymeleaf` and is mapped to the *same* URL paths;
-Spring routes to it only when the request carries htmx headers and is not a boosted navigation. Those
-methods return fragment selectors like `"job/fragment/tab :: tab"`. When adding an htmx-driven
-interaction, add the method to the `Hx` controller rather than branching inside the page controller.
+### Refusals are 404, not 403
 
-All controllers extend `common/BaseController`, which injects `currentUrl`, `tab` (from the `?tab=`
-query param) and `randomNumber` into every model — templates rely on `tab` for tabbed views.
-
-### Persistence
-
-- `common/Base` is the `@MappedSuperclass` for UUID-keyed entities (`Employer`, `Job`, `Location`,
-  `Feed`, `FeedJob`) with `createdAt`/`lastModifiedAt` maintained by `@PrePersist`/`@PreUpdate`.
-  `Tag` is the exception: `Long` identity id, no `Base`.
-- Schema is owned by Flyway (`src/main/resources/db/migration`, history table `migrations`);
-  `hibernate.ddl-auto: none`. Schema changes need a new `V<n>__*.sql` migration — never rely on JPA DDL.
-- `src/main/resources/data.sql` seeds demo rows on every start (`spring.sql.init.mode: always`,
-  `defer-datasource-initialization=true`) using `ON DUPLICATE KEY UPDATE`, so it is MariaDB-specific
-  and must stay idempotent.
-- Join entities `JobTag`/`JobLocation` use `@IdClass`-style composite ids (`JobTagId`, `JobLocationId`).
-  Deleting a tag requires clearing `job_tags` first — see `TagRepo.deleteJobTagsByTagId`.
-
-### Feed publishing
-
-`ojobpub/v1` maps internal entities to the external contract: `OjobpubController` (`@RestController`,
-`GET /ojobpub/v1/by-employer/{id}`) → `OjobpubService.generateOjobpub()` → `Ojobpub*Dto` tree. Keep the
-DTO field names and value formats (upper-case country/currency, lower-case interval) stable — they are
-the published API surface.
-
-### Templates
-
-Thymeleaf with the Layout Dialect: `templates_v2/layout.html` is the decorator, pages use
-`layout:decorate`. CSS/JS (Tabler, htmx, hyperscript, Font Awesome) load from CDNs in `layout.html`;
-`static/css/main.css` is currently empty. Fragment directories are inconsistently named
-(`fragments/`, `fragment/`, `partials/`) — follow whatever the feature already uses and match the
-string the controller returns.
-
-`templates_v1/` is the retired copy of this tree; only `templates_v2` is wired up.
-
-i18n: `messages.properties` / `messages_de.properties`, session locale, switchable with `?lang=`.
-Controllers pass message *keys* (e.g. `"msg.success.saved"`, `"msg.error.formMissingData"`) as flash or
-model attributes and templates resolve them.
-
-### Conventions worth matching
-
-- Lombok everywhere (`@Getter/@Setter/@Data/@Slf4j`); field injection with `@Autowired`.
-- Services throw `common/exception/NotFoundException` and `jakarta.validation.ValidationException`;
-  page controllers catch these and render `"error"` or re-render the form with an `error` model attribute.
-- Two `ModelMapper` beans exist (`modelMapper`, `strictModelMapper` — the latter is field-access and
-  ambiguity-ignoring); pick by bean name when injecting.
-- `-parameters` compilation is expected (needed for Spring Data / MVC param binding).
-
-### Known loose ends
-
-JobRunr, GraphQL (`spring-boot-starter-graphql`, empty `resources/graphql/`) and `@EnableScheduling`
-are configured but have no jobs, schemas or scheduled methods yet. The `Makefile` `update`/`build`
-targets copy vendored assets from `node_modules`, but there is no `package.json` in the repo and the
-target directories do not exist — those targets are stale; build with `./mvnw` directly.
-
-## Specification-driven rebuild
-
-`docs/SPEC.md` is the authoritative specification: purpose, domain model, job lifecycle, the public
-feed contract and the user interface. Where it disagrees with the code, the spec wins. The published
-output contract is the oJobPub v1 JSON Schema, vendored at
-`src/main/resources/ojobpub/v1/ojobpub.schema.json` (upstream:
-`https://raw.githubusercontent.com/letsemploy/schema/refs/heads/main/v1/ojobpub.json`).
-
-The backend and the UI are wired to each other. `templates/` is the only template tree; `templates_v1`
-and `templates_v2` are gone, as are the old `*Dto` and `*HxController` classes.
+A user asking for something they may not see, or may not do, gets `NotFoundException` → 404. This is
+deliberate and uniform: 403 would confirm that the record exists. `common/exception/ValidationFailure`
+carries field errors back to a form; `NotFoundException` is unchecked and handled centrally.
 
 ### The rules live in one place
 
-`job/Publication.java` holds the publication rules of spec sections 4.3 and 4.4 — the readiness
-requirements, the date window, and what a job *presents* as (`PUBLISHED`, `EXPIRED`, `INCOMPLETE`,
-`DRAFT`, `INACTIVE`). Both the feed serving path and the back-office readiness panel read it, so a
-screen and a published document cannot disagree. Add publication logic there, not in a controller.
-
-`ojobpub/v1/service/OjobpubEnums.java` maps every published enum explicitly. Never derive a published
-value with `name().toLowerCase()`: the schema wants `on-site`, which that produces as `on_site`.
+- `job/Publication.java` — the publication rules of spec 4.3/4.4: readiness requirements, the date
+  window, and what a job *presents* as (`PUBLISHED`, `EXPIRED`, `INCOMPLETE`, `DRAFT`, `INACTIVE`). Both
+  the feed serving path and the back-office readiness panel read it, so a screen and a published
+  document cannot disagree. Add publication logic here, not in a controller.
+- `membership/MembershipService.java` — who belongs to an employer and with what role, including the
+  last-owner rule.
+- `ojobpub/v1/service/OjobpubEnums.java` — explicit mapping for every published enum. **Never** derive a
+  published value with `name().toLowerCase()`: the schema wants `on-site`, which that produces as
+  `on_site`.
 
 ### Published feed
 
@@ -135,49 +74,146 @@ value with `name().toLowerCase()`: the schema wants `on-site`, which that produc
 `301` to the canonical URL. Slug and UUID are separated by an **underscore**, the one character neither
 side may contain. Malformed segments answer `404`, never `400`.
 
-### Authentication
+The document is built by `OjobpubService` and validated by `OjobpubValidator` against the vendored
+schema at `src/main/resources/ojobpub/v1/ojobpub.schema.json` (upstream:
+`https://raw.githubusercontent.com/letsemploy/schema/refs/heads/main/v1/ojobpub.json`). The feed screen
+shows a validity badge from the same validator.
 
-OIDC via Spring Security. `SecurityConfig` has three chains: the public feed, a **dev-profile bypass**
-(a synthetic `dev@localhost` admin, no identity provider needed), and the back-office. Without a
-configured `ClientRegistrationRepository` the back-office chain is replaced by a **fail-closed** one —
-the app starts and feeds stay served, but nobody gets in.
+### Authentication and roles
+
+OIDC via Spring Security. `SecurityConfig` has three chains: the public feed; a **dev-profile bypass**
+(no identity provider needed); and the back-office. Without a configured `ClientRegistrationRepository`
+the back-office chain is replaced by a **fail-closed** one — the app starts and feeds stay served, but
+nobody gets in. `DevBypassGuard` refuses to start if `dev` is combined with `prod`.
+
+Roles are **two independent axes** (§2.1):
+
+- `UserEntity.Role` — the *platform* role, `USER` or `ADMIN`. Admins act on any employer without being
+  a member.
+- `MembershipRole` — the *per-employer* role, `OWNER` or `EDITOR`, stored on the membership.
+
+`AppUser` carries both (`isAdmin()`, `isOwnerOf(employerId)`). There is no global "editor" any more;
+that word now names a membership role only.
+
+The dev bypass resolves to a **real seeded user** (`dev`/`dev@localhost`), not a synthetic principal,
+because invitations and memberships are keyed on a user id.
+
+### Invitations and membership
+
+Access is granted by invitation and taken up by consent (§2.6, §2.7). `MembershipService` owns
+memberships and roles; `InvitationService` owns invitations. Use
+`MembershipService.requireOwner(user, employerId)`, which passes for an owner of that employer **or** a
+platform admin.
+
+**Membership has exactly two write sites** (§2.2): creating an employer (`EmployerService.save` grants
+the creator `OWNER`) and accepting an invitation (with the role the invitation carried). A third would
+mean access was granted without consent. `changeRole` may only change an existing membership.
+
+**Every employer must keep at least one owner** (§2.7). `MembershipService` guards both demotion and
+removal, and the People screen renders the reason rather than greying the control out.
+
+`InviteOutcome.SENT` is returned both when an invitation was created **and** when no account matched
+the address. That is deliberate: the form must not become an oracle for which addresses are registered.
+`ALREADY_MEMBER` and `ALREADY_INVITED` *are* reported, because both people are listed on the same
+screen. Do not "improve" this by reporting unknown addresses.
+
+Owners invite, change roles, remove members and edit the employer record; editors work on jobs and
+feeds. Employer **creation is open to any signed-in user**; deletion is admin-only and **no delete route
+exists yet**.
+
+### Persistence
+
+- Flyway owns the schema (`src/main/resources/db/migration`, history table `migrations`);
+  `hibernate.ddl-auto: none`. Schema changes need a new `V<n>__*.sql` — never rely on JPA DDL, and
+  never edit an applied migration.
+- `common/Base` is the `@MappedSuperclass` for UUID-keyed entities with `createdAt`/`lastModifiedAt`:
+  `Employer`, `Job`, `Location`, `Feed`, `Invitation`, `Membership`, `UserEntity`. `Tag` is the
+  exception (numeric identity id), as is `JobStatusEvent`.
+- Enumerations persist **as strings**, never ordinals — including country codes. `Location.country` is a
+  `CountryCode` whose constant names *are* the ISO alpha-2 codes, so the stored value is the published
+  value.
+- Job↔tag and job↔location are plain `@ManyToMany` join tables; there are no link entities.
+- `data.sql` seeds demo rows on every start (`spring.sql.init.mode: always`) using
+  `ON DUPLICATE KEY UPDATE`, so it is MariaDB-specific and must stay idempotent.
+- The feed serving path loads jobs with locations and tags in a bounded number of queries. An N+1
+  there is a defect.
 
 ### UI
 
-Tabler sidenav shell, htmx for partial updates, a hard JavaScript budget (no hand-written `.js`, no
-front-end build). Assets are vendored in `static/vendor/` and must never come from a CDN.
+Tabler sidenav shell, htmx for partial updates, and a hard JavaScript budget (§7.2): **no hand-written
+`.js` file, no front-end build step, no CDN**. Assets are vendored in `static/vendor/` (Tabler CSS/JS,
+htmx, hyperscript, and a trimmed icon sprite — not the full 1.8 MB Tabler sprite). `static/css/app.css`
+is the only custom stylesheet.
 
-Templates bind to the view models in `web/view/`, assembled by `web/Views.java`. `web/UiContextAdvice`
-supplies the shell context (`ui`) to every screen; each controller supplies its own `page`
-(`PageMeta`). A controller that forgets `page` will fail to render.
+`templates/` is the only template tree. Layout Dialect: `layout.html` decorates, pages use
+`layout:decorate`, shared fragments live in `templates/fragments/`.
 
-There is no preview harness and no fixture data: screens are exercised against the real controllers
-and `data.sql`. The seed data deliberately covers all five publication states, including an `INACTIVE`
-job and an `ACTIVE` one with no location (which presents as `INCOMPLETE` and is excluded from the
-feed). Keep that coverage when editing `data.sql`, or `ScreenRenderingTest` loses it.
+Templates bind to the view models in `web/view/`, assembled by `web/Views.java`.
+`web/UiContextFactory` builds the shell context (`ui`); `web/UiContextAdvice` supplies it to every
+screen, and `web/GlobalErrorHandler` builds it too. That duplication is necessary: Spring does **not**
+apply `@ModelAttribute` contributions to `@ExceptionHandler` methods, so an error view relying on the
+advice would fail to render and turn every 404 into a 500.
+`ScreenRenderingTest.notFoundRendersTheErrorPage` guards it.
 
-### Tests
+Each controller supplies its own `page` (`PageMeta`); one that forgets it will not render. A new
+sidebar destination is added in `UiContextFactory`.
+
+Where a screen has an htmx fragment variant, it is a second `@GetMapping` on the **same** controller
+annotated `@HxRequest(boosted = false)` returning a fragment selector (`"tag/fragments/table :: table"`).
+The `boosted = false` matters: navigation uses `hx-boost`, so a boosted request is an htmx request that
+still wants a whole page.
+
+i18n: `messages.properties` / `messages_de.properties`, session locale, switchable with `?lang=`. The
+bundles are asserted **at parity** — a key added to one and not the other fails the build. Controllers
+pass message *keys* as flash attributes and templates resolve them.
+
+### Conventions
+
+- Lombok throughout: `@Getter/@Setter/@Value/@Data/@Slf4j`, and `@RequiredArgsConstructor` for
+  **constructor injection**. There is no `@Autowired` field injection anywhere; keep it that way.
+- `-parameters` compilation is expected (Spring Data and MVC parameter binding rely on it).
+
+## Tests
 
 ```bash
 ./mvnw test                                  # all; needs MariaDB
 ./mvnw test -Dtest=OjobpubConformanceTest    # the build gate; no Spring, no database
 ./mvnw test -Dtest=ScreenRenderingTest       # renders every screen against the seed data
+./mvnw test -Dtest=InvitationServiceTest     # consent and non-disclosure
+./mvnw test -Dtest=MembershipServiceTest     # ownership, role changes, the last-owner rule
 ```
 
 `OjobpubConformanceTest` validates generated documents against the vendored schema (minimal, maximal
 and empty-feed shapes). It is the most important test here: everything else is internal, this is the
-contract. It is a plain unit test — no Spring context, no database, no profile.
+contract. Plain unit test — no Spring context, no database, no profile.
 
 `ScreenRenderingTest` renders every screen through the production controllers and asserts the section 7
-rules that are checkable in markup. It references the fixed UUIDs in `data.sql`.
+rules that are checkable in markup (no unresolved message keys, no CDN or inline script, `hx-boost`,
+skip link, `aria-current`, preserved input on validation errors, status words not just colours). It
+references the fixed UUIDs in `data.sql`, so **a new screen must be added to `everyScreen()`**.
 
-Test configuration lives in `src/test/resources/application-test.yml` (profile `test`), which points at
-the `publisher_test` database and disables JobRunr. **It must stay profile-specific.** A plain
+There is no preview harness and no fixture data: screens run against the real controllers and
+`data.sql`. The seed deliberately covers all five publication states — including an `INACTIVE` job and
+an `ACTIVE` one with no location, which presents as `INCOMPLETE` and is excluded from the feed — and
+three users: the dev admin (owner of Acme), `member@example.com` (editor) and `editor@example.com` (no
+membership, one pending invitation). Keep that coverage when editing `data.sql`, or the tests lose it.
+
+Test configuration lives in `src/test/resources/application-test.yml` (profile `test`), pointing at
+`publisher_test` and disabling JobRunr. **It must stay profile-specific.** A plain
 `src/test/resources/application.yml` loses to `src/main/resources/application.properties`, so its
-overrides are silently ignored and the dashboard binds its fixed port — which then collides with a
-locally running instance.
+overrides are silently ignored and the dashboard binds its fixed port, colliding with a running
+instance.
 
-Back-office tests activate `@ActiveProfiles({"dev", "test"})`: `dev` provides the authentication
-bypass, and `test` is listed second so its datasource wins over the dev one. `DevBypassGuard` refuses
-to start if `dev` is ever combined with `prod`.
+Back-office tests use `@ActiveProfiles({"dev", "test"})`: `dev` provides the authentication bypass,
+`test` is listed second so its datasource wins over the dev one. CI provisions `publisher_test` on a
+MariaDB service container.
 
+## Known loose ends
+
+- **Configured but unused.** JobRunr has no jobs, `spring-boot-starter-graphql` has an empty
+  `resources/graphql/`, and `@EnableScheduling` has no scheduled methods. Nothing here needs a
+  scheduler by design: the job date window is evaluated at serving time.
+- **Stale Makefile.** The `update`/`build` targets copy assets from `node_modules`, but there is no
+  `package.json` and the target directories do not exist. Assets are vendored in `static/vendor/`
+  instead; build with `./mvnw` directly.
+- **No employer delete route**, though the spec reserves deletion for admins (§7.13).

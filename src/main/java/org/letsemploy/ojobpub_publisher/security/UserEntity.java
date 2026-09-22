@@ -1,9 +1,6 @@
 package org.letsemploy.ojobpub_publisher.security;
 
 import jakarta.persistence.*;
-import java.util.HashSet;
-import java.util.Set;
-import java.util.UUID;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -33,14 +30,13 @@ public class UserEntity extends Base {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private Role role = Role.EDITOR;
+    private Role role = Role.USER;
 
-    @ElementCollection(fetch = FetchType.EAGER)
-    @CollectionTable(name = "user_employers", joinColumns = @JoinColumn(name = "user_id"))
-    @Column(name = "employer_id")
-    private Set<UUID> employerIds = new HashSet<>();
-
+    /**
+     * The platform role (spec 2.1). Per-employer standing lives on the membership,
+     * not here: {@code EDITOR} named a global role that no longer exists.
+     */
     public enum Role {
-        EDITOR, ADMIN
+        USER, ADMIN
     }
 }

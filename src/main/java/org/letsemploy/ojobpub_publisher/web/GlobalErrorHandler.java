@@ -2,6 +2,7 @@ package org.letsemploy.ojobpub_publisher.web;
 
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.UUID;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.letsemploy.ojobpub_publisher.common.exception.NotFoundException;
 import org.letsemploy.ojobpub_publisher.web.view.PageMeta;
@@ -17,11 +18,15 @@ import org.springframework.web.bind.annotation.ResponseStatus;
  */
 @ControllerAdvice(basePackages = "org.letsemploy.ojobpub_publisher")
 @Slf4j
+@RequiredArgsConstructor
 public class GlobalErrorHandler {
+
+    private final UiContextFactory uiContextFactory;
 
     @ExceptionHandler(NotFoundException.class)
     @ResponseStatus(HttpStatus.NOT_FOUND)
-    public String notFound(NotFoundException e, Model model) {
+    public String notFound(NotFoundException e, HttpServletRequest request, Model model) {
+        model.addAttribute("ui", uiContextFactory.build(request));
         model.addAttribute("page", PageMeta.of("Not found"));
         model.addAttribute("errorTitle", e.getMessage());
         return "error";
@@ -30,6 +35,7 @@ public class GlobalErrorHandler {
     @ExceptionHandler(Exception.class)
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     public String unexpected(Exception e, HttpServletRequest request, Model model) {
+        model.addAttribute("ui", uiContextFactory.build(request));
         String correlationId = UUID.randomUUID().toString().substring(0, 8);
         log.error("Unexpected error [{}] handling {}", correlationId, request.getRequestURI(), e);
         model.addAttribute("page", PageMeta.of("Error"));

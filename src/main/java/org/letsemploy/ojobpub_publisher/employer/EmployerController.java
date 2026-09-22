@@ -10,6 +10,7 @@ import org.letsemploy.ojobpub_publisher.feed.FeedService;
 import org.letsemploy.ojobpub_publisher.job.JobService;
 import org.letsemploy.ojobpub_publisher.location.Location;
 import org.letsemploy.ojobpub_publisher.location.LocationService;
+import org.letsemploy.ojobpub_publisher.membership.MembershipService;
 import org.letsemploy.ojobpub_publisher.web.view.*;
 import org.letsemploy.ojobpub_publisher.web.Scope;
 import org.letsemploy.ojobpub_publisher.web.Views;
@@ -30,6 +31,7 @@ public class EmployerController {
     private final EmployerService employerService;
     private final LocationService locationService;
     private final FeedService feedService;
+    private final MembershipService membershipService;
     private final JobService jobService;
     private final Scope scope;
     private final Views views;
@@ -59,6 +61,8 @@ public class EmployerController {
                         new Crumb(employer.getName(), null))));
         model.addAttribute("employer", views.employerRow(employer,
                 jobService.findByEmployer(id).size(), feedService.findByEmployer(id).size()));
+        // Owners and admins may edit the record and manage people (spec 2.1).
+        model.addAttribute("canAdminister", membershipService.canAdminister(scope.user(), id));
         return "employer/detail";
     }
 
@@ -73,6 +77,7 @@ public class EmployerController {
 
     @GetMapping("/{id}/update")
     public String editForm(@PathVariable UUID id, Model model) {
+        membershipService.requireOwner(scope.user(), id);
         Employer employer = employerService.findVisible(id, scope.user());
         model.addAttribute("page", new PageMeta(message("employer.edit"), null,
                 List.of(new Crumb(message("nav.employers"), "/employers"),
@@ -94,7 +99,8 @@ public class EmployerController {
         try {
             UUID locationId = headquarters == null || headquarters.isBlank()
                     ? null : UUID.fromString(headquarters);
-            Employer saved = employerService.save(id, name, slug, url, industry, locationId);
+            Employer saved = employerService.save(id, name, slug, url, industry, locationId,
+                    scope.user());
             // Every employer gets a working URL the moment it exists (spec 3.5).
             if (id == null) {
                 feedService.createDefaultFeed(saved);
