@@ -1,5 +1,6 @@
 package org.letsemploy.ojobpub_publisher.job;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -15,20 +16,26 @@ public interface JobRepo extends JpaRepository<Job, UUID> {
     @EntityGraph(attributePaths = {"employer", "locations", "tags"})
     Optional<Job> findWithDetailById(UUID id);
 
+    /**
+     * Filters on what a job *presents* as, not on the stored status: PUBLISHED,
+     * EXPIRED and INCOMPLETE are all stored as ACTIVE (spec 7.6). The predicate
+     * comes from {@link Publication}, beside the Java rule it mirrors.
+     */
     @Query("""
             SELECT DISTINCT j FROM Job j
             LEFT JOIN j.tags t
             WHERE (:employerIds IS NULL OR j.employer.id IN :employerIds)
               AND (:q IS NULL OR LOWER(j.title) LIKE LOWER(CONCAT('%', :q, '%'))
                              OR LOWER(j.referenceId) LIKE LOWER(CONCAT('%', :q, '%')))
-              AND (:status IS NULL OR j.status = :status)
               AND (:jobType IS NULL OR j.jobType = :jobType)
+              AND """ + Publication.JPQL_PRESENTATION_FILTER + """
             """)
     @EntityGraph(attributePaths = {"employer", "locations", "tags"})
     Page<Job> search(@Param("employerIds") List<UUID> employerIds,
                      @Param("q") String q,
-                     @Param("status") JobStatus status,
+                     @Param("presentation") String presentation,
                      @Param("jobType") JobType jobType,
+                     @Param("today") LocalDate today,
                      Pageable pageable);
 
     @EntityGraph(attributePaths = {"employer", "locations", "tags"})

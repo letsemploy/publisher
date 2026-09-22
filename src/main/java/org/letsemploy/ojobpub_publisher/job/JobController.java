@@ -83,7 +83,7 @@ public class JobController {
                               int page, int size, String sort) {
         int pageSize = Math.min(Math.max(size, 1), MAX_PAGE_SIZE);
         String sortField = SORTABLE.contains(sort) ? sort : "title";
-        JobStatus statusFilter = presentationToStatus(status);
+        Publication.Presentation statusFilter = presentationFilter(status);
         JobType typeFilter = jobType == null || jobType.isBlank()
                 ? null : JobType.valueOf(jobType.toUpperCase());
 
@@ -127,20 +127,23 @@ public class JobController {
     }
 
     /**
-     * The list filters on what a job presents (spec 7.6). "expired" and
-     * "incomplete" are both ACTIVE in storage, so they filter to ACTIVE here and
-     * are distinguished by the badge.
+     * The list filters on what a job *presents* as (spec 7.6). PUBLISHED, EXPIRED
+     * and INCOMPLETE are all stored as ACTIVE, so the filter is evaluated against
+     * the publication rules rather than the stored column - mapping them to ACTIVE
+     * here would make all three return the same rows.
+     *
+     * <p>An unrecognised value filters nothing rather than erroring, so a stale
+     * bookmark degrades to the unfiltered list (spec 8.3).
      */
-    private JobStatus presentationToStatus(String presentation) {
+    private Publication.Presentation presentationFilter(String presentation) {
         if (presentation == null || presentation.isBlank()) {
             return null;
         }
-        return switch (presentation) {
-            case "draft" -> JobStatus.DRAFT;
-            case "inactive" -> JobStatus.INACTIVE;
-            case "published", "expired", "incomplete" -> JobStatus.ACTIVE;
-            default -> null;
-        };
+        try {
+            return Publication.Presentation.valueOf(presentation.trim().toUpperCase());
+        } catch (IllegalArgumentException e) {
+            return null;
+        }
     }
 
     // ---------------------------------------------------------------- detail

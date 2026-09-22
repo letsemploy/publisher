@@ -116,6 +116,59 @@ public final class Publication {
         };
     }
 
+    /**
+     * The SQL twin of {@link #presentation(Job, LocalDate)}.
+     *
+     * <p>Three of the five presentation values - PUBLISHED, EXPIRED and INCOMPLETE -
+     * are *derived*: all three are stored as {@code ACTIVE} and told apart by the
+     * readiness rules and the date window. A list filter therefore cannot work off
+     * the stored column; it has to evaluate the same rule in the database, or
+     * "expired" silently returns every active job.
+     *
+     * <p>These fragments live here, beside the Java rule they mirror, because two
+     * copies of a rule in two files drift. {@code PublicationFilterTest} asserts
+     * the two agree for every job in the database, so drift fails the build.
+     *
+     * <p>They assume the alias {@code j} for the job.
+     */
+    public static final String JPQL_COMPLETE = """
+            (j.publishedAt IS NOT NULL
+             AND LENGTH(TRIM(j.title)) > 0
+             AND LENGTH(TRIM(j.url)) > 0
+             AND LENGTH(TRIM(j.languageCode)) = 2
+             AND j.jobType IS NOT NULL
+             AND SIZE(j.locations) > 0
+             AND ((j.salaryMin IS NULL AND j.salaryMax IS NULL)
+                  OR (j.salaryCurrency IS NOT NULL AND LENGTH(TRIM(j.salaryCurrency)) > 0
+                      AND j.salaryInterval IS NOT NULL)))""";
+
+    /** The date window of {@link #withinDateWindow}; needs a {@code :today} parameter. */
+    public static final String JPQL_WITHIN_WINDOW = """
+            ((j.applyBefore IS NULL OR j.applyBefore >= :today)
+             AND (j.endDate IS NULL OR j.endDate >= :today))""";
+
+    /** Matches one {@link Presentation} by name; needs {@code :presentation} and {@code :today}. */
+    public static final String JPQL_PRESENTATION_FILTER = """
+            (:presentation IS NULL
+             OR (:presentation = 'DRAFT'
+                 AND j.status = org.letsemploy.ojobpub_publisher.job.JobStatus.DRAFT)
+             OR (:presentation = 'INACTIVE'
+                 AND j.status = org.letsemploy.ojobpub_publisher.job.JobStatus.INACTIVE)
+             OR (:presentation = 'INCOMPLETE'
+                 AND j.status = org.letsemploy.ojobpub_publisher.job.JobStatus.ACTIVE
+                 AND NOT """ + JPQL_COMPLETE + """
+            )
+             OR (:presentation = 'PUBLISHED'
+                 AND j.status = org.letsemploy.ojobpub_publisher.job.JobStatus.ACTIVE
+                 AND """ + JPQL_COMPLETE + """
+                 AND """ + JPQL_WITHIN_WINDOW + """
+            )
+             OR (:presentation = 'EXPIRED'
+                 AND j.status = org.letsemploy.ojobpub_publisher.job.JobStatus.ACTIVE
+                 AND """ + JPQL_COMPLETE + """
+                 AND NOT """ + JPQL_WITHIN_WINDOW + """
+            ))""";
+
     public enum Presentation {
         PUBLISHED, EXPIRED, INCOMPLETE, DRAFT, INACTIVE;
 

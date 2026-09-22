@@ -29,10 +29,16 @@ public class JobService {
     private final TagService tagService;
     private final LocationService locationService;
 
-    public Page<Job> search(List<UUID> employerIds, String q, JobStatus status,
+    /**
+     * @param presentation what the job presents as (spec 7.6), not the stored
+     *                     status; null means no status filter
+     */
+    public Page<Job> search(List<UUID> employerIds, String q, Publication.Presentation presentation,
                             JobType jobType, Pageable pageable) {
         return jobRepo.search(employerIds == null || employerIds.isEmpty() ? null : employerIds,
-                q == null || q.isBlank() ? null : q.trim(), status, jobType, pageable);
+                q == null || q.isBlank() ? null : q.trim(),
+                presentation == null ? null : presentation.name(),
+                jobType, LocalDate.now(), pageable);
     }
 
     public Job findVisible(UUID id, AppUser user) {
