@@ -853,51 +853,54 @@ click while the user works down a long job list.
 
 ```
 ┌──────────────┬──────────────────────────────────────────────────┐
-│  ojobpub     │  [page title]                    [primary action]│  ← top bar
+│  ojobpub     │                      ▸ Employer ▾   ◻ User ▾     │  ← top bar
 │              ├──────────────────────────────────────────────────┤
-│ ▸ Employer ▾ │                                                  │
-│              │   page content                                   │
-│ ◻ Dashboard  │                                                  │
-│ ◻ Jobs       │                                                  │
+│ ◻ Dashboard  │  [page title]                    [primary action]│
+│ ◻ Jobs       ├──────────────────────────────────────────────────┤
 │ ◻ Feeds      │                                                  │
-│ ◻ Employers  │                                                  │
+│ ◻ Employers  │   page content                                   │
 │ ◻ Locations  │                                                  │
 │ ◻ Tags       │                                                  │
 │ ◻ Invites ②  │                                                  │
-│              │                                                  │
-│ ─────────────│                                                  │
-│ ◻ User ▾     │                                                  │
 └──────────────┴──────────────────────────────────────────────────┘
 ```
 
 Implemented with Tabler's vertical navbar (`navbar navbar-vertical navbar-expand-lg`) inside
 `page` / `page-wrapper`.
 
-**Sidebar** — top to bottom:
+**Sidebar** — navigation, and nothing else:
 
 - The product brand, linking to the dashboard.
-- The **employer switcher** (§2.5) directly beneath the brand, as a dropdown showing the active
-  employer's name. Hidden when the user has exactly one employer. For admins it also offers *All
-  employers*. Switching posts to the server, which stores the choice in the session and redirects back
-  to the current screen.
 - The primary navigation: **Dashboard, Jobs, Feeds, Employers, Locations, Tags, Invitations**, each
   with a Tabler icon and label. *Employers* is visible to everyone but only offers create/delete to
   admins.
 - **Invitations** (§7.16) carries a count badge when any are pending. It stays visible when there are
   none: a user with no employer memberships has nothing else to do, and an entry that disappears when
   empty cannot be found by someone who wants to check whether an invitation ever arrived.
-- A footer block with the current user, and a dropdown holding *Language*, *Theme* and *Log out*.
+
+**Top bar** — everything about *context* rather than destination, right-aligned:
+
+- The **employer switcher** (§2.5), a dropdown showing the active employer's name. Hidden when the
+  user has exactly one employer. For admins it also offers *All employers*. Switching posts to the
+  server, which stores the choice in the session and redirects back to the current screen.
+- The **user menu**: the current user, with *Language*, *Theme* and *Log out*.
+
+These belong together and apart from the navigation: which employer am I working on, who am I, and how
+do I want the application presented. Keeping them in the top bar also keeps them in one fixed place on
+every screen, including the narrow layout where the sidebar collapses behind a toggle — a switcher that
+disappears with the navigation is a switcher you cannot reach.
 
 The sidebar **must** mark the active destination with `aria-current="page"` and a visual state, derived
 from the request path on the server — never guessed in the browser.
 
-**Top bar** — Tabler's `page-header`: the screen title, a breadcrumb where the screen is nested
-(feed → job), and the screen's primary action as a button on the right. Secondary actions live in an
-overflow dropdown, never as a row of competing buttons.
+**Page header** — beneath the top bar, Tabler's `page-header`: the screen title, a breadcrumb where the
+screen is nested (feed → job), and the screen's primary action as a button on the right. Secondary
+actions live in an overflow dropdown, never as a row of competing buttons.
 
-**Responsive** — below the `lg` breakpoint the sidebar collapses into Tabler's offcanvas drawer behind a
-hamburger toggle; the employer switcher moves into the top bar so context is never hidden. Tables reflow
-per §7.6. The application must be usable at 360 px width.
+**Responsive** — below the `lg` breakpoint the sidebar collapses behind a hamburger toggle. The top bar
+does not collapse, so the employer switcher and the user menu stay reachable; their labels shorten to
+icons on narrow screens rather than disappearing. Tables reflow per §7.6. The application must be usable
+at 360 px width.
 
 **Theme** — Tabler light and dark themes are both supported. The choice is stored server-side with the
 user and rendered into the `<html>` element on the first response, so there is no flash of the wrong

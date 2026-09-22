@@ -120,6 +120,50 @@ class ScreenRenderingTest {
         }
     }
 
+    /**
+     * Identity and employer context live in the top bar; the sidebar is navigation
+     * only (spec 7.3). Asserted by position, because both are dropdowns and a
+     * class check alone would not notice one drifting back into the sidebar.
+     */
+    @Test
+    void userMenuAndEmployerSwitcherLiveInTheTopBar() throws Exception {
+        String html = html("/jobs");
+        int sidebarEnd = html.indexOf("</aside>");
+        int userMenu = html.indexOf("/logout");
+        int employerSwitcher = html.indexOf("/context/employer");
+        assertThat(sidebarEnd).as("sidebar present").isPositive();
+        assertThat(userMenu).as("user menu after the sidebar").isGreaterThan(sidebarEnd);
+        assertThat(employerSwitcher).as("employer switcher after the sidebar").isGreaterThan(sidebarEnd);
+        assertThat(html).contains("/context/theme");
+        // The sidebar still carries the destinations and the invitation badge.
+        String sidebar = html.substring(0, sidebarEnd);
+        assertThat(sidebar).contains("nav-link-title").contains("/invitations");
+    }
+
+    /**
+     * Theme and language must not be boosted. hx-boost swaps the body only, so the
+     * `data-bs-theme` and `lang` attributes on <html> would keep their old values
+     * and the change would not appear until the next full page load.
+     */
+    @Test
+    void themeAndLanguageForceAFullNavigation() throws Exception {
+        String html = html("/jobs");
+        int themeForm = html.indexOf("/context/theme");
+        assertThat(themeForm).isPositive();
+        assertThat(html.substring(themeForm - 120, themeForm + 120))
+                .as("theme form opts out of boosting").contains("hx-boost=\"false\"");
+        int langLink = html.indexOf("lang=de");
+        assertThat(langLink).isPositive();
+        assertThat(html.substring(langLink - 200, langLink + 120))
+                .as("language links opt out of boosting").contains("hx-boost=\"false\"");
+    }
+
+    /** The attribute the theme actually depends on is on <html>, and reflects the session. */
+    @Test
+    void themeIsRenderedOnTheHtmlElement() throws Exception {
+        assertThat(html("/jobs")).containsPattern("<html[^>]*data-bs-theme=\"(light|dark)\"");
+    }
+
     @Test
     void shellIsProgressivelyEnhancedAndAccessible() throws Exception {
         assertThat(html("/jobs"))

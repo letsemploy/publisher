@@ -11,7 +11,12 @@
     </div>
 </div>
 
-<!-- Sidebar (spec 7.3): brand, employer switcher, primary nav, user footer -->
+<!--
+  Sidebar (spec 7.3): brand and the primary destinations.
+
+  Who you are and which employer you are working on live in the top bar
+  (:: topbar), so the sidebar is navigation and nothing else.
+-->
 <aside th:fragment="sidebar" class="navbar navbar-vertical navbar-expand-lg d-print-none">
     <div class="container-fluid">
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
@@ -24,33 +29,6 @@
             <a th:href="@{/}" class="d-flex align-items-center text-reset text-decoration-none">
                 <span th:text="#{app.name}">oJobPub Publisher</span>
             </a>
-        </div>
-
-        <!-- Employer switcher: hidden when the user has exactly one employer (spec 2.5) -->
-        <div class="mt-2 mb-3 d-none d-lg-block" th:if="${ui.employers.size() > 1 or ui.admin}">
-            <div class="dropdown w-100">
-                <a href="#" class="btn btn-outline-secondary w-100 d-flex align-items-center dropdown-toggle"
-                   data-bs-toggle="dropdown" aria-expanded="false">
-                    <svg th:replace="~{fragments/icon :: i('building','icon me-2')}"></svg>
-                    <span class="text-truncate"
-                          th:text="${ui.activeEmployer != null} ? ${ui.activeEmployer.label} : #{employer.all}">Acme</span>
-                </a>
-                <div class="dropdown-menu w-100">
-                    <form th:action="@{/context/employer}" method="post" th:each="e : ${ui.employers}">
-                        <input type="hidden" name="employerId" th:value="${e.id}"/>
-                        <button type="submit" class="dropdown-item"
-                                th:classappend="${ui.activeEmployer != null and ui.activeEmployer.id == e.id} ? 'active'"
-                                th:text="${e.label}">Acme</button>
-                    </form>
-                    <div class="dropdown-divider" th:if="${ui.admin}"></div>
-                    <form th:action="@{/context/employer}" method="post" th:if="${ui.admin}">
-                        <input type="hidden" name="employerId" value=""/>
-                        <button type="submit" class="dropdown-item"
-                                th:classappend="${ui.activeEmployer == null} ? 'active'"
-                                th:text="#{employer.all}">All employers</button>
-                    </form>
-                </div>
-            </div>
         </div>
 
         <div class="collapse navbar-collapse" id="sidebar-menu">
@@ -70,42 +48,88 @@
                     </a>
                 </li>
             </ul>
+        </div>
+    </div>
+</aside>
 
-            <div class="mt-auto pb-3">
-                <div class="dropdown">
-                    <a href="#" class="nav-link d-flex align-items-center text-reset dropdown-toggle"
-                       data-bs-toggle="dropdown" aria-expanded="false">
-                        <span class="nav-link-icon">
-                            <svg th:replace="~{fragments/icon :: i('user','icon')}"></svg>
-                        </span>
-                        <span class="nav-link-title ms-1 text-truncate" th:text="${ui.userName}">User</span>
-                    </a>
-                    <div class="dropdown-menu">
-                        <h6 class="dropdown-header" th:text="#{label.language}">Language</h6>
-                        <a class="dropdown-item" th:each="l : ${ui.languages}"
-                           th:href="@{''(lang=${l})}"
-                           th:classappend="${l == #locale.language} ? 'active'"
-                           th:text="#{'lang.' + ${l}}">English</a>
-                        <div class="dropdown-divider"></div>
-                        <form th:action="@{/context/theme}" method="post">
-                            <input type="hidden" name="theme" th:value="${ui.theme == 'dark'} ? 'light' : 'dark'"/>
-                            <button type="submit" class="dropdown-item">
-                                <svg th:replace="~{fragments/icon :: i('moon','icon dropdown-item-icon')}"></svg>
-                                <span th:text="${ui.theme == 'dark'} ? #{theme.light} : #{theme.dark}">Dark mode</span>
-                            </button>
-                        </form>
-                        <div class="dropdown-divider"></div>
-                        <form th:action="@{/logout}" method="post">
-                            <button type="submit" class="dropdown-item">
-                                <svg th:replace="~{fragments/icon :: i('logout','icon dropdown-item-icon')}"></svg>
-                                <span th:text="#{label.logout}">Log out</span>
-                            </button>
-                        </form>
-                    </div>
+<!--
+  Top bar (spec 7.3): the employer switcher and the user menu, on the right.
+
+  Both are about context rather than destination - which employer am I working
+  on, who am I, what language and theme - so they sit apart from the navigation
+  and stay in the same place on every screen, including the narrow layout where
+  the sidebar collapses away.
+-->
+<header th:fragment="topbar" class="navbar navbar-expand-md d-print-none">
+    <div class="container-xl">
+        <div class="navbar-nav flex-row order-md-last ms-auto">
+
+            <!-- Employer switcher: hidden when the user has exactly one employer (spec 2.5) -->
+            <div class="nav-item dropdown me-3" th:if="${ui.employers.size() > 1 or ui.admin}">
+                <a href="#" class="nav-link d-flex align-items-center text-reset dropdown-toggle"
+                   data-bs-toggle="dropdown" aria-expanded="false" th:title="#{employer.switch}">
+                    <svg th:replace="~{fragments/icon :: i('building','icon me-2')}"></svg>
+                    <span class="text-truncate d-none d-md-inline" style="max-width:12rem"
+                          th:text="${ui.activeEmployer != null} ? ${ui.activeEmployer.label} : #{employer.all}">Acme</span>
+                </a>
+                <div class="dropdown-menu dropdown-menu-end">
+                    <form th:action="@{/context/employer}" method="post" th:each="e : ${ui.employers}">
+                        <input type="hidden" name="employerId" th:value="${e.id}"/>
+                        <button type="submit" class="dropdown-item"
+                                th:classappend="${ui.activeEmployer != null and ui.activeEmployer.id == e.id} ? 'active'"
+                                th:text="${e.label}">Acme</button>
+                    </form>
+                    <div class="dropdown-divider" th:if="${ui.admin}"></div>
+                    <form th:action="@{/context/employer}" method="post" th:if="${ui.admin}">
+                        <input type="hidden" name="employerId" value=""/>
+                        <button type="submit" class="dropdown-item"
+                                th:classappend="${ui.activeEmployer == null} ? 'active'"
+                                th:text="#{employer.all}">All employers</button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- User menu: identity, language, theme, log out -->
+            <div class="nav-item dropdown">
+                <a href="#" class="nav-link d-flex align-items-center text-reset dropdown-toggle"
+                   data-bs-toggle="dropdown" aria-expanded="false" th:aria-label="#{label.userMenu}">
+                    <span class="avatar avatar-sm">
+                        <svg th:replace="~{fragments/icon :: i('user','icon')}"></svg>
+                    </span>
+                    <span class="d-none d-xl-block ps-2 text-truncate" style="max-width:12rem"
+                          th:text="${ui.userName}">User</span>
+                </a>
+                <div class="dropdown-menu dropdown-menu-end">
+                    <h6 class="dropdown-header" th:text="#{label.language}">Language</h6>
+                    <!--
+                      Not boosted: hx-boost swaps the body only, so the lang and
+                      data-bs-theme attributes on <html> would keep their old values.
+                      Language and theme are rare actions; a full navigation is the
+                      right trade and needs no JavaScript.
+                    -->
+                    <a class="dropdown-item" th:each="l : ${ui.languages}"
+                       th:href="@{''(lang=${l})}" hx-boost="false"
+                       th:classappend="${l == #locale.language} ? 'active'"
+                       th:text="#{'lang.' + ${l}}">English</a>
+                    <div class="dropdown-divider"></div>
+                    <form th:action="@{/context/theme}" method="post" hx-boost="false">
+                        <input type="hidden" name="theme" th:value="${ui.theme == 'dark'} ? 'light' : 'dark'"/>
+                        <button type="submit" class="dropdown-item">
+                            <svg th:replace="~{fragments/icon :: i('moon','icon dropdown-item-icon')}"></svg>
+                            <span th:text="${ui.theme == 'dark'} ? #{theme.light} : #{theme.dark}">Dark mode</span>
+                        </button>
+                    </form>
+                    <div class="dropdown-divider"></div>
+                    <form th:action="@{/logout}" method="post">
+                        <button type="submit" class="dropdown-item">
+                            <svg th:replace="~{fragments/icon :: i('logout','icon dropdown-item-icon')}"></svg>
+                            <span th:text="#{label.logout}">Log out</span>
+                        </button>
+                    </form>
                 </div>
             </div>
         </div>
     </div>
-</aside>
+</header>
 </body>
 </html>
