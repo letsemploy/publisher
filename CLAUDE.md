@@ -140,10 +140,29 @@ exists yet**.
 
 ### UI
 
-Tabler sidenav shell, htmx for partial updates, and a hard JavaScript budget (§7.2): **no hand-written
-`.js` file, no front-end build step, no CDN**. Assets are vendored in `static/vendor/` (Tabler CSS/JS,
-htmx, hyperscript, and a trimmed icon sprite — not the full 1.8 MB Tabler sprite). `static/css/app.css`
-is the only custom stylesheet.
+Tabler sidenav shell, htmx for partial updates, and a JavaScript budget that bounds *dependencies*
+rather than lines (§7.2): **no bundler, no transpiler, no CDN, and a library needs a reason**.
+
+Front-end dependencies are pinned in `package.json` with a committed lockfile. Their `dist` files are
+copied into `static/vendor/` and **committed**, so `./mvnw package` works with Maven alone on a machine
+with no Node — nothing in `pom.xml` invokes it. Refresh them with:
+
+```bash
+make assets        # npm ci && npm run vendor
+```
+
+`scripts/vendor-assets.sh` copies the dist files and rebuilds `icons.svg` from **only the icons
+actually referenced**, scanning both the templates (`fragments/icon :: i('name')`) *and* the Java
+(`new NavItem("name", …)` — the sidebar's icon names live there, not in a template). Miss the second
+source and the nav icons vanish.
+
+`static/js/app.js` is the application's own behaviour: one small plain-ES module, delegated listeners
+so it survives htmx swaps, covering modal dismissal, chip removal and copy-to-clipboard. hyperscript is
+gone, so the CSP carries **neither `unsafe-inline` nor `unsafe-eval`**.
+
+Controls that only work with JavaScript are rendered `hidden` with `data-enhanced` and revealed by the
+module, so no screen offers a dead button — progressive enhancement is still mandatory (§7.1).
+`static/css/app.css` is the only custom stylesheet.
 
 `templates/` is the only template tree. Layout Dialect: `layout.html` decorates, pages use
 `layout:decorate`, shared fragments live in `templates/fragments/`.
@@ -181,6 +200,7 @@ pass message *keys* as flash attributes and templates resolve them.
 ./mvnw test -Dtest=ScreenRenderingTest       # renders every screen against the seed data
 ./mvnw test -Dtest=InvitationServiceTest     # consent and non-disclosure
 ./mvnw test -Dtest=MembershipServiceTest     # ownership, role changes, the last-owner rule
+make assets                                  # refresh vendored front-end deps (needs Node)
 ```
 
 `OjobpubConformanceTest` validates generated documents against the vendored schema (minimal, maximal
@@ -213,7 +233,4 @@ MariaDB service container.
 - **Configured but unused.** JobRunr has no jobs, `spring-boot-starter-graphql` has an empty
   `resources/graphql/`, and `@EnableScheduling` has no scheduled methods. Nothing here needs a
   scheduler by design: the job date window is evaluated at serving time.
-- **Stale Makefile.** The `update`/`build` targets copy assets from `node_modules`, but there is no
-  `package.json` and the target directories do not exist. Assets are vendored in `static/vendor/`
-  instead; build with `./mvnw` directly.
 - **No employer delete route**, though the spec reserves deletion for admins (§7.13).

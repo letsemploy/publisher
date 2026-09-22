@@ -1,0 +1,14 @@
+{
+  "name": "ojobpub-publisher-assets",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Front-end dependencies for the ojobpub publisher (spec 7.2, 9.1). npm is a maintenance tool: the dist files are copied into src/main/resources/static/vendor and committed, so ./mvnw package needs no Node.",
+  "scripts": {
+    "vendor": "./scripts/vendor-assets.sh"
+  },
+  "dependencies": {
+    "@tabler/core": "1.4.0",
+    "@tabler/icons": "3.31.0",
+    "htmx.org": "2.0.8"
+  }
+}

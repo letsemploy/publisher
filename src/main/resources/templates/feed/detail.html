@@ -26,11 +26,13 @@
                 <input type="text" class="form-control font-monospace" readonly th:value="${feed.publicUrl}"
                        th:aria-label="#{feed.publicUrl}"/>
                 <span class="input-group-text">
-                    <!-- Reads the adjacent input rather than interpolating the URL into code. -->
-                    <a href="#" class="link-secondary" th:title="#{label.copy}"
-                       _="on click call navigator.clipboard.writeText(previous <input/>'s value)">
+                    <!-- Hidden until app.js reveals it; the URL itself is selectable without JS. -->
+                    <button type="button" class="btn btn-link link-secondary p-0 border-0"
+                            th:title="#{label.copy}" th:aria-label="#{label.copy}"
+                            th:attr="data-copied-label=#{label.copied}"
+                            data-action="copy" data-enhanced hidden>
                         <svg th:replace="~{fragments/icon :: i('copy','icon')}"></svg>
-                    </a>
+                    </button>
                 </span>
             </div>
             <small class="form-hint" th:text="#{feed.url.hint}">Anyone with this link can read the feed.</small>

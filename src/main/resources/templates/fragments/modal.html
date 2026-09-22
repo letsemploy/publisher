@@ -13,14 +13,14 @@
             <div class="modal-header">
                 <h5 class="modal-title" th:text="#{${titleKey}}">Are you sure?</h5>
                 <button type="button" class="btn-close" th:aria-label="#{label.close}"
-                        _="on click remove closest .modal"></button>
+                        data-action="dismiss-modal"></button>
             </div>
             <div class="modal-body">
                 <p th:utext="${body}">This cannot be undone.</p>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-link link-secondary me-auto"
-                        _="on click remove closest .modal" th:text="#{label.cancel}">Cancel</button>
+                        data-action="dismiss-modal" th:text="#{label.cancel}">Cancel</button>
                 <form th:action="${action}" method="post">
                     <button type="submit" class="btn"
                             th:classappend="${danger} ? 'btn-danger' : 'btn-primary'"

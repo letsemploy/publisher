@@ -798,42 +798,48 @@ client application.
    real `<a>` links, real `<form>` posts, real full-page responses. htmx makes those interactions
    partial and fast; it is never the only way to perform an action. This is both an accessibility
    guarantee and the cheapest possible insurance against a broken asset.
-3. **A hard JavaScript budget** (§7.2). If a requirement seems to need a JavaScript library, the
-   requirement is re-designed as a server round trip first.
-4. **No front-end build step.** No npm at build or run time, no bundler, no transpiler, no source maps
-   to ship. Assets are vendored files served from `/static`.
+3. **A JavaScript budget, not a prohibition** (§7.2). Some behaviour is genuinely better in the
+   browser, and a few lines there beat a contrived server round trip. What is budgeted is *dependencies
+   and complexity*, not lines: reach for a server round trip first, and when the browser is the right
+   place, write the small amount of code it takes rather than adding a library.
+4. **npm manages dependencies; there is no build step.** Front-end dependencies are pinned in
+   `package.json` with a lockfile, and their published `dist` files are copied into `/static` and
+   **committed**. No bundler, no transpiler, no minifier of our own. See §7.2 for why the copied files
+   are committed.
 5. **Tabler is the design system.** Its components, spacing, colour roles and icons are used as
    published. Custom CSS is a last resort, lives in one small stylesheet, and never restyles a Tabler
    component into something it is not.
 
 ### 7.2 JavaScript budget
 
-Permitted, in full:
+What the browser may load:
 
-| Asset | Purpose |
-|---|---|
-| **htmx** | All partial page updates |
-| **Tabler's own JS bundle** | Only the Tabler/Bootstrap components that cannot work without it: offcanvas sidebar, dropdown menus, modals, tooltips |
-| **hyperscript** *(optional)* | Trivial inline DOM behaviour with no server involvement, e.g. copy-to-clipboard |
+| Asset | Source | Purpose |
+|---|---|---|
+| **htmx** | npm | All partial page updates |
+| **Tabler's CSS and JS** | npm | The design system, and the components that cannot work without script: offcanvas sidebar, dropdowns, modals, tooltips |
+| **Tabler icons** | npm | A sprite trimmed to the icons actually used, not the full set |
+| **The application's own module** | written here | The small amount of behaviour that genuinely belongs in the browser |
 
 Rules:
 
-- The application **must not** ship a hand-written `.js` file. If behaviour cannot be expressed as an
-  htmx attribute or a one-line hyperscript attribute, it is done on the server.
-- No SPA framework, no jQuery, no client-side validation library, no date picker library, no rich text
-  editor, no charting library, no select/autocomplete library (§7.8 specifies the server-rendered
-  alternative).
+- **Our own JavaScript is permitted and should stay small.** One module, plain modern ES served as
+  written — no transpiler, no bundler, no framework. It is reviewed like any other source file: no
+  `eval`, no building markup or code from strings, and nothing that duplicates state the server owns.
+- **A library needs a reason.** No SPA framework, no jQuery, no client-side validation library, no date
+  picker, no rich text editor, no charting library, no select/autocomplete library (§7.8 gives the
+  server-rendered alternative). Adding one is a decision to record, not a convenience.
+- **Dependencies come from npm**, pinned in `package.json` with a committed lockfile. Their `dist`
+  files are copied into `/static` **and committed**, so a clean checkout builds with Maven alone and
+  needs no Node (§9.1). Refreshing them is one documented command and a reviewable commit — a diff
+  that shows exactly which bytes the browser will receive.
 - Assets are **self-hosted**, never loaded from a CDN. This keeps the application working offline and
   in restricted networks, removes a third-party availability and privacy dependency, and allows the
-  strict `Content-Security-Policy` of §9.4 — which forbids inline scripts and external script origins.
-- **hyperscript and the CSP are in tension.** hyperscript evaluates the text of `_="…"` attributes at
-  runtime, which generally requires `script-src 'unsafe-eval'` — a real weakening of §9.4. It is
-  therefore confined to behaviour with no server involvement and no security consequence (closing a
-  modal, removing a chip, copying a field). A `_="…"` attribute **must not** be built by string
-  concatenation in a template: it would place data inside executable code. Read the value from the DOM
-  instead — `navigator.clipboard.writeText(previous <input/>'s value)`, not an interpolated URL.
-  Whether to keep hyperscript at all, or drop it and accept a copy button that only selects text, is
-  recorded as an open question (§11).
+  strict `Content-Security-Policy` of §9.4.
+- **No inline script and no `eval`.** The CSP is `script-src 'self'` with neither `unsafe-inline` nor
+  `unsafe-eval` (§9.4). This is why the application's behaviour lives in a module file rather than in
+  attributes evaluated at runtime, and it is what makes the strict policy achievable rather than
+  aspirational.
 - Vendored asset files are checked in, with their versions recorded, and refreshed by a documented,
   repeatable command. Upgrading a vendored asset is a reviewable commit.
 - Icons are the **Tabler SVG sprite**, referenced as `<svg><use href="/static/icons.svg#tabler-…"></svg>`.
@@ -1187,15 +1193,22 @@ partial updates, Tabler as the design system, Spring Data JPA over MariaDB, Flyw
 migrations, Spring Security with the OAuth2 client stack for OIDC.
 
 Server-rendered HTML with fragment swaps is a deliberate choice: the back-office is form-and-list heavy
-with no offline or real-time requirements, and a single deployable with no separate front-end build
-keeps the product proportional to the problem. §7.1 and §7.2 state the resulting constraints — no build
-step, no hand-written JavaScript file, and self-hosted assets — which are requirements of this stack
-choice, not preferences.
+with no offline or real-time requirements, and a single deployable keeps the product proportional to
+the problem. §7.1 and §7.2 state the resulting constraints — self-hosted assets, no bundler, and a
+small amount of our own JavaScript rather than libraries — which follow from that choice.
 
-Front-end assets (Tabler CSS and JS, the Tabler icon sprite, htmx) are **vendored into
-`src/main/resources/static`** and served by the application. Their versions are recorded, and a single
-documented command refreshes them; the refresh is a reviewable commit, never a step in the build. The
-build itself must produce a runnable artifact from a clean checkout with Maven alone.
+Front-end dependencies are declared in **`package.json`** with a committed lockfile. Their published
+`dist` files are copied into `src/main/resources/static` and **committed to the repository**; the
+application serves them from there.
+
+**Node is a maintenance tool, never a build dependency.** `./mvnw package` **must** produce a runnable
+artifact from a clean checkout with Maven alone, on a machine with no Node installed. Neither CI nor
+the container build may require it. The cost is generated files in version control; the benefit is that
+the build has one toolchain, and the exact bytes sent to browsers are reviewable in a diff.
+
+Refreshing the assets is one documented command that installs from the lockfile and copies the `dist`
+files into place. Upgrading a dependency is therefore an ordinary reviewable commit, and the icon
+sprite is trimmed to the icons actually referenced rather than shipping the full set.
 
 ### 9.2 Structure
 
@@ -1247,10 +1260,11 @@ than aspirational.
   data by forgetting a check.
 - Standard security response headers (HSTS, `X-Content-Type-Options`, a restrictive
   `Content-Security-Policy`, `Referrer-Policy`) are set on back-office responses.
-- Because all assets are self-hosted (§7.2), the policy can be genuinely strict: `default-src 'self'`
-  with no external script, style or font origin and **no `unsafe-inline`**. Any inline `<style>` or
-  `<script>` block in a template is therefore a defect — a CDN reference would break the page outright,
-  which is the intended feedback.
+- Because all assets are self-hosted and the application's own behaviour lives in a module file
+  (§7.2), the policy is genuinely strict: `default-src 'self'` with no external script, style or font
+  origin, **no `unsafe-inline`** and **no `unsafe-eval`**. An inline `<style>` or `<script>` block, a
+  CDN reference, or anything that evaluates code from a string will break the page outright, which is
+  the intended feedback.
 - The `dev` bypass is constrained exactly as described in §2.3.
 
 ### 9.5 Configuration
@@ -1322,9 +1336,8 @@ user records (issuer, subject, email, display name), which are deleted with the 
    many, and every employer publishes a public feed URL. Whether creation needs a quota, review or
    verification is unspecified, and matters more here than for most back-offices because the output is
    public by design.
-10. **hyperscript versus `unsafe-eval`.** §7.2 permits hyperscript for trivial DOM behaviour, but it
-   needs a CSP relaxation that §9.4 otherwise forbids. Three ways out, none yet chosen: allow
-   `'unsafe-eval'` and keep the convenience; drop hyperscript and let the copy control merely select
-   the URL text, which needs no script at all; or ship one small audited script file and relax the
-   "no hand-written JavaScript" rule instead. The choice affects only three interactions today
-   (modal dismissal, chip removal, copy to clipboard).
+10. **Keeping the JavaScript small.** §7.2 now permits the application's own module, which removes the
+   `unsafe-eval` tension that hyperscript created but also removes the constraint that kept browser
+   behaviour near zero. Nothing currently measures or bounds it. Whether a size budget, or a rule that
+   each addition names the server round trip it replaces, is worth adopting is deferred — the module
+   covers three interactions today (modal dismissal, chip removal, copy to clipboard).

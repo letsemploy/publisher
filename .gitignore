@@ -31,3 +31,6 @@ build/
 
 ### VS Code ###
 .vscode/
+
+### Front-end dependencies (the vendored dist files ARE committed) ###
+node_modules/

@@ -89,6 +89,37 @@ class ScreenRenderingTest {
                 .doesNotContain("<script>");
     }
 
+    /** Our own module is served; hyperscript is gone and nothing evaluates strings (spec 7.2). */
+    @Test
+    void behaviourComesFromOurOwnModuleOnly() throws Exception {
+        String html = html("/jobs");
+        assertThat(html).contains("/js/app.js").contains("/vendor/htmx.min.js");
+        assertThat(html).doesNotContain("hyperscript");
+    }
+
+    /**
+     * A control that only works with JavaScript is hidden until the module reveals
+     * it, so no screen offers a dead button (spec 7.1).
+     */
+    @Test
+    void javascriptOnlyControlsAreHiddenUntilEnhanced() throws Exception {
+        // The copy control lives on the feed detail screen, beside the public URL.
+        String feed = html("/feeds/" + FEED_ALL);
+        assertThat(feed).contains("data-action=\"copy\"").contains("data-enhanced").contains("hidden");
+        // Chip removal on the job form is the other enhancement-only control.
+        assertThat(html("/jobs/" + JOB_PUBLISHED + "/update"))
+                .contains("data-action=\"remove-chip\"").contains("data-enhanced");
+    }
+
+    /** Nothing evaluates code from a string any more, so the CSP needs no unsafe-eval. */
+    @Test
+    void noTemplateEvaluatesCodeFromAString() throws Exception {
+        for (String path : new String[]{"/feeds/" + FEED_ALL, "/jobs/" + JOB_PUBLISHED + "/update",
+                "/jobs/" + JOB_PUBLISHED + "/delete"}) {
+            assertThat(html(path)).as(path).doesNotContain("_=\"on ").doesNotContain("hyperscript");
+        }
+    }
+
     @Test
     void shellIsProgressivelyEnhancedAndAccessible() throws Exception {
         assertThat(html("/jobs"))

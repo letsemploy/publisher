@@ -63,8 +63,10 @@ public class SecurityConfig {
                 .logout(logout -> logout.logoutSuccessUrl("/"))
                 .headers(h -> h.contentSecurityPolicy(csp ->
                         // Self-hosted assets only, so the policy can be genuinely strict (spec 9.4).
+                        // No 'unsafe-inline' and no 'unsafe-eval': all behaviour lives in
+                        // a module file, so nothing evaluates code from a string (spec 9.4).
                         csp.policyDirectives("default-src 'self'; img-src 'self' data:; "
-                                + "style-src 'self'; script-src 'self' 'unsafe-eval'; "
+                                + "style-src 'self'; script-src 'self'; "
                                 + "base-uri 'self'; frame-ancestors 'none'")));
         return http.build();
     }
