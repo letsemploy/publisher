@@ -11,6 +11,7 @@ import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -115,6 +116,34 @@ class OjobpubConformanceTest {
     private void assertConforms(Feed feed) {
         var document = service.generate(feed, LocalDate.of(2026, 9, 21)).getDocument();
         assertThat(validator.validate(document)).as("schema violations").isEmpty();
+    }
+
+    /**
+     * The gate must be able to fail. Every other test here asserts that a
+     * document conforms, which a validator that accepted everything would
+     * satisfy just as well - so one case has to prove the validator says no.
+     *
+     * <p>Worth keeping in view whenever the schema library is upgraded: its API
+     * has been renamed wholesale once already, and a rewrite that quietly
+     * validated nothing would otherwise be indistinguishable from a working one.
+     */
+    @Test
+    void aDocumentMissingRequiredFieldsIsRejected() {
+        assertThat(validator.validate(Map.of("version", "1.0")))
+                .as("violations for a document with only one of the four required fields")
+                .isNotEmpty();
+    }
+
+    /** The schema types `version` as a string; a number must not slip through. */
+    @Test
+    void aWronglyTypedFieldIsRejected() {
+        assertThat(validator.validate(Map.of(
+                "version", 1,
+                "lastUpdated", "2026-09-21T08:15:00Z",
+                "employer", Map.of("name", "Acme AG"),
+                "jobs", List.of())))
+                .as("violations for a numeric version")
+                .isNotEmpty();
     }
 
     @Test
