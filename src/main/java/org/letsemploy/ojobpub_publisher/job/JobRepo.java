@@ -1,6 +1,7 @@
 package org.letsemploy.ojobpub_publisher.job;
 
 import java.time.LocalDate;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -22,15 +23,19 @@ public interface JobRepo extends JpaRepository<Job, UUID> {
      * comes from {@link Publication}, beside the Java rule it mirrors.
      */
     @Query("""
-            SELECT DISTINCT j FROM Job j
-            LEFT JOIN j.tags t
+            SELECT j FROM Job j
             WHERE (:employerIds IS NULL OR j.employer.id IN :employerIds)
               AND (:q IS NULL OR LOWER(j.title) LIKE LOWER(CONCAT('%', :q, '%'))
                              OR LOWER(j.referenceId) LIKE LOWER(CONCAT('%', :q, '%')))
               AND (:jobType IS NULL OR j.jobType = :jobType)
               AND """ + Publication.JPQL_PRESENTATION_FILTER + """
             """)
-    @EntityGraph(attributePaths = {"employer", "locations", "tags"})
+    // Only the to-one association is fetch-joined. Fetch-joining a *collection*
+    // alongside a Pageable forces Hibernate to drop the SQL LIMIT and paginate in
+    // memory (HHH90003004) - it loads every matching row to return twenty. The
+    // rows need `locations`, which arrives through batch fetching instead:
+    // hibernate.default_batch_fetch_size keeps that to a bounded number of queries.
+    @EntityGraph(attributePaths = {"employer"})
     Page<Job> search(@Param("employerIds") List<UUID> employerIds,
                      @Param("q") String q,
                      @Param("presentation") String presentation,
@@ -43,6 +48,13 @@ public interface JobRepo extends JpaRepository<Job, UUID> {
 
     @Query("SELECT COUNT(f) FROM Feed f JOIN f.jobs j WHERE j.id = :jobId")
     long countFeeds(@Param("jobId") UUID jobId);
+
+    /**
+     * Feed counts for a whole page in one query. Calling {@link #countFeeds} per
+     * row is an N+1: twenty rows meant twenty queries.
+     */
+    @Query("SELECT j.id, COUNT(f) FROM Feed f JOIN f.jobs j WHERE j.id IN :jobIds GROUP BY j.id")
+    List<Object[]> countFeedsByJob(@Param("jobIds") Collection<UUID> jobIds);
 
     @Query("SELECT f.id FROM Feed f JOIN f.jobs j WHERE j.id = :jobId")
     List<UUID> findFeedIds(@Param("jobId") UUID jobId);

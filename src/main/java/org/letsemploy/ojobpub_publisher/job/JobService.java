@@ -4,6 +4,7 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -61,6 +62,18 @@ public class JobService {
 
     public long countFeeds(UUID jobId) {
         return jobRepo.countFeeds(jobId);
+    }
+
+    /** Feed counts for a whole page in one query, keyed by job id (spec 10). */
+    public Map<UUID, Long> feedCounts(List<Job> jobs) {
+        if (jobs.isEmpty()) {
+            return Map.of();
+        }
+        Map<UUID, Long> counts = new java.util.HashMap<>();
+        for (Object[] row : jobRepo.countFeedsByJob(jobs.stream().map(Job::getId).toList())) {
+            counts.put((UUID) row[0], (Long) row[1]);
+        }
+        return counts;
     }
 
     /** The feeds a job belongs to, for the membership panel (spec 7.11). */

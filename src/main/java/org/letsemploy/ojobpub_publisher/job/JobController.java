@@ -99,8 +99,10 @@ public class JobController {
         }
 
         LocalDate today = LocalDate.now();
+        // One query for the whole page, not one per row (spec 10).
+        Map<UUID, Long> feedCounts = jobService.feedCounts(result.getContent());
         List<JobRow> rows = result.getContent().stream()
-                .map(j -> views.jobRow(j, jobService.countFeeds(j.getId()), today))
+                .map(j -> views.jobRow(j, feedCounts.getOrDefault(j.getId(), 0L), today))
                 .toList();
 
         model.addAttribute("jobs", new PageView<>(rows, pageNumber, pageSize,

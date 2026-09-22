@@ -29,6 +29,8 @@ spring:
     properties:
       hibernate:
         dialect: org.hibernate.dialect.MariaDBDialect
+        # JobListQueryTest counts queries to prove the list does not do an N+1.
+        generate_statistics: true
   sql:
     init:
       mode: always
