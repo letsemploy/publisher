@@ -6,7 +6,7 @@ spring:
     locations: classpath:db/migration
     table: migrations
   datasource:
-    url: jdbc:mariadb://127.0.0.1:3306/ojobpub_publisher_dev?createDatabaseIfNotExist=true
+    url: jdbc:mariadb://127.0.0.1:${DB_PORT:3307}/ojobpub_publisher_dev?createDatabaseIfNotExist=true
     driver-class-name: org.mariadb.jdbc.Driver
     username: root
     password: root

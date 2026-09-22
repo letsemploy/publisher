@@ -14,8 +14,17 @@ comments cite it as `spec 4.3`, and that is the fastest way to find the rule beh
 
 ## Commands
 
-MariaDB is required to run *and* to test — `docker compose up -d` starts it on 3306 (root/root) plus
-adminer on 8081.
+MariaDB is required to run *and* to test. `podman-compose up -d` (or `docker compose up -d`) brings up
+`docker-compose.yml`: the `db` service on **3307** (root/root) and adminer on **8082**.
+
+**Not 3306, deliberately.** Other projects on the same machine publish 3306 and 8081, and sharing one
+server means another project's `compose down` takes these databases with it — or, worse, two projects
+use one instance without anyone noticing. Both the application and the tests read the port from
+`DB_PORT`, defaulting to 3307; CI sets `DB_PORT=3306` because there MariaDB is a service container on
+the standard port. Override it locally the same way to point at a different server.
+
+The container is `ojobpub-publisher_db_1`; the compose *service* is `db`, so it is
+`podman-compose exec db mariadb -uroot -proot`, not `mariadb`.
 
 ```bash
 ./mvnw spring-boot:run -Dspring-boot.run.profiles=dev   # http://localhost:8080
@@ -281,7 +290,7 @@ instance.
 
 Back-office tests use `@ActiveProfiles({"dev", "test"})`: `dev` provides the authentication bypass,
 `test` is listed second so its datasource wins over the dev one. CI provisions `publisher_test` on a
-MariaDB service container.
+MariaDB service container and sets `DB_PORT=3306`; locally it defaults to 3307 (see **Commands**).
 
 ## Known loose ends
 

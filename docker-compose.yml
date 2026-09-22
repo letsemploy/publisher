@@ -1,4 +1,13 @@
-version: "3.5"
+# Local MariaDB for running and testing (see CLAUDE.md).
+#
+# Deliberately NOT on the default 3306: this machine runs other projects whose
+# stacks publish 3306 and 8081, and a shared server means one project's
+# `docker compose down` silently takes another's databases with it - or worse,
+# that two projects quietly share one instance without anyone noticing.
+#
+# The port is read from DB_PORT by both the application and the tests, so CI -
+# where MariaDB is a service container on the standard port - sets DB_PORT=3306
+# and everything else keeps this default.
 services:
   db:
     image: docker.io/mariadb
@@ -6,10 +15,10 @@ services:
     environment:
       MARIADB_ROOT_PASSWORD: root
     ports:
-      - '3306:3306'
+      - '${DB_PORT:-3307}:3306'
 
   adminer:
     image: docker.io/adminer
     restart: always
     ports:
-      - '8081:8080'
+      - '8082:8080'

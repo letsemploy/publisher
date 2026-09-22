@@ -10,7 +10,7 @@
 # @ActiveProfiles, so the datasource below wins over the dev one.
 spring:
   datasource:
-    url: jdbc:mariadb://127.0.0.1:3306/publisher_test?createDatabaseIfNotExist=true
+    url: jdbc:mariadb://127.0.0.1:${DB_PORT:3307}/publisher_test?createDatabaseIfNotExist=true
     driver-class-name: org.mariadb.jdbc.Driver
     username: root
     password: root

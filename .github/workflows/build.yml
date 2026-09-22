@@ -13,6 +13,9 @@ on:
   push:
 env:
   SPRING_SQL_INIT_CONTINUE_ON_ERROR: true
+  # The service container below is on the standard port; only local development
+  # moves off it, to avoid colliding with other stacks on the same machine.
+  DB_PORT: 3306
 
 jobs:
   build-and-push-image:
