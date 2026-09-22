@@ -23,7 +23,7 @@ jobs:
           mariadb version: '11' # Optional, default value is "latest". The version of the MariaDB
           mysql database: 'publisher_test' # Optional, default value is "test". The specified database which will be create
           mysql root password: 'root' # Required if "mysql user" is empty, default is empty. The root superuser password
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: actions/setup-java@v5
         with:
           distribution: 'temurin'
