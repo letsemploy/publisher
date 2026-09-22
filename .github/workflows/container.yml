@@ -17,7 +17,7 @@ on:
       - "v*"
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: letsemploy/ojobpub-publisher
+  IMAGE_NAME: letsemploy/publisher
 
 jobs:
   build-and-push-image:
