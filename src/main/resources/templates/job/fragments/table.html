@@ -3,8 +3,9 @@
 <body>
 <!-- The list region: swapped on search, filter, sort and paging (spec 7.4) -->
 <div th:fragment="table" th:remove="tag">
-    <div th:if="${jobs.content.isEmpty()}"
-         th:replace="~{fragments/empty :: state('briefcase','job.empty.title','job.empty.subtitle','/jobs/create','job.create')}"></div>
+    <th:block th:if="${jobs.content.isEmpty()}">
+        <div th:replace="~{fragments/empty :: state('briefcase','job.empty.title','job.empty.subtitle','/jobs/create','job.create')}"></div>
+    </th:block>
 
     <div class="table-responsive" th:unless="${jobs.content.isEmpty()}">
         <table class="table table-vcenter card-table">

@@ -12,8 +12,9 @@
 </div>
 <div layout:fragment="content">
     <div class="card">
-        <div th:if="${locations.isEmpty()}"
-             th:replace="~{fragments/empty :: state('map-pin','location.empty.title','location.empty.subtitle','/locations/create','location.create')}"></div>
+        <th:block th:if="${locations.isEmpty()}">
+            <div th:replace="~{fragments/empty :: state('map-pin','location.empty.title','location.empty.subtitle','/locations/create','location.create')}"></div>
+        </th:block>
         <div class="table-responsive" th:unless="${locations.isEmpty()}">
             <table class="table table-vcenter card-table">
                 <thead>

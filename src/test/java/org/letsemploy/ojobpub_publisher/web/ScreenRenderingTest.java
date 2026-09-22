@@ -263,6 +263,66 @@ class ScreenRenderingTest {
     }
 
     /**
+     * An empty state belongs to an empty list only (spec 7.6).
+     *
+     * <p>Regression guard for a Thymeleaf precedence trap: {@code th:replace}
+     * (precedence 100) is processed before {@code th:if} (300), so an element
+     * carrying both is replaced by the fragment before the condition is ever
+     * evaluated - and the empty state renders next to a full table. Every list
+     * screen was written that way. The condition now lives on a wrapping
+     * {@code th:block}, which leaves no markup of its own.
+     */
+    @Test
+    void anEmptyStateIsNotRenderedBesideAFullList() throws Exception {
+        assertThat(html("/jobs"))
+                .as("six seeded jobs, so no empty state")
+                .contains("Senior Backend Engineer")
+                .doesNotContain("No jobs yet");
+        assertThat(html("/feeds")).doesNotContain("No feeds yet");
+        assertThat(html("/employers/" + EMPLOYER + "/people"))
+                .contains("Mara Member")
+                .doesNotContain("No members yet");
+    }
+
+    /** The same trap, and the same guard, for the htmx fragment variant. */
+    @Test
+    void theJobFragmentDoesNotCarryAnEmptyState() throws Exception {
+        String fragment = mvc.perform(get("/jobs").header("HX-Request", "true"))
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString();
+        assertThat(fragment).contains("Senior Backend Engineer").doesNotContain("No jobs yet");
+    }
+
+    /**
+     * The readiness panel had it worst: both the satisfied and the unsatisfied
+     * icon rendered on every row, so the panel said yes and no at once.
+     */
+    @Test
+    void aReadinessRowShowsOneIconNotBoth() throws Exception {
+        String body = html("/jobs/" + JOB_PUBLISHED);
+        // Counted inside the readiness list only, so the dev banner's own
+        // warning icon cannot be mistaken for a readiness row.
+        int start = body.indexOf("list-unstyled mb-0");
+        String panel = body.substring(start, body.indexOf("</ul>", start));
+        assertThat(countOf(panel, "ti-circle-check"))
+                .as("one check per satisfied requirement")
+                .isEqualTo(6);
+        assertThat(countOf(panel, "ti-alert-triangle"))
+                .as("this job meets every requirement, so no warnings")
+                .isZero();
+    }
+
+    private static int countOf(String haystack, String needle) {
+        int n = 0;
+        int i = 0;
+        while ((i = haystack.indexOf(needle, i)) >= 0) {
+            n++;
+            i += needle.length();
+        }
+        return n;
+    }
+
+    /**
      * A missing record renders the error page. Regression guard: the error view
      * decorates with the shell, and @ModelAttribute does not reach @ExceptionHandler,
      * so the handler must supply `ui` itself or every 404 becomes a 500.

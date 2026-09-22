@@ -12,8 +12,9 @@
 </div>
 <div layout:fragment="content">
     <div class="card">
-        <div th:if="${employers.content.isEmpty()}"
-             th:replace="~{fragments/empty :: state('building','employer.empty.title','employer.empty.subtitle','/employers/create','employer.create')}"></div>
+        <th:block th:if="${employers.content.isEmpty()}">
+            <div th:replace="~{fragments/empty :: state('building','employer.empty.title','employer.empty.subtitle','/employers/create','employer.create')}"></div>
+        </th:block>
         <div class="table-responsive" th:unless="${employers.content.isEmpty()}">
             <table class="table table-vcenter card-table">
                 <thead>

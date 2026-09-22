@@ -12,8 +12,9 @@
 </div>
 <div layout:fragment="content">
     <div class="card">
-        <div th:if="${feeds.isEmpty()}"
-             th:replace="~{fragments/empty :: state('rss','feed.empty.title','feed.empty.subtitle','/feeds/create','feed.create')}"></div>
+        <th:block th:if="${feeds.isEmpty()}">
+            <div th:replace="~{fragments/empty :: state('rss','feed.empty.title','feed.empty.subtitle','/feeds/create','feed.create')}"></div>
+        </th:block>
 
         <div class="table-responsive" th:unless="${feeds.isEmpty()}">
             <table class="table table-vcenter card-table">

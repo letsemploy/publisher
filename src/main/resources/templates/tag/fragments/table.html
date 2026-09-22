@@ -3,8 +3,9 @@
 <body>
 <!-- The tag list region: swapped on search (spec 7.4). -->
 <div th:fragment="table" th:remove="tag">
-            <div th:if="${tags.isEmpty()}"
-                 th:replace="~{fragments/empty :: state('tag','tag.empty.title','tag.empty.subtitle','/tags/create','tag.create')}"></div>
+            <th:block th:if="${tags.isEmpty()}">
+                <div th:replace="~{fragments/empty :: state('tag','tag.empty.title','tag.empty.subtitle','/tags/create','tag.create')}"></div>
+            </th:block>
             <div class="table-responsive" th:unless="${tags.isEmpty()}">
                 <table class="table table-vcenter card-table">
                     <thead>

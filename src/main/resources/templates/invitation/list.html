@@ -8,8 +8,9 @@
     <div class="card">
         <!-- For a user with no memberships this is the whole application, so the
              empty state must not read like an error (spec 7.16). -->
-        <div th:if="${invitations.isEmpty()}"
-             th:replace="~{fragments/empty :: state('mail','invitation.empty.title','invitation.empty.subtitle','/employers/create','employer.create')}"></div>
+        <th:block th:if="${invitations.isEmpty()}">
+            <div th:replace="~{fragments/empty :: state('mail','invitation.empty.title','invitation.empty.subtitle','/employers/create','employer.create')}"></div>
+        </th:block>
 
         <div class="list-group list-group-flush" th:unless="${invitations.isEmpty()}">
             <div class="list-group-item" th:each="inv : ${invitations}">

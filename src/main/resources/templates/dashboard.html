@@ -44,8 +44,9 @@
         <div class="card-header">
             <h3 class="card-title" th:text="#{nav.feeds}">Feeds</h3>
         </div>
-        <div th:if="${dashboard.feeds.isEmpty()}"
-             th:replace="~{fragments/empty :: state('rss','feed.empty.title','feed.empty.subtitle','/feeds/create','feed.create')}"></div>
+        <th:block th:if="${dashboard.feeds.isEmpty()}">
+            <div th:replace="~{fragments/empty :: state('rss','feed.empty.title','feed.empty.subtitle','/feeds/create','feed.create')}"></div>
+        </th:block>
         <div class="table-responsive" th:unless="${dashboard.feeds.isEmpty()}">
             <table class="table table-vcenter card-table">
                 <thead>

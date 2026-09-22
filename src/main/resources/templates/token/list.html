@@ -41,8 +41,9 @@
         <div class="col-lg-7">
             <div class="card">
                 <div class="card-header"><h3 class="card-title" th:text="#{token.list}">Tokens</h3></div>
-                <div th:if="${tokens.isEmpty()}"
-                     th:replace="~{fragments/empty :: state('key','token.empty.title','token.empty.subtitle',null,null)}"></div>
+                <th:block th:if="${tokens.isEmpty()}">
+                    <div th:replace="~{fragments/empty :: state('key','token.empty.title','token.empty.subtitle',null,null)}"></div>
+                </th:block>
                 <div class="table-responsive" th:unless="${tokens.isEmpty()}">
                     <table class="table table-vcenter card-table">
                         <thead>

@@ -8,8 +8,9 @@
                th:attr="hx-get=@{'/feeds/' + ${feed.id} + '/candidates'},hx-target='#feed-panels',
                         hx-trigger='input changed delay:300ms, search'"/>
     </div>
-    <div th:if="${feed.candidates.isEmpty()}"
-         th:replace="~{fragments/empty :: state('check','feed.candidates.empty',null,null,null)}"></div>
+    <th:block th:if="${feed.candidates.isEmpty()}">
+        <div th:replace="~{fragments/empty :: state('check','feed.candidates.empty',null,null,null)}"></div>
+    </th:block>
     <div class="list-group list-group-flush" th:unless="${feed.candidates.isEmpty()}">
         <div class="list-group-item d-flex align-items-center" th:each="job : ${feed.candidates}">
             <div class="me-auto">

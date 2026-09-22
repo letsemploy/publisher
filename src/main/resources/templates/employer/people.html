@@ -9,8 +9,9 @@
         <div class="col-lg-7">
             <div class="card">
                 <div class="card-header"><h3 class="card-title" th:text="#{employer.people.members}">Members</h3></div>
-                <div th:if="${people.members.isEmpty()}"
-                     th:replace="~{fragments/empty :: state('users','employer.people.noMembers','employer.people.noMembersHint',null,null)}"></div>
+                <th:block th:if="${people.members.isEmpty()}">
+                    <div th:replace="~{fragments/empty :: state('users','employer.people.noMembers','employer.people.noMembersHint',null,null)}"></div>
+                </th:block>
                 <div class="table-responsive" th:unless="${people.members.isEmpty()}">
                     <table class="table table-vcenter card-table">
                         <thead>

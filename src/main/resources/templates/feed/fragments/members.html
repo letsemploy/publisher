@@ -2,8 +2,9 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <body>
 <div th:fragment="members" th:remove="tag">
-    <div th:if="${feed.members.isEmpty()}"
-         th:replace="~{fragments/empty :: state('briefcase','feed.members.empty','feed.members.emptyHint',null,null)}"></div>
+    <th:block th:if="${feed.members.isEmpty()}">
+        <div th:replace="~{fragments/empty :: state('briefcase','feed.members.empty','feed.members.emptyHint',null,null)}"></div>
+    </th:block>
     <div class="list-group list-group-flush" th:unless="${feed.members.isEmpty()}">
         <div class="list-group-item d-flex align-items-center" th:each="job : ${feed.members}">
             <div class="me-auto">
