@@ -11,8 +11,9 @@ import org.letsemploy.ojobpub_publisher.employer.Employer;
 import org.letsemploy.ojobpub_publisher.employer.EmployerRepo;
 import org.letsemploy.ojobpub_publisher.membership.MembershipRole;
 import org.letsemploy.ojobpub_publisher.membership.MembershipService;
-import org.letsemploy.ojobpub_publisher.security.AppUser;
+import org.letsemploy.ojobpub_publisher.security.Actor;
 import org.letsemploy.ojobpub_publisher.security.UserEntity;
+import org.letsemploy.ojobpub_publisher.token.ServiceTokenRepo;
 import org.letsemploy.ojobpub_publisher.security.UserRepo;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -36,13 +37,14 @@ public class InvitationService {
     }
 
     private final InvitationRepo invitationRepo;
+    private final ServiceTokenRepo serviceTokenRepo;
     private final UserRepo userRepo;
     private final EmployerRepo employerRepo;
     private final MembershipService membershipService;
 
     // ------------------------------------------------------------- the invitee
 
-    public List<Invitation> pendingFor(AppUser user) {
+    public List<Invitation> pendingFor(Actor user) {
         if (user.getId() == null) {
             return List.of();
         }
@@ -50,7 +52,7 @@ public class InvitationService {
                 user.getId(), InvitationStatus.PENDING);
     }
 
-    public long countPendingFor(AppUser user) {
+    public long countPendingFor(Actor user) {
         return user.getId() == null ? 0
                 : invitationRepo.countByInviteeIdAndStatus(user.getId(), InvitationStatus.PENDING);
     }
@@ -61,7 +63,7 @@ public class InvitationService {
      * @return the employer the user now belongs to
      */
     @Transactional
-    public Employer accept(UUID invitationId, AppUser user) {
+    public Employer accept(UUID invitationId, Actor user) {
         Invitation invitation = ownPending(invitationId, user);
         UserEntity invitee = invitation.getInvitee();
         membershipService.grant(invitee, invitation.getEmployer(), invitation.getRole());
@@ -73,7 +75,7 @@ public class InvitationService {
     }
 
     @Transactional
-    public Employer decline(UUID invitationId, AppUser user) {
+    public Employer decline(UUID invitationId, Actor user) {
         Invitation invitation = ownPending(invitationId, user);
         invitation.resolve(InvitationStatus.DECLINED);
         invitationRepo.save(invitation);
@@ -81,7 +83,7 @@ public class InvitationService {
     }
 
     /** Responding to someone else's invitation is a 404, never a 403 (spec 7.16). */
-    private Invitation ownPending(UUID invitationId, AppUser user) {
+    private Invitation ownPending(UUID invitationId, Actor user) {
         Invitation invitation = invitationRepo.findById(invitationId)
                 .orElseThrow(() -> new NotFoundException("Invitation not found: " + invitationId));
         if (user.getId() == null || !invitation.getInvitee().getId().equals(user.getId())) {
@@ -109,7 +111,7 @@ public class InvitationService {
      * naming them discloses nothing the admin cannot already see.
      */
     @Transactional
-    public InviteOutcome invite(UUID employerId, String email, MembershipRole role, AppUser actor) {
+    public InviteOutcome invite(UUID employerId, String email, MembershipRole role, Actor actor) {
         // An owner of this employer, or an admin (spec 2.6).
         membershipService.requireOwner(actor, employerId);
         Employer employer = employerRepo.findById(employerId)
@@ -134,16 +136,22 @@ public class InvitationService {
             return InviteOutcome.ALREADY_INVITED;
         }
 
-        UserEntity inviter = userRepo.findById(actor.getId())
-                .orElseThrow(() -> new NotFoundException("User not found: " + actor.getId()));
-        invitationRepo.save(new Invitation(employer, invitee, inviter,
-                role == null ? MembershipRole.EDITOR : role));
-        log.info("User {} invited user {} to employer {}", inviter.getId(), invitee.getId(), employerId);
+        // Either a person or a token invited them, and the record says which (spec 3.11).
+        MembershipRole granted = role == null ? MembershipRole.EDITOR : role;
+        Invitation invitation = actor.isToken()
+                ? new Invitation(employer, invitee, serviceTokenRepo.findById(actor.getId())
+                        .orElseThrow(() -> new NotFoundException("Token not found: " + actor.getId())),
+                        granted)
+                : new Invitation(employer, invitee, userRepo.findById(actor.getId())
+                        .orElseThrow(() -> new NotFoundException("User not found: " + actor.getId())),
+                        granted);
+        invitationRepo.save(invitation);
+        log.info("{} invited user {} to employer {}", actor.getDisplayName(), invitee.getId(), employerId);
         return InviteOutcome.SENT;
     }
 
     @Transactional
-    public void revoke(UUID invitationId, AppUser actor) {
+    public void revoke(UUID invitationId, Actor actor) {
         Invitation invitation = invitationRepo.findById(invitationId)
                 .orElseThrow(() -> new NotFoundException("Invitation not found: " + invitationId));
         membershipService.requireOwner(actor, invitation.getEmployer().getId());

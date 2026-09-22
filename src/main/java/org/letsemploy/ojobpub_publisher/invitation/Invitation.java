@@ -9,6 +9,7 @@ import org.letsemploy.ojobpub_publisher.common.Base;
 import org.letsemploy.ojobpub_publisher.employer.Employer;
 import org.letsemploy.ojobpub_publisher.membership.MembershipRole;
 import org.letsemploy.ojobpub_publisher.security.UserEntity;
+import org.letsemploy.ojobpub_publisher.token.ServiceToken;
 
 /** An offer of access to one employer, made to one registered user (spec 3.8). */
 @Entity
@@ -26,9 +27,17 @@ public class Invitation extends Base {
     @JoinColumn(name = "invitee_id", nullable = false, updatable = false)
     private UserEntity invitee;
 
-    @ManyToOne(fetch = FetchType.EAGER, optional = false)
-    @JoinColumn(name = "invited_by_id", nullable = false, updatable = false)
-    private UserEntity invitedBy;
+    /**
+     * Who sent it - exactly one of these is set (spec 3.11). An audit record names
+     * the token, not the person who created it: the token is what acted.
+     */
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "invited_by_user_id", updatable = false)
+    private UserEntity invitedByUser;
+
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "invited_by_token_id", updatable = false)
+    private ServiceToken invitedByToken;
 
     /** The membership role acceptance will grant (spec 2.6, 3.8). */
     @Enumerated(EnumType.STRING)
@@ -44,11 +53,30 @@ public class Invitation extends Base {
 
     public Invitation(Employer employer, UserEntity invitee, UserEntity invitedBy,
                       MembershipRole role) {
+        this(employer, invitee, role);
+        this.invitedByUser = invitedBy;
+    }
+
+    public Invitation(Employer employer, UserEntity invitee, ServiceToken invitedBy,
+                      MembershipRole role) {
+        this(employer, invitee, role);
+        this.invitedByToken = invitedBy;
+    }
+
+    private Invitation(Employer employer, UserEntity invitee, MembershipRole role) {
         this.employer = employer;
         this.invitee = invitee;
-        this.invitedBy = invitedBy;
         this.role = role;
         this.status = InvitationStatus.PENDING;
+    }
+
+    /** How the inviter is named on screen and in audit records (spec 3.11). */
+    public String getInvitedByLabel() {
+        if (invitedByUser != null) {
+            return invitedByUser.getDisplayName() != null
+                    ? invitedByUser.getDisplayName() : invitedByUser.getEmail();
+        }
+        return invitedByToken.getLabel();
     }
 
     /**

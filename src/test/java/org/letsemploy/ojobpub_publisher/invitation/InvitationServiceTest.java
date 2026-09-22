@@ -13,7 +13,7 @@ import org.letsemploy.ojobpub_publisher.employer.EmployerRepo;
 import org.letsemploy.ojobpub_publisher.membership.MembershipRepo;
 import org.letsemploy.ojobpub_publisher.membership.MembershipRole;
 import org.letsemploy.ojobpub_publisher.membership.MembershipService;
-import org.letsemploy.ojobpub_publisher.security.AppUser;
+import org.letsemploy.ojobpub_publisher.security.Actor;
 import org.letsemploy.ojobpub_publisher.security.UserEntity;
 import org.letsemploy.ojobpub_publisher.security.UserRepo;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -41,7 +41,7 @@ class InvitationServiceTest {
     private MembershipRepo membershipRepo;
 
     private Employer employer;
-    private AppUser admin;
+    private Actor admin;
     private UserEntity invitee;
     private UserEntity member;
 
@@ -53,11 +53,11 @@ class InvitationServiceTest {
         member = userRepo.findByEmailIgnoreCase("member@example.com").orElseThrow();
     }
 
-    private AppUser asUser(UserEntity user) {
+    private Actor asUser(UserEntity user) {
         Map<UUID, MembershipRole> memberships = new java.util.HashMap<>();
         membershipRepo.findByUserId(user.getId())
                 .forEach(m -> memberships.put(m.getEmployer().getId(), m.getRole()));
-        return new AppUser(user.getId(), user.getDisplayName(), user.getEmail(),
+        return Actor.user(user.getId(), user.getDisplayName(), user.getEmail(),
                 user.getRole() == UserEntity.Role.ADMIN, memberships);
     }
 
@@ -100,7 +100,7 @@ class InvitationServiceTest {
     @Test
     void ownerMayInvite() {
         membershipService.changeRole(employer.getId(), member.getId(), MembershipRole.OWNER, admin);
-        AppUser owner = asUser(member);
+        Actor owner = asUser(member);
         assertThat(owner.isAdmin()).as("not platform staff").isFalse();
 
         assertThat(invitationService.invite(employer.getId(), "fresh@example.com",
@@ -110,14 +110,14 @@ class InvitationServiceTest {
     /** An editor works on the content, not on who else gets in (spec 2.6). */
     @Test
     void editorMayNotInvite() {
-        AppUser editor = asUser(member);
+        Actor editor = asUser(member);
         assertThatThrownBy(() -> invitationService.invite(employer.getId(), "x@example.com",
                 MembershipRole.EDITOR, editor)).isInstanceOf(NotFoundException.class);
     }
 
     @Test
     void aStrangerMayNotInvite() {
-        AppUser stranger = asUser(invitee);
+        Actor stranger = asUser(invitee);
         assertThatThrownBy(() -> invitationService.invite(employer.getId(), "x@example.com",
                 MembershipRole.EDITOR, stranger)).isInstanceOf(NotFoundException.class);
     }
@@ -194,7 +194,7 @@ class InvitationServiceTest {
 
     @Test
     void anonymousUserHasNoInvitations() {
-        AppUser anonymous = new AppUser(null, "anonymous", null, false, Map.of());
+        Actor anonymous = Actor.anonymous();
         assertThat(invitationService.pendingFor(anonymous)).isEmpty();
         assertThat(invitationService.countPendingFor(anonymous)).isZero();
     }

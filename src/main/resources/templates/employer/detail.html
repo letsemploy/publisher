@@ -10,6 +10,10 @@
             <svg th:replace="~{fragments/icon :: i('users','icon')}"></svg>
             <span th:text="#{employer.people.title}">People</span>
         </a>
+        <a class="btn" th:if="${canAdminister}" th:href="@{'/employers/' + ${employer.id} + '/tokens'}">
+            <svg th:replace="~{fragments/icon :: i('key','icon')}"></svg>
+            <span th:text="#{token.title}">API tokens</span>
+        </a>
         <a class="btn" th:if="${canAdminister}" th:href="@{'/employers/' + ${employer.id} + '/update'}">
             <svg th:replace="~{fragments/icon :: i('pencil','icon')}"></svg>
             <span th:text="#{label.edit}">Edit</span>

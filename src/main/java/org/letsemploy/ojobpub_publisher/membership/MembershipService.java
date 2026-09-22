@@ -7,7 +7,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.letsemploy.ojobpub_publisher.common.exception.NotFoundException;
 import org.letsemploy.ojobpub_publisher.common.exception.ValidationFailure;
 import org.letsemploy.ojobpub_publisher.employer.Employer;
-import org.letsemploy.ojobpub_publisher.security.AppUser;
+import org.letsemploy.ojobpub_publisher.security.Actor;
 import org.letsemploy.ojobpub_publisher.security.UserEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -26,8 +26,11 @@ public class MembershipService {
 
     private final MembershipRepo membershipRepo;
 
+    /** People only; a token's membership is managed on its own screen (spec 7.17). */
     public List<Membership> membersOf(UUID employerId) {
-        return membershipRepo.findByEmployerIdOrderByRoleAscUserDisplayNameAsc(employerId);
+        return membershipRepo.findByEmployerIdOrderByRoleAscUserDisplayNameAsc(employerId).stream()
+                .filter(Membership::isHeldByUser)
+                .toList();
     }
 
     public List<Membership> of(UUID userId) {
@@ -55,19 +58,19 @@ public class MembershipService {
      * May this user administer the employer itself — its record, its people?
      * An admin may, anywhere; otherwise it takes an owner membership (spec 2.1).
      */
-    public boolean canAdminister(AppUser user, UUID employerId) {
+    public boolean canAdminister(Actor user, UUID employerId) {
         return user.isAdmin() || user.isOwnerOf(employerId);
     }
 
     /** A non-owner gets "not found", like every other refusal here (spec 2.4). */
-    public void requireOwner(AppUser user, UUID employerId) {
+    public void requireOwner(Actor user, UUID employerId) {
         if (!canAdminister(user, employerId)) {
             throw new NotFoundException("Not found.");
         }
     }
 
     @Transactional
-    public void changeRole(UUID employerId, UUID userId, MembershipRole target, AppUser actor) {
+    public void changeRole(UUID employerId, UUID userId, MembershipRole target, Actor actor) {
         requireOwner(actor, employerId);
         Membership membership = membershipRepo.findByUserIdAndEmployerId(userId, employerId)
                 .orElseThrow(() -> new NotFoundException("Membership not found."));
@@ -84,7 +87,7 @@ public class MembershipService {
     }
 
     @Transactional
-    public void remove(UUID employerId, UUID userId, AppUser actor) {
+    public void remove(UUID employerId, UUID userId, Actor actor) {
         requireOwner(actor, employerId);
         Membership membership = membershipRepo.findByUserIdAndEmployerId(userId, employerId)
                 .orElseThrow(() -> new NotFoundException("Membership not found."));
@@ -100,7 +103,7 @@ public class MembershipService {
      */
     private void refuseIfLastOwner(UUID employerId, Membership membership, String field) {
         if (membership.getRole().isOwner()
-                && membershipRepo.countByEmployerIdAndRole(employerId, MembershipRole.OWNER) <= 1) {
+                && membershipRepo.countByEmployerIdAndRoleAndUserIsNotNull(employerId, MembershipRole.OWNER) <= 1) {
             throw new ValidationFailure(field,
                     "This is the only owner. Make someone else an owner first.");
         }
@@ -108,6 +111,6 @@ public class MembershipService {
 
     public boolean isLastOwner(UUID employerId, Membership membership) {
         return membership.getRole().isOwner()
-                && membershipRepo.countByEmployerIdAndRole(employerId, MembershipRole.OWNER) <= 1;
+                && membershipRepo.countByEmployerIdAndRoleAndUserIsNotNull(employerId, MembershipRole.OWNER) <= 1;
     }
 }

@@ -40,10 +40,10 @@ Container builds use `Dockerfile.multistage`, which is what CI pushes to ghcr.io
 
 ### Package by feature
 
-`employer`, `job`, `location`, `tag`, `feed`, `invitation`, `membership` — each owns its entity,
-repository, service, form objects and controllers. Plus `common` (shared base types, slugs,
-exceptions), `config` (beans), `security` (users, roles, filter chains), `web` (shell context, view
-models, error handling) and `ojobpub/v1` (the published contract).
+`employer`, `job`, `location`, `tag`, `feed`, `invitation`, `membership`, `token` — each owns its
+entity, repository, service, form objects and controllers. Plus `common` (shared base types, slugs,
+exceptions), `config` (beans), `security` (actors, roles, filter chains), `web` (shell context, view
+models, error handling), `ojobpub/v1` (the published contract) and `api` (the GraphQL management API).
 
 Controllers are thin: they resolve the actor, call a service, and put view models on the model.
 **Authorization lives in services, never in controllers or templates** (§2.4) — hiding a button is not
@@ -81,8 +81,10 @@ shows a validity badge from the same validator.
 
 ### Authentication and roles
 
-OIDC via Spring Security. `SecurityConfig` has three chains: the public feed; a **dev-profile bypass**
-(no identity provider needed); and the back-office. Without a configured `ClientRegistrationRepository`
+OIDC via Spring Security. `SecurityConfig` has four chains, in order: the **management API**
+(`/graphql`, bearer token, stateless, no CSRF); the public feed; a **dev-profile bypass**
+(no identity provider needed); and the back-office. The API chain is `@Order(0)` on purpose — the dev
+bypass must never reach `/graphql`, so the API is token-authenticated even locally. Without a configured `ClientRegistrationRepository`
 the back-office chain is replaced by a **fail-closed** one — the app starts and feeds stay served, but
 nobody gets in. `DevBypassGuard` refuses to start if `dev` is combined with `prod`.
 
@@ -92,8 +94,14 @@ Roles are **two independent axes** (§2.1):
   a member.
 - `MembershipRole` — the *per-employer* role, `OWNER` or `EDITOR`, stored on the membership.
 
-`AppUser` carries both (`isAdmin()`, `isOwnerOf(employerId)`). There is no global "editor" any more;
+`Actor` carries both (`isAdmin()`, `isOwnerOf(employerId)`). There is no global "editor" any more;
 that word now names a membership role only.
+
+**`Actor` is whoever is acting: a signed-in user or a service token** (§3.11). One type rather than
+two, because every rule downstream asks both the same questions. `Actor.isToken()` distinguishes them
+and `Actor.hasScope()` is always true for a person — scopes narrow a token only. Anywhere the model
+records *who did this* (`Invitation.invitedBy*`, `Membership`), it holds two nullable references with
+a database CHECK that exactly one is set.
 
 The dev bypass resolves to a **real seeded user** (`dev`/`dev@localhost`), not a synthetic principal,
 because invitations and memberships are keyed on a user id.
@@ -120,6 +128,48 @@ screen. Do not "improve" this by reporting unknown addresses.
 Owners invite, change roles, remove members and edit the employer record; editors work on jobs and
 feeds. Employer **creation is open to any signed-in user**; deletion is admin-only and **no delete route
 exists yet**.
+
+### Management API (`api/`, `token/`)
+
+`POST /graphql` only, authenticated by `Authorization: Bearer <prefix>.<secret>` (§2.8, §11). The
+schema is `src/main/resources/graphql/schema.graphqls`.
+
+**The API is another caller of the same services, never a second implementation.** Resolvers read the
+`Actor`, check a `TokenScope`, and delegate to `JobService`/`FeedService`/`InvitationService`/
+`MembershipService`/`EmployerService`. If a rule can be bypassed through the API, the rule was in the
+wrong layer.
+
+- **The employer is implied by the token** and is never an argument, so a token cannot name another
+  employer. `ApiActor.employerId()` is the only source.
+- **Role and scope are both ceilings.** A scope check refuses early with a clearer answer; the service
+  still applies the membership role.
+- **Errors split two ways** (§11.4): a domain refusal is *data*, returned in the payload's
+  `userErrors` by `ApiErrors` (stable `code`, message resolved through the same bundles the screens
+  use). The GraphQL `errors` array is for faults, and `ApiErrorCodes` guarantees every entry carries an
+  `extensions.code`. This is the one place the 404-not-403 rule is deliberately broken: a scope refusal
+  answers `FORBIDDEN`, because an integration needs to know whether to fix its credentials.
+- **`inviteMember` returns an outcome, not the invitation** — returning the record would disclose
+  whether an address has an account.
+- **A mutation resolver must not be `@Transactional`.** A service that refuses throws
+  `ValidationFailure`, which marks the caller's transaction rollback-only; the resolver then returns
+  its `userErrors` and the commit fails with `UnexpectedRollbackException` — turning a refusal into a
+  fault. Mutations let the service own the write and read the result back through
+  `ApiMapper.read*(id, actor)`, which has its own read-only transaction. `ManagementApiTest` is
+  deliberately **not** `@Transactional` for the same reason: a test transaction hides this entirely.
+- Limits (§11.6) are wired as `Instrumentation` beans (`ApiLimitsConfig`) plus `ApiTransportFilter`
+  (POST only, bounded body, per-token budget with `X-RateLimit-*` headers). The rate limiter is
+  in-memory and per instance.
+
+**Service tokens** (`token/`) belong to an employer, never to a person; only an owner may create one,
+and a token may never mint another. The secret is shown once and stored hashed with a delegating
+password encoder; the public `prefix` names the token in logs and the register. Revoking sets
+`revokedAt` and never deletes, so the audit trail still resolves. A token holds a `Membership` of its
+own and never satisfies the last-owner rule — which is why `MembershipRepo` counts owners with
+`countByEmployerIdAndRoleAndUserIsNotNull`.
+
+**Neither `ServiceTokenAuthFilter` nor `ApiTransportFilter` is a bean.** Boot registers every `Filter`
+bean against every request, which would demand a bearer token on the whole back-office; the API chain
+constructs them.
 
 ### Persistence
 
@@ -200,6 +250,8 @@ pass message *keys* as flash attributes and templates resolve them.
 ./mvnw test -Dtest=ScreenRenderingTest       # renders every screen against the seed data
 ./mvnw test -Dtest=InvitationServiceTest     # consent and non-disclosure
 ./mvnw test -Dtest=MembershipServiceTest     # ownership, role changes, the last-owner rule
+./mvnw test -Dtest=ManagementApiTest         # the GraphQL API end to end
+./mvnw test -Dtest=ApiLimitsTest             # depth, rate and body limits, with the ceilings lowered
 make assets                                  # refresh vendored front-end deps (needs Node)
 ```
 
@@ -216,7 +268,10 @@ There is no preview harness and no fixture data: screens run against the real co
 `data.sql`. The seed deliberately covers all five publication states — including an `INACTIVE` job and
 an `ACTIVE` one with no location, which presents as `INCOMPLETE` and is excluded from the feed — and
 three users: the dev admin (owner of Acme), `member@example.com` (editor) and `editor@example.com` (no
-membership, one pending invitation). Keep that coverage when editing `data.sql`, or the tests lose it.
+membership, one pending invitation). It also seeds one service token so the API tokens screen has a
+row; its `secret_hash` is of a secret that was generated and discarded, so the row is **not** a usable
+credential — `data.sql` runs wherever the application starts. Keep that coverage when editing
+`data.sql`, or the tests lose it.
 
 Test configuration lives in `src/test/resources/application-test.yml` (profile `test`), pointing at
 `publisher_test` and disabling JobRunr. **It must stay profile-specific.** A plain
@@ -230,7 +285,10 @@ MariaDB service container.
 
 ## Known loose ends
 
-- **Configured but unused.** JobRunr has no jobs, `spring-boot-starter-graphql` has an empty
-  `resources/graphql/`, and `@EnableScheduling` has no scheduled methods. Nothing here needs a
-  scheduler by design: the job date window is evaluated at serving time.
+- **Configured but unused.** JobRunr has no jobs and `@EnableScheduling` has no scheduled methods.
+  Nothing here needs a scheduler by design: the job date window is evaluated at serving time.
+- **MariaDB DDL is not transactional.** A migration that fails halfway leaves the schema half-changed
+  and the `migrations` row marked failed, and every later start fails on the part that did apply. It
+  will not rename a column a foreign key still points at, either — drop the key, rename, re-add, which
+  is why `V4` does the `invitations` rename in three statements.
 - **No employer delete route**, though the spec reserves deletion for admins (§7.13).

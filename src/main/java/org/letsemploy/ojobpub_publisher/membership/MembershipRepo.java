@@ -15,6 +15,11 @@ public interface MembershipRepo extends JpaRepository<Membership, UUID> {
 
     boolean existsByUserIdAndEmployerId(UUID userId, UUID employerId);
 
-    /** Drives the last-owner rule (spec 2.7). */
-    long countByEmployerIdAndRole(UUID employerId, MembershipRole role);
+    Optional<Membership> findByServiceTokenIdAndEmployerId(UUID tokenId, UUID employerId);
+
+    /**
+     * Drives the last-owner rule (spec 2.7). Counts only owners who are *people*:
+     * a workspace owned solely by a credential has nobody answerable for it.
+     */
+    long countByEmployerIdAndRoleAndUserIsNotNull(UUID employerId, MembershipRole role);
 }

@@ -1,0 +1,11 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<div th:replace="~{fragments/modal :: confirm(
+        'token.revoke.title',
+        ${message},
+        @{'/employers/' + ${employerId} + '/tokens/' + ${token.id} + '/revoke'},
+        'token.revoke',
+        true)}"></div>
+</body>
+</html>

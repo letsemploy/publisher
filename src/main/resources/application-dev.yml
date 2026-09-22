@@ -20,6 +20,13 @@ spring:
   sql:
     init:
       mode: always
+  # Introspection and GraphiQL are development conveniences only (spec 11.6).
+  graphql:
+    schema:
+      introspection:
+        enabled: true
+    graphiql:
+      enabled: true
 logging:
   level:
     org:

@@ -17,7 +17,7 @@ import org.springframework.security.oauth2.core.oidc.user.OidcUser;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-/** Resolves the current {@link AppUser}, provisioning on first OIDC login (spec 2.2). */
+/** Resolves the current {@link Actor}, provisioning on first OIDC login (spec 2.2). */
 @Service
 @RequiredArgsConstructor
 public class CurrentUserService {
@@ -35,7 +35,7 @@ public class CurrentUserService {
     }
 
     @Transactional
-    public AppUser current() {
+    public Actor current() {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
 
         // Development mode: no identity provider, but a real user record all the same -
@@ -50,7 +50,7 @@ public class CurrentUserService {
                     .orElseGet(() -> provision(oidc));
             return toAppUser(user);
         }
-        return new AppUser(null, "anonymous", null, false, Map.of());
+        return Actor.anonymous();
     }
 
     /** Seeded by data.sql, but provisioned on demand so dev works on an empty database. */
@@ -66,13 +66,13 @@ public class CurrentUserService {
         });
     }
 
-    private AppUser toAppUser(UserEntity user) {
+    private Actor toAppUser(UserEntity user) {
         String name = Optional.ofNullable(user.getDisplayName())
                 .orElse(Optional.ofNullable(user.getEmail()).orElse(user.getSubject()));
         Map<UUID, MembershipRole> memberships = membershipRepo.findByUserId(user.getId()).stream()
                 .collect(Collectors.toMap(m -> m.getEmployer().getId(), Membership::getRole,
                         (a, b) -> a));
-        return new AppUser(user.getId(), name, user.getEmail(),
+        return Actor.user(user.getId(), name, user.getEmail(),
                 user.getRole() == UserEntity.Role.ADMIN, memberships);
     }
 

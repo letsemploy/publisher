@@ -12,7 +12,7 @@ import org.letsemploy.ojobpub_publisher.common.exception.NotFoundException;
 import org.letsemploy.ojobpub_publisher.common.exception.ValidationFailure;
 import org.letsemploy.ojobpub_publisher.employer.Employer;
 import org.letsemploy.ojobpub_publisher.location.LocationService;
-import org.letsemploy.ojobpub_publisher.security.AppUser;
+import org.letsemploy.ojobpub_publisher.security.Actor;
 import org.letsemploy.ojobpub_publisher.tag.Tag;
 import org.letsemploy.ojobpub_publisher.tag.TagService;
 import org.springframework.data.domain.Page;
@@ -42,7 +42,7 @@ public class JobService {
                 jobType, LocalDate.now(), pageable);
     }
 
-    public Job findVisible(UUID id, AppUser user) {
+    public Job findVisible(UUID id, Actor user) {
         Job job = jobRepo.findWithDetailById(id)
                 .orElseThrow(() -> new NotFoundException("Job not found: " + id));
         // A non-member gets 404, never 403 (spec 2.4).
@@ -218,12 +218,12 @@ public class JobService {
     }
 
     @Transactional
-    public Job transition(UUID jobId, JobStatus target, AppUser user) {
+    public Job transition(UUID jobId, JobStatus target, Actor user) {
         return transition(findVisible(jobId, user), target, user.getDisplayName());
     }
 
     @Transactional
-    public void delete(UUID id, AppUser user) {
+    public void delete(UUID id, Actor user) {
         jobRepo.delete(findVisible(id, user));
     }
 

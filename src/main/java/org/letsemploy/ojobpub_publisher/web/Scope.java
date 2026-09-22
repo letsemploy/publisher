@@ -6,7 +6,7 @@ import lombok.RequiredArgsConstructor;
 import org.letsemploy.ojobpub_publisher.common.exception.NotFoundException;
 import org.letsemploy.ojobpub_publisher.employer.Employer;
 import org.letsemploy.ojobpub_publisher.employer.EmployerService;
-import org.letsemploy.ojobpub_publisher.security.AppUser;
+import org.letsemploy.ojobpub_publisher.security.Actor;
 import org.letsemploy.ojobpub_publisher.security.CurrentUserService;
 import org.springframework.stereotype.Component;
 
@@ -22,12 +22,12 @@ public class Scope {
     private final EmployerService employerService;
     private final EmployerContext employerContext;
 
-    public AppUser user() {
+    public Actor user() {
         return currentUserService.current();
     }
 
     public List<Employer> employers() {
-        AppUser user = user();
+        Actor user = user();
         List<Employer> visible = employerService.visibleTo(user);
         UUID active = employerContext.getActiveEmployerId();
         if (active == null) {

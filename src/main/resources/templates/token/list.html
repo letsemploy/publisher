@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout}">
+<head><title th:text="#{token.title}">API tokens</title></head>
+<body>
+<div layout:fragment="content">
+
+    <!--
+      The secret, shown exactly once (spec 2.8, 7.17). It arrives as a flash
+      attribute, so a reload of this page will not show it again - which is
+      what the notice below promises.
+    -->
+    <div class="alert alert-success mb-3" role="alert" th:if="${createdSecret}">
+        <div class="d-flex">
+            <svg th:replace="~{fragments/icon :: i('key','icon alert-icon')}"></svg>
+            <div class="ms-2 w-100">
+                <h4 class="alert-title" th:text="#{token.created.title(${createdName})}">Token created</h4>
+                <p th:text="#{token.created.once}">Copy it now. It cannot be shown again.</p>
+                <div class="input-group input-group-flat">
+                    <input type="text" class="form-control font-monospace" readonly
+                           th:value="${createdSecret}" th:aria-label="#{token.created.secret}"/>
+                    <span class="input-group-text">
+                        <!-- Hidden until app.js reveals it; the value is selectable without JS. -->
+                        <button type="button" class="btn btn-link link-secondary p-0 border-0"
+                                th:title="#{label.copy}" th:aria-label="#{label.copy}"
+                                th:attr="data-copied-label=#{label.copied}"
+                                data-action="copy" data-enhanced hidden>
+                            <svg th:replace="~{fragments/icon :: i('copy','icon')}"></svg>
+                        </button>
+                    </span>
+                </div>
+                <p class="mt-2 mb-0 text-secondary" th:text="#{token.created.lost}">
+                    If it is lost, revoke this token and create another.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <div class="row row-cards">
+        <div class="col-lg-7">
+            <div class="card">
+                <div class="card-header"><h3 class="card-title" th:text="#{token.list}">Tokens</h3></div>
+                <div th:if="${tokens.isEmpty()}"
+                     th:replace="~{fragments/empty :: state('key','token.empty.title','token.empty.subtitle',null,null)}"></div>
+                <div class="table-responsive" th:unless="${tokens.isEmpty()}">
+                    <table class="table table-vcenter card-table">
+                        <thead>
+                        <tr>
+                            <th th:text="#{label.name}">Name</th>
+                            <th th:text="#{token.scopes}">Scopes</th>
+                            <th th:text="#{token.lastUsed}">Last used</th>
+                            <th class="w-1"></th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr th:each="t : ${tokens}">
+                            <td>
+                                <div th:text="${t.name}">ats-sync</div>
+                                <div class="text-secondary small font-monospace" th:text="${t.prefix}">ojp_abc</div>
+                                <span class="badge bg-secondary-lt mt-1" th:if="${t.revoked}"
+                                      th:text="#{token.revokedBadge}">revoked</span>
+                            </td>
+                            <td>
+                                <span class="badge bg-blue-lt me-1" th:each="s : ${t.scopes}"
+                                      th:text="#{'scope.' + ${s}}">jobs:read</span>
+                            </td>
+                            <td class="text-secondary">
+                                <!-- The column that earns its place: a token unused for
+                                     months is the one to revoke (spec 7.17). -->
+                                <div th:text="${t.lastUsedAt ?: #messages.msg('token.neverUsed')}">never</div>
+                                <div class="small" th:text="#{token.createdBy(${t.createdBy},${t.createdAt})}">by dev</div>
+                            </td>
+                            <td>
+                                <button class="btn btn-sm btn-ghost-danger" th:unless="${t.revoked}"
+                                        th:attr="hx-get=@{'/employers/' + ${employerId} + '/tokens/' + ${t.id} + '/revoke'},
+                                                 hx-target='#modal-container'"
+                                        th:text="#{token.revoke}">Revoke</button>
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-5">
+            <div class="card">
+                <div class="card-header"><h3 class="card-title" th:text="#{token.create}">Create a token</h3></div>
+                <form th:action="@{'/employers/' + ${employerId} + '/tokens'}" method="post">
+                    <div class="card-body">
+                        <div th:replace="~{fragments/form :: errorSummary(${errors})}"></div>
+                        <div th:replace="~{fragments/form :: input('name','label.name',${name},'text',true,'token.name.hint',${fieldErrors['name']},64)}"></div>
+
+                        <div class="mb-3">
+                            <label class="form-label" for="role" th:text="#{label.role}">Role</label>
+                            <select class="form-select" id="role" name="role">
+                                <option value="EDITOR" th:text="#{role.editor}">Editor</option>
+                                <option value="OWNER" th:text="#{role.owner}">Owner</option>
+                            </select>
+                            <small class="form-hint" th:text="#{token.role.hint}">A token acts with this role.</small>
+                        </div>
+
+                        <fieldset class="form-fieldset">
+                            <legend class="form-label" th:text="#{token.scopes}">Scopes</legend>
+                            <!-- Described by what they let a caller do, not by their
+                                 identifiers (spec 7.17). -->
+                            <label class="form-check" th:each="s : ${scopes}">
+                                <input class="form-check-input" type="checkbox" name="scopes"
+                                       th:value="${s.name()}"
+                                       th:id="'scope-' + ${s.name().toLowerCase()}"/>
+                                <span class="form-check-label" th:text="#{'scope.' + ${s.name().toLowerCase()} + '.label'}">Read jobs</span>
+                                <span class="form-check-description"
+                                      th:text="#{'scope.' + ${s.name().toLowerCase()} + '.hint'}">What it allows.</span>
+                            </label>
+                            <div class="alert alert-warning mt-2 mb-0" role="alert"
+                                 th:text="#{scope.people_write.warning}">
+                                people:write lets a caller invite and remove colleagues.
+                            </div>
+                        </fieldset>
+                    </div>
+                    <div class="card-footer">
+                        <button type="submit" class="btn btn-primary w-100">
+                            <svg th:replace="~{fragments/icon :: i('key','icon')}"></svg>
+                            <span th:text="#{token.create.submit}">Create token</span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

@@ -23,6 +23,38 @@ public class SecurityConfig {
             "/css/**", "/vendor/**", "/images/**", "/favicon.ico", "/error"
     };
 
+    /**
+     * Order 1: the management API. A bearer token per request, no session and no
+     * CSRF (spec 11.2). It must not fall through to the back-office chain, or an
+     * integration gets a redirect to an identity provider instead of JSON.
+     */
+    @Bean
+    @org.springframework.core.annotation.Order(0)
+    SecurityFilterChain managementApiChain(
+            HttpSecurity http,
+            org.letsemploy.ojobpub_publisher.token.ServiceTokenService tokens,
+            org.letsemploy.ojobpub_publisher.api.ApiRateLimiter rateLimiter,
+            @org.springframework.beans.factory.annotation.Value("${app.api.max-request-bytes:262144}")
+            long maxRequestBytes) throws Exception {
+        ServiceTokenAuthFilter tokenFilter = new ServiceTokenAuthFilter(tokens);
+        http.securityMatcher(PathPatternRequestMatcher.withDefaults().matcher("/graphql"))
+                .authorizeHttpRequests(a -> a.anyRequest().authenticated())
+                .csrf(csrf -> csrf.disable())
+                .sessionManagement(s -> s.sessionCreationPolicy(
+                        org.springframework.security.config.http.SessionCreationPolicy.STATELESS))
+                .addFilterBefore(tokenFilter,
+                        org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter.class)
+                // Credentials first, then the transport budget: an unauthenticated
+                // request has no token to charge the request against (spec 11.6).
+                .addFilterAfter(
+                        new org.letsemploy.ojobpub_publisher.api.ApiTransportFilter(
+                                rateLimiter, maxRequestBytes),
+                        ServiceTokenAuthFilter.class)
+                .exceptionHandling(e -> e.authenticationEntryPoint(
+                        (req, res, ex) -> res.sendError(401)));
+        return http.build();
+    }
+
     /** Order 1: the published feed. Machines call this; it must never see a login page. */
     @Bean
     @org.springframework.core.annotation.Order(1)
@@ -45,6 +77,8 @@ public class SecurityConfig {
     @Profile("dev")
     @org.springframework.core.annotation.Order(2)
     SecurityFilterChain devChain(HttpSecurity http) throws Exception {
+        // /graphql is matched by the API chain at Order(0), so the bypass never
+        // reaches it: the API is token-authenticated even in development.
         http.authorizeHttpRequests(a -> a.anyRequest().permitAll())
                 .csrf(csrf -> csrf.disable())
                 .headers(h -> h.frameOptions(f -> f.sameOrigin()));

@@ -7,6 +7,7 @@ import lombok.Setter;
 import org.letsemploy.ojobpub_publisher.common.Base;
 import org.letsemploy.ojobpub_publisher.employer.Employer;
 import org.letsemploy.ojobpub_publisher.security.UserEntity;
+import org.letsemploy.ojobpub_publisher.token.ServiceToken;
 
 /** One person's standing in one employer (spec 3.9). */
 @Entity
@@ -16,9 +17,14 @@ import org.letsemploy.ojobpub_publisher.security.UserEntity;
 @NoArgsConstructor
 public class Membership extends Base {
 
-    @ManyToOne(fetch = FetchType.EAGER, optional = false)
-    @JoinColumn(name = "user_id", nullable = false, updatable = false)
+    /** Exactly one of {@link #user} and {@link #serviceToken} is set (spec 3.11). */
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "user_id", updatable = false)
     private UserEntity user;
+
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "service_token_id", updatable = false)
+    private ServiceToken serviceToken;
 
     @ManyToOne(fetch = FetchType.EAGER, optional = false)
     @JoinColumn(name = "employer_id", nullable = false, updatable = false)
@@ -33,5 +39,24 @@ public class Membership extends Base {
         this.user = user;
         this.employer = employer;
         this.role = role;
+    }
+
+    public Membership(ServiceToken serviceToken, Employer employer, MembershipRole role) {
+        this.serviceToken = serviceToken;
+        this.employer = employer;
+        this.role = role;
+    }
+
+    /** True when this membership belongs to a person rather than a credential. */
+    public boolean isHeldByUser() {
+        return user != null;
+    }
+
+    /** How the member is named on screen and in audit records. */
+    public String getMemberLabel() {
+        if (user != null) {
+            return user.getDisplayName() != null ? user.getDisplayName() : user.getEmail();
+        }
+        return serviceToken.getLabel();
     }
 }

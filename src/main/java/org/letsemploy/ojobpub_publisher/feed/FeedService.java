@@ -12,7 +12,7 @@ import org.letsemploy.ojobpub_publisher.employer.Employer;
 import org.letsemploy.ojobpub_publisher.job.Job;
 import org.letsemploy.ojobpub_publisher.job.JobService;
 import org.letsemploy.ojobpub_publisher.ojobpub.v1.service.OjobpubService;
-import org.letsemploy.ojobpub_publisher.security.AppUser;
+import org.letsemploy.ojobpub_publisher.security.Actor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -28,7 +28,7 @@ public class FeedService {
         return feedRepo.findByEmployerIdOrderByNameAsc(employerId);
     }
 
-    public Feed findVisible(UUID id, AppUser user) {
+    public Feed findVisible(UUID id, Actor user) {
         Feed feed = feedRepo.findWithJobsById(id)
                 .orElseThrow(() -> new NotFoundException("Feed not found: " + id));
         if (!user.isAdmin() && !user.getEmployerIds().contains(feed.getEmployer().getId())) {
@@ -84,7 +84,7 @@ public class FeedService {
 
     /** Membership is restricted to the feed's own employer (spec 3.5). */
     @Transactional
-    public Feed addJob(UUID feedId, UUID jobId, AppUser user) {
+    public Feed addJob(UUID feedId, UUID jobId, Actor user) {
         Feed feed = findVisible(feedId, user);
         Job job = jobService.findVisible(jobId, user);
         if (!job.getEmployer().getId().equals(feed.getEmployer().getId())) {
@@ -95,14 +95,14 @@ public class FeedService {
     }
 
     @Transactional
-    public Feed removeJob(UUID feedId, UUID jobId, AppUser user) {
+    public Feed removeJob(UUID feedId, UUID jobId, Actor user) {
         Feed feed = findVisible(feedId, user);
         feed.getJobs().removeIf(j -> j.getId().equals(jobId));
         return feedRepo.save(feed);
     }
 
     @Transactional
-    public void delete(UUID id, AppUser user) {
+    public void delete(UUID id, Actor user) {
         feedRepo.delete(findVisible(id, user));
     }
 

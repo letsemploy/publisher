@@ -7,7 +7,7 @@ import lombok.RequiredArgsConstructor;
 import org.letsemploy.ojobpub_publisher.employer.Employer;
 import org.letsemploy.ojobpub_publisher.employer.EmployerService;
 import org.letsemploy.ojobpub_publisher.invitation.InvitationService;
-import org.letsemploy.ojobpub_publisher.security.AppUser;
+import org.letsemploy.ojobpub_publisher.security.Actor;
 import org.letsemploy.ojobpub_publisher.security.CurrentUserService;
 import org.letsemploy.ojobpub_publisher.web.view.NavItem;
 import org.letsemploy.ojobpub_publisher.web.view.Ref;
@@ -32,7 +32,7 @@ public class UiContextFactory {
     private final InvitationService invitationService;
 
     public UiContext build(HttpServletRequest request) {
-        AppUser user = currentUserService.current();
+        Actor user = currentUserService.current();
         List<Employer> employers = employerService.visibleTo(user);
         Ref active = activeEmployer(employers);
 

@@ -14,6 +14,7 @@ import org.letsemploy.ojobpub_publisher.job.Publication;
 import org.letsemploy.ojobpub_publisher.location.Location;
 import org.letsemploy.ojobpub_publisher.membership.Membership;
 import org.letsemploy.ojobpub_publisher.security.UserEntity;
+import org.letsemploy.ojobpub_publisher.token.ServiceToken;
 import org.letsemploy.ojobpub_publisher.tag.Tag;
 import org.letsemploy.ojobpub_publisher.web.view.*;
 import org.springframework.beans.factory.annotation.Value;
@@ -144,7 +145,7 @@ public class Views {
         return new InvitationRow(invitation.getId().toString(),
                 invitation.getEmployer().getName(),
                 invitation.getRole().name().toLowerCase(),
-                displayName(invitation.getInvitedBy()),
+                invitation.getInvitedByLabel(),
                 TIMESTAMP.format(invitation.getCreatedAt()));
     }
 
@@ -153,7 +154,7 @@ public class Views {
                 displayName(invitation.getInvitee()),
                 invitation.getInvitee().getEmail(),
                 invitation.getRole().name().toLowerCase(),
-                displayName(invitation.getInvitedBy()),
+                invitation.getInvitedByLabel(),
                 TIMESTAMP.format(invitation.getCreatedAt()));
     }
 
@@ -161,6 +162,15 @@ public class Views {
         UserEntity user = membership.getUser();
         return new MemberRow(user.getId().toString(), displayName(user), user.getEmail(),
                 membership.getRole().name().toLowerCase(), lastOwner);
+    }
+
+    public TokenRow tokenRow(ServiceToken token) {
+        return new TokenRow(token.getId().toString(), token.getName(), token.getPrefix(),
+                token.getScopes().stream().map(s -> s.name().toLowerCase()).sorted().toList(),
+                displayName(token.getCreatedBy()),
+                TIMESTAMP.format(token.getCreatedAt()),
+                token.getLastUsedAt() == null ? null : TIMESTAMP.format(token.getLastUsedAt()),
+                token.isRevoked());
     }
 
     private String displayName(UserEntity user) {

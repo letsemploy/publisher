@@ -13,7 +13,7 @@ import org.letsemploy.ojobpub_publisher.employer.Employer;
 import org.letsemploy.ojobpub_publisher.employer.EmployerRepo;
 import org.letsemploy.ojobpub_publisher.employer.EmployerService;
 import org.letsemploy.ojobpub_publisher.location.LocationRepo;
-import org.letsemploy.ojobpub_publisher.security.AppUser;
+import org.letsemploy.ojobpub_publisher.security.Actor;
 import org.letsemploy.ojobpub_publisher.security.UserEntity;
 import org.letsemploy.ojobpub_publisher.security.UserRepo;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -41,7 +41,7 @@ class MembershipServiceTest {
     private UserRepo userRepo;
 
     private Employer employer;
-    private AppUser admin;
+    private Actor admin;
     private UserEntity owner;
     private UserEntity editor;
     private UserEntity outsider;
@@ -55,11 +55,11 @@ class MembershipServiceTest {
         admin = asUser(owner);
     }
 
-    private AppUser asUser(UserEntity user) {
+    private Actor asUser(UserEntity user) {
         Map<UUID, MembershipRole> memberships = new java.util.HashMap<>();
         membershipRepo.findByUserId(user.getId())
                 .forEach(m -> memberships.put(m.getEmployer().getId(), m.getRole()));
-        return new AppUser(user.getId(), user.getDisplayName(), user.getEmail(),
+        return Actor.user(user.getId(), user.getDisplayName(), user.getEmail(),
                 user.getRole() == UserEntity.Role.ADMIN, memberships);
     }
 
@@ -73,7 +73,7 @@ class MembershipServiceTest {
     /** The creator becomes the first owner; no employer exists unowned (spec 2.7). */
     @Test
     void creatingAnEmployerMakesTheCreatorItsOwner() {
-        AppUser creator = asUser(outsider);
+        Actor creator = asUser(outsider);
         assertThat(creator.isAdmin()).as("an ordinary user").isFalse();
 
         Employer created = employerService.save(null, "Newco AG", null, null, null,
@@ -81,14 +81,14 @@ class MembershipServiceTest {
 
         assertThat(membershipRepo.findByUserIdAndEmployerId(outsider.getId(), created.getId()))
                 .get().extracting(Membership::getRole).isEqualTo(MembershipRole.OWNER);
-        assertThat(membershipRepo.countByEmployerIdAndRole(created.getId(), MembershipRole.OWNER))
+        assertThat(membershipRepo.countByEmployerIdAndRoleAndUserIsNotNull(created.getId(), MembershipRole.OWNER))
                 .isEqualTo(1);
     }
 
     /** Editing the employer record takes an owner membership or admin (spec 2.1). */
     @Test
     void anEditorMayNotEditTheEmployerRecord() {
-        AppUser asEditor = asUser(editor);
+        Actor asEditor = asUser(editor);
         assertThatThrownBy(() -> employerService.save(employer.getId(), "Renamed", null, null, null,
                 employer.getHeadquarters().getId(), asEditor))
                 .isInstanceOf(NotFoundException.class);
@@ -125,7 +125,7 @@ class MembershipServiceTest {
 
     @Test
     void anEditorMayNotChangeRoles() {
-        AppUser asEditor = asUser(editor);
+        Actor asEditor = asUser(editor);
         assertThatThrownBy(() -> membershipService.changeRole(employer.getId(), owner.getId(),
                 MembershipRole.EDITOR, asEditor)).isInstanceOf(NotFoundException.class);
     }
@@ -158,7 +158,7 @@ class MembershipServiceTest {
         membershipService.changeRole(employer.getId(), owner.getId(), MembershipRole.EDITOR, admin);
 
         assertThat(roleOf(owner)).isEqualTo(MembershipRole.EDITOR);
-        assertThat(membershipRepo.countByEmployerIdAndRole(employer.getId(), MembershipRole.OWNER))
+        assertThat(membershipRepo.countByEmployerIdAndRoleAndUserIsNotNull(employer.getId(), MembershipRole.OWNER))
                 .isEqualTo(1);
     }
 

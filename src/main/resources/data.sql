@@ -104,9 +104,35 @@ INSERT INTO memberships (id, created_at, last_modified_at, user_id, employer_id,
 ON DUPLICATE KEY UPDATE id = id;
 
 -- A pending invitation waiting for the colleague, so the screens have something to show.
-INSERT INTO invitations (id, created_at, last_modified_at, employer_id, invitee_id, invited_by_id,
-                         role, status, responded_at) VALUES
+INSERT INTO invitations (id, created_at, last_modified_at, employer_id, invitee_id,
+                         invited_by_user_id, role, status, responded_at) VALUES
   ('33333333-3333-4333-8333-333333333333', now(), now(), '003d6aec-021b-11f1-aefa-f649a5d91690',
    '22222222-2222-4222-8222-222222222222', '11111111-1111-4111-8111-111111111111',
    'EDITOR', 'PENDING', NULL)
+ON DUPLICATE KEY UPDATE id = id;
+
+-- A service token, so the API tokens screen has a row to show (spec 7.17).
+--
+-- The hash is of a random secret that was generated and discarded, so this row is
+-- deliberately NOT a usable credential: nothing authenticates against it. A working
+-- seeded token would be a credential committed to the repository, and data.sql runs
+-- wherever the application starts.
+INSERT INTO service_tokens (id, created_at, last_modified_at, employer_id, name, prefix,
+                            secret_hash, last_used_at, revoked_at, created_by_id) VALUES
+  ('77777777-7777-4777-8777-777777777777', now(), now(), '003d6aec-021b-11f1-aefa-f649a5d91690',
+   'ats-sync', 'ojp_seedonly01',
+   '{bcrypt}$2a$10$//umO/HMS.9LMIbFuRqerehvXBa1t.SdsgCqpEgTpDAcUmNlxDS22',
+   NULL, NULL, '11111111-1111-4111-8111-111111111111')
+ON DUPLICATE KEY UPDATE id = id;
+
+INSERT INTO service_token_scopes (service_token_id, scope) VALUES
+  ('77777777-7777-4777-8777-777777777777', 'JOBS_WRITE'),
+  ('77777777-7777-4777-8777-777777777777', 'FEEDS_READ')
+ON DUPLICATE KEY UPDATE scope = scope;
+
+-- A token holds a membership of its own, carrying its role (spec 2.8).
+INSERT INTO memberships (id, created_at, last_modified_at, user_id, service_token_id,
+                         employer_id, role) VALUES
+  ('88888888-8888-4888-8888-888888888888', now(), now(), NULL,
+   '77777777-7777-4777-8777-777777777777', '003d6aec-021b-11f1-aefa-f649a5d91690', 'EDITOR')
 ON DUPLICATE KEY UPDATE id = id;

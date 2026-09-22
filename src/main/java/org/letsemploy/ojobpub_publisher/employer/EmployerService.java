@@ -10,7 +10,7 @@ import org.letsemploy.ojobpub_publisher.location.LocationService;
 import org.letsemploy.ojobpub_publisher.membership.MembershipService;
 import org.letsemploy.ojobpub_publisher.security.UserEntity;
 import org.letsemploy.ojobpub_publisher.security.UserRepo;
-import org.letsemploy.ojobpub_publisher.security.AppUser;
+import org.letsemploy.ojobpub_publisher.security.Actor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -26,7 +26,7 @@ public class EmployerService {
     private final UserRepo userRepo;
 
     /** Editors see only their employers; an admin sees all (spec 2.1). */
-    public List<Employer> visibleTo(AppUser user) {
+    public List<Employer> visibleTo(Actor user) {
         if (user.isAdmin()) {
             return employerRepo.findAllByOrderByNameAsc();
         }
@@ -38,7 +38,7 @@ public class EmployerService {
                 .toList();
     }
 
-    public Page<Employer> pageVisibleTo(AppUser user, String query, Pageable pageable) {
+    public Page<Employer> pageVisibleTo(Actor user, String query, Pageable pageable) {
         if (user.isAdmin()) {
             return query == null || query.isBlank()
                     ? employerRepo.findAllByOrderByNameAsc(pageable)
@@ -54,7 +54,7 @@ public class EmployerService {
      * A non-member gets "not found", not "forbidden", so the existence of other
      * employers' records is not disclosed (spec 2.4).
      */
-    public Employer findVisible(UUID id, AppUser user) {
+    public Employer findVisible(UUID id, Actor user) {
         Employer employer = employerRepo.findById(id)
                 .orElseThrow(() -> new NotFoundException("Employer not found: " + id));
         if (!user.isAdmin() && !user.getEmployerIds().contains(id)) {
@@ -71,7 +71,7 @@ public class EmployerService {
      */
     @Transactional
     public Employer save(UUID id, String name, String slug, String url, String industry,
-                         UUID locationId, AppUser actor) {
+                         UUID locationId, Actor actor) {
         if (name == null || name.isBlank()) {
             throw new ValidationFailure("name", "A name is required.");
         }

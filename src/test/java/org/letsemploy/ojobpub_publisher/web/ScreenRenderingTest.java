@@ -37,6 +37,7 @@ class ScreenRenderingTest {
     private static final String JOB_INCOMPLETE = "de69390e-133f-4b2f-e094-8f6071829301";
     private static final String FEED_ALL = "cd58289d-022e-4a1e-df83-7e5f60718293";
     private static final String MEMBER = "44444444-4444-4444-8444-444444444444";
+    private static final String TOKEN = "77777777-7777-4777-8777-777777777777";
 
     @Autowired
     private MockMvc mvc;
@@ -59,7 +60,9 @@ class ScreenRenderingTest {
                 "/tags", "/tags/create", "/tags?q=jav",
                 "/invitations",
                 "/employers/" + EMPLOYER + "/people",
-                "/employers/" + EMPLOYER + "/people/members/" + MEMBER + "/remove");
+                "/employers/" + EMPLOYER + "/people/members/" + MEMBER + "/remove",
+                "/employers/" + EMPLOYER + "/tokens",
+                "/employers/" + EMPLOYER + "/tokens/" + TOKEN + "/revoke");
     }
 
     private String html(String path) throws Exception {
@@ -239,6 +242,24 @@ class ScreenRenderingTest {
                 .contains("editor@example.com")
                 .contains("Mara Member")
                 .contains("Send invitation");
+    }
+
+    /**
+     * The register is what makes a forgotten integration visible (spec 7.17), so
+     * the list must name the token, its public prefix and its scopes - and must
+     * never show a secret, which is only ever rendered once at creation.
+     */
+    @Test
+    void tokenScreenListsWhatMakesADormantTokenNoticeable() throws Exception {
+        String body = html("/employers/" + EMPLOYER + "/tokens");
+        assertThat(body)
+                .contains("ats-sync")
+                .contains("ojp_seedonly01")
+                .contains("jobs:write")
+                .contains("Never used")
+                .contains("Manage people lets whatever holds this token")
+                .doesNotContain("secret_hash")
+                .doesNotContain("$2a$");
     }
 
     /**

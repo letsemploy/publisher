@@ -1,0 +1,184 @@
+# The management API (spec 11). The employer is implied by the token and is never
+# an argument, so a token cannot name another employer.
+
+type Query {
+    "The employer this token belongs to."
+    employer: Employer!
+    jobs(page: Int = 0, size: Int = 20, presentation: Presentation, jobType: JobType, q: String): JobPage!
+    job(id: ID!): Job
+    feeds: [Feed!]!
+    """
+    Locations and tags are platform-wide, not an employer's own (spec 3.6, 3.7).
+    They are readable because JobInput refers to them by id, and a caller has no
+    other way to learn one.
+    """
+    locations(q: String): [Location!]!
+    tags(q: String): [Tag!]!
+    members: [Member!]!
+    pendingInvitations: [Invitation!]!
+}
+
+type Mutation {
+    createJob(input: JobInput!): JobPayload!
+    updateJob(id: ID!, input: JobInput!): JobPayload!
+    activateJob(id: ID!): JobPayload!
+    deactivateJob(id: ID!): JobPayload!
+    deleteJob(id: ID!): DeletePayload!
+
+    createFeed(input: FeedInput!): FeedPayload!
+    updateFeed(id: ID!, input: FeedInput!): FeedPayload!
+    addJobToFeed(feedId: ID!, jobId: ID!): FeedPayload!
+    removeJobFromFeed(feedId: ID!, jobId: ID!): FeedPayload!
+
+    updateEmployer(input: EmployerInput!): EmployerPayload!
+
+    inviteMember(email: String!, role: MembershipRole!): InvitationPayload!
+    revokeInvitation(id: ID!): DeletePayload!
+    changeMemberRole(userId: ID!, role: MembershipRole!): MemberPayload!
+    removeMember(userId: ID!): DeletePayload!
+}
+
+# --- payloads ---------------------------------------------------------------
+# Domain failures are data, not faults: they arrive in userErrors beside the
+# payload. The GraphQL errors array is reserved for transport and auth faults
+# (spec 11.4).
+
+"A rejected input or a broken rule. `code` is stable; `message` is the text the UI shows."
+type UserError {
+    field: String
+    message: String!
+    code: String!
+}
+
+type JobPayload { job: Job, userErrors: [UserError!]! }
+type FeedPayload { feed: Feed, userErrors: [UserError!]! }
+type EmployerPayload { employer: Employer, userErrors: [UserError!]! }
+"""
+What an invite attempt did. SENT is deliberately returned both when an invitation
+was created and when no account matched the address: the API must not become an
+oracle for which addresses are registered (spec 2.6). That is why this payload
+carries an outcome and not the invitation.
+"""
+type InvitationPayload { outcome: InviteOutcome, userErrors: [UserError!]! }
+type MemberPayload { member: Member, userErrors: [UserError!]! }
+type DeletePayload { deletedId: ID, userErrors: [UserError!]! }
+
+# --- types ------------------------------------------------------------------
+
+type Employer {
+    id: ID!
+    name: String!
+    slug: String!
+    url: String
+    industry: String
+    headquarters: Location!
+}
+
+type Location { id: ID!, city: String!, country: String! }
+
+type Tag { id: ID!, name: String! }
+
+type Job {
+    id: ID!
+    title: String!
+    description: String
+    url: String!
+    language: String!
+    referenceId: String
+    category: String
+    jobType: JobType!
+    workType: WorkType
+    experienceLevel: ExperienceLevel
+    workLoadPercentMin: Int
+    workLoadPercentMax: Int
+    salaryMin: Float
+    salaryMax: Float
+    salaryCurrency: String
+    salaryInterval: SalaryInterval
+    startDate: String
+    endDate: String
+    applyBefore: String
+    "The stored lifecycle state (spec 4.1)."
+    status: JobStatus!
+    publishedAt: String
+    "What the job presents as today: published, expired, incomplete (spec 7.6)."
+    presentation: Presentation!
+    locations: [Location!]!
+    tags: [String!]!
+}
+
+"Offset pagination, matching the back-office (spec 11.5). Ordering is total and stable."
+type JobPage {
+    content: [Job!]!
+    page: Int!
+    size: Int!
+    totalElements: Int!
+    totalPages: Int!
+}
+
+type Feed {
+    id: ID!
+    name: String!
+    slug: String!
+    description: String
+    "The public ojobpub.json URL (spec 5.1)."
+    publicUrl: String!
+    jobs: [Job!]!
+}
+
+type Member {
+    userId: ID!
+    displayName: String
+    email: String
+    role: MembershipRole!
+}
+
+type Invitation {
+    id: ID!
+    inviteeEmail: String
+    role: MembershipRole!
+    status: InvitationStatus!
+    "Who sent it - a person, or a token naming itself (spec 3.11)."
+    invitedBy: String!
+}
+
+# --- inputs -----------------------------------------------------------------
+
+input JobInput {
+    title: String!
+    description: String
+    url: String!
+    language: String!
+    referenceId: String
+    category: String
+    jobType: JobType!
+    workType: WorkType
+    experienceLevel: ExperienceLevel
+    workLoadPercentMin: Int
+    workLoadPercentMax: Int
+    salaryMin: Float
+    salaryMax: Float
+    salaryCurrency: String
+    salaryInterval: SalaryInterval
+    startDate: String
+    endDate: String
+    applyBefore: String
+    locationIds: [ID!]
+    tagIds: [ID!]
+}
+
+input FeedInput { name: String!, slug: String, description: String }
+
+input EmployerInput { name: String!, slug: String, url: String, industry: String, headquartersId: ID }
+
+# --- enums: the published spellings where one exists (spec 6.5) --------------
+
+enum JobType { PERMANENT, CONTRACT, TEMPORARY, FREELANCE, VOLUNTEER, APPRENTICESHIP, INTERNSHIP }
+enum WorkType { ON_SITE, REMOTE, HYBRID }
+enum ExperienceLevel { JUNIOR, MID, SENIOR, LEAD, MANAGER, DIRECTOR, EXECUTIVE }
+enum SalaryInterval { HOURLY, DAILY, WEEKLY, MONTHLY, YEARLY }
+enum JobStatus { DRAFT, ACTIVE, INACTIVE }
+enum Presentation { PUBLISHED, EXPIRED, INCOMPLETE, DRAFT, INACTIVE }
+enum MembershipRole { OWNER, EDITOR }
+enum InvitationStatus { PENDING, ACCEPTED, DECLINED, REVOKED }
+enum InviteOutcome { SENT, ALREADY_MEMBER, ALREADY_INVITED }
