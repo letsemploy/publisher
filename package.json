@@ -9,6 +9,6 @@
   "dependencies": {
     "@tabler/core": "1.4.0",
     "@tabler/icons": "3.31.0",
-    "htmx.org": "2.0.8"
+    "htmx.org": "2.0.10"
   }
 }
