@@ -44,7 +44,8 @@ public final class ApiTypes {
                           List<JobDto> jobs) {
     }
 
-    public record MemberDto(String userId, String displayName, String email, String role) {
+    public record MemberDto(String userId, String displayName, String email, String role,
+                            boolean suspended, String suspendedAt) {
     }
 
     public record InvitationDto(String id, String inviteeEmail, String role, String status,

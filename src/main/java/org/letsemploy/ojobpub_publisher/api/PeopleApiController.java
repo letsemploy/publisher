@@ -94,6 +94,28 @@ public class PeopleApiController {
     }
 
     @MutationMapping
+    public MemberPayload suspendMember(@Argument String userId) {
+        Actor actor = api.requireScope(TokenScope.PEOPLE_WRITE);
+        UUID employerId = api.employerId();
+        UUID member = uuid(userId, "user");
+        try {
+            membershipService.suspend(employerId, member, actor);
+        } catch (ValidationFailure e) {
+            return new MemberPayload(null, errors.from(e));
+        }
+        return MemberPayload.ok(mapper.readMember(employerId, member));
+    }
+
+    @MutationMapping
+    public MemberPayload reinstateMember(@Argument String userId) {
+        Actor actor = api.requireScope(TokenScope.PEOPLE_WRITE);
+        UUID employerId = api.employerId();
+        UUID member = uuid(userId, "user");
+        membershipService.reinstate(employerId, member, actor);
+        return MemberPayload.ok(mapper.readMember(employerId, member));
+    }
+
+    @MutationMapping
     public DeletePayload removeMember(@Argument String userId) {
         Actor actor = api.requireScope(TokenScope.PEOPLE_WRITE);
         UUID member = uuid(userId, "user");

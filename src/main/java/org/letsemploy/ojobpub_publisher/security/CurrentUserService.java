@@ -4,12 +4,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
-import org.letsemploy.ojobpub_publisher.membership.Membership;
-import org.letsemploy.ojobpub_publisher.membership.MembershipRepo;
 import org.letsemploy.ojobpub_publisher.membership.MembershipRole;
+import org.letsemploy.ojobpub_publisher.membership.MembershipService;
 import org.springframework.core.env.Environment;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -27,7 +24,7 @@ public class CurrentUserService {
     public static final String DEV_SUBJECT = "dev@localhost";
 
     private final UserRepo userRepo;
-    private final MembershipRepo membershipRepo;
+    private final MembershipService membershipService;
     private final Environment environment;
 
     public boolean isDevMode() {
@@ -69,9 +66,9 @@ public class CurrentUserService {
     private Actor toAppUser(UserEntity user) {
         String name = Optional.ofNullable(user.getDisplayName())
                 .orElse(Optional.ofNullable(user.getEmail()).orElse(user.getSubject()));
-        Map<UUID, MembershipRole> memberships = membershipRepo.findByUserId(user.getId()).stream()
-                .collect(Collectors.toMap(m -> m.getEmployer().getId(), Membership::getRole,
-                        (a, b) -> a));
+        // Suspended memberships are left out, so every check downstream sees a
+        // suspended member exactly as it sees a non-member (spec 2.7).
+        Map<UUID, MembershipRole> memberships = membershipService.activeRolesOf(user.getId());
         return Actor.user(user.getId(), name, user.getEmail(),
                 user.getRole() == UserEntity.Role.ADMIN, memberships);
     }

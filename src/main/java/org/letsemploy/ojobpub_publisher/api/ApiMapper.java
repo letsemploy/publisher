@@ -115,7 +115,8 @@ public class ApiMapper {
     public MemberDto member(Membership membership) {
         return new MemberDto(membership.getUser().getId().toString(),
                 membership.getUser().getDisplayName(), membership.getUser().getEmail(),
-                membership.getRole().name());
+                membership.getRole().name(), membership.isSuspended(),
+                membership.isSuspended() ? membership.getSuspendedAt().toString() : null);
     }
 
     public InvitationDto invitation(Invitation invitation) {

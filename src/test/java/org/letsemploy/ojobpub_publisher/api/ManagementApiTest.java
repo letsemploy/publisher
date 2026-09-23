@@ -55,6 +55,8 @@ class ManagementApiTest {
     private static final String JOB_INCOMPLETE = "de69390e-133f-4b2f-e094-8f6071829301";
     /** A draft with no description and no location, so activation must be refused. */
     private static final String JOB_DRAFT = "bc47178c-f11d-490d-ce72-6d4e5f607182";
+    /** Mara Member, an editor of Acme. */
+    private static final String MEMBER = "44444444-4444-4444-8444-444444444444";
     private static final String HEADQUARTERS = "2c2e59d5-0b1a-11f1-938c-42a3421a666f";
 
     @Autowired
@@ -76,6 +78,8 @@ class ManagementApiTest {
         jdbc.update("DELETE FROM jobs WHERE title = 'API written'");
         jdbc.update("DELETE FROM service_tokens WHERE name LIKE 'test-%' OR name = 'foreign'");
         jdbc.update("DELETE FROM employers WHERE name LIKE 'Other Co %'");
+        // The seed suspends nobody, so any suspension is one of ours.
+        jdbc.update("UPDATE memberships SET suspended_at = NULL");
     }
 
     private Actor devAdmin() {
@@ -322,5 +326,41 @@ class ManagementApiTest {
                 .path("data").path("members");
         assertThat(members.findValuesAsText("email")).contains("member@example.com");
         assertThat(members.toString()).doesNotContain("ojp_");
+    }
+
+    /** Suspension keeps the member listed, with their role, and is undone in one call (spec 2.7). */
+    @Test
+    void aMemberCanBeSuspendedAndReinstated() throws Exception {
+        String secret = tokenWith(TokenScope.PEOPLE_WRITE);
+
+        JsonNode suspended = query(secret, "mutation { suspendMember(userId: \"" + MEMBER
+                + "\") { member { role suspended suspendedAt } userErrors { code } } }")
+                .path("data").path("suspendMember");
+        assertThat(suspended.path("userErrors")).isEmpty();
+        assertThat(suspended.path("member").path("role").asText()).isEqualTo("EDITOR");
+        assertThat(suspended.path("member").path("suspended").asBoolean()).isTrue();
+        assertThat(suspended.path("member").path("suspendedAt").asText()).isNotBlank();
+
+        JsonNode reinstated = query(secret, "mutation { reinstateMember(userId: \"" + MEMBER
+                + "\") { member { role suspended suspendedAt } } }")
+                .path("data").path("reinstateMember").path("member");
+        assertThat(reinstated.path("suspended").asBoolean()).isFalse();
+        assertThat(reinstated.path("suspendedAt").isNull()).isTrue();
+        assertThat(reinstated.path("role").asText()).isEqualTo("EDITOR");
+    }
+
+    /**
+     * Suspending the last active owner is the last-owner rule again: a refusal,
+     * so data in userErrors and not a fault (spec 2.7, 11.4). A token is never
+     * that owner, so it cannot rescue the employer by holding the role.
+     */
+    @Test
+    void suspendingTheLastOwnerIsRefusedAsData() throws Exception {
+        JsonNode response = query(tokenWith(TokenScope.PEOPLE_WRITE),
+                "mutation { suspendMember(userId: \"" + DEV_ADMIN
+                        + "\") { member { suspended } userErrors { code } } }");
+        assertThat(response.path("errors").isMissingNode()).isTrue();
+        assertThat(response.path("data").path("suspendMember").path("userErrors")
+                .findValuesAsText("code")).containsExactly("LAST_OWNER");
     }
 }

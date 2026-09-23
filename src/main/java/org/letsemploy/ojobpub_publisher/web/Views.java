@@ -5,6 +5,7 @@ import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.letsemploy.ojobpub_publisher.employer.Employer;
 import org.letsemploy.ojobpub_publisher.feed.Feed;
@@ -160,10 +161,12 @@ public class Views {
                 TIMESTAMP.format(invitation.getCreatedAt()));
     }
 
-    public MemberRow memberRow(Membership membership, boolean lastOwner) {
+    public MemberRow memberRow(Membership membership, boolean lastOwner, UUID viewerId) {
         UserEntity user = membership.getUser();
         return new MemberRow(user.getId().toString(), displayName(user), user.getEmail(),
-                membership.getRole().name().toLowerCase(), lastOwner);
+                membership.getRole().name().toLowerCase(), lastOwner,
+                membership.isSuspended() ? TIMESTAMP.format(membership.getSuspendedAt()) : null,
+                user.getId().equals(viewerId));
     }
 
     public TokenRow tokenRow(ServiceToken token, Instant now, int warningDays) {

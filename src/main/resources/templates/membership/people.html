@@ -45,6 +45,13 @@
                                       th:text="#{'role.' + ${m.role}}">Editor</span>
                                 <span class="badge bg-yellow-lt ms-1" th:if="${m.lastOwner}"
                                       th:text="#{employer.people.onlyOwner}">only owner</span>
+                                <!-- A word and a date, not just a colour (spec 7.9). Every
+                                     member sees it: it is part of the membership. -->
+                                <span class="badge bg-red-lt ms-1" th:if="${m.suspended}"
+                                      th:title="${m.suspendedAt}"
+                                      th:text="#{employer.people.suspendedBadge}">suspended</span>
+                                <div class="text-secondary small" th:if="${m.suspended}"
+                                     th:text="#{employer.people.suspendedSince(${m.suspendedAt})}">Suspended since …</div>
                             </td>
                             <td th:if="${people.canAdminister}">
                                 <div class="btn-list flex-nowrap justify-content-end">
@@ -59,6 +66,20 @@
                                                 th:text="${m.role == 'owner'} ? #{employer.people.makeEditor} : #{employer.people.makeOwner}">
                                             Make owner
                                         </button>
+                                    </form>
+                                    <!-- Reversible, so no confirmation; not offered on one's own
+                                         row or for the last active owner (spec 2.7). -->
+                                    <form th:if="${!m.suspended and !m.lastOwner and !m.self}"
+                                          th:action="@{'/employers/' + ${people.employerId} + '/people/members/' + ${m.id} + '/suspend'}"
+                                          method="post">
+                                        <button type="submit" class="btn btn-sm"
+                                                th:text="#{employer.people.suspend}">Suspend</button>
+                                    </form>
+                                    <form th:if="${m.suspended}"
+                                          th:action="@{'/employers/' + ${people.employerId} + '/people/members/' + ${m.id} + '/reinstate'}"
+                                          method="post">
+                                        <button type="submit" class="btn btn-sm"
+                                                th:text="#{employer.people.reinstate}">Reinstate</button>
                                     </form>
                                     <button class="btn btn-sm btn-ghost-danger" th:unless="${m.lastOwner}"
                                             th:attr="hx-get=@{'/employers/' + ${people.employerId} + '/people/members/' + ${m.id} + '/remove'},

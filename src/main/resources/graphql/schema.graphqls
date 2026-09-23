@@ -36,6 +36,9 @@ type Mutation {
     revokeInvitation(id: ID!): DeletePayload!
     changeMemberRole(userId: ID!, role: MembershipRole!): MemberPayload!
     removeMember(userId: ID!): DeletePayload!
+    "Keeps the membership and its role but grants nothing until reinstated (spec 2.7)."
+    suspendMember(userId: ID!): MemberPayload!
+    reinstateMember(userId: ID!): MemberPayload!
 }
 
 # --- payloads ---------------------------------------------------------------
@@ -131,6 +134,10 @@ type Member {
     displayName: String
     email: String
     role: MembershipRole!
+    "A suspended member keeps their role but may not act on the employer (spec 2.7)."
+    suspended: Boolean!
+    "When the suspension began, ISO-8601; null while active."
+    suspendedAt: String
 }
 
 type Invitation {

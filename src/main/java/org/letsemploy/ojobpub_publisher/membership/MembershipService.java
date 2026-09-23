@@ -1,7 +1,10 @@
 package org.letsemploy.ojobpub_publisher.membership;
 
+import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.letsemploy.ojobpub_publisher.common.exception.NotFoundException;
@@ -37,6 +40,17 @@ public class MembershipService {
 
     public List<Membership> of(UUID userId) {
         return membershipRepo.findByUserId(userId);
+    }
+
+    /**
+     * What a person may act on, and as what: the standing an {@link Actor} is
+     * built from. A suspended membership is left out here and nowhere else, which
+     * is what makes a suspension take effect everywhere at once (spec 2.7).
+     */
+    public Map<UUID, MembershipRole> activeRolesOf(UUID userId) {
+        return membershipRepo.findByUserIdAndSuspendedAtIsNull(userId).stream()
+                .collect(Collectors.toMap(m -> m.getEmployer().getId(), Membership::getRole,
+                        (a, b) -> a));
     }
 
     /** Write site 1: the creator of an employer becomes its first owner (spec 2.7). */
@@ -120,20 +134,66 @@ public class MembershipService {
     }
 
     /**
+     * Suspend another member (spec 2.7): the membership stays, with its role, but
+     * grants nothing until it is reinstated. Needs no consent, like removal.
+     *
+     * <p>Not oneself - an owner who locks themselves out has to find another
+     * owner to let them back in - and not the last active owner, for the same
+     * reason as removal.
+     */
+    @Transactional
+    public void suspend(UUID employerId, UUID userId, Actor actor) {
+        requireOwner(actor, employerId);
+        Membership membership = membershipRepo.findByUserIdAndEmployerId(userId, employerId)
+                .orElseThrow(() -> new NotFoundException("Membership not found."));
+        if (membership.isSuspended()) {
+            return;
+        }
+        if (userId.equals(actor.getId())) {
+            throw new ValidationFailure("self", "You cannot suspend yourself.");
+        }
+        refuseIfLastOwner(employerId, membership, "member");
+        membership.setSuspendedAt(Instant.now());
+        membershipRepo.save(membership);
+        log.info("User {} suspended user {} in employer {}", actor.getId(), userId, employerId);
+    }
+
+    /**
+     * Lift a suspension, with the role the membership already held. Never refused
+     * for a quota: a suspended membership still occupies its slot (spec 8.4).
+     */
+    @Transactional
+    public void reinstate(UUID employerId, UUID userId, Actor actor) {
+        requireOwner(actor, employerId);
+        Membership membership = membershipRepo.findByUserIdAndEmployerId(userId, employerId)
+                .orElseThrow(() -> new NotFoundException("Membership not found."));
+        if (!membership.isSuspended()) {
+            return;
+        }
+        membership.setSuspendedAt(null);
+        membershipRepo.save(membership);
+        log.info("User {} reinstated user {} in employer {}", actor.getId(), userId, employerId);
+    }
+
+    /**
      * The one rule protecting against a state nobody can repair from inside the
      * employer (spec 2.7). The message must say what to do about it — a refusal
      * with no route forward is worse than the button being missing.
      */
     private void refuseIfLastOwner(UUID employerId, Membership membership, String field) {
-        if (membership.getRole().isOwner()
-                && membershipRepo.countByEmployerIdAndRoleAndUserIsNotNull(employerId, MembershipRole.OWNER) <= 1) {
+        if (isLastOwner(employerId, membership)) {
             throw new ValidationFailure(field,
-                    "This is the only owner. Make someone else an owner first.");
+                    "This is the only active owner. Make someone else an owner first.");
         }
     }
 
+    /**
+     * Only an active owner can be the last one: a suspended owner is already
+     * unable to act, so demoting or removing them takes nothing away.
+     */
     public boolean isLastOwner(UUID employerId, Membership membership) {
-        return membership.getRole().isOwner()
-                && membershipRepo.countByEmployerIdAndRoleAndUserIsNotNull(employerId, MembershipRole.OWNER) <= 1;
+        return membership.getRole().isOwner() && !membership.isSuspended()
+                && membershipRepo.countByEmployerIdAndRoleAndUserIsNotNullAndSuspendedAtIsNull(
+                        employerId, MembershipRole.OWNER) <= 1;
     }
 }

@@ -1,6 +1,7 @@
 package org.letsemploy.ojobpub_publisher.membership;
 
 import jakarta.persistence.*;
+import java.time.Instant;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -30,10 +31,17 @@ public class Membership extends Base {
     @JoinColumn(name = "employer_id", nullable = false, updatable = false)
     private Employer employer;
 
-    /** The only thing about a membership that may change (spec 2.7). */
+    /** What may change about a membership, with {@link #suspendedAt} (spec 2.7). */
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private MembershipRole role = MembershipRole.EDITOR;
+
+    /**
+     * Set while an owner has suspended this membership; null means active
+     * (spec 2.7). A suspended membership is still listed and still holds its
+     * role, but grants nothing.
+     */
+    private Instant suspendedAt;
 
     public Membership(UserEntity user, Employer employer, MembershipRole role) {
         this.user = user;
@@ -50,6 +58,10 @@ public class Membership extends Base {
     /** True when this membership belongs to a person rather than a credential. */
     public boolean isHeldByUser() {
         return user != null;
+    }
+
+    public boolean isSuspended() {
+        return suspendedAt != null;
     }
 
     /** How the member is named on screen and in audit records. */

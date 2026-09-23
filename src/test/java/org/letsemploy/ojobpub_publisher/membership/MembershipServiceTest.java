@@ -81,7 +81,7 @@ class MembershipServiceTest {
 
         assertThat(membershipRepo.findByUserIdAndEmployerId(outsider.getId(), created.getId()))
                 .get().extracting(Membership::getRole).isEqualTo(MembershipRole.OWNER);
-        assertThat(membershipRepo.countByEmployerIdAndRoleAndUserIsNotNull(created.getId(), MembershipRole.OWNER))
+        assertThat(membershipRepo.countByEmployerIdAndRoleAndUserIsNotNullAndSuspendedAtIsNull(created.getId(), MembershipRole.OWNER))
                 .isEqualTo(1);
     }
 
@@ -158,7 +158,7 @@ class MembershipServiceTest {
         membershipService.changeRole(employer.getId(), owner.getId(), MembershipRole.EDITOR, admin);
 
         assertThat(roleOf(owner)).isEqualTo(MembershipRole.EDITOR);
-        assertThat(membershipRepo.countByEmployerIdAndRoleAndUserIsNotNull(employer.getId(), MembershipRole.OWNER))
+        assertThat(membershipRepo.countByEmployerIdAndRoleAndUserIsNotNullAndSuspendedAtIsNull(employer.getId(), MembershipRole.OWNER))
                 .isEqualTo(1);
     }
 
@@ -187,5 +187,112 @@ class MembershipServiceTest {
         assertThat(membershipService.canAdminister(admin, employer.getId())).isTrue();
         assertThat(membershipService.canAdminister(asUser(editor), employer.getId())).isFalse();
         assertThat(membershipService.canAdminister(asUser(outsider), employer.getId())).isFalse();
+    }
+
+    // ----------------------------------------------------------- suspending
+
+    private Membership membershipOf(UserEntity user) {
+        return membershipRepo.findByUserIdAndEmployerId(user.getId(), employer.getId()).orElseThrow();
+    }
+
+    /**
+     * A suspended member keeps the membership and its role, but the standing an
+     * Actor is built from no longer includes the employer - so every check
+     * downstream treats them as a non-member (spec 2.7).
+     */
+    @Test
+    void aSuspendedMemberKeepsTheirRoleButLosesAccess() {
+        membershipService.suspend(employer.getId(), editor.getId(), admin);
+
+        assertThat(membershipOf(editor).isSuspended()).isTrue();
+        assertThat(membershipOf(editor).getRole()).isEqualTo(MembershipRole.EDITOR);
+        assertThat(membershipService.activeRolesOf(editor.getId())).doesNotContainKey(employer.getId());
+        assertThat(membershipService.membersOf(employer.getId()))
+                .extracting(m -> m.getUser().getId()).contains(editor.getId());
+    }
+
+    @Test
+    void reinstatingRestoresAccessWithTheSameRole() {
+        membershipService.changeRole(employer.getId(), editor.getId(), MembershipRole.OWNER, admin);
+        membershipService.suspend(employer.getId(), editor.getId(), admin);
+
+        membershipService.reinstate(employer.getId(), editor.getId(), admin);
+
+        assertThat(membershipOf(editor).isSuspended()).isFalse();
+        assertThat(membershipService.activeRolesOf(editor.getId()))
+                .containsEntry(employer.getId(), MembershipRole.OWNER);
+    }
+
+    /** A suspended owner cannot act, so cannot administer either. */
+    @Test
+    void aSuspendedOwnerCannotAdminister() {
+        membershipService.changeRole(employer.getId(), editor.getId(), MembershipRole.OWNER, admin);
+        membershipService.suspend(employer.getId(), editor.getId(), admin);
+
+        Actor suspended = Actor.user(editor.getId(), editor.getDisplayName(), editor.getEmail(),
+                false, membershipService.activeRolesOf(editor.getId()));
+        assertThat(membershipService.canAdminister(suspended, employer.getId())).isFalse();
+        assertThatThrownBy(() -> membershipService.reinstate(employer.getId(), editor.getId(), suspended))
+                .isInstanceOf(NotFoundException.class);
+    }
+
+    @Test
+    void anEditorMayNotSuspend() {
+        assertThatThrownBy(() -> membershipService.suspend(employer.getId(), owner.getId(),
+                asUser(editor))).isInstanceOf(NotFoundException.class);
+    }
+
+    @Test
+    void nobodyMaySuspendThemselves() {
+        membershipService.changeRole(employer.getId(), editor.getId(), MembershipRole.OWNER, admin);
+        assertThatThrownBy(() -> membershipService.suspend(employer.getId(), editor.getId(),
+                asUser(editor)))
+                .isInstanceOf(ValidationFailure.class)
+                .hasMessageContaining("self");
+        assertThat(membershipOf(editor).isSuspended()).isFalse();
+    }
+
+    /**
+     * Acts as platform staff who are not a member: the dev admin is also the only
+     * owner, and suspending themselves would be refused as self-suspension first.
+     */
+    @Test
+    void theLastOwnerCannotBeSuspended() {
+        Actor staff = Actor.user(UUID.randomUUID(), "Staff", "staff@example.com", true, Map.of());
+        assertThatThrownBy(() -> membershipService.suspend(employer.getId(), owner.getId(), staff))
+                .isInstanceOf(ValidationFailure.class)
+                .hasMessageContaining("member");
+        assertThat(membershipOf(owner).isSuspended()).isFalse();
+    }
+
+    /**
+     * A suspended owner does not count toward the last-owner rule: with the only
+     * other owner suspended, the active one is the last and cannot be demoted -
+     * but the suspended one can be, since that takes nothing away (spec 2.7).
+     */
+    @Test
+    void aSuspendedOwnerDoesNotSatisfyTheLastOwnerRule() {
+        membershipService.changeRole(employer.getId(), editor.getId(), MembershipRole.OWNER, admin);
+        membershipService.suspend(employer.getId(), editor.getId(), admin);
+
+        assertThat(membershipService.isLastOwner(employer.getId(), membershipOf(owner))).isTrue();
+        assertThat(membershipService.isLastOwner(employer.getId(), membershipOf(editor))).isFalse();
+        assertThatThrownBy(() -> membershipService.changeRole(employer.getId(), owner.getId(),
+                MembershipRole.EDITOR, admin)).isInstanceOf(ValidationFailure.class);
+
+        membershipService.changeRole(employer.getId(), editor.getId(), MembershipRole.EDITOR, admin);
+        assertThat(roleOf(editor)).isEqualTo(MembershipRole.EDITOR);
+    }
+
+    /** A suspension still occupies its slot, or reinstating could breach a quota (spec 8.4). */
+    @Test
+    void aSuspendedMembershipStillCountsTowardQuotas() {
+        long members = membershipService.countMembersOf(employer.getId());
+        long memberships = membershipService.countMembershipsOf(editor.getId());
+
+        membershipService.suspend(employer.getId(), editor.getId(), admin);
+
+        assertThat(membershipService.countMembersOf(employer.getId())).isEqualTo(members);
+        assertThat(membershipService.countMembershipsOf(editor.getId())).isEqualTo(memberships);
     }
 }

@@ -77,6 +77,7 @@ public class ApiErrors {
         }
         return switch (key) {
             case "role", "member" -> "LAST_OWNER";
+            case "self" -> "CANNOT_SUSPEND_SELF";
             case "status" -> "INVALID_TRANSITION";
             case "email" -> "INVALID_EMAIL";
             default -> "INVALID_INPUT";

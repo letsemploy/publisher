@@ -141,8 +141,17 @@ quota checks live *inside* that lambda: at the top of the method they would refu
 nothing. Token memberships are written directly by `ServiceTokenService` and never go through `grant`,
 which is what keeps a credential out of the per-person counts — do not "tidy" that into `grant`.
 
-**Every employer must keep at least one owner** (§2.7). `MembershipService` guards both demotion and
-removal, and the People screen renders the reason rather than greying the control out.
+**Every employer must keep at least one active owner** (§2.7). `MembershipService` guards demotion,
+removal and suspension, and the People screen renders the reason rather than greying the control out.
+
+**Suspension** (§2.7) sets `Membership.suspendedAt`; the row, its role and its quota slot all stay. It is
+enforced in exactly one place: `CurrentUserService` builds the `Actor` from
+`MembershipService.activeRolesOf`, which leaves suspended memberships out, so every check downstream
+sees a suspended member as a non-member without knowing suspension exists. Do not add a
+`isSuspended()` check to individual services — and do not build an `Actor` from `findByUserId`, which
+would quietly restore access. A suspended owner does not count for the last-owner rule, and nobody may
+suspend themselves (`ValidationFailure` field `self`, API code `CANNOT_SUSPEND_SELF`). Tokens are
+revoked, never suspended.
 
 `InviteOutcome.SENT` is returned both when an invitation was created **and** when no account matched
 the address. That is deliberate: the form must not become an oracle for which addresses are registered.
@@ -217,7 +226,7 @@ work". An expired token still counts toward the per-employer quota (§8.4). The 
 password encoder; the public `prefix` names the token in logs and the register. Revoking sets
 `revokedAt` and never deletes, so the audit trail still resolves. A token holds a `Membership` of its
 own and never satisfies the last-owner rule — which is why `MembershipRepo` counts owners with
-`countByEmployerIdAndRoleAndUserIsNotNull`.
+`countByEmployerIdAndRoleAndUserIsNotNullAndSuspendedAtIsNull`.
 
 **Neither `ServiceTokenAuthFilter` nor `ApiTransportFilter` is a bean.** Boot registers every `Filter`
 bean against every request, which would demand a bearer token on the whole back-office; the API chain
@@ -349,6 +358,7 @@ enforced it.) Controllers pass message *keys* as flash attributes and templates 
 ./mvnw test -Dtest=ManagementApiTest         # the GraphQL API end to end
 ./mvnw test -Dtest=ApiLimitsTest             # depth, rate and body limits, with the ceilings lowered
 ./mvnw test -Dtest=PeopleScreenTest          # the People screen as an editor, not an admin
+./mvnw test -Dtest=MemberSuspensionScreenTest # suspending and reinstating from the People screen
 ./mvnw test -Dtest=ResourceLimitsTest        # the quota convention; no Spring, no database
 ./mvnw test -Dtest=QuotaEnforcementTest      # the six quotas against the seed data
 ./mvnw test -Dtest=MessageBundleTest         # the two bundles, at parity

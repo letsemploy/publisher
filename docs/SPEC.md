@@ -69,7 +69,7 @@ having no standing anywhere else.
 | Role | May do within that employer |
 |---|---|
 | **Editor** | Full create/read/update/delete on the employer's jobs, feeds and locations; **see who else belongs to the employer and with which role** (§7.18) |
-| **Owner** | Everything an editor may do, plus: edit the employer record, invite people (§2.6), change a member's role, and remove members (§2.7) |
+| **Owner** | Everything an editor may do, plus: edit the employer record, invite people (§2.6), change a member's role, suspend and reinstate members, and remove members (§2.7) |
 
 There is no read-only role in v1. Every member may edit that employer's jobs and feeds; the difference
 between owner and editor is authority over **the employer and its people**, not over its content.
@@ -77,8 +77,8 @@ between owner and editor is authority over **the employer and its people**, not 
 **Seeing the people is not authority over them.** Every member may see the membership list, because
 anyone editing an employer's jobs needs to know who else is doing so and who to ask for access; only an
 owner may change it. What an editor is shown is the membership itself — who belongs, and as what — and
-not the owner's working material: pending invitations, the invite form and the role and removal
-controls are absent rather than disabled (§7.18).
+not the owner's working material: pending invitations, the invite form and the role, suspension and
+removal controls are absent rather than disabled (§7.18).
 
 Tags are global and every signed-in user may manage them.
 
@@ -106,7 +106,8 @@ below depends on there being a *human* answerable, it says so.
   limit** (§8.4). The refusal says to leave an employer first.
 - Membership is created by **exactly two acts**: creating an employer, and accepting an invitation
   (§2.6, §2.7). No other path grants access to an employer, and neither can be performed on someone
-  else's behalf without their consent. Removal is the owner's or an admin's to perform and needs none.
+  else's behalf without their consent. Suspension and removal are the owner's or an admin's to perform
+  and need none.
 - The authenticated user **must** expose a stable **user identity** and their **email address**, not
   merely a display name and a set of employer ids. An invitation is addressed to a person, so a
   principal that cannot be identified as a specific user has nothing to attach one to.
@@ -232,16 +233,34 @@ question (§12).
 - The platform role (§2.1) is **not** editable here. Making someone platform staff is a different
   decision with a different blast radius, and no employer-scoped screen may do it.
 
+**Suspending a member**
+
+- An owner of an employer, or an admin, **may suspend another member** and **reinstate** them. It needs
+  no consent, like removal, and takes effect on the member's next request.
+- A suspended membership **grants nothing**: the member sees and may do exactly what a non-member may,
+  and asking for anything of that employer gets `404` (§2.4). It is not a read-only mode.
+- It is **not a removal**. The membership stays, with its role, and stays on the People screen marked
+  as suspended and since when, so colleagues are not left wondering where someone went. Reinstating
+  restores it with the role it had, and needs no invitation — which is the point: removal hands the way
+  back to the removed person's consent, suspension keeps it with the owners.
+- **Nobody may suspend themselves.** An owner who locks themselves out needs another owner to let them
+  back in; that is a removal they did not intend, not an act worth offering.
+- A suspended member is still a member for every other purpose: they cannot be invited again ("already
+  a member", §2.6), their role may still be changed, and they may be removed outright.
+- Service tokens are not suspended; a token that should stop working is revoked (§2.8).
+
 **The last owner**
 
-An employer **must** always have at least one owner **who is a person**. The application **must** refuse
-to demote or remove the last one, and the screen **must** say why rather than simply disabling the
+An employer **must** always have at least one **active** owner **who is a person**. The application
+**must** refuse to demote, remove or suspend the last one, and the screen **must** say why rather than simply disabling the
 control with no explanation — "promote someone else first" is actionable, a greyed-out button is not.
 
 A service token with the owner role (§2.8) does **not** satisfy this. A workspace whose only owner is a
 credential has nobody who can be invited, can accept, or is answerable for it; it would be owned by a
 secret in someone's CI configuration. Tokens are excluded from the count for the same reason the rule
-exists at all.
+exists at all. A **suspended** owner does not satisfy it either: they cannot act, so an employer whose
+only other owners are suspended is exactly as frozen. Conversely, demoting or removing a suspended owner
+is never refused by this rule — it takes away nobody who could act.
 
 This is the one rule here that protects against a state nobody can repair from inside the employer. An
 ownerless employer would still be reachable by platform admins, but its own people could no longer
@@ -277,7 +296,7 @@ Six, in three pairs — `jobs:read`, `jobs:write`, `feeds:read`, `feeds:write`, 
 
 The split exists because the blast radii differ. A feed-publishing integration has no business editing
 postings, and almost nothing has business removing colleagues from an employer. `people:write` — invite,
-revoke, change a role, remove a member — is the one to be reluctant with, and it is useless without the
+revoke, change a role, suspend or remove a member — is the one to be reluctant with, and it is useless without the
 owner role beside it.
 
 **Handling the secret**
@@ -509,13 +528,15 @@ why it is an entity of its own rather than a set of employer references on the u
 | `member` | Actor | **yes** | a **User or a ServiceToken** (§3.11); immutable |
 | `employer` | Employer | **yes** | immutable |
 | `role` | enum | **yes** | `OWNER` or `EDITOR` (§2.1) |
+| `suspendedAt` | instant | no | set while an owner has suspended the membership (§2.7); **null means active**. A suspended membership grants nothing |
 
 At most one membership per (member, employer). A user's membership is created only by creating an
 employer or by accepting an invitation (§2.2); a token's is created with the token itself, by an owner
-(§2.8). Its `role` is the one thing about it that may change (§2.7).
+(§2.8). Its `role` and whether it is suspended are the only things about it that may change (§2.7).
 
-**Invariant:** every employer has at least one membership with role `OWNER` **held by a user**.
-Creating an employer establishes it, and §2.7 forbids the demotion or removal that would break it. A
+**Invariant:** every employer has at least one **active** membership with role `OWNER` **held by a
+user**. Creating an employer establishes it, and §2.7 forbids the demotion, removal or suspension that
+would break it. A
 token's owner membership does not count toward it (§2.7).
 
 Deleting an employer or a user deletes their memberships.
@@ -1326,8 +1347,11 @@ owner or admin additionally gets, on the same screen:
 
 - **Role and removal controls** on each member. Removing needs no consent (§2.6) but confirms through
   the §7.4 modal, naming the person and the employer, and states that they may be invited again.
-- **The last owner** — the demote and remove controls **must** be refused for the last remaining owner,
-  with a sentence saying to promote someone else first (§2.7). A control that is merely greyed out
+- **Suspend and reinstate** on each member but oneself (§2.7). Suspending is reversible, so it does not
+  confirm through a modal. A suspended member's row stays in the list for **everyone**, editors included,
+  marked *suspended* in words with the date — it is part of the membership, like the role.
+- **The last owner** — the demote, remove and suspend controls **must** be refused for the last remaining
+  active owner, with a sentence saying to promote someone else first (§2.7). A control that is merely greyed out
   leaves the user guessing.
 - **Pending invitations** — who was invited, with which role, by whom, when, and a *Revoke* action.
 - **Invite** — an email field and a **role choice** (Editor by default). The invitee must already be
@@ -1407,7 +1431,9 @@ may exist is a question the application has to answer rather than leave to good 
   one click from live again (§2.8), so treating it as free would let an employer hold a reserve of
   lapsed credentials and flip between them, and would make renewing a lapsed token something the quota
   could refuse — on the one screen whose purpose is to un-break an integration. Members and memberships: **people only** —
-  a service token holds a membership (§2.8) but is not a colleague.
+  a service token holds a membership (§2.8) but is not a colleague. A **suspended** membership still
+  counts, for the expired token's reason: reinstating is one click, and a quota that could refuse it
+  would tell the owner how many employers that person belongs to — the disclosure §2.6 refuses.
 - **Refusal is a validation failure**, carried to the form or the flash on the web and to `userErrors`
   with the stable code `QUOTA_REACHED` through the API (§11.4). It is an expected outcome of a
   well-formed request, never a fault. The message names the way out — delete one, revoke one, leave
@@ -1590,7 +1616,8 @@ wrong layer.
 - **Queries** read: an employer, its jobs, feeds, locations, tags, members and pending invitations.
 - **Mutations** are named for the act, not for CRUD: `createJob`, `updateJob`, `activateJob`,
   `deactivateJob`, `deleteJob`, `addJobToFeed`, `removeJobFromFeed`, `createFeed`, `updateFeed`,
-  `updateEmployer`, `inviteMember`, `revokeInvitation`, `changeMemberRole`, `removeMember`. Activation
+  `updateEmployer`, `inviteMember`, `revokeInvitation`, `changeMemberRole`, `suspendMember`,
+  `reinstateMember`, `removeMember`. Activation
   is not `updateJob(status: ACTIVE)`; it is a transition with its own rules (§4.1), and naming it so
   keeps the API honest about that.
 - **Every mutation returns a payload**, never a bare entity: the result, and a list of `userErrors`

@@ -71,9 +71,7 @@ public class PeopleController {
                           Map<String, String> fieldErrors, String email) {
         Employer employer = employerService.findVisible(employerId, scope.user());
         boolean canAdminister = membershipService.canAdminister(scope.user(), employerId);
-        List<MemberRow> members = membershipService.membersOf(employerId).stream()
-                .map(m -> views.memberRow(m, membershipService.isLastOwner(employerId, m)))
-                .toList();
+        List<MemberRow> members = memberRows(employerId);
         // Pending invitations are the owner's working material, so an editor is
         // not given them at all rather than shown an empty section (spec 7.18).
         List<PendingInvitationRow> pending = canAdminister
@@ -126,8 +124,7 @@ public class PeopleController {
                                 Model model) {
         membershipService.requireOwner(scope.user(), employerId);
         Employer employer = employerService.findVisible(employerId, scope.user());
-        MemberRow member = membershipService.membersOf(employerId).stream()
-                .map(m -> views.memberRow(m, membershipService.isLastOwner(employerId, m)))
+        MemberRow member = memberRows(employerId).stream()
                 .filter(m -> m.getId().equals(userId.toString()))
                 .findFirst()
                 .orElseThrow(() -> new NotFoundException("Member not found: " + userId));
@@ -163,6 +160,36 @@ public class PeopleController {
             flash.addFlashAttribute("errorMsg", "employer.people.lastOwner");
         }
         return redirectToPeople(employerId);
+    }
+
+    @PostMapping("/employers/{employerId}/people/members/{userId}/suspend")
+    public String suspend(@PathVariable UUID employerId, @PathVariable UUID userId,
+                          RedirectAttributes flash) {
+        try {
+            membershipService.suspend(employerId, userId, scope.user());
+            flash.addFlashAttribute("successMsg", "employer.people.suspended");
+        } catch (ValidationFailure e) {
+            // Not oneself, and not the last active owner (spec 2.7).
+            flash.addFlashAttribute("errorMsg", e.getFieldErrors().containsKey("self")
+                    ? "employer.people.cannotSuspendSelf"
+                    : "employer.people.lastOwner");
+        }
+        return redirectToPeople(employerId);
+    }
+
+    @PostMapping("/employers/{employerId}/people/members/{userId}/reinstate")
+    public String reinstate(@PathVariable UUID employerId, @PathVariable UUID userId,
+                            RedirectAttributes flash) {
+        membershipService.reinstate(employerId, userId, scope.user());
+        flash.addFlashAttribute("successMsg", "employer.people.reinstated");
+        return redirectToPeople(employerId);
+    }
+
+    private List<MemberRow> memberRows(UUID employerId) {
+        UUID viewer = scope.user().getId();
+        return membershipService.membersOf(employerId).stream()
+                .map(m -> views.memberRow(m, membershipService.isLastOwner(employerId, m), viewer))
+                .toList();
     }
 
     /**
