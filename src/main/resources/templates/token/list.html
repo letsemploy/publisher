@@ -6,6 +6,11 @@
 <body>
 <div layout:fragment="content">
 
+    <!-- No employer chosen, so there is no register to show (spec 7.17). -->
+    <th:block th:if="${tokens == null}">
+        <div th:replace="~{fragments/empty :: state('key','token.noEmployer.title','token.noEmployer.subtitle','/employers','nav.employers')}"></div>
+    </th:block>
+
     <!--
       The secret, shown exactly once (spec 2.8, 7.17). It arrives as a flash
       attribute, so a reload of this page will not show it again - which is
@@ -37,7 +42,7 @@
         </div>
     </div>
 
-    <div class="row row-cards">
+    <div class="row row-cards" th:if="${tokens != null}">
         <div class="col-lg-7">
             <div class="card">
                 <div class="card-header"><h3 class="card-title" th:text="#{token.list}">Tokens</h3></div>
@@ -51,6 +56,7 @@
                             <th th:text="#{label.name}">Name</th>
                             <th th:text="#{token.scopes}">Scopes</th>
                             <th th:text="#{token.lastUsed}">Last used</th>
+                            <th th:text="#{token.expires}">Expires</th>
                             <th class="w-1"></th>
                         </tr>
                         </thead>
@@ -72,11 +78,28 @@
                                 <div th:text="${t.lastUsedAt ?: #messages.msg('token.neverUsed')}">never</div>
                                 <div class="small" th:text="#{token.createdBy(${t.createdBy},${t.createdAt})}">by dev</div>
                             </td>
+                            <td class="text-secondary">
+                                <!-- Expiry is derived from the date, never stored as
+                                     a status, so a renewed token is live again at
+                                     once (spec 2.8). -->
+                                <div th:text="${t.expiresAt ?: #messages.msg('token.neverExpires')}">2027-09-23</div>
+                                <span class="badge mt-1"
+                                      th:classappend="${t.state == 'expired'} ? 'bg-red-lt'
+                                                    : (${t.state == 'expiring'} ? 'bg-yellow-lt' : 'bg-green-lt')"
+                                      th:unless="${t.revoked}"
+                                      th:text="#{'token.state.' + ${t.state}}">active</span>
+                            </td>
                             <td>
                                 <button class="btn btn-sm btn-ghost-danger" th:unless="${t.revoked}"
                                         th:attr="hx-get=@{'/employers/' + ${employerId} + '/tokens/' + ${t.id} + '/revoke'},
                                                  hx-target='#modal-container'"
                                         th:text="#{token.revoke}">Revoke</button>
+                                <form th:if="${t.renewable}" class="d-inline"
+                                      th:action="@{'/employers/' + ${employerId} + '/tokens/' + ${t.id} + '/renew'}"
+                                      method="post">
+                                    <button type="submit" class="btn btn-sm"
+                                            th:text="${t.expired} ? #{token.reactivate} : #{token.renew}">Renew</button>
+                                </form>
                             </td>
                         </tr>
                         </tbody>

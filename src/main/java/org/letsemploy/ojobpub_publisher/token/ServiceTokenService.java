@@ -46,6 +46,17 @@ public class ServiceTokenService {
     private final PasswordEncoder passwordEncoder;
     private final ResourceLimits limits;
 
+    /** 0 switches expiry off entirely, as 0 disables a quota (spec 2.8, 8.4). */
+    @org.springframework.beans.factory.annotation.Value("${app.tokens.lifetime-months:12}")
+    private int lifetimeMonths;
+
+    @org.springframework.beans.factory.annotation.Value("${app.tokens.expiry-warning-days:30}")
+    private int expiryWarningDays;
+
+    public int getExpiryWarningDays() {
+        return expiryWarningDays;
+    }
+
     /** A created token and its secret, which is returned exactly once (spec 2.8). */
     @Value
     public static class CreatedToken {
@@ -95,6 +106,7 @@ public class ServiceTokenService {
         token.setName(name.trim());
         token.setPrefix(prefix);
         token.setSecretHash(passwordEncoder.encode(secretPart));
+        token.setExpiresAt(TokenLifecycle.expiryFrom(Instant.now(), lifetimeMonths));
         token.setScopes(new java.util.LinkedHashSet<>(scopes));
         token.setCreatedBy(creator);
         ServiceToken saved = tokenRepo.save(token);
@@ -116,12 +128,50 @@ public class ServiceTokenService {
         ServiceToken token = tokenRepo.findById(tokenId)
                 .orElseThrow(() -> new NotFoundException("Token not found: " + tokenId));
         membershipService.requireOwner(actor, token.getEmployer().getId());
+        if (actor.isToken()) {
+            // The same refusal create() makes, for the same reason: a credential
+            // that can extend its own life never expires, and the feature would
+            // be decorative.
+            throw new NotFoundException("Not found.");
+        }
         if (token.isRevoked()) {
             return;
         }
         token.setRevokedAt(Instant.now());
         tokenRepo.save(token);
         log.info("User {} revoked service token {}", actor.getId(), token.getPrefix());
+    }
+
+    /**
+     * Pushes the expiry out, keeping the secret (spec 2.8).
+     *
+     * <p>The same act renews a live token and reactivates a lapsed one - there is
+     * nothing to undo, only a date to move. The secret is untouched on purpose:
+     * an integration that is running keeps running, which is what makes expiry
+     * something an owner can act on rather than an outage they discover.
+     */
+    @Transactional
+    public ServiceToken renew(UUID tokenId, Actor actor) {
+        ServiceToken token = tokenRepo.findById(tokenId)
+                .orElseThrow(() -> new NotFoundException("Token not found: " + tokenId));
+        membershipService.requireOwner(actor, token.getEmployer().getId());
+        if (actor.isToken()) {
+            // The same refusal create() makes, for the same reason: a credential
+            // that can extend its own life never expires, and the feature would
+            // be decorative.
+            throw new NotFoundException("Not found.");
+        }
+        if (token.isRevoked()) {
+            // Revocation is the permanent one; if it could be undone it would be
+            // no different from letting a token lapse.
+            throw new ValidationFailure("token",
+                    "A revoked token cannot be renewed. Create a new one instead.");
+        }
+        token.setExpiresAt(TokenLifecycle.expiryFrom(Instant.now(), lifetimeMonths));
+        ServiceToken saved = tokenRepo.save(token);
+        log.info("User {} renewed service token {} until {}",
+                actor.getId(), token.getPrefix(), token.getExpiresAt());
+        return saved;
     }
 
     /** URL-safe random text; the source of both the prefix and the secret. */
@@ -143,13 +193,18 @@ public class ServiceTokenService {
         String prefix = presented.substring(0, presented.indexOf('.'));
         String secret = presented.substring(presented.indexOf('.') + 1);
 
+        Instant now = Instant.now();
         Optional<ServiceToken> found = tokenRepo.findByPrefix(prefix);
-        if (found.isEmpty() || found.get().isRevoked()
+        // Unknown, revoked, lapsed and wrong-secret are one answer. A caller
+        // learns only that this credential does not work (spec 2.8).
+        if (found.isEmpty() || found.get().isRevoked() || found.get().isExpired(now)
                 || !passwordEncoder.matches(secret, found.get().getSecretHash())) {
             return Optional.empty();
         }
         ServiceToken token = found.get();
-        token.setLastUsedAt(Instant.now());
+        // Only a call that actually worked counts as a use: the column answers
+        // "when did this last function", and a refusal is not a use.
+        token.setLastUsedAt(now);
         tokenRepo.save(token);
 
         MembershipRole role = membershipRepo

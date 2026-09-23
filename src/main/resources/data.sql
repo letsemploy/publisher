@@ -118,21 +118,41 @@ ON DUPLICATE KEY UPDATE id = id;
 -- seeded token would be a credential committed to the repository, and data.sql runs
 -- wherever the application starts.
 INSERT INTO service_tokens (id, created_at, last_modified_at, employer_id, name, prefix,
-                            secret_hash, last_used_at, revoked_at, created_by_id) VALUES
+                            secret_hash, last_used_at, expires_at, revoked_at, created_by_id) VALUES
   ('77777777-7777-4777-8777-777777777777', now(), now(), '003d6aec-021b-11f1-aefa-f649a5d91690',
    'ats-sync', 'ojp_seedonly01',
    '{bcrypt}$2a$10$//umO/HMS.9LMIbFuRqerehvXBa1t.SdsgCqpEgTpDAcUmNlxDS22',
-   NULL, NULL, '11111111-1111-4111-8111-111111111111')
+   NULL, DATE_ADD(now(), INTERVAL 12 MONTH), NULL,
+   '11111111-1111-4111-8111-111111111111')
+ON DUPLICATE KEY UPDATE id = id;
+
+-- A second token, already lapsed, so the expired state and the Reactivate
+-- control are visible in the register (spec 2.8, 7.17). created_at is backdated
+-- rather than now(): it is honest, and it keeps findByEmployerIdOrderByCreatedAtDesc
+-- deterministic, which a test relies on.
+INSERT INTO service_tokens (id, created_at, last_modified_at, employer_id, name, prefix,
+                            secret_hash, last_used_at, expires_at, revoked_at, created_by_id) VALUES
+  ('79797979-7979-4979-8979-797979797979',
+   DATE_SUB(now(), INTERVAL 13 MONTH), DATE_SUB(now(), INTERVAL 13 MONTH),
+   '003d6aec-021b-11f1-aefa-f649a5d91690',
+   'legacy-export', 'ojp_seedexpired',
+   '{bcrypt}$2a$10$//umO/HMS.9LMIbFuRqerehvXBa1t.SdsgCqpEgTpDAcUmNlxDS22',
+   DATE_SUB(now(), INTERVAL 12 MONTH), DATE_SUB(now(), INTERVAL 1 MONTH), NULL,
+   '11111111-1111-4111-8111-111111111111')
 ON DUPLICATE KEY UPDATE id = id;
 
 INSERT INTO service_token_scopes (service_token_id, scope) VALUES
   ('77777777-7777-4777-8777-777777777777', 'JOBS_WRITE'),
-  ('77777777-7777-4777-8777-777777777777', 'FEEDS_READ')
+  ('77777777-7777-4777-8777-777777777777', 'FEEDS_READ'),
+  ('79797979-7979-4979-8979-797979797979', 'JOBS_READ')
 ON DUPLICATE KEY UPDATE scope = scope;
 
 -- A token holds a membership of its own, carrying its role (spec 2.8).
 INSERT INTO memberships (id, created_at, last_modified_at, user_id, service_token_id,
                          employer_id, role) VALUES
   ('88888888-8888-4888-8888-888888888888', now(), now(), NULL,
-   '77777777-7777-4777-8777-777777777777', '003d6aec-021b-11f1-aefa-f649a5d91690', 'EDITOR')
+   '77777777-7777-4777-8777-777777777777', '003d6aec-021b-11f1-aefa-f649a5d91690', 'EDITOR'),
+  ('89898989-8989-4989-8989-898989898989',
+   DATE_SUB(now(), INTERVAL 13 MONTH), DATE_SUB(now(), INTERVAL 13 MONTH), NULL,
+   '79797979-7979-4979-8979-797979797979', '003d6aec-021b-11f1-aefa-f649a5d91690', 'EDITOR')
 ON DUPLICATE KEY UPDATE id = id;

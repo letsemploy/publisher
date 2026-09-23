@@ -290,9 +290,24 @@ owner role beside it.
   UI, logs and audit records can name a token unambiguously.
 - Presented as `Authorization: Bearer <token>`. A token in a query string would end up in access logs
   and referrer headers.
-- Revocation is **immediate** and permanent; a revoked token is never reactivated. Tokens do not expire
-  on their own — expiry that silently breaks a working integration causes outages at bad moments — so
-  the register must show when each was last used, which is what makes an unused token noticeable.
+- Revocation is **immediate** and permanent; a revoked token is never reactivated.
+- A token **expires after a configured lifetime**, 12 months by default, and an owner **renews** it.
+  Renewal keeps the **same secret** and only moves the date, so honouring an expiry costs a click and
+  no redeployment; the same act **reactivates** one that has already lapsed. `0` configures no expiry
+  at all, for an installation that wants none.
+
+  This reverses an earlier decision, and the objection that stood behind it — *expiry silently breaks a
+  working integration at a bad moment* — is answered rather than dismissed. It is answered three ways:
+  the register shows each token's date and **flags one before it lapses**; renewal changes no secret,
+  so there is nothing to redeploy under time pressure; and a lapsed token comes back in seconds instead
+  of being reissued. What remains true is that nothing **notifies** anybody (§12) — the flag is on a
+  screen an owner must visit.
+- **Expiry is evaluated when a token is used or listed, never by a background job.** A lapsed token is
+  simply one whose date has passed; nothing is written as it happens, which is why reactivating it is a
+  date change rather than an undo, and why this still needs no scheduler (§12).
+- Expired and revoked are refused **identically**, and identically to an unknown token: a caller learns
+  only that this credential does not work. The register must show when each token was **last used**,
+  which is what makes a forgotten integration noticeable — and a refused request is not a use.
 
 **What a token is not**
 
@@ -518,7 +533,8 @@ A credential that lets another system act on one employer (§2.8).
 | `secretHash` | string | **yes** | the hash of the secret. The secret itself is **never** stored |
 | `scopes` | set of enum | **yes** | from the six of §2.8; at least one |
 | `createdBy` | User | **yes** | the owner who created it; a token is always someone's decision |
-| `lastUsedAt` | instant | no | set on each accepted request; what makes a dormant token visible |
+| `lastUsedAt` | instant | no | set on each **accepted** request; what makes a dormant token visible |
+| `expiresAt` | instant | no | when it stops working; **null means never**, which a lifetime of 0 configures. Renewal moves it; nothing else does |
 | `revokedAt` | instant | no | once set the token is dead, permanently |
 
 A token's membership (§3.9) carries its role and is created and deleted with it.
@@ -957,7 +973,7 @@ Rules:
 ### 7.3 Layout
 
 A fixed left sidebar, a slim top bar and a content area — the conventional administration shell, chosen
-because the navigation is a flat set of eight destinations that must stay visible and reachable in one
+because the navigation is a flat set of nine destinations that must stay visible and reachable in one
 click while the user works down a long job list.
 
 ```
@@ -968,6 +984,7 @@ click while the user works down a long job list.
 │ ◻ Jobs       ├──────────────────────────────────────────────────┤
 │ ◻ Feeds      │                                                  │
 │ ◻ People     │   page content                                   │
+│ ◻ Tokens  ⚿  │                                                  │
 │ ◻ Employers  │                                                  │
 │ ◻ Locations  │                                                  │
 │ ◻ Tags       │                                                  │
@@ -981,12 +998,18 @@ Implemented with Tabler's vertical navbar (`navbar navbar-vertical navbar-expand
 **Sidebar** — navigation, and nothing else:
 
 - The product brand, linking to the dashboard.
-- The primary navigation: **Dashboard, Jobs, Feeds, People, Employers, Locations, Tags,
+- The primary navigation: **Dashboard, Jobs, Feeds, People, API tokens, Employers, Locations, Tags,
   Invitations**, each with a Tabler icon and label. *Employers* is visible to everyone but only offers
   create/delete to admins.
 - **People** (§7.18) covers the **active employer** (§2.5), which is why it sits beside Jobs and Feeds
   rather than under Employers: it answers "who am I working with here", the same scope those two
   answer. It is visible to every member, and what it offers depends on the membership role.
+- **API tokens** (§7.17) covers the active employer too, and is the **only entry whose visibility
+  depends on the role**: owners and admins only, because holding the list is close to holding the
+  access. It is **absent** when no employer is active, rather than showing an empty state as People
+  does — People is visible to every member, so an empty state is honest, whereas with no employer
+  selected there is no ownership question to answer. An admin who chooses *All employers* therefore
+  does not see it, and reaches a specific employer's tokens from the employer record.
 - **Invitations** (§7.16) carries a count badge when any are pending. It stays visible when there are
   none: a user with no employer memberships has nothing else to do, and an entry that disappears when
   empty cannot be found by someone who wants to check whether an invitation ever arrived.
@@ -1257,10 +1280,17 @@ that does it. It must not read like an error, and it must not imply they are stu
 Managing an employer's service tokens (§2.8). **Owners only** — an editor never sees it, because
 holding the list is close to holding the access.
 
+A **sidebar destination** covering the active employer (§7.3), and reachable per-employer from the
+employer record. It is the one navigation entry whose visibility depends on the role.
+
 **List** — every token: its name, its role, its scopes, the public prefix, who created it, when it was
-created, and **when it was last used**. Last-used is the column that earns its place: it is how a
-forgotten integration becomes visible, and a token that has not been used in months is the one to
-revoke.
+created, **when it was last used**, and **when it expires**. Last-used is the column that earns its
+place: it is how a forgotten integration becomes visible, and a token that has not been used in months
+is the one to revoke. Each row shows its state — active, expiring soon, expired or revoked.
+
+**Renew** — on every token that is not revoked, whether or not it is near its date; an owner tidying up
+before a change freeze should not be told to come back later. On a lapsed token the same control reads
+**Reactivate**. It needs no confirmation: it is additive and reversible, unlike revoking.
 
 **Create** — a name, a role (§2.1) and a set of scopes, with the scopes explained in terms of what they
 let a caller *do* rather than by their identifiers. `people:write` **must** carry a plain warning that
@@ -1271,8 +1301,9 @@ that it cannot be retrieved again. The screen offers to copy it and says what to
 revoke and create another. It **must not** appear in any later view, in the list, or in a log.
 
 **Revoke** — confirmed through the §7.4 modal, naming the token and stating that anything using it will
-begin failing immediately. Revocation is permanent; the token stays in the list, marked revoked, so the
-audit trail still resolves (§3.10).
+begin failing immediately **and that, unlike an expired token, a revoked one cannot be renewed**. Now
+that lapsing is recoverable, the modal has to say which of the two this is. Revocation is permanent; the
+token stays in the list, marked revoked, so the audit trail still resolves (§3.10).
 
 **Empty state** — per §7.6, explaining what a token is for and that it lets another system act on this
 employer without a person signing in.
@@ -1372,7 +1403,10 @@ may exist is a question the application has to answer rather than leave to good 
   raising it is a configuration change. One rule, one code path, no privileged bypass.
 - **What counts.** Jobs: every row, `DRAFT`, `ACTIVE` and `INACTIVE` alike — a draft occupies storage
   and a slot. Tokens: **non-revoked only**, because revoking retains the row for the audit trail
-  (§3.10) and must therefore be the way back under the limit. Members and memberships: **people only** —
+  (§3.10) and must therefore be the way back under the limit. An **expired** token still counts: it is
+  one click from live again (§2.8), so treating it as free would let an employer hold a reserve of
+  lapsed credentials and flip between them, and would make renewing a lapsed token something the quota
+  could refuse — on the one screen whose purpose is to un-break an integration. Members and memberships: **people only** —
   a service token holds a membership (§2.8) but is not a colleague.
 - **Refusal is a validation failure**, carried to the form or the flash on the web and to `userErrors`
   with the stable code `QUOTA_REACHED` through the API (§11.4). It is an expected outcome of a
@@ -1657,10 +1691,15 @@ because its consumers are anonymous and unreachable; API clients hold tokens, so
    large list while jobs are being created or retired can see a row twice or miss one. A stable total
    ordering bounds the damage but does not remove it. Whether the API needs cursor connections, or a
    way to page a fixed snapshot, is deferred until a client is actually affected.
-11. **Token expiry and rotation.** Tokens do not expire (§2.8); the register surfaces last-used instead.
-   Whether long-lived credentials should be forced to rotate, and how an integration would rotate
-   without an outage, is unspecified — as is whether an unused token should eventually be disabled
-   automatically.
+11. **Token rotation, and noticing an expiry.** Expiry now exists (§2.8), but it deliberately does not
+   force **rotation**: renewal keeps the same secret, which is what makes it free of an outage, so a
+   leaked secret stays valid as long as someone keeps renewing. Whether renewal should be able to issue
+   a *new* secret with an overlap window, so an integration can move across without downtime, is still
+   open. Two smaller questions come with it: nothing **notifies** anyone that a token is about to
+   lapse — the warning is a flag on a screen an owner has no routine reason to visit, and a dashboard
+   card or a sidebar badge is the obvious read-time answer — and whether a merely **unused** token
+   should be disabled automatically, which unlike expiry really would need the scheduler item 4
+   declines.
 12. **Reading through the API versus the feed.** The API can read an employer's jobs, and the published
    feed exposes the same postings anonymously (§5). Whether consumers should be pushed toward the feed
    for reads, and the API narrowed toward management, is worth deciding before both grow clients.

@@ -1,5 +1,6 @@
 package org.letsemploy.ojobpub_publisher.web;
 
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
@@ -15,6 +16,7 @@ import org.letsemploy.ojobpub_publisher.location.Location;
 import org.letsemploy.ojobpub_publisher.membership.Membership;
 import org.letsemploy.ojobpub_publisher.security.UserEntity;
 import org.letsemploy.ojobpub_publisher.token.ServiceToken;
+import org.letsemploy.ojobpub_publisher.token.TokenLifecycle;
 import org.letsemploy.ojobpub_publisher.tag.Tag;
 import org.letsemploy.ojobpub_publisher.web.view.*;
 import org.springframework.beans.factory.annotation.Value;
@@ -164,12 +166,14 @@ public class Views {
                 membership.getRole().name().toLowerCase(), lastOwner);
     }
 
-    public TokenRow tokenRow(ServiceToken token) {
+    public TokenRow tokenRow(ServiceToken token, Instant now, int warningDays) {
         return new TokenRow(token.getId().toString(), token.getName(), token.getPrefix(),
                 token.getScopes().stream().map(s -> s.name().toLowerCase()).sorted().toList(),
                 displayName(token.getCreatedBy()),
                 TIMESTAMP.format(token.getCreatedAt()),
                 token.getLastUsedAt() == null ? null : TIMESTAMP.format(token.getLastUsedAt()),
+                token.getExpiresAt() == null ? null : TIMESTAMP.format(token.getExpiresAt()),
+                TokenLifecycle.state(token, now, warningDays).name().toLowerCase(),
                 token.isRevoked());
     }
 

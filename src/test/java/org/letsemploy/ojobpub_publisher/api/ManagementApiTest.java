@@ -67,6 +67,8 @@ class ManagementApiTest {
     private ObjectMapper json;
     @Autowired
     private JdbcTemplate jdbc;
+    @Autowired
+    private org.letsemploy.ojobpub_publisher.token.ServiceTokenRepo tokenRepo;
 
     /** Employers cascade to their feeds, memberships and tokens. */
     @AfterEach
@@ -115,6 +117,37 @@ class ManagementApiTest {
     void anUnknownTokenIsIndistinguishableFromARevokedOne() throws Exception {
         assertThat(firstErrorCode(query("ojp_nosuchtoken.whatever", "{ employer { name } }")))
                 .isEqualTo("UNAUTHENTICATED");
+    }
+
+    /**
+     * Expired joins unknown and revoked in giving one answer. If a lapsed token
+     * answered differently, a caller holding a guessed prefix would learn that
+     * the prefix exists - the oracle the test above exists to prevent.
+     */
+    @Test
+    void anExpiredTokenIsIndistinguishableFromAnUnknownOne() throws Exception {
+        String secret = tokenWith(TokenScope.JOBS_READ);
+        String prefix = secret.substring(0, secret.indexOf('.'));
+        // Set through the entity, not with a JDBC Timestamp: the database runs in
+        // UTC and the host need not, and the driver converts a Timestamp with the
+        // host's zone - which silently writes an expiry in the future.
+        var token = tokenRepo.findByPrefix(prefix).orElseThrow();
+        token.setExpiresAt(java.time.Instant.now().minusSeconds(60));
+        tokenRepo.save(token);
+
+        String expired = mvc.perform(post("/graphql")
+                        .header("Authorization", "Bearer " + secret)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"query\":\"{ employer { name } }\"}"))
+                .andReturn().getResponse().getContentAsString();
+        String unknown = mvc.perform(post("/graphql")
+                        .header("Authorization", "Bearer ojp_nosuchtoken.whatever")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"query\":\"{ employer { name } }\"}"))
+                .andReturn().getResponse().getContentAsString();
+        assertThat(expired)
+                .as("byte for byte, or it is not indistinguishable")
+                .isEqualTo(unknown);
     }
 
     /** No GET execution: a query must not be triggerable by a link (spec 11.2). */

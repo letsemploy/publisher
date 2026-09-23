@@ -231,6 +231,39 @@ class QuotaEnforcementTest {
                 .hasSizeGreaterThan((int) before);
     }
 
+    /**
+     * An expired token still occupies a slot, because it is one click from live
+     * again (spec 8.4). Only revoking means "gone", which is what makes revoking
+     * the way back under the quota - and what stops an employer holding ten live
+     * tokens plus a reserve of lapsed ones to flip between.
+     */
+    @Test
+    void anExpiredTokenStillCountsBecauseItCanBeRenewed() {
+        ServiceToken live = tokenRepo.findByEmployerIdOrderByCreatedAtDesc(acme.getId()).stream()
+                .filter(t -> !t.isRevoked()).findFirst().orElseThrow();
+        live.setExpiresAt(java.time.Instant.now().minusSeconds(60));
+        tokenRepo.save(live);
+
+        assertThatThrownBy(() -> tokenService.create(acme.getId(), "after-expiry",
+                MembershipRole.EDITOR, Set.of(TokenScope.JOBS_READ), admin))
+                .isInstanceOf(ValidationFailure.class)
+                .hasMessageContaining("limit.tokens");
+    }
+
+    /**
+     * And renewing one is never refused for being at the cap: the quota governs
+     * creating, not repairing something that already exists (spec 8.4).
+     */
+    @Test
+    void renewingAtTheCapIsNotRefused() {
+        ServiceToken live = tokenRepo.findByEmployerIdOrderByCreatedAtDesc(acme.getId()).stream()
+                .filter(t -> !t.isRevoked()).findFirst().orElseThrow();
+        live.setExpiresAt(java.time.Instant.now().minusSeconds(60));
+        tokenRepo.save(live);
+
+        assertThatCode(() -> tokenService.renew(live.getId(), admin)).doesNotThrowAnyException();
+    }
+
     // ---------------------------------------------------------- members
 
     /**

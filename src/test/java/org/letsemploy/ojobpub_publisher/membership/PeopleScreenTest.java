@@ -98,6 +98,25 @@ class PeopleScreenTest {
     }
 
     /**
+     * The API tokens destination is the first nav entry whose visibility depends
+     * on the role (spec 7.3, 7.17). An unconditional {@code nav.add} would pass
+     * every other test in the suite, so this is the one that catches it.
+     */
+    @Test
+    void anEditorIsNotOfferedApiTokensInTheSidebar() throws Exception {
+        String body = people("/people");
+        String sidebar = body.substring(0, body.indexOf("</aside>"));
+        assertThat(sidebar).doesNotContain("/tokens");
+    }
+
+    /** And hiding it is presentation only - the service still refuses. */
+    @Test
+    void anEditorCannotReachTheTokensScreen() throws Exception {
+        mvc.perform(get("/employers/" + EMPLOYER + "/tokens"))
+                .andExpect(status().isNotFound());
+    }
+
+    /**
      * Hiding the controls is presentation; the refusal is in the service. An
      * editor posting the invite directly is refused as a non-owner, and with 404
      * rather than 403 (spec 2.4).

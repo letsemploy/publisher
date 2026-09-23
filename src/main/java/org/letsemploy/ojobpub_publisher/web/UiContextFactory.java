@@ -7,6 +7,7 @@ import lombok.RequiredArgsConstructor;
 import org.letsemploy.ojobpub_publisher.employer.Employer;
 import org.letsemploy.ojobpub_publisher.employer.EmployerService;
 import org.letsemploy.ojobpub_publisher.invitation.InvitationService;
+import org.letsemploy.ojobpub_publisher.membership.MembershipService;
 import org.letsemploy.ojobpub_publisher.security.Actor;
 import org.letsemploy.ojobpub_publisher.security.CurrentUserService;
 import org.letsemploy.ojobpub_publisher.web.view.NavItem;
@@ -30,6 +31,7 @@ public class UiContextFactory {
     private final EmployerService employerService;
     private final EmployerContext employerContext;
     private final InvitationService invitationService;
+    private final MembershipService membershipService;
 
     public UiContext build(HttpServletRequest request) {
         Actor user = currentUserService.current();
@@ -37,7 +39,7 @@ public class UiContextFactory {
         Ref active = activeEmployer(employers);
 
         String path = request.getRequestURI();
-        List<NavItem> nav = List.of(
+        List<NavItem> nav = new java.util.ArrayList<>(List.of(
                 new NavItem("layout-dashboard", "nav.dashboard", "/", path.equals("/")),
                 new NavItem("briefcase", "nav.jobs", "/jobs", path.startsWith("/jobs")),
                 new NavItem("rss", "nav.feeds", "/feeds", path.startsWith("/feeds")),
@@ -50,7 +52,16 @@ public class UiContextFactory {
                 // Stays visible when empty: a user with no memberships has nothing
                 // else to do, and an entry that vanishes cannot be checked (spec 7.3).
                 new NavItem("mail", "nav.invitations", "/invitations",
-                        path.startsWith("/invitations")));
+                        path.startsWith("/invitations"))));
+
+        // The one destination whose visibility depends on the role, and the one
+        // that needs an employer to be about: holding the token list is close to
+        // holding the access (spec 7.17), and with no employer selected there is
+        // neither a subject to show nor a role to check.
+        if (active != null
+                && membershipService.canAdminister(user, UUID.fromString(active.getId()))) {
+            nav.add(4, new NavItem("key", "nav.tokens", "/tokens", path.startsWith("/tokens")));
+        }
 
         return new UiContext(user.getDisplayName(), user.isAdmin(),
                 currentUserService.isDevMode(), employerContext.getTheme(),

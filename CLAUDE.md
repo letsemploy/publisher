@@ -75,6 +75,11 @@ carries field errors back to a form; `NotFoundException` is unchecked and handle
 - `ojobpub/v1/service/OjobpubEnums.java` — explicit mapping for every published enum. **Never** derive a
   published value with `name().toLowerCase()`: the schema wants `on-site`, which that produces as
   `on_site`.
+- `token/TokenLifecycle.java` — when a token lapses and what it presents as (§2.8): ACTIVE, EXPIRING,
+  EXPIRED, REVOKED. Static and clock-taking like `Publication`, and for the same reason — expiry is
+  derived at read time and **nothing is written as a token lapses**, which is what makes reactivating
+  one a date change rather than an undo, and what keeps this project free of a scheduler. Revoked
+  outranks expired: one is permanent, the other is not.
 - `common/ResourceLimits.java` — the six creation quotas of §8.4 and, more importantly, the two rules
   around them: **`0` means unlimited**, and a quota refuses **at** the cap. Spread across six services
   those get written six times and one of them forgets the zero, turning "unlimited" into "none". It
@@ -200,7 +205,15 @@ wrong layer.
   in-memory and per instance.
 
 **Service tokens** (`token/`) belong to an employer, never to a person; only an owner may create one,
-and a token may never mint another. The secret is shown once and stored hashed with a delegating
+and a token may never mint another — **nor renew one**, including itself, which would make it immortal
+and the expiry decorative.
+
+Tokens **expire** after `app.tokens.lifetime-months` (12; `0` = never) and an owner renews them.
+**Renewal keeps the secret** and only moves the date, so nothing is redeployed; the same act reactivates
+a lapsed token, and it extends from *now*, not from the old date. A revoked token can never be renewed —
+that is the whole distinction between the two. `authenticate` refuses expired, revoked and unknown
+identically, and a refused call must **not** stamp `lastUsedAt`: that column answers "when did this last
+work". An expired token still counts toward the per-employer quota (§8.4). The secret is shown once and stored hashed with a delegating
 password encoder; the public `prefix` names the token in logs and the register. Revoking sets
 `revokedAt` and never deletes, so the audit trail still resolves. A token holds a `Membership` of its
 own and never satisfies the last-owner rule — which is why `MembershipRepo` counts owners with
@@ -228,6 +241,11 @@ code **`QUOTA_REACHED`** — deliberately not `LIMIT_*`, because `ApiErrorCodes`
 `errors` rather than data in `userErrors`. `ApiErrors.message()` resolves `limit.*` through the bundles,
 so **those bundle entries must contain no `{0}` placeholders** — it calls `getMessage` with no
 arguments and a parameter would render literally.
+
+**The test database runs in UTC and the host may not.** Writing an `Instant` with a raw JDBC
+`Timestamp` converts it using the *host* zone, so "a minute ago" can land hours in the future and a
+token you meant to expire stays valid. Set temporal fields through the entity and the repository, as
+`ServiceTokenExpiryTest` does.
 
 A test that creates rows and is **not** `@Transactional` must clean up in `@AfterEach`, or its leftovers
 count against a quota in some later class and fail it for reasons that look unrelated. `ApiQuotaTest`
@@ -294,9 +312,15 @@ advice would fail to render and turn every 404 into a 500.
 `ScreenRenderingTest.notFoundRendersTheErrorPage` guards it.
 
 Each controller supplies its own `page` (`PageMeta`); one that forgets it will not render. A new
-sidebar destination is added in `UiContextFactory` — there are eight: Dashboard, Jobs, Feeds, People,
-Employers, Locations, Tags, Invitations. Its icon name lives in the `NavItem`, so a new one
+sidebar destination is added in `UiContextFactory` — there are nine: Dashboard, Jobs, Feeds, People,
+API tokens, Employers, Locations, Tags, Invitations. Its icon name lives in the `NavItem`, so a new one
 needs `make assets` to reach the sprite.
+
+**API tokens is the only role-conditional entry**, added to a mutable list only when an employer is
+active *and* the actor administers it. Two consequences worth knowing: a nav item renders on every
+screen, so a missing `nav.*` key in either bundle fails the unresolved-key assertion for *every* path
+at once; and an unconditional `nav.add` passes every test except
+`PeopleScreenTest.anEditorIsNotOfferedApiTokensInTheSidebar`, which exists for that reason.
 
 Where a screen has an htmx fragment variant, it is a second `@GetMapping` on the **same** controller
 annotated `@HxRequest(boosted = false)` returning a fragment selector (`"tag/fragments/table :: table"`).
@@ -328,6 +352,8 @@ enforced it.) Controllers pass message *keys* as flash attributes and templates 
 ./mvnw test -Dtest=ResourceLimitsTest        # the quota convention; no Spring, no database
 ./mvnw test -Dtest=QuotaEnforcementTest      # the six quotas against the seed data
 ./mvnw test -Dtest=MessageBundleTest         # the two bundles, at parity
+./mvnw test -Dtest=TokenLifecycleTest        # the expiry boundaries; no Spring, no database
+./mvnw test -Dtest=ServiceTokenExpiryTest    # expiry, renewal and what renewal must not touch
 make assets                                  # refresh vendored front-end deps (needs Node)
 ```
 

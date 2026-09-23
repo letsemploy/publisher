@@ -49,8 +49,20 @@ public class ServiceToken extends Base {
     @Column(name = "last_used_at")
     private Instant lastUsedAt;
 
+    /**
+     * When this token stops working, or null for never (spec 2.8). Nothing writes
+     * it as time passes; a lapsed token is simply one whose date is behind us.
+     */
+    @Column(name = "expires_at")
+    private Instant expiresAt;
+
     @Column(name = "revoked_at")
     private Instant revokedAt;
+
+    /** Past its date. Recoverable, unlike {@link #isRevoked()}. */
+    public boolean isExpired(Instant now) {
+        return expiresAt != null && !expiresAt.isAfter(now);
+    }
 
     public boolean isRevoked() {
         return revokedAt != null;

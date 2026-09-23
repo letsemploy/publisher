@@ -58,7 +58,7 @@ class ScreenRenderingTest {
                 "/employers/" + EMPLOYER + "/update",
                 "/locations", "/locations/create",
                 "/tags", "/tags/create", "/tags?q=jav",
-                "/invitations", "/people",
+                "/invitations", "/people", "/tokens",
                 "/employers/" + EMPLOYER + "/people",
                 "/employers/" + EMPLOYER + "/people/members/" + MEMBER + "/remove",
                 "/employers/" + EMPLOYER + "/tokens",
@@ -234,6 +234,14 @@ class ScreenRenderingTest {
                 .contains("Schema valid");
     }
 
+    /** Owners get the API tokens destination; the sidebar is where it is found. */
+    @Test
+    void theSidebarOffersApiTokensToAnOwner() throws Exception {
+        String body = html("/jobs");
+        String sidebar = body.substring(0, body.indexOf("</aside>"));
+        assertThat(sidebar).contains("/tokens").contains("API tokens");
+    }
+
     /**
      * The other half of {@code PeopleScreenTest}, which renders this screen as an
      * editor: an owner must still get everything. The two together are what keep
@@ -275,6 +283,11 @@ class ScreenRenderingTest {
                 .contains("ojp_seedonly01")
                 .contains("jobs:write")
                 .contains("Never used")
+                // The seed carries a lapsed token so the state and its recovery
+                // are actually rendered, not merely possible (spec 2.8).
+                .contains("legacy-export")
+                .contains("expired")
+                .contains("Reactivate")
                 .contains("Manage people lets whatever holds this token")
                 .doesNotContain("secret_hash")
                 .doesNotContain("$2a$");
