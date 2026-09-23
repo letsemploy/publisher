@@ -9,7 +9,7 @@ import org.springframework.test.context.ActiveProfiles;
  * security configuration resolves.
  */
 @SpringBootTest
-@ActiveProfiles({"dev", "test"})
+@ActiveProfiles(resolver = TestProfiles.class)
 class ApplicationTests {
 
     @Test

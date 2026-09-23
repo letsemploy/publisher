@@ -1,4 +1,5 @@
--- Demo data, loaded under the dev profile only and idempotent (spec 9.3).
+-- Demo data for MariaDB, loaded under the dev and test profiles and idempotent
+-- (spec 9.3). data-sqlite.sql holds the same rows; change both together.
 
 INSERT INTO locations (id, created_at, last_modified_at, city, country) VALUES
   ('2c2e59d5-0b1a-11f1-938c-42a3421a666f', now(), now(), 'Bern', 'CH'),
@@ -115,7 +116,7 @@ ON DUPLICATE KEY UPDATE id = id;
 --
 -- The hash is of a random secret that was generated and discarded, so this row is
 -- deliberately NOT a usable credential: nothing authenticates against it. A working
--- seeded token would be a credential committed to the repository, and data.sql runs
+-- seeded token would be a credential committed to the repository, and the seed runs
 -- wherever the application starts.
 INSERT INTO service_tokens (id, created_at, last_modified_at, employer_id, name, prefix,
                             secret_hash, last_used_at, expires_at, revoked_at, created_by_id) VALUES

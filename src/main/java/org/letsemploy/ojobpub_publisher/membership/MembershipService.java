@@ -1,6 +1,7 @@
 package org.letsemploy.ojobpub_publisher.membership;
 
 import java.time.Instant;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -31,12 +32,25 @@ public class MembershipService {
     private final MembershipRepo membershipRepo;
     private final ResourceLimits limits;
 
-    /** People only; a token's membership is managed on its own screen (spec 7.17). */
+    /**
+     * People only; a token's membership is managed on its own screen (spec 7.17).
+     * Owners first, then by name.
+     *
+     * <p>Sorted here, not in SQL: MariaDB orders an ENUM column by declaration,
+     * which put owners first, but SQLite stores the role as text and would put
+     * EDITOR before OWNER (spec 9.3). The enum's own order is the same everywhere.
+     */
     public List<Membership> membersOf(UUID employerId) {
-        return membershipRepo.findByEmployerIdOrderByRoleAscUserDisplayNameAsc(employerId).stream()
+        return membershipRepo.findByEmployerId(employerId).stream()
                 .filter(Membership::isHeldByUser)
+                .sorted(MEMBER_ORDER)
                 .toList();
     }
+
+    private static final Comparator<Membership> MEMBER_ORDER =
+            Comparator.comparing(Membership::getRole)
+                    .thenComparing(m -> m.getUser().getDisplayName(),
+                            Comparator.nullsLast(String.CASE_INSENSITIVE_ORDER));
 
     public List<Membership> of(UUID userId) {
         return membershipRepo.findByUserId(userId);

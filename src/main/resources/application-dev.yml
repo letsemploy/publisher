@@ -3,8 +3,8 @@ spring:
     enabled: true
     baselineOnMigrate: true
     validateOnMigrate: true
-    locations: classpath:db/migration
     table: migrations
+  # MariaDB unless the sqlite profile is active too; that one reads this path.
   datasource:
     url: jdbc:mariadb://127.0.0.1:${DB_PORT:3307}/ojobpub_publisher_dev?createDatabaseIfNotExist=true
     driver-class-name: org.mariadb.jdbc.Driver
@@ -27,6 +27,9 @@ spring:
         enabled: true
     graphiql:
       enabled: true
+app:
+  sqlite:
+    path: data/ojobpub_dev.db
 logging:
   level:
     org:

@@ -14,7 +14,8 @@ comments cite it as `spec 4.3`, and that is the fastest way to find the rule beh
 
 ## Commands
 
-MariaDB is required to run *and* to test. `podman-compose up -d` (or `docker compose up -d`) brings up
+Two databases (§9.3): **MariaDB**, the default, and **SQLite** for a single-instance installation — see
+**Two databases** under Architecture. With MariaDB, a server is needed to run *and* to test. `podman-compose up -d` (or `docker compose up -d`) brings up
 `docker-compose.yml`: the `db` service on **3307** (root/root) and adminer on **8082**.
 
 **Not 3306, deliberately.** Other projects on the same machine publish 3306 and 8081, and sharing one
@@ -28,15 +29,19 @@ The container is `ojobpub-publisher_db_1`; the compose *service* is `db`, so it 
 
 ```bash
 ./mvnw spring-boot:run -Dspring-boot.run.profiles=dev   # http://localhost:8080
+./mvnw spring-boot:run -Dspring-boot.run.profiles=dev,sqlite  # same, on data/ojobpub_dev.db, no server
 ./mvnw package                                          # build jar (runs tests)
-./mvnw test                                             # all tests
+./mvnw test                                             # all tests, on MariaDB
+TEST_DB=sqlite ./mvnw clean test                        # all tests, on SQLite (target/publisher_test.db)
 ./mvnw test -Dtest=MembershipServiceTest                # one class
 ./mvnw test -Dtest=TagServiceTest#namesAreNormalised    # one method
 ./mvnw versions:display-dependency-updates              # or: make check-mvn-updates
 ```
 
 The `dev` profile is not active by default and the app will not start without it: `application-dev.yml`
-holds the only datasource configuration (database `ojobpub_publisher_dev`). It also bypasses
+holds the only MariaDB datasource configuration (database `ojobpub_publisher_dev`). A deployment either
+sets `SPRING_DATASOURCE_*` for MariaDB or runs with `SPRING_PROFILES_ACTIVE=sqlite` and
+`APP_SQLITE_PATH` on a volume. It also bypasses
 authentication (§2.3) — see **Authentication** below.
 
 JobRunr's dashboard binds port 8000 whenever the app runs. Actuator and the Prometheus registry are on
@@ -263,9 +268,10 @@ a run killed before its cleanup would otherwise poison the next one.
 
 ### Persistence
 
-- Flyway owns the schema (`src/main/resources/db/migration`, history table `migrations`);
-  `hibernate.ddl-auto: none`. Schema changes need a new `V<n>__*.sql` — never rely on JPA DDL, and
-  never edit an applied migration.
+- Flyway owns the schema (`src/main/resources/db/migration/{vendor}`, history table `migrations`);
+  `hibernate.ddl-auto: none`. Schema changes need a new `V<n>__*.sql` **in both `mariadb/` and
+  `sqlite/`** — never rely on JPA DDL, and never edit an applied migration. `MigrationParityTest`
+  fails the build if a version exists in one folder only.
 - `common/Base` is the `@MappedSuperclass` for UUID-keyed entities with `createdAt`/`lastModifiedAt`:
   `Employer`, `Job`, `Location`, `Feed`, `Invitation`, `Membership`, `UserEntity`. `Tag` is the
   exception (numeric identity id), as is `JobStatusEvent`.
@@ -273,8 +279,34 @@ a run killed before its cleanup would otherwise poison the next one.
   `CountryCode` whose constant names *are* the ISO alpha-2 codes, so the stored value is the published
   value.
 - Job↔tag and job↔location are plain `@ManyToMany` join tables; there are no link entities.
-- `data.sql` seeds demo rows on every start (`spring.sql.init.mode: always`) using
-  `ON DUPLICATE KEY UPDATE`, so it is MariaDB-specific and must stay idempotent.
+- `data-mariadb.sql` and `data-sqlite.sql` seed the same demo rows, with the same fixed ids, on every
+  dev and test start (`spring.sql.init.mode: always`; `spring.sql.init.platform` picks the file). Both
+  must stay idempotent — `ON DUPLICATE KEY UPDATE` on one, `ON CONFLICT DO NOTHING` on the other, never
+  `INSERT OR IGNORE`, which also swallows CHECK violations. **Edit both together.** A stale
+  `target/classes/data.sql` from before the split is loaded as well, so after pulling this change
+  build with `clean` once.
+
+### Two databases (§9.3)
+
+MariaDB is the reference; SQLite is the `sqlite` profile (`application-sqlite.yml`). Nothing in
+`src/main/java` knows which one is in use, and that is the rule to keep: **no native SQL**, and nothing
+that relies on a MariaDB-only behaviour. What makes SQLite behave the same is all in configuration and
+the schema, and each piece fails *silently* if lost:
+
+- **`foreign_keys=on`** on the JDBC URL. SQLite enforces foreign keys per connection, only when asked;
+  without it every cascade stops and deletes leave orphans.
+- **`date_class=TEXT`** on the URL. The driver's default is epoch milliseconds, and in SQLite every
+  number sorts before every text value, so the date window (§4.4) would compare garbage. Instants and
+  dates are text `yyyy-MM-dd HH:mm:ss.SSS` (instants in UTC), and `data-sqlite.sql` writes exactly
+  that — `'2026-11-01 00:00:00.000'`, not `'2026-11-01'`, which neither compares equal nor parses back.
+- **`preferred_uuid_jdbc_type: CHAR`**, so UUIDs are lower-case text matching the seed's literals.
+- **Money is `TEXT`** in the SQLite schema: `NUMERIC` affinity would turn 85000.50 into a float.
+- **Enums are `TEXT CHECK (… IN …)`** and case-insensitive names are `COLLATE NOCASE` (ASCII only).
+- **Never sort by an enum column in SQL.** MariaDB orders an `ENUM` by declaration, SQLite
+  alphabetically — which is why `MembershipService.membersOf` sorts owners first in Java.
+
+`config/SqliteConfig` creates the database file's directory, reading the path from the datasource URL.
+One instance only: SQLite has one writer (`busy_timeout` makes others wait).
 - The feed serving path loads jobs with locations and tags in a bounded number of queries. An N+1
   there is a defect.
 
@@ -351,6 +383,8 @@ enforced it.) Controllers pass message *keys* as flash attributes and templates 
 
 ```bash
 ./mvnw test                                  # all; needs MariaDB
+TEST_DB=sqlite ./mvnw test                   # all, on SQLite; no server
+./mvnw test -Dtest=MigrationParityTest       # both migration folders advance together; no database
 ./mvnw test -Dtest=OjobpubConformanceTest    # the build gate; no Spring, no database
 ./mvnw test -Dtest=ScreenRenderingTest       # renders every screen against the seed data
 ./mvnw test -Dtest=InvitationServiceTest     # consent and non-disclosure
@@ -374,16 +408,16 @@ contract. Plain unit test — no Spring context, no database, no profile.
 `ScreenRenderingTest` renders every screen through the production controllers and asserts the section 7
 rules that are checkable in markup (no unresolved message keys, no CDN or inline script, `hx-boost`,
 skip link, `aria-current`, preserved input on validation errors, status words not just colours). It
-references the fixed UUIDs in `data.sql`, so **a new screen must be added to `everyScreen()`**.
+references the fixed UUIDs in the seed, so **a new screen must be added to `everyScreen()`**.
 
-There is no preview harness and no fixture data: screens run against the real controllers and
-`data.sql`. The seed deliberately covers all five publication states — including an `INACTIVE` job and
+There is no preview harness and no fixture data: screens run against the real controllers and the
+seed (`data-mariadb.sql` / `data-sqlite.sql`). The seed deliberately covers all five publication states — including an `INACTIVE` job and
 an `ACTIVE` one with no location, which presents as `INCOMPLETE` and is excluded from the feed — and
 three users: the dev admin (owner of Acme), `member@example.com` (editor) and `editor@example.com` (no
 membership, one pending invitation). It also seeds one service token so the API tokens screen has a
 row; its `secret_hash` is of a secret that was generated and discarded, so the row is **not** a usable
-credential — `data.sql` runs wherever the application starts. Keep that coverage when editing
-`data.sql`, or the tests lose it.
+credential — the seed runs wherever the dev or test profile starts. Keep that coverage, **in both
+files**, or the tests lose it on one database.
 
 Test configuration lives in `src/test/resources/application-test.yml` (profile `test`), pointing at
 `publisher_test` and disabling JobRunr. **It must stay profile-specific.** A plain
@@ -397,14 +431,19 @@ screen as somebody else, override the actor: `PeopleScreenTest` replaces `Curren
 `@MockitoBean` and returns an editor. Do that whenever a screen shows different things to different
 roles, and assert **both** directions — what the role sees and what it must not.
 
-Back-office tests use `@ActiveProfiles({"dev", "test"})`: `dev` provides the authentication bypass,
-`test` is listed second so its datasource wins over the dev one. CI provisions `publisher_test` on a
-MariaDB service container and sets `DB_PORT=3306`; locally it defaults to 3307 (see **Commands**).
+Back-office tests use `@ActiveProfiles(resolver = TestProfiles.class)`, which resolves to `dev, test`:
+`dev` provides the authentication bypass, `test` is listed second so its datasource wins over the dev
+one. With `TEST_DB=sqlite` it appends `sqlite`, which outranks both — that is the only switch, so a new
+Spring test must use the resolver rather than naming profiles, or it will silently stay on MariaDB. CI
+runs the suite twice, as a matrix: MariaDB (`publisher_test` on a service container, `DB_PORT=3306`;
+locally 3307, see **Commands**) and SQLite.
 
 ## Known loose ends
 
 - **Configured but unused.** JobRunr has no jobs and `@EnableScheduling` has no scheduled methods.
   Nothing here needs a scheduler by design: the job date window is evaluated at serving time.
+- **SQLite folds case for ASCII only.** "Zürich" and "zürich" are distinct there and equal on MariaDB,
+  so a tag or city differing only in a non-ASCII capital can exist twice on SQLite.
 - **MariaDB DDL is not transactional.** A migration that fails halfway leaves the schema half-changed
   and the `migrations` row marked failed, and every later start fails on the part that did apply. It
   will not rename a column a foreign key still points at, either — drop the key, rename, re-add, which

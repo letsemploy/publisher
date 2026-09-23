@@ -8,6 +8,7 @@ import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
+import org.letsemploy.ojobpub_publisher.TestProfiles;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.data.domain.PageRequest;
@@ -25,7 +26,7 @@ import org.springframework.transaction.annotation.Transactional;
  * These tests assert they agree for every job in the database.
  */
 @SpringBootTest
-@ActiveProfiles({"dev", "test"})
+@ActiveProfiles(resolver = TestProfiles.class)
 @Transactional  // the Java rule reads job.locations, which is lazy; keep a session open
 class PublicationFilterTest {
 

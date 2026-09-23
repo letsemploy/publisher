@@ -9,6 +9,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
+import org.letsemploy.ojobpub_publisher.TestProfiles;
 import org.letsemploy.ojobpub_publisher.membership.MembershipRole;
 import org.letsemploy.ojobpub_publisher.security.Actor;
 import org.letsemploy.ojobpub_publisher.token.ServiceTokenService;
@@ -31,7 +32,7 @@ import org.springframework.test.web.servlet.MockMvc;
  */
 @SpringBootTest
 @AutoConfigureMockMvc
-@ActiveProfiles({"dev", "test"})
+@ActiveProfiles(resolver = TestProfiles.class)
 @TestPropertySource(properties = {
         "app.limits.jobs-per-employer=6",
         "app.limits.tokens-per-employer=0",

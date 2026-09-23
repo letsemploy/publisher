@@ -1,0 +1,42 @@
+# SQLite instead of MariaDB, for a single-instance installation (spec 9.3).
+#
+#   SPRING_PROFILES_ACTIVE=sqlite  APP_SQLITE_PATH=/data/ojobpub.db
+#
+# One file, no database server. One instance only: SQLite has a single writer,
+# and the API rate limiter is already per instance (spec 11.6).
+#
+# Every connection property below changes what is stored or enforced, so none of
+# them is a tuning knob:
+#
+# * foreign_keys=on - SQLite enforces foreign keys only when each connection asks.
+#   Without it every ON DELETE CASCADE silently stops working and deleting an
+#   employer leaves its jobs, feeds and memberships behind.
+# * date_class=TEXT - dates and instants are written as 'yyyy-MM-dd HH:mm:ss.SSS'
+#   text, which sorts correctly. The default is epoch milliseconds, and the seed
+#   and migrations would then be comparing numbers with text (see V6__baseline.sql).
+# * journal_mode=WAL, busy_timeout - readers do not block the writer, and a second
+#   writer waits for the first instead of failing with SQLITE_BUSY.
+spring:
+  datasource:
+    url: "jdbc:sqlite:${app.sqlite.path:data/ojobpub.db}?foreign_keys=on&date_class=TEXT&journal_mode=WAL&busy_timeout=10000"
+    driver-class-name: org.sqlite.JDBC
+    username: ""
+    password: ""
+    hikari:
+      maximum-pool-size: 4
+  flyway:
+    enabled: true
+    table: migrations
+    baselineOnMigrate: true
+    validateOnMigrate: true
+  jpa:
+    properties:
+      hibernate:
+        dialect: org.hibernate.community.dialect.SQLiteDialect
+        # Stored as text, lower-case and hyphenated - the form the seed writes and
+        # the form a human reads in the sqlite3 shell.
+        type:
+          preferred_uuid_jdbc_type: CHAR
+  sql:
+    init:
+      platform: sqlite

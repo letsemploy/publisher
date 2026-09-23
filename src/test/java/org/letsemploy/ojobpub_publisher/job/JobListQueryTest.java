@@ -11,6 +11,7 @@ import org.hibernate.SessionFactory;
 import org.hibernate.stat.Statistics;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.letsemploy.ojobpub_publisher.TestProfiles;
 import org.letsemploy.ojobpub_publisher.web.Views;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -30,7 +31,7 @@ import org.springframework.transaction.annotation.Transactional;
  * was fetched one query per row.
  */
 @SpringBootTest
-@ActiveProfiles({"dev", "test"})
+@ActiveProfiles(resolver = TestProfiles.class)
 @Transactional
 class JobListQueryTest {
 

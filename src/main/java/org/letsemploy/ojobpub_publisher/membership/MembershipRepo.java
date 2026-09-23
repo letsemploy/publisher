@@ -12,7 +12,7 @@ public interface MembershipRepo extends JpaRepository<Membership, UUID> {
     /** What a person may act on: a suspended membership grants nothing (spec 2.7). */
     List<Membership> findByUserIdAndSuspendedAtIsNull(UUID userId);
 
-    List<Membership> findByEmployerIdOrderByRoleAscUserDisplayNameAsc(UUID employerId);
+    List<Membership> findByEmployerId(UUID employerId);
 
     Optional<Membership> findByUserIdAndEmployerId(UUID userId, UUID employerId);
 

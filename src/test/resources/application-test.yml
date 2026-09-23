@@ -18,7 +18,6 @@ spring:
     enabled: true
     baselineOnMigrate: true
     validateOnMigrate: true
-    locations: classpath:db/migration
     table: migrations
   jpa:
     generate-ddl: false
@@ -28,7 +27,6 @@ spring:
     defer-datasource-initialization: true
     properties:
       hibernate:
-        dialect: org.hibernate.dialect.MariaDBDialect
         # JobListQueryTest counts queries to prove the list does not do an N+1.
         generate_statistics: true
   sql:
@@ -36,6 +34,11 @@ spring:
       mode: always
   thymeleaf:
     cache: false
+
+# Used only when TEST_DB=sqlite adds the sqlite profile (see TestProfiles).
+app:
+  sqlite:
+    path: target/publisher_test.db
 
 # Nothing in a test may bind a port: the dashboard's is fixed and would collide
 # with a locally running instance.

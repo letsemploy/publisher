@@ -1455,8 +1455,8 @@ a limit — only creating is.
 ### 9.1 Stack
 
 Java 25, Spring Boot 4 (Web MVC), Thymeleaf with the Layout Dialect for server-rendered HTML, htmx for
-partial updates, Tabler as the design system, Spring Data JPA over MariaDB, Flyway for schema
-migrations, Spring Security with the OAuth2 client stack for OIDC.
+partial updates, Tabler as the design system, Spring Data JPA over MariaDB or SQLite (§9.3), Flyway for
+schema migrations, Spring Security with the OAuth2 client stack for OIDC.
 
 Server-rendered HTML with fragment swaps is a deliberate choice: the back-office is form-and-list heavy
 with no offline or real-time requirements, and a single deployable keeps the product proportional to
@@ -1516,6 +1516,27 @@ than aspirational.
 - Seed/demo data is loaded only under the `dev` profile and must be idempotent. It includes the
   development administrator (§2.3), without which nothing keyed on user identity works locally.
 
+**Two databases.** MariaDB is the default and the reference. **SQLite** is supported as an alternative
+for a **single-instance** installation — one team, one process, one file on a volume, no database server
+to run. It is selected with the `sqlite` profile and a file path; nothing else about the application
+changes.
+
+- **One instance only.** SQLite has a single writer, and the API rate limiter is already counted per
+  instance (§11.6). Scaling out means MariaDB.
+- **Same behaviour, enforced the same way.** Foreign keys and their cascades, the two exactly-one-of
+  CHECK constraints (§3.11), and the enumerated value sets are enforced by the database on both. Text
+  that MariaDB compares case-insensitively — tag names, cities, email, employer, feed and job names —
+  is case-insensitive on SQLite too, for ASCII; beyond ASCII ("Zürich" versus "zürich") SQLite
+  distinguishes case where MariaDB does not.
+- **Instants, dates and money are stored as text** on SQLite, in one fixed format, because SQLite has no
+  such types and a mixture of representations would silently break the date window (§4.4). Salaries
+  keep their exact decimal value (§6.7).
+- **Migrations come in pairs.** Each database has its own migration folder. SQLite starts from a
+  single baseline at the version MariaDB had reached when SQLite was added, so both report the same
+  schema version; every later migration exists for both, and the build fails if one is missing.
+- The seed data likewise exists once per database, with the same rows and identifiers.
+- The test suite runs **in full against both** in CI.
+
 ### 9.4 Security configuration
 
 - Three filter chains: the public feed and health endpoints (stateless, anonymous, CSRF disabled,
@@ -1542,6 +1563,9 @@ than aspirational.
 No secrets in the repository. OIDC issuer, client id and client secret come from the environment. The
 application's public base URL is configured explicitly, because feed URLs must be absolute and correct
 behind a reverse proxy.
+
+The database is MariaDB unless the `sqlite` profile is active (§9.3), in which case the file is
+`app.sqlite.path` (`APP_SQLITE_PATH`), default `data/ojobpub.db`, and its directory is created on start.
 
 ---
 

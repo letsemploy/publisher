@@ -9,6 +9,7 @@ import java.util.Set;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.letsemploy.ojobpub_publisher.TestProfiles;
 import org.letsemploy.ojobpub_publisher.common.exception.ValidationFailure;
 import org.letsemploy.ojobpub_publisher.employer.Employer;
 import org.letsemploy.ojobpub_publisher.employer.EmployerRepo;
@@ -47,7 +48,7 @@ import org.springframework.transaction.annotation.Transactional;
  * A quota that can only refuse is a trap; one that can be escaped is a limit.
  */
 @SpringBootTest
-@ActiveProfiles({"dev", "test"})
+@ActiveProfiles(resolver = TestProfiles.class)
 @Transactional
 @TestPropertySource(properties = {
         "app.limits.jobs-per-employer=6",

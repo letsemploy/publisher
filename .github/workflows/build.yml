@@ -12,16 +12,28 @@ name: Build Java
 on:
   push:
 env:
-  SPRING_SQL_INIT_CONTINUE_ON_ERROR: true
   # The service container below is on the standard port; only local development
   # moves off it, to avoid colliding with other stacks on the same machine.
   DB_PORT: 3306
 
 jobs:
+  # The whole suite runs once per database (spec 9.3): MariaDB, the default, and
+  # SQLite, the single-instance alternative. Neither is allowed to rot.
   build-and-push-image:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        db: [mariadb, sqlite]
+    env:
+      # Read by TestProfiles: "sqlite" adds the sqlite profile to every test.
+      TEST_DB: ${{ matrix.db }}
+      # A broken seed must fail here, not surface later as an unrelated test
+      # failure. The MariaDB leg keeps its historical setting.
+      SPRING_SQL_INIT_CONTINUE_ON_ERROR: ${{ matrix.db == 'mariadb' }}
     steps:
       - uses: getong/mariadb-action@v1.11
+        if: matrix.db == 'mariadb'
         with:
           mariadb version: '11' # Optional, default value is "latest". The version of the MariaDB
           mysql database: 'publisher_test' # Optional, default value is "test". The specified database which will be create

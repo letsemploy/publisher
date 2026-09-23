@@ -8,6 +8,7 @@ import java.util.Map;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.letsemploy.ojobpub_publisher.TestProfiles;
 import org.letsemploy.ojobpub_publisher.common.exception.ValidationFailure;
 import org.letsemploy.ojobpub_publisher.employer.EmployerRepo;
 import org.letsemploy.ojobpub_publisher.employer.EmployerService;
@@ -36,7 +37,7 @@ import org.springframework.transaction.annotation.Transactional;
  * job test needs.
  */
 @SpringBootTest
-@ActiveProfiles({"dev", "test"})
+@ActiveProfiles(resolver = TestProfiles.class)
 @Transactional
 @TestPropertySource(properties = {
         "app.limits.memberships-per-user=2",

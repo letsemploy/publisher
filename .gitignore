@@ -34,3 +34,6 @@ build/
 
 ### Front-end dependencies (the vendored dist files ARE committed) ###
 node_modules/
+
+### Local SQLite databases (profile sqlite) ###
+/data/
