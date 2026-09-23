@@ -138,6 +138,26 @@ Owners invite, change roles, remove members and edit the employer record; editor
 feeds. Employer **creation is open to any signed-in user**; deletion is admin-only and **no delete route
 exists yet**.
 
+**The People screen** (`membership/PeopleController`, §7.18) is where all of this surfaces. Two routes,
+one handler, so they cannot drift:
+
+- `/people` — the sidebar destination, covering the **active employer**.
+- `/employers/{id}/people` — the same screen for a named employer, from the employer record.
+- Every write stays under `/employers/{id}/people/...`; after one, `redirectToPeople` returns the user
+  to whichever route they came from rather than moving them to the other.
+
+**Every member sees the membership list** — name, email, role (§2.1). The owner-only parts (invite
+form, pending invitations, role and removal controls) are **absent for an editor, not disabled**, and
+`populate` does not even fetch pending invitations unless `canAdminister`. The screen says why the
+controls are missing; a control that is simply gone reads as a broken page. None of that is the check:
+reading takes membership via `EmployerService.findVisible`, every write takes `requireOwner`.
+
+`Scope` has **two** employer resolvers and they answer different questions.
+`requireActiveEmployer()` picks a default to *create against* and falls back to the first visible
+employer. `activeEmployer()` returns `Optional` and is for a screen that *names a subject*: with "All
+employers" chosen, or no memberships, the honest answer is none, and People renders an empty state
+rather than silently picking one. Do not swap them.
+
 ### Management API (`api/`, `token/`)
 
 `POST /graphql` only, authenticated by `Authorization: Bearer <prefix>.<secret>` (§2.8, §11). The
@@ -224,7 +244,13 @@ module, so no screen offers a dead button — progressive enhancement is still m
 `static/css/app.css` is the only custom stylesheet.
 
 `templates/` is the only template tree. Layout Dialect: `layout.html` decorates, pages use
-`layout:decorate`, shared fragments live in `templates/fragments/`.
+`layout:decorate`, shared fragments live in `templates/fragments/`. Directories follow the owning
+package, so the People screen is `templates/membership/`, not under `employer/`.
+
+**Never put `th:if` and `th:replace` on the same element.** Thymeleaf processes `th:replace`
+(precedence 100) before `th:if` (300), so the element is replaced before the condition is evaluated and
+the fragment renders unconditionally — which is how every list screen once showed its empty state above
+a full table. Wrap it: `<th:block th:if="…"><div th:replace="…"></div></th:block>`.
 
 Templates bind to the view models in `web/view/`, assembled by `web/Views.java`.
 `web/UiContextFactory` builds the shell context (`ui`); `web/UiContextAdvice` supplies it to every
@@ -234,7 +260,9 @@ advice would fail to render and turn every 404 into a 500.
 `ScreenRenderingTest.notFoundRendersTheErrorPage` guards it.
 
 Each controller supplies its own `page` (`PageMeta`); one that forgets it will not render. A new
-sidebar destination is added in `UiContextFactory`.
+sidebar destination is added in `UiContextFactory` — there are eight: Dashboard, Jobs, Feeds, People,
+Employers, Locations, Tags, Invitations. Its icon name lives in the `NavItem`, so a new one
+needs `make assets` to reach the sprite.
 
 Where a screen has an htmx fragment variant, it is a second `@GetMapping` on the **same** controller
 annotated `@HxRequest(boosted = false)` returning a fragment selector (`"tag/fragments/table :: table"`).
@@ -261,6 +289,7 @@ pass message *keys* as flash attributes and templates resolve them.
 ./mvnw test -Dtest=MembershipServiceTest     # ownership, role changes, the last-owner rule
 ./mvnw test -Dtest=ManagementApiTest         # the GraphQL API end to end
 ./mvnw test -Dtest=ApiLimitsTest             # depth, rate and body limits, with the ceilings lowered
+./mvnw test -Dtest=PeopleScreenTest          # the People screen as an editor, not an admin
 make assets                                  # refresh vendored front-end deps (needs Node)
 ```
 
@@ -287,6 +316,12 @@ Test configuration lives in `src/test/resources/application-test.yml` (profile `
 `src/test/resources/application.yml` loses to `src/main/resources/application.properties`, so its
 overrides are silently ignored and the dashboard binds its fixed port, colliding with a running
 instance.
+
+**Every back-office test runs as the seeded admin**, because that is who the dev bypass resolves to —
+so no screen test notices a permission split, since the privileged half is always present. To render a
+screen as somebody else, override the actor: `PeopleScreenTest` replaces `CurrentUserService` with
+`@MockitoBean` and returns an editor. Do that whenever a screen shows different things to different
+roles, and assert **both** directions — what the role sees and what it must not.
 
 Back-office tests use `@ActiveProfiles({"dev", "test"})`: `dev` provides the authentication bypass,
 `test` is listed second so its datasource wins over the dev one. CI provisions `publisher_test` on a
