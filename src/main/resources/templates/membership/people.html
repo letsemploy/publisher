@@ -5,13 +5,27 @@
 <head><title th:text="#{employer.people.title}">People</title></head>
 <body>
 <div layout:fragment="content">
-    <div class="row row-cards">
-        <div class="col-lg-7">
+
+    <!--
+      No active employer, so the screen has no subject to name (spec 7.18). The
+      switcher lives in the top bar; a user with no memberships is pointed at
+      the two things they can actually do.
+    -->
+    <th:block th:if="${people == null}">
+        <div th:replace="~{fragments/empty :: state('users','people.noEmployer.title','people.noEmployer.subtitle','/employers/create','employer.create')}"></div>
+    </th:block>
+
+    <div class="row row-cards" th:if="${people != null}">
+        <div th:classappend="${people.canAdminister} ? 'col-lg-7' : 'col-lg-12'">
             <div class="card">
                 <div class="card-header"><h3 class="card-title" th:text="#{employer.people.members}">Members</h3></div>
                 <th:block th:if="${people.members.isEmpty()}">
                     <div th:replace="~{fragments/empty :: state('users','employer.people.noMembers','employer.people.noMembersHint',null,null)}"></div>
                 </th:block>
+                <!-- An editor may see the list but not change it, and the screen
+                     says why rather than leaving the missing controls unexplained. -->
+                <div class="card-body text-secondary border-bottom" th:unless="${people.canAdminister}"
+                     th:text="#{people.readOnly}">Only owners can invite or remove people.</div>
                 <div class="table-responsive" th:unless="${people.members.isEmpty()}">
                     <table class="table table-vcenter card-table">
                         <thead>
@@ -19,7 +33,7 @@
                             <th th:text="#{label.name}">Name</th>
                             <th th:text="#{label.email}">Email</th>
                             <th th:text="#{label.role}">Role</th>
-                            <th class="w-1"></th>
+                            <th class="w-1" th:if="${people.canAdminister}"></th>
                         </tr>
                         </thead>
                         <tbody>
@@ -32,7 +46,7 @@
                                 <span class="badge bg-yellow-lt ms-1" th:if="${m.lastOwner}"
                                       th:text="#{employer.people.onlyOwner}">only owner</span>
                             </td>
-                            <td>
+                            <td th:if="${people.canAdminister}">
                                 <div class="btn-list flex-nowrap justify-content-end">
                                     <!-- The last owner cannot be demoted or removed (spec 2.7);
                                          the screen says why instead of greying a control out. -->
@@ -60,7 +74,7 @@
                 </div>
             </div>
 
-            <div class="card mt-3">
+            <div class="card mt-3" th:if="${people.canAdminister}">
                 <div class="card-header">
                     <h3 class="card-title" th:text="#{employer.people.pending}">Pending invitations</h3>
                 </div>
@@ -99,7 +113,7 @@
             </div>
         </div>
 
-        <div class="col-lg-5">
+        <div class="col-lg-5" th:if="${people.canAdminister}">
             <div class="card">
                 <div class="card-header"><h3 class="card-title" th:text="#{employer.people.invite}">Invite</h3></div>
                 <form th:action="@{'/employers/' + ${people.employerId} + '/people/invite'}" method="post">

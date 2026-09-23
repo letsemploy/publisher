@@ -41,6 +41,9 @@ public class UiContextFactory {
                 new NavItem("layout-dashboard", "nav.dashboard", "/", path.equals("/")),
                 new NavItem("briefcase", "nav.jobs", "/jobs", path.startsWith("/jobs")),
                 new NavItem("rss", "nav.feeds", "/feeds", path.startsWith("/feeds")),
+                // Covers the active employer, like Jobs and Feeds above it, which
+                // is why it sits here and not under Employers (spec 7.3, 7.18).
+                new NavItem("users", "nav.people", "/people", path.startsWith("/people")),
                 new NavItem("building", "nav.employers", "/employers", path.startsWith("/employers")),
                 new NavItem("map-pin", "nav.locations", "/locations", path.startsWith("/locations")),
                 new NavItem("tag", "nav.tags", "/tags", path.startsWith("/tags")),

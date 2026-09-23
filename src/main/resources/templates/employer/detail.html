@@ -6,7 +6,7 @@
 <body>
 <div layout:fragment="page-actions">
     <div class="btn-list">
-        <a class="btn" th:if="${canAdminister}" th:href="@{'/employers/' + ${employer.id} + '/people'}">
+        <a class="btn" th:href="@{'/employers/' + ${employer.id} + '/people'}">
             <svg th:replace="~{fragments/icon :: i('users','icon')}"></svg>
             <span th:text="#{employer.people.title}">People</span>
         </a>

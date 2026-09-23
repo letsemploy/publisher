@@ -68,11 +68,17 @@ having no standing anywhere else.
 
 | Role | May do within that employer |
 |---|---|
-| **Editor** | Full create/read/update/delete on the employer's jobs, feeds and locations |
+| **Editor** | Full create/read/update/delete on the employer's jobs, feeds and locations; **see who else belongs to the employer and with which role** (§7.18) |
 | **Owner** | Everything an editor may do, plus: edit the employer record, invite people (§2.6), change a member's role, and remove members (§2.7) |
 
 There is no read-only role in v1. Every member may edit that employer's jobs and feeds; the difference
 between owner and editor is authority over **the employer and its people**, not over its content.
+
+**Seeing the people is not authority over them.** Every member may see the membership list, because
+anyone editing an employer's jobs needs to know who else is doing so and who to ask for access; only an
+owner may change it. What an editor is shown is the membership itself — who belongs, and as what — and
+not the owner's working material: pending invitations, the invite form and the role and removal
+controls are absent rather than disabled (§7.18).
 
 Tags are global and every signed-in user may manage them.
 
@@ -942,7 +948,7 @@ Rules:
 ### 7.3 Layout
 
 A fixed left sidebar, a slim top bar and a content area — the conventional administration shell, chosen
-because the navigation is a flat set of seven destinations that must stay visible and reachable in one
+because the navigation is a flat set of eight destinations that must stay visible and reachable in one
 click while the user works down a long job list.
 
 ```
@@ -952,7 +958,8 @@ click while the user works down a long job list.
 │ ◻ Dashboard  │  [page title]                    [primary action]│
 │ ◻ Jobs       ├──────────────────────────────────────────────────┤
 │ ◻ Feeds      │                                                  │
-│ ◻ Employers  │   page content                                   │
+│ ◻ People     │   page content                                   │
+│ ◻ Employers  │                                                  │
 │ ◻ Locations  │                                                  │
 │ ◻ Tags       │                                                  │
 │ ◻ Invites ②  │                                                  │
@@ -965,9 +972,12 @@ Implemented with Tabler's vertical navbar (`navbar navbar-vertical navbar-expand
 **Sidebar** — navigation, and nothing else:
 
 - The product brand, linking to the dashboard.
-- The primary navigation: **Dashboard, Jobs, Feeds, Employers, Locations, Tags, Invitations**, each
-  with a Tabler icon and label. *Employers* is visible to everyone but only offers create/delete to
-  admins.
+- The primary navigation: **Dashboard, Jobs, Feeds, People, Employers, Locations, Tags,
+  Invitations**, each with a Tabler icon and label. *Employers* is visible to everyone but only offers
+  create/delete to admins.
+- **People** (§7.18) covers the **active employer** (§2.5), which is why it sits beside Jobs and Feeds
+  rather than under Employers: it answers "who am I working with here", the same scope those two
+  answer. It is visible to every member, and what it offers depends on the membership role.
 - **Invitations** (§7.16) carries a count badge when any are pending. It stays visible when there are
   none: a user with no employer memberships has nothing else to do, and an entry that disappears when
   empty cannot be found by someone who wants to check whether an invitation ever arrived.
@@ -1196,21 +1206,7 @@ admins only**; an editor works on jobs and feeds, not on the employer record.
 the feed URLs its consumers depend on.
 **API tokens** (owners only) — §7.17.
 
-**People** (owners and admins) — a screen of its own at the employer, in three parts:
-
-- **Members** — everyone with access and their **role**, with a control to change it between *Owner*
-  and *Editor*, and a *Remove* action. Removing needs no consent (§2.6) but confirms through the §7.4
-  modal, naming the person and the employer, and states that they may be invited again.
-- **The last owner** — the demote and remove controls **must** be refused for the last remaining owner,
-  with a sentence saying to promote someone else first (§2.7). A control that is merely greyed out
-  leaves the user guessing.
-- **Pending invitations** — who was invited, with which role, by whom, when, and a *Revoke* action.
-- **Invite** — an email field and a **role choice** (Editor by default). The invitee must already be
-  registered, which the form says up front so a failure is not a surprise.
-
-The invite form's feedback obeys §2.6: an address that matches no account produces the **same** message
-as a successful invitation, while "already a member" and "already invited" are named, because both
-people are listed directly above the form.
+**People** — §7.18. Reachable from here for any employer, and from the sidebar for the active one.
 
 ### 7.14 Locations
 
@@ -1271,6 +1267,47 @@ audit trail still resolves (§3.10).
 
 **Empty state** — per §7.6, explaining what a token is for and that it lets another system act on this
 employer without a person signing in.
+
+---
+
+### 7.18 People
+
+Who belongs to an employer. A sidebar destination covering the **active employer** (§2.5), and the same
+screen reachable per-employer at the employer record (§7.13) — an admin, and anyone with several
+employers, needs to look at one that is not the one they are working in.
+
+**Every member sees the membership list**, editors included (§2.1): name, email address and role, with
+the sole owner marked. Someone editing an employer's jobs works alongside these people and has to know
+who to ask when they need access or a decision; a screen that answers that question only for owners
+makes the owner a lookup service for their own colleagues.
+
+**What the role changes is the actions, not the list.** For an editor the list is the whole screen. An
+owner or admin additionally gets, on the same screen:
+
+- **Role and removal controls** on each member. Removing needs no consent (§2.6) but confirms through
+  the §7.4 modal, naming the person and the employer, and states that they may be invited again.
+- **The last owner** — the demote and remove controls **must** be refused for the last remaining owner,
+  with a sentence saying to promote someone else first (§2.7). A control that is merely greyed out
+  leaves the user guessing.
+- **Pending invitations** — who was invited, with which role, by whom, when, and a *Revoke* action.
+- **Invite** — an email field and a **role choice** (Editor by default). The invitee must already be
+  registered, which the form says up front so a failure is not a surprise.
+
+The owner-only parts are **absent** for an editor, not disabled. A disabled invite form advertises a
+capability and then refuses it; and pending invitations are the owner's working material — who has been
+approached and has not yet answered — which is theirs to disclose, not the screen's.
+
+The invite form's feedback obeys §2.6: an address that matches no account produces the **same** message
+as a successful invitation, while "already a member" and "already invited" are named, because both
+people are listed directly above the form.
+
+**Authorization is on the data, not the markup** (§2.4). Reading the list takes membership of that
+employer, and every write takes the owner role; both are enforced in the service, so hiding a control
+is presentation and never the check. A non-member asking for an employer's people gets `404`.
+
+**No active employer** — for a user who has chosen *All employers* (§2.5), or has none at all, the
+screen cannot name a subject. It says so and points at the employer switcher, or, for a user with no
+memberships, at §7.16 and creating an employer, exactly as the other employer-scoped screens do.
 
 ---
 

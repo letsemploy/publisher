@@ -58,7 +58,7 @@ class ScreenRenderingTest {
                 "/employers/" + EMPLOYER + "/update",
                 "/locations", "/locations/create",
                 "/tags", "/tags/create", "/tags?q=jav",
-                "/invitations",
+                "/invitations", "/people",
                 "/employers/" + EMPLOYER + "/people",
                 "/employers/" + EMPLOYER + "/people/members/" + MEMBER + "/remove",
                 "/employers/" + EMPLOYER + "/tokens",
@@ -232,6 +232,24 @@ class ScreenRenderingTest {
                 .contains("/ojobpub.json")
                 .contains("Omitted from the published document")
                 .contains("Schema valid");
+    }
+
+    /**
+     * The other half of {@code PeopleScreenTest}, which renders this screen as an
+     * editor: an owner must still get everything. The two together are what keep
+     * the permission split honest in both directions.
+     */
+    @Test
+    void anOwnerGetsTheInviteFormAndPendingInvitationsOnTheSidebarScreen() throws Exception {
+        assertThat(html("/people"))
+                .contains("Mara Member")
+                .contains("Pending invitations")
+                .contains("Send invitation")
+                // Mara is an editor, so her control offers promotion; the only
+                // owner is the last one, whose controls are refused (spec 2.7).
+                .contains("Make owner")
+                .contains("Promote someone else to owner first")
+                .doesNotContain("ask one of the owners");
     }
 
     /** The seed data leaves an invitation pending, so the sidebar badge has a value. */

@@ -1,6 +1,7 @@
 package org.letsemploy.ojobpub_publisher.web;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.letsemploy.ojobpub_publisher.common.exception.NotFoundException;
@@ -38,6 +39,24 @@ public class Scope {
 
     public List<UUID> employerIds() {
         return employers().stream().map(Employer::getId).toList();
+    }
+
+    /**
+     * The one employer the current screen is about, if there is one (spec 2.5).
+     *
+     * <p>Distinct from {@link #requireActiveEmployer()}, which picks a default to
+     * create against. A screen that names a subject - People (spec 7.18) - must
+     * not quietly pick the first of several: with "All employers" chosen, or with
+     * no memberships at all, the honest answer is that there is no subject.
+     */
+    public Optional<Employer> activeEmployer() {
+        UUID chosen = employerContext.getActiveEmployerId();
+        List<Employer> visible = employerService.visibleTo(user());
+        if (chosen != null) {
+            return visible.stream().filter(e -> e.getId().equals(chosen)).findFirst();
+        }
+        // One employer is unambiguously the one being worked on, chosen or not.
+        return visible.size() == 1 ? Optional.of(visible.get(0)) : Optional.empty();
     }
 
     /** The employer a newly created job or feed belongs to. */
