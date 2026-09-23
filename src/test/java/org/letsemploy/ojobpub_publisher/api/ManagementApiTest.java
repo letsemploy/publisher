@@ -22,6 +22,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 
@@ -35,6 +36,13 @@ import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles({"dev", "test"})
+// Quotas off: this class tests API semantics, not limits, and it is not
+// @Transactional - a run killed before @AfterEach leaves test-% tokens behind,
+// and the next run would then fail on a quota that has nothing to do with what
+// is being tested (spec 8.4; 0 means unlimited).
+@TestPropertySource(properties = {
+        "app.limits.tokens-per-employer=0",
+        "app.limits.memberships-per-user=0"})
 // Deliberately NOT @Transactional: a test transaction would hold every write open
 // and hide the case this suite most needs to see - a service marking the caller's
 // transaction rollback-only when it refuses. What the tests create is removed in

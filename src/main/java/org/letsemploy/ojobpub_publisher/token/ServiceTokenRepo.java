@@ -11,4 +11,7 @@ public interface ServiceTokenRepo extends JpaRepository<ServiceToken, UUID> {
     Optional<ServiceToken> findByPrefix(String prefix);
 
     List<ServiceToken> findByEmployerIdOrderByCreatedAtDesc(UUID employerId);
+
+    /** Live tokens only: revoking keeps the row, so it must free up the quota. */
+    long countByEmployerIdAndRevokedAtIsNull(UUID employerId);
 }

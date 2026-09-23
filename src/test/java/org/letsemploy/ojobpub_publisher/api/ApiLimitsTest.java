@@ -35,7 +35,9 @@ import org.springframework.transaction.annotation.Transactional;
 @TestPropertySource(properties = {
         "app.api.max-query-depth=2",
         "app.api.rate-limit=2",
-        "app.api.max-request-bytes=64"
+        "app.api.max-request-bytes=64",
+        // Resource quotas are a different feature; keep them out of this one.
+        "app.limits.tokens-per-employer=0"
 })
 @Transactional
 class ApiLimitsTest {

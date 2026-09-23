@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.letsemploy.ojobpub_publisher.common.Slugs;
+import org.letsemploy.ojobpub_publisher.common.ResourceLimits;
 import org.letsemploy.ojobpub_publisher.common.exception.NotFoundException;
 import org.letsemploy.ojobpub_publisher.common.exception.ValidationFailure;
 import org.letsemploy.ojobpub_publisher.location.LocationService;
@@ -23,6 +24,7 @@ public class EmployerService {
     private final EmployerRepo employerRepo;
     private final LocationService locationService;
     private final MembershipService membershipService;
+    private final ResourceLimits limits;
     private final UserRepo userRepo;
 
     /** Editors see only their employers; an admin sees all (spec 2.1). */
@@ -82,6 +84,11 @@ public class EmployerService {
         boolean creating = id == null;
         Employer employer;
         if (creating) {
+            // Creating grants the creator a membership (spec 2.7), so the
+            // membership quota decides this before any row is written. grant()
+            // would refuse it anyway; refusing here means no wasted work.
+            limits.requireRoomForMemberships(
+                    () -> membershipService.countMembershipsOf(actor.getId()));
             employer = new Employer();
         } else {
             membershipService.requireOwner(actor, id);

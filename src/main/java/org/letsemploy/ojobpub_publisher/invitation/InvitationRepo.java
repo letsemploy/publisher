@@ -11,6 +11,8 @@ public interface InvitationRepo extends JpaRepository<Invitation, UUID> {
 
     long countByInviteeIdAndStatus(UUID inviteeId, InvitationStatus status);
 
+    long countByEmployerIdAndStatus(UUID employerId, InvitationStatus status);
+
     List<Invitation> findByEmployerIdAndStatusOrderByCreatedAtDesc(UUID employerId, InvitationStatus status);
 
     Optional<Invitation> findByEmployerIdAndInviteeIdAndStatus(

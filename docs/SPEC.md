@@ -102,6 +102,8 @@ below depends on there being a *human* answerable, it says so.
 - A newly provisioned user has the **User** platform role and **no employer memberships**. They can log
   in, and from an empty state they may either **create an employer** — becoming its owner (§2.7) — or
   wait for an invitation (§7.16). Neither path is privileged over the other.
+- Creating an employer grants a membership, so it is **refused once the user is at their membership
+  limit** (§8.4). The refusal says to leave an employer first.
 - Membership is created by **exactly two acts**: creating an employer, and accepting an invitation
   (§2.6, §2.7). No other path grants access to an employer, and neither can be performed on someone
   else's behalf without their consent. Removal is the owner's or an admin's to perform and needs none.
@@ -192,7 +194,13 @@ see — and a silent no-op there would look like a bug.
 
 - Only the **invitee** may accept or decline. An **owner** of that employer, or an admin, may revoke a
   pending invitation.
-- **Accepting creates the membership**, with the role the invitation carried.
+- **Accepting creates the membership**, with the role the invitation carried. It is **refused** if the
+  invitee is at their membership limit, or the employer at its member limit (§8.4); the invitation stays
+  pending, so it can be taken up once there is room. The **inviter is never told** — how many employers
+  someone belongs to is theirs, and reporting it would be the same disclosure the invite form refuses to
+  make.
+- An employer at its member limit may not invite at all: an invitation that could never be accepted is
+  worse than a refusal now.
 - Declining and revoking create nothing. A declined invitation may be sent again later; people change
   jobs and teams.
 - Invitations **do not expire**. Nothing here requires a scheduler.
@@ -412,7 +420,8 @@ are assigned.
 
 Every employer **must** have a feed with the slug `all` created automatically when the employer is
 created. It behaves like any other feed and may be edited or deleted; it exists so that a new employer
-has a working URL immediately.
+has a working URL immediately. It is created **regardless of the feed limit** (§8.4) — an employer
+without a working URL is a broken employer — though it counts towards the limit thereafter.
 
 ### 3.6 Slugs
 
@@ -1343,6 +1352,42 @@ Pagination defaults to 20 items and is capped at 100 regardless of what the requ
 fields are validated against an allow-list per screen. An out-of-range page clamps to the last available
 page rather than erroring.
 
+### 8.4 Resource limits
+
+Creation is self-serve (§2.2) and every employer publishes a public, anonymous URL (§5.1), so how much
+may exist is a question the application has to answer rather than leave to good behaviour.
+
+| Limit | Property | Default |
+|---|---|---|
+| Employer memberships per user | `app.limits.memberships-per-user` | 3 |
+| Jobs per employer | `app.limits.jobs-per-employer` | 100 |
+| Feeds per employer | `app.limits.feeds-per-employer` | 10 |
+| Pending invitations per employer | `app.limits.pending-invitations-per-employer` | 20 |
+| Service tokens per employer | `app.limits.tokens-per-employer` | 10 |
+| Members per employer | `app.limits.members-per-employer` | 25 |
+
+- **`0` means unlimited.** A single-installation team has no abuse problem to solve, and a quota that
+  cannot be removed is an obstacle rather than a protection.
+- **The cap belongs to the resource, not to the person acting.** A platform admin reaches it too;
+  raising it is a configuration change. One rule, one code path, no privileged bypass.
+- **What counts.** Jobs: every row, `DRAFT`, `ACTIVE` and `INACTIVE` alike — a draft occupies storage
+  and a slot. Tokens: **non-revoked only**, because revoking retains the row for the audit trail
+  (§3.10) and must therefore be the way back under the limit. Members and memberships: **people only** —
+  a service token holds a membership (§2.8) but is not a colleague.
+- **Refusal is a validation failure**, carried to the form or the flash on the web and to `userErrors`
+  with the stable code `QUOTA_REACHED` through the API (§11.4). It is an expected outcome of a
+  well-formed request, never a fault. The message names the way out — delete one, revoke one, leave
+  one — because a refusal with no route forward is the same mistake as a greyed-out control (§2.7).
+- **Enforced in the services**, never in the markup. A hidden button is not a limit (§2.4).
+
+**These are policy; §10 is capability.** The performance targets there — up to 10 000 jobs per employer
+on a list screen — are what the code must be able to do, and they still hold. The defaults above are
+what a shared installation chooses to allow, and an operator may raise them or switch them off.
+
+Two acts are deliberately exempt. The `all` feed created with an employer (§3.5) is never refused: an
+employer without a working URL is a broken employer. And editing anything is never refused for being at
+a limit — only creating is.
+
 ---
 
 ## 9. Technical shape
@@ -1602,10 +1647,12 @@ because its consumers are anonymous and unreachable; API clients hold tokens, so
    themselves, and an owner cannot hand over and walk away in one action. Whether "leave" and "transfer
    ownership" should exist as first-class actions is deferred; today the sequence is promote, then ask
    the new owner to remove you.
-9. **Self-serve and abuse.** Any signed-in user may now create an employer (§2.2). Nothing limits how
-   many, and every employer publishes a public feed URL. Whether creation needs a quota, review or
-   verification is unspecified, and matters more here than for most back-offices because the output is
-   public by design.
+9. **Reviewing self-serve employers.** The quota half of this question is answered: creation is bounded
+   by the limits of §8.4. What remains is whether a self-serve employer should need **review or
+   verification** before its feed is served publicly — a quota bounds how *many* public URLs a stranger
+   can mint, not what they put behind them. Nothing today inspects an employer before its document is
+   available to anyone with the link, and the answer probably depends on whether an installation is a
+   single team or a public service.
 10. **Offset pagination and a moving list.** The API pages by offset (§11.5), so a client walking a
    large list while jobs are being created or retired can see a row twice or miss one. A stable total
    ordering bounds the damage but does not remove it. Whether the API needs cursor connections, or a

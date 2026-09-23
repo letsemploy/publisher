@@ -3,6 +3,7 @@ package org.letsemploy.ojobpub_publisher.invitation;
 import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import org.letsemploy.ojobpub_publisher.common.exception.ValidationFailure;
 import org.letsemploy.ojobpub_publisher.employer.Employer;
 import org.letsemploy.ojobpub_publisher.web.EmployerContext;
 import org.letsemploy.ojobpub_publisher.web.Scope;
@@ -50,10 +51,22 @@ public class InvitationController {
      */
     @PostMapping("/{id}/accept")
     public String accept(@PathVariable UUID id, RedirectAttributes flash) {
-        Employer employer = invitationService.accept(id, scope.user());
-        employerContext.setActiveEmployerId(employer.getId());
-        flash.addFlashAttribute("successMsg", "invitation.accepted");
-        return "redirect:/";
+        try {
+            Employer employer = invitationService.accept(id, scope.user());
+            employerContext.setActiveEmployerId(employer.getId());
+            flash.addFlashAttribute("successMsg", "invitation.accepted");
+            return "redirect:/";
+        } catch (ValidationFailure e) {
+            // Two quotas can refuse this and the way out differs, so the message
+            // does too: leave an employer, or ask an owner to make room (spec 8.4).
+            flash.addFlashAttribute("errorMsg",
+                    e.getFieldErrors().containsKey("limit.memberships")
+                            ? "invitation.limit.yours"
+                            : "invitation.limit.employer");
+            // Back to the list: they joined nothing, so a dashboard for an
+            // employer they are not in would be the wrong place to land.
+            return "redirect:/invitations";
+        }
     }
 
     @PostMapping("/{id}/decline")

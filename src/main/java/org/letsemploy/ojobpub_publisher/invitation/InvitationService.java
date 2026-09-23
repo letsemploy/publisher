@@ -5,6 +5,7 @@ import java.util.Optional;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.letsemploy.ojobpub_publisher.common.ResourceLimits;
 import org.letsemploy.ojobpub_publisher.common.exception.NotFoundException;
 import org.letsemploy.ojobpub_publisher.common.exception.ValidationFailure;
 import org.letsemploy.ojobpub_publisher.employer.Employer;
@@ -41,6 +42,7 @@ public class InvitationService {
     private final UserRepo userRepo;
     private final EmployerRepo employerRepo;
     private final MembershipService membershipService;
+    private final ResourceLimits limits;
 
     // ------------------------------------------------------------- the invitee
 
@@ -119,6 +121,17 @@ public class InvitationService {
         if (email == null || email.isBlank() || !email.contains("@")) {
             throw new ValidationFailure("email", "Enter the email address of a registered user.");
         }
+
+        // Both quotas are checked BEFORE the address is looked up, and that
+        // ordering is the rule, not an accident. Checked afterwards, an employer
+        // at its cap would answer SENT for an unregistered address and a refusal
+        // for a registered one - which is exactly the account oracle spec 2.6
+        // forbids. Here the refusal depends only on the employer's own counts and
+        // is identical for every address.
+        limits.requireRoomForInvitations(() -> invitationRepo.countByEmployerIdAndStatus(
+                employerId, InvitationStatus.PENDING));
+        // An invitation that could never be accepted is worse than a refusal now.
+        limits.requireRoomForMembers(() -> membershipService.countMembersOf(employerId));
 
         Optional<UserEntity> found = userRepo.findByEmailIgnoreCase(email.trim());
         if (found.isEmpty()) {

@@ -10,6 +10,7 @@ import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
+import org.letsemploy.ojobpub_publisher.common.ResourceLimits;
 import org.letsemploy.ojobpub_publisher.common.exception.NotFoundException;
 import org.letsemploy.ojobpub_publisher.common.exception.ValidationFailure;
 import org.letsemploy.ojobpub_publisher.employer.Employer;
@@ -43,6 +44,7 @@ public class ServiceTokenService {
     private final EmployerRepo employerRepo;
     private final UserRepo userRepo;
     private final PasswordEncoder passwordEncoder;
+    private final ResourceLimits limits;
 
     /** A created token and its secret, which is returned exactly once (spec 2.8). */
     @Value
@@ -75,6 +77,11 @@ public class ServiceTokenService {
         if (scopes == null || scopes.isEmpty()) {
             throw new ValidationFailure("scopes", "Choose at least one scope.");
         }
+        // Revoked tokens keep their row for the audit trail (spec 3.10), so only
+        // live ones count - revoking is the way back under the quota.
+        limits.requireRoomForTokens(
+                () -> tokenRepo.countByEmployerIdAndRevokedAtIsNull(employerId));
+
         Employer employer = employerRepo.findById(employerId)
                 .orElseThrow(() -> new NotFoundException("Employer not found: " + employerId));
         UserEntity creator = userRepo.findById(actor.getId())

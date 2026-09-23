@@ -14,6 +14,8 @@ public interface FeedRepo extends JpaRepository<Feed, UUID> {
 
     boolean existsByEmployerIdAndNameIgnoreCase(UUID employerId, String name);
 
+    long countByEmployerId(UUID employerId);
+
     /**
      * Loads a feed with its jobs and each job's locations and tags in a bounded
      * number of queries: an N+1 on the serving path is a defect (spec 9.3).

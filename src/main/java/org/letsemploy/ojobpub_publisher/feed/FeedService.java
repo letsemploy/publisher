@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import org.letsemploy.ojobpub_publisher.common.ResourceLimits;
 import org.letsemploy.ojobpub_publisher.common.Slugs;
 import org.letsemploy.ojobpub_publisher.common.exception.NotFoundException;
 import org.letsemploy.ojobpub_publisher.common.exception.ValidationFailure;
@@ -22,6 +23,7 @@ public class FeedService {
 
     private final FeedRepo feedRepo;
     private final JobService jobService;
+    private final ResourceLimits limits;
     private final OjobpubService ojobpubService;
 
     public List<Feed> findByEmployer(UUID employerId) {
@@ -53,6 +55,9 @@ public class FeedService {
         }
         Feed feed;
         if (id == null) {
+            // Before the name check: an employer at its cap should not be told
+            // to pick a different name (spec 8.4).
+            limits.requireRoomForFeeds(() -> feedRepo.countByEmployerId(employer.getId()));
             feed = new Feed();
             feed.setEmployer(employer);
             if (feedRepo.existsByEmployerIdAndNameIgnoreCase(employer.getId(), name.trim())) {
@@ -71,6 +76,11 @@ public class FeedService {
     /**
      * Every employer gets a working URL the moment it exists: an {@code all} feed
      * is created with the employer (spec 3.5).
+     *
+     * <p>Deliberately not routed through {@link #save}, and deliberately not
+     * subject to the feed quota: an employer without its {@code all} feed is a
+     * broken employer. Do not "tidy" this into save() - the exemption is
+     * structural, and {@code theDefaultFeedIsNeverRefused} guards it.
      */
     @Transactional
     public Feed createDefaultFeed(Employer employer) {

@@ -8,6 +8,7 @@ import java.util.Map;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.letsemploy.ojobpub_publisher.common.ResourceLimits;
 import org.letsemploy.ojobpub_publisher.common.exception.NotFoundException;
 import org.letsemploy.ojobpub_publisher.common.exception.ValidationFailure;
 import org.letsemploy.ojobpub_publisher.employer.Employer;
@@ -29,6 +30,7 @@ public class JobService {
     private final JobStatusEventRepo eventRepo;
     private final TagService tagService;
     private final LocationService locationService;
+    private final ResourceLimits limits;
 
     /**
      * @param presentation what the job presents as (spec 7.6), not the stored
@@ -85,6 +87,7 @@ public class JobService {
     public Job save(JobForm form, Employer employer, boolean activate, String actor) {
         Job job;
         if (form.getId() == null) {
+            limits.requireRoomForJobs(() -> jobRepo.countByEmployerId(employer.getId()));
             job = new Job();
             // Set at creation and immutable thereafter (spec 3.3).
             job.setEmployer(employer);

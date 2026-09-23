@@ -36,6 +36,10 @@ public class ApiErrors {
 
     /** A readiness key names a requirement, not an argument; translate where one exists. */
     private String field(String key) {
+        if (key.startsWith("limit.")) {
+            // Nothing in the input fixes being at a quota, so no argument names it.
+            return null;
+        }
         return switch (key) {
             case "readiness.locations" -> "locationIds";
             case "readiness.salary" -> "salaryCurrency";
@@ -48,9 +52,12 @@ public class ApiErrors {
     }
 
     private String message(String key, String fallback) {
-        if (!key.startsWith("readiness.")) {
+        if (!key.startsWith("readiness.") && !key.startsWith("limit.")) {
             return fallback;
         }
+        // Note for whoever adds a key here: getMessage is called with no
+        // arguments, because ValidationFailure carries a message and no
+        // parameters. A bundle entry with a {0} in it would render literally.
         // The readiness rows say what is required; the service's own text only
         // says that something is.
         return messages.getMessage(key, null, fallback, LocaleContextHolder.getLocale());
@@ -59,6 +66,14 @@ public class ApiErrors {
     private String code(String key) {
         if (key.startsWith("readiness.")) {
             return "NOT_READY";
+        }
+        // QUOTA_REACHED, not LIMIT_*: ApiErrorCodes already emits LIMIT_EXCEEDED
+        // for a query that breaches the depth or complexity ceiling, and that is
+        // a transport fault in `errors`. This one is a domain refusal in
+        // `userErrors` (spec 11.4), and two similar names in one response would
+        // cost a client author an afternoon.
+        if (key.startsWith("limit.")) {
+            return "QUOTA_REACHED";
         }
         return switch (key) {
             case "role", "member" -> "LAST_OWNER";

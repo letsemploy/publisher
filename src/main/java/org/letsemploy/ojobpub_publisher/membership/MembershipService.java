@@ -5,6 +5,7 @@ import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.letsemploy.ojobpub_publisher.common.exception.NotFoundException;
+import org.letsemploy.ojobpub_publisher.common.ResourceLimits;
 import org.letsemploy.ojobpub_publisher.common.exception.ValidationFailure;
 import org.letsemploy.ojobpub_publisher.employer.Employer;
 import org.letsemploy.ojobpub_publisher.security.Actor;
@@ -25,6 +26,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class MembershipService {
 
     private final MembershipRepo membershipRepo;
+    private final ResourceLimits limits;
 
     /** People only; a token's membership is managed on its own screen (spec 7.17). */
     public List<Membership> membersOf(UUID employerId) {
@@ -43,11 +45,32 @@ public class MembershipService {
         return grant(user, employer, MembershipRole.OWNER);
     }
 
-    /** Write site 2: accepting an invitation, with the role the invitation carried. */
+    /**
+     * Write site 2: accepting an invitation, with the role the invitation carried.
+     *
+     * <p>The quotas are checked inside {@code orElseGet}, not at the top: this
+     * method is idempotent, and a re-grant that changes nothing must not be
+     * refused for being over a limit it is not adding to (spec 8.4).
+     */
     @Transactional
     public Membership grant(UserEntity user, Employer employer, MembershipRole role) {
         return membershipRepo.findByUserIdAndEmployerId(user.getId(), employer.getId())
-                .orElseGet(() -> membershipRepo.save(new Membership(user, employer, role)));
+                .orElseGet(() -> {
+                    limits.requireRoomForMemberships(
+                            () -> membershipRepo.countByUserId(user.getId()));
+                    limits.requireRoomForMembers(
+                            () -> membershipRepo.countByEmployerIdAndUserIsNotNull(employer.getId()));
+                    return membershipRepo.save(new Membership(user, employer, role));
+                });
+    }
+
+    /** The quota counts, for callers that refuse before doing any work (spec 8.4). */
+    public long countMembershipsOf(UUID userId) {
+        return membershipRepo.countByUserId(userId);
+    }
+
+    public long countMembersOf(UUID employerId) {
+        return membershipRepo.countByEmployerIdAndUserIsNotNull(employerId);
     }
 
     public boolean isMember(UUID userId, UUID employerId) {

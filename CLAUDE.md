@@ -75,6 +75,11 @@ carries field errors back to a form; `NotFoundException` is unchecked and handle
 - `ojobpub/v1/service/OjobpubEnums.java` — explicit mapping for every published enum. **Never** derive a
   published value with `name().toLowerCase()`: the schema wants `on-site`, which that produces as
   `on_site`.
+- `common/ResourceLimits.java` — the six creation quotas of §8.4 and, more importantly, the two rules
+  around them: **`0` means unlimited**, and a quota refuses **at** the cap. Spread across six services
+  those get written six times and one of them forgets the zero, turning "unlimited" into "none". It
+  takes a `LongSupplier`, so a disabled quota issues no `COUNT` at all. It injects no repositories —
+  `common` depends on nothing, and each service owns the repository that answers its own count.
 
 ### Published feed
 
@@ -125,6 +130,11 @@ platform admin.
 **Membership has exactly two write sites** (§2.2): creating an employer (`EmployerService.save` grants
 the creator `OWNER`) and accepting an invitation (with the role the invitation carried). A third would
 mean access was granted without consent. `changeRole` may only change an existing membership.
+
+`MembershipService.grant` is **idempotent** — it returns any existing membership via `orElseGet`. The
+quota checks live *inside* that lambda: at the top of the method they would refuse a re-grant that adds
+nothing. Token memberships are written directly by `ServiceTokenService` and never go through `grant`,
+which is what keeps a credential out of the per-person counts — do not "tidy" that into `grant`.
 
 **Every employer must keep at least one owner** (§2.7). `MembershipService` guards both demotion and
 removal, and the People screen renders the reason rather than greying the control out.
@@ -200,6 +210,30 @@ own and never satisfies the last-owner rule — which is why `MembershipRepo` co
 bean against every request, which would demand a bearer token on the whole back-office; the API chain
 constructs them.
 
+### Resource limits (`common/ResourceLimits.java`, §8.4)
+
+Six configurable creation quotas under `app.limits.*`, defaults in `application.properties`, `0` =
+unlimited. Checked in the services at the single creation method for each resource. Two exemptions that
+must stay: `FeedService.createDefaultFeed` (an employer without its `all` feed is broken) and every
+edit path — only creation is refused.
+
+**The invitation quota is checked before the email is looked up, and that ordering is the rule.**
+Checked after, an employer at its cap would answer `SENT` for an unregistered address and refuse a
+registered one — rebuilding exactly the account oracle §2.6 forbids.
+`theInvitationRefusalDoesNotRevealWhetherTheAddressHasAnAccount` fails if anyone moves it.
+
+A refusal is a `ValidationFailure` keyed `limit.*`. `ApiErrors` turns that prefix into the stable API
+code **`QUOTA_REACHED`** — deliberately not `LIMIT_*`, because `ApiErrorCodes` already emits
+`LIMIT_EXCEEDED` for a query that breaches the depth ceiling, and that one is a transport fault in
+`errors` rather than data in `userErrors`. `ApiErrors.message()` resolves `limit.*` through the bundles,
+so **those bundle entries must contain no `{0}` placeholders** — it calls `getMessage` with no
+arguments and a parameter would render literally.
+
+A test that creates rows and is **not** `@Transactional` must clean up in `@AfterEach`, or its leftovers
+count against a quota in some later class and fail it for reasons that look unrelated. `ApiQuotaTest`
+and `ManagementApiTest` both do; `ManagementApiTest` additionally switches the token quota off, because
+a run killed before its cleanup would otherwise poison the next one.
+
 ### Persistence
 
 - Flyway owns the schema (`src/main/resources/db/migration`, history table `migrations`);
@@ -270,8 +304,9 @@ The `boosted = false` matters: navigation uses `hx-boost`, so a boosted request 
 still wants a whole page.
 
 i18n: `messages.properties` / `messages_de.properties`, session locale, switchable with `?lang=`. The
-bundles are asserted **at parity** — a key added to one and not the other fails the build. Controllers
-pass message *keys* as flash attributes and templates resolve them.
+bundles are asserted **at parity** by `MessageBundleTest` — a key added to one and not the other fails
+the build, as does an empty value. (That claim stood in this file for a long time before any test
+enforced it.) Controllers pass message *keys* as flash attributes and templates resolve them.
 
 ### Conventions
 
@@ -290,6 +325,9 @@ pass message *keys* as flash attributes and templates resolve them.
 ./mvnw test -Dtest=ManagementApiTest         # the GraphQL API end to end
 ./mvnw test -Dtest=ApiLimitsTest             # depth, rate and body limits, with the ceilings lowered
 ./mvnw test -Dtest=PeopleScreenTest          # the People screen as an editor, not an admin
+./mvnw test -Dtest=ResourceLimitsTest        # the quota convention; no Spring, no database
+./mvnw test -Dtest=QuotaEnforcementTest      # the six quotas against the seed data
+./mvnw test -Dtest=MessageBundleTest         # the two bundles, at parity
 make assets                                  # refresh vendored front-end deps (needs Node)
 ```
 

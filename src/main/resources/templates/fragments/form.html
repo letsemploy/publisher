@@ -7,8 +7,21 @@
      class="alert alert-danger" role="alert">
     <h4 class="alert-title" th:text="#{form.errorSummary(${errors.size()})}">There are errors</h4>
     <ul class="mb-0">
+        <!--
+          Only a field that is an input id gets a link. A refusal keyed on a
+          message key - limit.* or readiness.* - names a rule, not a box on this
+          form, and '#limit.jobs' would be a dead anchor. Input ids carry no dot.
+
+          Such a key is also resolved through the bundles, falling back to the
+          text the service supplied, exactly as the flash region does. Without
+          this a German user reads an English refusal, because the service's
+          message is a literal and only the key has a translation (spec 8.1).
+        -->
         <li th:each="e : ${errors}">
-            <a th:href="'#' + ${e.field}" th:text="${e.message}">message</a>
+            <a th:if="${e.field != null and !e.field.contains('.')}"
+               th:href="'#' + ${e.field}" th:text="${e.message}">message</a>
+            <span th:unless="${e.field != null and !e.field.contains('.')}"
+                  th:text="${#messages.msgOrNull(e.field) ?: e.message}">message</span>
         </li>
     </ul>
 </div>
