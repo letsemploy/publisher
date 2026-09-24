@@ -12,10 +12,14 @@
 	<artifactId>ojobpub-app</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
 	<name>ojobpub-app</name>
-	<description>Demo project for Spring Boot</description>
-	<url/>
+	<description>Publish job postings as a machine-readable ojobpub.json feed</description>
+	<url>https://github.com/letsemploy/publisher</url>
 	<licenses>
-		<license/>
+		<license>
+			<name>Apache-2.0</name>
+			<url>https://www.apache.org/licenses/LICENSE-2.0</url>
+			<distribution>repo</distribution>
+		</license>
 	</licenses>
 	<developers>
 		<developer/>
