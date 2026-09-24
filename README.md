@@ -54,8 +54,8 @@ email; a colleague must have signed in once before they can be invited.
 
 ## More
 
-- [`docs/SPEC.md`](docs/SPEC.md) is the full specification: roles, the job lifecycle, the feed
-  contract, the API and every configuration setting.
+- [`docs/SPEC.md`](docs/SPEC.md) is the index of the full specification in `docs/spec/`: roles, the
+  job lifecycle, the feed contract, the API and every configuration setting.
 - [`CLAUDE.md`](CLAUDE.md) covers development: building, running locally with a demo login or a
   local Keycloak, and the tests.
 

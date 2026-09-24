@@ -8,9 +8,13 @@ Spring Boot 4 / Java 25 server-rendered web app (Thymeleaf + htmx). Employers ma
 and publish selected ones as a machine-readable `ojobpub.json` feed. Maven artifact is `ojobpub-app`,
 Java package root is `org.letsemploy.ojobpub_publisher`.
 
-**`docs/SPEC.md` is the authoritative specification** — purpose, roles, domain model, job lifecycle, the
-published feed contract and the user interface. Where it disagrees with the code, the spec wins. Code
-comments cite it as `spec 4.3`, and that is the fastest way to find the rule behind a piece of code.
+**The specification is authoritative** — purpose, roles, domain model, job lifecycle, the published feed
+contract and the user interface. Where it disagrees with the code, the spec wins. It is one file per
+chapter under `docs/spec/` (`04-job-lifecycle.md` holds §4), with `docs/SPEC.md` as the index linking
+every section. Code comments cite it as `spec 4.3` — the number is global across the files, so §4.3
+is in chapter 4 — and that is the fastest way to find the rule behind a piece of code. Keep the
+numbering when editing: a new section goes at the end of its chapter, never renumbering the ones
+after it, because code cites them; a new section also needs its line in the index.
 
 ## Commands
 
