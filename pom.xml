@@ -10,7 +10,7 @@
 	</parent>
 	<groupId>org.letsemploy</groupId>
 	<artifactId>ojobpub-app</artifactId>
-	<version>0.1.0</version>
+	<version>0.2.0-SNAPSHOT</version>
 	<name>ojobpub-app</name>
 	<description>Publish job postings as a machine-readable ojobpub.json feed</description>
 	<url>https://github.com/letsemploy/publisher</url>
