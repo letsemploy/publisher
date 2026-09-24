@@ -24,7 +24,7 @@ public class SecurityConfig {
 
     private static final String[] PUBLIC = {
             "/ojobpub/**", "/actuator/health/**", "/actuator/info",
-            "/css/**", "/vendor/**", "/images/**", "/favicon.ico", "/error"
+            "/css/**", "/js/**", "/vendor/**", "/images/**", "/favicon.ico", "/error"
     };
 
     /**
@@ -129,14 +129,26 @@ public class SecurityConfig {
         authorizationRequests.setAuthorizationRequestCustomizer(
                 OAuth2AuthorizationRequestCustomizers.withPkce());
 
+        // Signing out ends on our sign-in page, saying so (spec 7.19) - via the
+        // provider when it advertises an end-session endpoint, directly when not.
         OidcClientInitiatedLogoutSuccessHandler providerLogout =
                 new OidcClientInitiatedLogoutSuccessHandler(registrations);
-        providerLogout.setPostLogoutRedirectUri("{baseUrl}/");
+        providerLogout.setPostLogoutRedirectUri("{baseUrl}/login?logout");
+        providerLogout.setDefaultTargetUrl("/login?logout");
 
         http.authorizeHttpRequests(a -> a
                         .requestMatchers(PUBLIC).permitAll()
+                        // By path, so every variant is reachable - ?error, ?logout,
+                        // ?lang=de. The configurer's own permitAll() matches the
+                        // login and failure URLs exactly, query string included, and
+                        // bounced /login?logout back to a bare /login.
+                        .requestMatchers("/login").permitAll()
                         .anyRequest().authenticated())
+                // Our own sign-in page rather than Spring's generated one, which is
+                // English only and unstyled under this CSP (spec 7.19). It is also
+                // where a failed sign-in lands: /login?error.
                 .oauth2Login(login -> login
+                        .loginPage("/login")
                         .authorizationEndpoint(a -> a.authorizationRequestResolver(authorizationRequests))
                         .defaultSuccessUrl("/", true))
                 .logout(logout -> logout.logoutSuccessHandler(providerLogout))

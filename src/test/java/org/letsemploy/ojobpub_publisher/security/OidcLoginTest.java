@@ -8,6 +8,8 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.UUID;
 import org.junit.jupiter.api.AfterEach;
@@ -137,12 +139,80 @@ class OidcLoginTest {
 
     // ---------------------------------------------------------------- chains
 
-    /** The back-office asks for a sign-in; it must never answer as the locked chain would. */
+    /**
+     * The back-office asks for a sign-in on our own page, and that page hands over
+     * to the provider. It must never answer as the locked chain would.
+     */
     @Test
-    void anAnonymousVisitorIsSentToTheProvider() throws Exception {
+    void anAnonymousVisitorIsShownTheSignInPage() throws Exception {
         mvc.perform(get("/"))
                 .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrl("/oauth2/authorization/oidc"));
+                .andExpect(redirectedUrl("/login"));
+    }
+
+    // ------------------------------------------------------------ sign-in page
+
+    private String page(String path) throws Exception {
+        return mvc.perform(get(path)).andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString();
+    }
+
+    /**
+     * A standalone page: no shell, since a signed-out visitor has no sidebar or
+     * user menu, and one way forward - to the provider. No password field: the
+     * application must never handle one (spec 2.2, 7.19).
+     */
+    @Test
+    void theSignInPageHandsOverToTheProvider() throws Exception {
+        assertThat(page("/login"))
+                .contains("Sign in to oJobPub Publisher")
+                .contains("href=\"/oauth2/authorization/oidc\"")
+                .doesNotContain("<aside")
+                .doesNotContain("href=\"/jobs\"")
+                .doesNotContain("type=\"password\"")
+                .doesNotContain("??");
+    }
+
+    /** The strict CSP of spec 9.4 would break anything inline, so nothing is. */
+    @Test
+    void theSignInPageHasNothingInline() throws Exception {
+        String body = page("/login");
+        assertThat(body).doesNotContain("<style").doesNotContainPattern("<script(?![^>]*\\ssrc=)");
+    }
+
+    /** Spring's generated page is gone: a failed sign-in lands here, told what happened. */
+    @Test
+    void aFailedSignInIsExplainedOnTheSignInPage() throws Exception {
+        assertThat(page("/login?error"))
+                .contains("Sign-in did not complete")
+                .contains("role=\"alert\"");
+    }
+
+    @Test
+    void signingOutEndsOnTheSignInPageSayingSo() throws Exception {
+        assertThat(page("/login?logout")).contains("You have signed out");
+    }
+
+    /** German too, and the notice survives the switch (spec 8.1). */
+    @Test
+    void theSignInPageSpeaksGerman() throws Exception {
+        assertThat(page("/login?error&lang=de"))
+                .contains("Bei oJobPub Publisher anmelden")
+                .contains("Die Anmeldung wurde nicht abgeschlossen")
+                .contains("lang=\"de\"");
+    }
+
+    @Test
+    void aSignedInVisitorIsNotShownTheSignInPage() throws Exception {
+        mvc.perform(get("/login").with(signedIn("alice-5", "Alice", "alice5@example.com", true)))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/"));
+    }
+
+    /** It was missing from the public paths, so no signed-out page could load it. */
+    @Test
+    void theApplicationScriptIsPublic() throws Exception {
+        mvc.perform(get("/js/app.js")).andExpect(status().isOk());
     }
 
     /** PKCE is required even for this confidential client (spec 2.2). */
@@ -233,7 +303,7 @@ class OidcLoginTest {
 
     /**
      * Logout ends the provider's session too, and asks it to send the browser
-     * back here (spec 2.2).
+     * back to the sign-in page, which says so (spec 2.2, 7.19).
      */
     @Test
     void logoutEndsTheSessionAtTheProvider() throws Exception {
@@ -242,9 +312,9 @@ class OidcLoginTest {
                         .with(csrf()))
                 .andExpect(status().is3xxRedirection())
                 .andReturn().getResponse().getHeader("Location");
-        assertThat(location)
+        assertThat(URLDecoder.decode(location, StandardCharsets.UTF_8))
                 .startsWith(END_SESSION)
                 .contains("id_token_hint=")
-                .contains("post_logout_redirect_uri=http://localhost/");
+                .contains("post_logout_redirect_uri=http://localhost/login?logout");
     }
 }

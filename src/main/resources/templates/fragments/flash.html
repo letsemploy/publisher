@@ -8,17 +8,13 @@
 
 <div th:fragment="items" th:remove="tag">
     <div th:if="${successMsg != null}" class="alert alert-success alert-dismissible" role="status">
-        <div class="d-flex">
-            <svg th:replace="~{fragments/icon :: i('circle-check','icon alert-icon')}"></svg>
-            <div th:text="${#messages.msgOrNull(successMsg) ?: successMsg}">Saved.</div>
-        </div>
+        <svg th:replace="~{fragments/icon :: i('circle-check','icon alert-icon flex-shrink-0')}"></svg>
+        <div th:text="${#messages.msgOrNull(successMsg) ?: successMsg}">Saved.</div>
         <a class="btn-close" data-bs-dismiss="alert" th:aria-label="#{label.close}"></a>
     </div>
     <div th:if="${errorMsg != null}" class="alert alert-danger alert-dismissible" role="alert">
-        <div class="d-flex">
-            <svg th:replace="~{fragments/icon :: i('alert-triangle','icon alert-icon')}"></svg>
-            <div th:text="${#messages.msgOrNull(errorMsg) ?: errorMsg}">Error.</div>
-        </div>
+        <svg th:replace="~{fragments/icon :: i('alert-triangle','icon alert-icon flex-shrink-0')}"></svg>
+        <div th:text="${#messages.msgOrNull(errorMsg) ?: errorMsg}">Error.</div>
         <a class="btn-close" data-bs-dismiss="alert" th:aria-label="#{label.close}"></a>
     </div>
 </div>

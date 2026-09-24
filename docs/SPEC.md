@@ -1388,6 +1388,28 @@ is presentation and never the check. A non-member asking for an employer's peopl
 screen cannot name a subject. It says so and points at the employer switcher, or, for a user with no
 memberships, at §7.16 and creating an employer, exactly as the other employer-scoped screens do.
 
+
+### 7.19 Sign-in
+
+Where a signed-out visitor starts, where a failed sign-in lands, and where signing out ends. A single
+centred card — the logo, "Sign in to oJobPub Publisher", one line saying the visitor will be taken to
+their organisation's sign-in page and brought back, a **Sign in** button, and the language choice.
+
+- **No credentials are entered here.** The application must not handle passwords (§2.2); the button
+  hands over to the identity provider, whose own page asks for them. A username and password form on
+  this page would be one.
+- **It is shown before the provider**, not skipped. One click is the price of a first visit that says
+  what this is and where the visitor is about to be sent, and of a sign-out that ends somewhere rather
+  than bouncing straight back into the provider.
+- **Two states**, each in words and not only in colour (§7.9): a failed sign-in (`?error`) says it did
+  not complete and to try again, without the technical detail of why; a completed sign-out
+  (`?logout`) says so. Switching language keeps the state.
+- It is **standalone**: no sidebar, switcher or user menu, since a signed-out visitor has none of them.
+- A signed-in visitor asking for it is sent on to the dashboard. Under `dev` it is inert, like every
+  login route (§2.3).
+- With **no identity provider configured** the page is refused like the rest of the back-office
+  (§9.4). A Sign in button that cannot work would be worse than the refusal.
+
 ---
 
 ## 8. Cross-cutting behaviour
@@ -1595,7 +1617,7 @@ properties with the registration id `oidc`:
 | `SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_OIDC_REDIRECT_URI` | `{baseUrl}/login/oauth2/code/{registrationId}` |
 
 The provider must allow `https://<host>/login/oauth2/code/oidc` as a redirect URI and, for
-RP-initiated logout, `https://<host>/` as a post-logout redirect. None of these has a default: an
+RP-initiated logout, `https://<host>/login?logout` as a post-logout redirect (§7.19). None of these has a default: an
 installation with no provider configured runs with the back-office closed (§9.4). For local work the
 `keycloak` profile points at the Keycloak in the repository's compose file.
 

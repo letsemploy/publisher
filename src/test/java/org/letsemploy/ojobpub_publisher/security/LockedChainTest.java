@@ -30,11 +30,15 @@ class LockedChainTest {
     @Autowired
     private MockMvc mvc;
 
-    /** Nobody can be authenticated, so nobody gets in - not even to a login page. */
+    /**
+     * Nobody can be authenticated, so nobody gets in - not even to the sign-in
+     * page, whose button could not work (spec 7.19).
+     */
     @Test
     void theBackOfficeIsClosed() throws Exception {
         mvc.perform(get("/")).andExpect(status().isForbidden());
         mvc.perform(get("/employers")).andExpect(status().isForbidden());
+        mvc.perform(get("/login")).andExpect(status().isForbidden());
     }
 
     @Test

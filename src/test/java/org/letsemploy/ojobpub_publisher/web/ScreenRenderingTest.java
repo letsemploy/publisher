@@ -401,6 +401,19 @@ class ScreenRenderingTest {
                 .andExpect(status().isNotFound());
     }
 
+    /**
+     * The login routes are inert in development (spec 2.3): the bypass has signed
+     * everyone in already, so the sign-in page sends them on rather than offering a
+     * provider that is not configured.
+     */
+    @Test
+    void theSignInPageIsInertInDevelopment() throws Exception {
+        mvc.perform(get("/login"))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers
+                        .redirectedUrl("/"));
+    }
+
     @Test
     void germanBundleRenders() throws Exception {
         assertThat(html("/jobs?lang=de")).contains("Stellen", "Entwurf");

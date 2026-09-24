@@ -18,7 +18,9 @@ Two databases (§9.3): **MariaDB**, the default, and **SQLite** for a single-ins
 **Two databases** under Architecture. With MariaDB, a server is needed to run *and* to test. `podman-compose up -d` (or `docker compose up -d`) brings up
 `docker-compose.yml`: the `db` service on **3307** (root/root), adminer on **8082**, and **Keycloak on
 8083** (admin/admin), which imports `keycloak/ojobpub-realm.json` — realm `ojobpub`, users alice/alice
-and bob/bob, and mallory/mallory whose email is unverified.
+and bob/bob, and mallory/mallory whose email is unverified. The realm is imported only into a fresh
+container, so after editing it: `podman rm -f ojobpub-publisher_keycloak_1 && podman-compose up -d
+keycloak` (podman-compose has no `rm`).
 
 **Not 3306, deliberately.** Other projects on the same machine publish 3306 and 8081, and sharing one
 server means another project's `compose down` takes these databases with it — or, worse, two projects
@@ -364,6 +366,16 @@ gone, so the CSP carries **neither `unsafe-inline` nor `unsafe-eval`**.
 Controls that only work with JavaScript are rendered `hidden` with `data-enhanced` and revealed by the
 module, so no screen offers a dead button — progressive enhancement is still mandatory (§7.1).
 `static/css/app.css` is the only custom stylesheet.
+
+**`login.html` is the one standalone template** (§7.19): it does not decorate `layout.html`, which
+assumes a signed-in user's sidebar, switcher and user menu. It is served by `security/LoginController`
+and permitted **by path** in the OIDC chain — `loginPage("/login").permitAll()` alone matches the
+login and failure URLs exactly, query string included, so `/login?logout` and `?lang=de` were bounced
+to a bare `/login`. The locked chain does not permit it. There is no password field and never will be.
+
+Alerts follow Tabler's structure: the icon (`icon alert-icon flex-shrink-0`) is a **direct child** of
+`.alert`, which is itself a flex row with a gap. Wrapped in an extra `d-flex` div the text sits against
+the icon and a long message squeezes it — which is how every flash message once looked.
 
 `templates/` is the only template tree. Layout Dialect: `layout.html` decorates, pages use
 `layout:decorate`, shared fragments live in `templates/fragments/`. Directories follow the owning

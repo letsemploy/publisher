@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<!--
+  Sign-in (spec 7.19). The one standalone page: it does NOT decorate layout.html,
+  because a signed-out visitor has no sidebar, employer switcher or user menu to
+  be shown - and layout.html assumes all three.
+
+  There is no username or password here, and there never will be: the application
+  must not handle passwords (spec 2.2). The button hands over to the identity
+  provider, whose own page asks for credentials.
+
+  No inline script or style, so the strict CSP of spec 9.4 holds on this page too.
+-->
+<html xmlns:th="http://www.thymeleaf.org"
+      th:lang="${#locale.language}"
+      th:attr="data-bs-theme=${ui.theme}">
+<head>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+    <title th:text="#{login.title} + ' · ' + #{app.name}">Sign in · oJobPub Publisher</title>
+    <link rel="stylesheet" th:href="@{/vendor/tabler.min.css}"/>
+    <link rel="stylesheet" th:href="@{/css/app.css}"/>
+</head>
+<body class="d-flex flex-column">
+<div class="page page-center">
+    <main class="container container-tight py-4" id="main">
+        <div class="text-center mb-4">
+            <!-- On a white tile, so the dark-blue mark reads in the dark theme too. -->
+            <span class="d-inline-block bg-white rounded-3 p-2 shadow-sm">
+                <img th:src="@{/images/logo.png}" src="/images/logo.png" width="56" height="56" alt=""/>
+            </span>
+            <div class="h2 mt-2 mb-0" th:text="#{app.name}">oJobPub Publisher</div>
+        </div>
+
+        <div class="card card-md">
+            <div class="card-body">
+                <h1 class="h2 text-center mb-3"
+                    th:text="#{login.heading(#{app.name})}">Sign in to oJobPub Publisher</h1>
+
+                <!-- Each state in words, not only in colour (spec 7.9). -->
+                <div class="alert alert-danger" role="alert" th:if="${error}">
+                    <svg th:replace="~{fragments/icon :: i('alert-triangle','icon alert-icon flex-shrink-0')}"></svg>
+                    <div th:text="#{login.error}">Sign-in did not complete.</div>
+                </div>
+                <div class="alert alert-success" role="status" th:if="${loggedOut}">
+                    <svg th:replace="~{fragments/icon :: i('circle-check','icon alert-icon flex-shrink-0')}"></svg>
+                    <div th:text="#{login.loggedOut}">You have signed out.</div>
+                </div>
+
+                <p class="text-secondary text-center" th:text="#{login.lead}">
+                    Use your organisation's account.
+                </p>
+
+                <a class="btn btn-primary w-100" th:href="@{/oauth2/authorization/oidc}">
+                    <svg th:replace="~{fragments/icon :: i('user','icon')}"></svg>
+                    <span th:text="#{login.submit}">Sign in</span>
+                </a>
+            </div>
+        </div>
+
+        <!-- The notice survives a language switch: the flags are carried along. -->
+        <nav class="text-center text-secondary mt-3" th:attr="aria-label=#{label.language}">
+            <th:block th:each="l, it : ${ui.languages}">
+                <a class="text-secondary"
+                   th:href="@{/login(lang=${l}, error=${error} ? '' : null, logout=${loggedOut} ? '' : null)}"
+                   th:attrappend="aria-current=${l == #locale.language} ? 'true' : null"
+                   th:classappend="${l == #locale.language} ? 'fw-bold'"
+                   th:text="#{'lang.' + ${l}}">English</a>
+                <span th:unless="${it.last}" aria-hidden="true"> · </span>
+            </th:block>
+        </nav>
+    </main>
+</div>
+</body>
+</html>
