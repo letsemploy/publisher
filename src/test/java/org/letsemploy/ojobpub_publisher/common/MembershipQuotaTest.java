@@ -62,8 +62,8 @@ class MembershipQuotaTest {
 
     @BeforeEach
     void setUp() {
-        admin = asUser(userRepo.findByEmailIgnoreCase("dev@localhost").orElseThrow());
-        invitee = userRepo.findByEmailIgnoreCase("editor@example.com").orElseThrow();
+        admin = asUser(userRepo.findUniqueByEmail("dev@localhost").orElseThrow());
+        invitee = userRepo.findUniqueByEmail("editor@example.com").orElseThrow();
         location = locationRepo.findAll().get(0).getId();
     }
 

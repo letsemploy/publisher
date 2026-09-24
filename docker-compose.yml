@@ -22,3 +22,22 @@ services:
     restart: always
     ports:
       - '8082:8080'
+
+  # A local OIDC identity provider, so the real login flow can be tried without
+  # the dev bypass: run the app with the `keycloak` profile (see CLAUDE.md).
+  #
+  # Port 8083, because 8080 is the app, 8081 another stack and 8082 adminer.
+  # The realm, its client and three users (alice, bob, and mallory, whose email
+  # is unverified) are imported from keycloak/ojobpub-realm.json on start. Every
+  # credential in there is for this container only.
+  keycloak:
+    image: quay.io/keycloak/keycloak
+    restart: always
+    command: start-dev --import-realm
+    environment:
+      KC_BOOTSTRAP_ADMIN_USERNAME: admin
+      KC_BOOTSTRAP_ADMIN_PASSWORD: admin
+    volumes:
+      - ./keycloak:/opt/keycloak/data/import:ro
+    ports:
+      - '${KEYCLOAK_PORT:-8083}:8080'

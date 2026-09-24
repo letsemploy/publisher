@@ -50,9 +50,9 @@ class MembershipServiceTest {
     @BeforeEach
     void setUp() {
         employer = employerRepo.findAll().get(0);
-        owner = userRepo.findByEmailIgnoreCase("dev@localhost").orElseThrow();
-        editor = userRepo.findByEmailIgnoreCase("member@example.com").orElseThrow();
-        outsider = userRepo.findByEmailIgnoreCase("editor@example.com").orElseThrow();
+        owner = userRepo.findUniqueByEmail("dev@localhost").orElseThrow();
+        editor = userRepo.findUniqueByEmail("member@example.com").orElseThrow();
+        outsider = userRepo.findUniqueByEmail("editor@example.com").orElseThrow();
         admin = asUser(owner);
     }
 

@@ -50,7 +50,7 @@ class ServiceTokenExpiryTest {
     void setUp() {
         acme = employerRepo.findAll().stream()
                 .filter(e -> e.getName().equals("Acme AG")).findFirst().orElseThrow().getId();
-        admin = asUser(userRepo.findByEmailIgnoreCase("dev@localhost").orElseThrow());
+        admin = asUser(userRepo.findUniqueByEmail("dev@localhost").orElseThrow());
     }
 
     private Actor asUser(UserEntity user) {
@@ -164,7 +164,7 @@ class ServiceTokenExpiryTest {
     @Test
     void anEditorCannotRenew() {
         var created = mint("guarded");
-        Actor editor = asUser(userRepo.findByEmailIgnoreCase("member@example.com").orElseThrow());
+        Actor editor = asUser(userRepo.findUniqueByEmail("member@example.com").orElseThrow());
         assertThatThrownBy(() -> tokens.renew(created.getToken().getId(), editor))
                 .isInstanceOf(NotFoundException.class);
     }

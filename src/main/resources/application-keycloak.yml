@@ -1,0 +1,35 @@
+# Real OIDC login against the Keycloak in docker-compose.yml (profile: keycloak).
+#
+#   podman-compose up -d          # wait until Keycloak answers on :8083
+#   ./mvnw spring-boot:run -Dspring-boot.run.profiles=keycloak
+#
+# Keycloak must be up first: the issuer is discovered when the application
+# starts, and without it the context fails. Sign in as alice/alice or bob/bob;
+# mallory/mallory has an unverified email and so cannot be invited (spec 2.2).
+#
+# A deployment sets the same five properties from the environment instead, with
+# its own provider (spec 9.5):
+#
+#   SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_OIDC_CLIENT_ID
+#   SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_OIDC_CLIENT_SECRET
+#   SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_OIDC_SCOPE=openid,profile,email
+#   SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_OIDC_REDIRECT_URI={baseUrl}/login/oauth2/code/{registrationId}
+#   SPRING_SECURITY_OAUTH2_CLIENT_PROVIDER_OIDC_ISSUER_URI
+#
+# and registers https://<host>/login/oauth2/code/oidc with the provider. The
+# redirect URI is not optional: Spring defaults it only for providers it knows by
+# name, and for any other the application refuses to start without it.
+spring:
+  security:
+    oauth2:
+      client:
+        registration:
+          oidc:
+            client-id: ojobpub-publisher
+            # Matches keycloak/ojobpub-realm.json; valid for that container only.
+            client-secret: local-dev-secret-not-for-production
+            scope: openid,profile,email
+            redirect-uri: "{baseUrl}/login/oauth2/code/{registrationId}"
+        provider:
+          oidc:
+            issuer-uri: http://localhost:${KEYCLOAK_PORT:8083}/realms/ojobpub

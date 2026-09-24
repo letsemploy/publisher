@@ -1,3 +1,12 @@
+# A developer's machine (profile: local): the local MariaDB, the demo seed and
+# GraphiQL. Never activated directly - it is a member of two profile groups
+# (application.properties):
+#
+#   dev      = local + the authentication bypass (spec 2.3)
+#   keycloak = local + real OIDC login against the Keycloak in docker-compose.yml
+#
+# So the bypass is the only thing that separates the two, and trying the real
+# login flow locally does not mean duplicating the database settings.
 spring:
   flyway:
     enabled: true

@@ -49,9 +49,9 @@ class InvitationServiceTest {
     @BeforeEach
     void setUp() {
         employer = employerRepo.findAll().get(0);
-        admin = asUser(userRepo.findByEmailIgnoreCase("dev@localhost").orElseThrow());
-        invitee = userRepo.findByEmailIgnoreCase("editor@example.com").orElseThrow();
-        member = userRepo.findByEmailIgnoreCase("member@example.com").orElseThrow();
+        admin = asUser(userRepo.findUniqueByEmail("dev@localhost").orElseThrow());
+        invitee = userRepo.findUniqueByEmail("editor@example.com").orElseThrow();
+        member = userRepo.findUniqueByEmail("member@example.com").orElseThrow();
     }
 
     private Actor asUser(UserEntity user) {
@@ -68,6 +68,26 @@ class InvitationServiceTest {
     }
 
     // ------------------------------------------------------- non-disclosure
+
+    /**
+     * Email is not unique: two issuers may vouch for one address. Such an address
+     * names nobody in particular, so it is answered as an unknown one - not
+     * guessed at, and not a 500 from a single-result query (spec 2.2, 2.6).
+     */
+    @Test
+    void anAddressSharedByTwoAccountsIsAnsweredAsUnknown() {
+        UserEntity twin = new UserEntity();
+        twin.setIssuer("https://other-idp.example");
+        twin.setSubject("edith-elsewhere");
+        twin.setEmail("EDITOR@example.com");
+        twin.setRole(UserEntity.Role.USER);
+        userRepo.save(twin);
+        long before = invitationRepo.count();
+
+        assertThat(invitationService.invite(employer.getId(), "editor@example.com",
+                MembershipRole.EDITOR, admin)).isEqualTo(InvitationService.InviteOutcome.SENT);
+        assertThat(invitationRepo.count()).isEqualTo(before);
+    }
 
     /**
      * An unregistered address is indistinguishable from success: the form must not

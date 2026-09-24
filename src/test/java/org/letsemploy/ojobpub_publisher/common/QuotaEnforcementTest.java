@@ -83,7 +83,7 @@ class QuotaEnforcementTest {
     @BeforeEach
     void setUp() {
         acme = employerRepo.findAll().get(0);
-        UserEntity dev = userRepo.findByEmailIgnoreCase("dev@localhost").orElseThrow();
+        UserEntity dev = userRepo.findUniqueByEmail("dev@localhost").orElseThrow();
         admin = asUser(dev);
     }
 

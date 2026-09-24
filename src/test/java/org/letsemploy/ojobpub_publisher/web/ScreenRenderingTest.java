@@ -24,7 +24,7 @@ import org.springframework.test.web.servlet.MockMvc;
  * template cannot pass here while breaking the running application.
  *
  * <p>The dev profile supplies the authentication bypass (spec 2.3); the test profile
- * follows it so its datasource wins over the dev one.
+ * follows it (and the local profile dev brings in) so its datasource wins.
  */
 @SpringBootTest
 @AutoConfigureMockMvc

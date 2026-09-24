@@ -1,19 +1,23 @@
 package org.letsemploy.ojobpub_publisher.security;
 
-import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.oauth2.client.oidc.web.logout.OidcClientInitiatedLogoutSuccessHandler;
 import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
+import org.springframework.security.oauth2.client.web.DefaultOAuth2AuthorizationRequestResolver;
+import org.springframework.security.oauth2.client.web.OAuth2AuthorizationRequestCustomizers;
+import org.springframework.security.oauth2.client.web.OAuth2AuthorizationRequestRedirectFilter;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.servlet.util.matcher.PathPatternRequestMatcher;
 
 /**
- * Two filter chains (spec 9.4): the public feed and health endpoints are
- * anonymous, stateless and CSRF-free; everything else is authenticated with CSRF
- * enabled.
+ * The filter chains of spec 9.4, in order: the management API (bearer token),
+ * the public feed (anonymous), and the back-office - which is the OIDC login
+ * chain, the development bypass under the dev profile, or a closed chain when no
+ * identity provider is configured.
  */
 @Configuration
 public class SecurityConfig {
@@ -85,16 +89,57 @@ public class SecurityConfig {
         return http.build();
     }
 
+    /**
+     * The back-office outside development: OIDC login if an identity provider is
+     * configured, and closed if not.
+     *
+     * <p>One bean deciding at creation time, not two behind
+     * {@code @ConditionalOnBean}/{@code @ConditionalOnMissingBean}. Those
+     * conditions are evaluated while this class is parsed - before
+     * auto-configuration has registered the {@link ClientRegistrationRepository}
+     * built from {@code spring.security.oauth2.client.*} - so the closed chain won
+     * even with a provider configured, and nobody could ever sign in. By the time
+     * this method runs every bean definition exists. {@code OidcLoginTest} guards
+     * it.
+     */
     @Bean
     @Profile("!dev")
-    @ConditionalOnBean(ClientRegistrationRepository.class)
     @org.springframework.core.annotation.Order(2)
-    SecurityFilterChain backOfficeChain(HttpSecurity http) throws Exception {
+    SecurityFilterChain backOfficeChain(HttpSecurity http,
+                                        ObjectProvider<ClientRegistrationRepository> registrations)
+            throws Exception {
+        ClientRegistrationRepository repository = registrations.getIfAvailable();
+        return repository == null ? locked(http) : oidcLogin(http, repository);
+    }
+
+    /**
+     * OIDC authorization-code login, with PKCE (spec 2.2).
+     *
+     * <p>Spring adds PKCE by itself only for a public client. This one is
+     * confidential - it holds a client secret - and the spec requires PKCE all the
+     * same, because it also protects the code in transit, which the secret does
+     * not. Logout ends the provider's session too where the provider advertises
+     * an end-session endpoint, and falls back to a local logout where it does not.
+     */
+    private SecurityFilterChain oidcLogin(HttpSecurity http, ClientRegistrationRepository registrations)
+            throws Exception {
+        DefaultOAuth2AuthorizationRequestResolver authorizationRequests =
+                new DefaultOAuth2AuthorizationRequestResolver(registrations,
+                        OAuth2AuthorizationRequestRedirectFilter.DEFAULT_AUTHORIZATION_REQUEST_BASE_URI);
+        authorizationRequests.setAuthorizationRequestCustomizer(
+                OAuth2AuthorizationRequestCustomizers.withPkce());
+
+        OidcClientInitiatedLogoutSuccessHandler providerLogout =
+                new OidcClientInitiatedLogoutSuccessHandler(registrations);
+        providerLogout.setPostLogoutRedirectUri("{baseUrl}/");
+
         http.authorizeHttpRequests(a -> a
                         .requestMatchers(PUBLIC).permitAll()
                         .anyRequest().authenticated())
-                .oauth2Login(login -> login.defaultSuccessUrl("/", true))
-                .logout(logout -> logout.logoutSuccessUrl("/"))
+                .oauth2Login(login -> login
+                        .authorizationEndpoint(a -> a.authorizationRequestResolver(authorizationRequests))
+                        .defaultSuccessUrl("/", true))
+                .logout(logout -> logout.logoutSuccessHandler(providerLogout))
                 .headers(h -> h.contentSecurityPolicy(csp ->
                         // Self-hosted assets only, so the policy can be genuinely strict (spec 9.4).
                         // No 'unsafe-inline' and no 'unsafe-eval': all behaviour lives in
@@ -111,11 +156,7 @@ public class SecurityConfig {
      * is closed rather than open: failing closed is the only safe default when
      * there is no way to authenticate anyone.
      */
-    @Bean
-    @Profile("!dev")
-    @ConditionalOnMissingBean(ClientRegistrationRepository.class)
-    @org.springframework.core.annotation.Order(2)
-    SecurityFilterChain lockedChain(HttpSecurity http) throws Exception {
+    private SecurityFilterChain locked(HttpSecurity http) throws Exception {
         http.authorizeHttpRequests(a -> a
                         .requestMatchers(PUBLIC).permitAll()
                         .anyRequest().denyAll())

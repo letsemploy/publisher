@@ -93,12 +93,27 @@ below depends on there being a *human* answerable, it says so.
 ### 2.2 Authentication
 
 - Authentication **must** use OAuth 2.0 / OpenID Connect through Spring Security, authorization-code
-  flow with PKCE. The application is an OIDC *relying party*; it must not store passwords.
+  flow with PKCE. The application is an OIDC *relying party*; it must not store passwords. PKCE is
+  used although the application is a confidential client holding a secret: the secret authenticates
+  the client, PKCE binds the code to the browser that started the flow, and only the second protects
+  a code intercepted in transit.
 - A user is identified by the stable pair **(issuer, subject)** from the ID token — never by email
   alone, which is mutable and may be reassigned.
 - On first successful login the application **must** provision a local user record from the ID token
   claims (issuer, subject, email, preferred display name). This record holds the application's own
   authorization data: role and employer memberships.
+- **Name and email are the provider's** and are refreshed from the token at every sign-in, so a
+  changed address reaches invitations (§2.6) without anyone editing it here. Nothing else on the
+  record is: role and memberships are local.
+- **Only a verified email is kept.** An invitation goes to whichever account holds the address (§2.6),
+  so an email the provider has not verified would let anyone who can type an address into their
+  profile collect invitations meant for someone else. An unverified address is stored as none; that
+  account can sign in, create an employer, and be invited once its address is verified.
+  `app.oidc.require-verified-email=false` relaxes this for a provider that never sends
+  `email_verified` at all.
+- **Email is not unique.** Two issuers may vouch for one address, and a provider may reassign one. An
+  address held by more than one account names nobody in particular and is treated as naming no one —
+  an invitation to it answers exactly as for an unknown address (§2.6).
 - A newly provisioned user has the **User** platform role and **no employer memberships**. They can log
   in, and from an empty state they may either **create an employer** — becoming its owner (§2.7) — or
   wait for an invitation (§7.16). Neither path is privileged over the other.
@@ -1542,6 +1557,10 @@ changes.
 - Three filter chains: the public feed and health endpoints (stateless, anonymous, CSRF disabled,
   `GET` only); the management API (stateless, bearer token, CSRF disabled, `POST` only — §11.2); and
   the back-office (session-based, authenticated, CSRF enabled).
+- Which back-office chain applies is decided once, at startup: OIDC login when a provider is
+  configured, the development bypass under `dev` (§2.3), and otherwise a **closed** chain — the
+  application starts and serves its feeds, but nobody can sign in. With no way to authenticate anyone,
+  failing closed is the only safe default.
 - The API chain **must not** fall back to the back-office chain. A GraphQL request with no token is a
   401, never a redirect to an identity provider: an integration receiving a login page instead of JSON
   fails in a way that is tedious to diagnose.
@@ -1563,6 +1582,22 @@ changes.
 No secrets in the repository. OIDC issuer, client id and client secret come from the environment. The
 application's public base URL is configured explicitly, because feed URLs must be absolute and correct
 behind a reverse proxy.
+
+**Identity provider.** Any standards-compliant OIDC provider, configured through Spring's own
+properties with the registration id `oidc`:
+
+| Environment variable | Value |
+|---|---|
+| `SPRING_SECURITY_OAUTH2_CLIENT_PROVIDER_OIDC_ISSUER_URI` | the provider's issuer; its metadata is discovered at startup |
+| `SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_OIDC_CLIENT_ID` | the client registered for this application |
+| `SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_OIDC_CLIENT_SECRET` | its secret |
+| `SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_OIDC_SCOPE` | `openid,profile,email` |
+| `SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_OIDC_REDIRECT_URI` | `{baseUrl}/login/oauth2/code/{registrationId}` |
+
+The provider must allow `https://<host>/login/oauth2/code/oidc` as a redirect URI and, for
+RP-initiated logout, `https://<host>/` as a post-logout redirect. None of these has a default: an
+installation with no provider configured runs with the back-office closed (§9.4). For local work the
+`keycloak` profile points at the Keycloak in the repository's compose file.
 
 The database is MariaDB unless the `sqlite` profile is active (§9.3), in which case the file is
 `app.sqlite.path` (`APP_SQLITE_PATH`), default `data/ojobpub.db`, and its directory is created on start.

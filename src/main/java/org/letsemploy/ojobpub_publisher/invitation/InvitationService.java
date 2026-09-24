@@ -133,9 +133,10 @@ public class InvitationService {
         // An invitation that could never be accepted is worse than a refusal now.
         limits.requireRoomForMembers(() -> membershipService.countMembersOf(employerId));
 
-        Optional<UserEntity> found = userRepo.findByEmailIgnoreCase(email.trim());
+        Optional<UserEntity> found = userRepo.findUniqueByEmail(email.trim());
         if (found.isEmpty()) {
-            // Deliberately indistinguishable from success.
+            // Deliberately indistinguishable from success - for an address with no
+            // account, and for one shared by several, which names nobody (spec 2.6).
             log.info("Invitation to employer {} addressed to an unregistered email", employerId);
             return InviteOutcome.SENT;
         }

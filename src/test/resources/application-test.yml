@@ -6,8 +6,9 @@
 # and the dashboard would silently keep its fixed port.
 #
 # Tests that exercise the back-office also activate the dev profile, whose security
-# bypass removes the need for an identity provider. This file is listed after it in
-# @ActiveProfiles, so the datasource below wins over the dev one.
+# bypass removes the need for an identity provider. dev brings in the local profile
+# (the developer's database); this one follows both - TestProfiles resolves to
+# dev, local, test - so the datasource below wins over the local one.
 spring:
   datasource:
     url: jdbc:mariadb://127.0.0.1:${DB_PORT:3307}/publisher_test?createDatabaseIfNotExist=true

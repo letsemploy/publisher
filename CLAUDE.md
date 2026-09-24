@@ -16,7 +16,9 @@ comments cite it as `spec 4.3`, and that is the fastest way to find the rule beh
 
 Two databases (§9.3): **MariaDB**, the default, and **SQLite** for a single-instance installation — see
 **Two databases** under Architecture. With MariaDB, a server is needed to run *and* to test. `podman-compose up -d` (or `docker compose up -d`) brings up
-`docker-compose.yml`: the `db` service on **3307** (root/root) and adminer on **8082**.
+`docker-compose.yml`: the `db` service on **3307** (root/root), adminer on **8082**, and **Keycloak on
+8083** (admin/admin), which imports `keycloak/ojobpub-realm.json` — realm `ojobpub`, users alice/alice
+and bob/bob, and mallory/mallory whose email is unverified.
 
 **Not 3306, deliberately.** Other projects on the same machine publish 3306 and 8081, and sharing one
 server means another project's `compose down` takes these databases with it — or, worse, two projects
@@ -30,6 +32,7 @@ The container is `ojobpub-publisher_db_1`; the compose *service* is `db`, so it 
 ```bash
 ./mvnw spring-boot:run -Dspring-boot.run.profiles=dev   # http://localhost:8080
 ./mvnw spring-boot:run -Dspring-boot.run.profiles=dev,sqlite  # same, on data/ojobpub_dev.db, no server
+./mvnw spring-boot:run -Dspring-boot.run.profiles=keycloak    # real OIDC login; Keycloak must be up first
 ./mvnw package                                          # build jar (runs tests)
 ./mvnw test                                             # all tests, on MariaDB
 TEST_DB=sqlite ./mvnw clean test                        # all tests, on SQLite (target/publisher_test.db)
@@ -38,11 +41,14 @@ TEST_DB=sqlite ./mvnw clean test                        # all tests, on SQLite (
 ./mvnw versions:display-dependency-updates              # or: make check-mvn-updates
 ```
 
-The `dev` profile is not active by default and the app will not start without it: `application-dev.yml`
-holds the only MariaDB datasource configuration (database `ojobpub_publisher_dev`). A deployment either
-sets `SPRING_DATASOURCE_*` for MariaDB or runs with `SPRING_PROFILES_ACTIVE=sqlite` and
-`APP_SQLITE_PATH` on a volume. It also bypasses
-authentication (§2.3) — see **Authentication** below.
+Locally, run either `dev` or `keycloak`; plain startup has no datasource. Both are **profile groups**
+(`application.properties`) that bring in `local` — `application-local.yml`, the developer's MariaDB
+(database `ojobpub_publisher_dev`), the seed and GraphiQL. `dev` adds the authentication bypass (§2.3);
+`keycloak` adds real OIDC login against the compose Keycloak (`application-keycloak.yml`). There is no
+`application-dev.yml`: the bypass is `@Profile("dev")` beans, so it cannot leak into `keycloak`, and
+the two differ in exactly that. A deployment sets `SPRING_DATASOURCE_*` for MariaDB or runs with
+`SPRING_PROFILES_ACTIVE=sqlite` and `APP_SQLITE_PATH` on a volume, plus the five `SPRING_SECURITY_OAUTH2_*`
+variables of §9.5 — see **Authentication** below.
 
 JobRunr's dashboard binds port 8000 whenever the app runs. Actuator and the Prometheus registry are on
 the main port.
@@ -105,12 +111,35 @@ shows a validity badge from the same validator.
 
 ### Authentication and roles
 
-OIDC via Spring Security. `SecurityConfig` has four chains, in order: the **management API**
-(`/graphql`, bearer token, stateless, no CSRF); the public feed; a **dev-profile bypass**
-(no identity provider needed); and the back-office. The API chain is `@Order(0)` on purpose — the dev
-bypass must never reach `/graphql`, so the API is token-authenticated even locally. Without a configured `ClientRegistrationRepository`
-the back-office chain is replaced by a **fail-closed** one — the app starts and feeds stay served, but
-nobody gets in. `DevBypassGuard` refuses to start if `dev` is combined with `prod`.
+OIDC via Spring Security, authorization code **with PKCE** (§2.2). `SecurityConfig` has four chains, in
+order: the **management API** (`/graphql`, bearer token, stateless, no CSRF); the public feed; a
+**dev-profile bypass** (no identity provider needed); and the back-office. The API chain is `@Order(0)`
+on purpose — the dev bypass must never reach `/graphql`, so the API is token-authenticated even locally.
+`DevBypassGuard` refuses to start if `dev` is combined with `prod`.
+
+**The back-office chain decides at bean creation, not with `@ConditionalOnBean`.** `backOfficeChain`
+takes an `ObjectProvider<ClientRegistrationRepository>`: OIDC login if a repository exists, a
+**fail-closed** chain if not (the app starts and feeds stay served, but nobody gets in). It used to be
+two beans behind `@ConditionalOnBean`/`@ConditionalOnMissingBean`, and those conditions run while
+`SecurityConfig` is parsed — *before* auto-configuration registers the repository built from
+`spring.security.oauth2.client.*`. So the closed chain won with a provider configured and nobody could
+ever sign in; every test ran under `dev` and none noticed. Never gate a bean in this class on an
+auto-configured bean. `OidcLoginTest` and `LockedChainTest` guard both directions.
+
+- **PKCE is set explicitly** (`OAuth2AuthorizationRequestCustomizers.withPkce()`): Spring adds it by
+  itself only for public clients, and this one is confidential. The compose Keycloak *requires* S256,
+  so losing it breaks local login loudly.
+- **The registration id is `oidc`** and `redirect-uri` must be set: Spring defaults it only for
+  providers it knows by name, and refuses to start without it for any other.
+- **Accounts:** `CurrentUserService.signIn` finds by (issuer, subject) or creates — `USER` role, no
+  memberships — and refreshes name and email from the token, writing only when they changed (it runs
+  on every request). **Only a verified email is stored** (`email_verified`), because invitations go to
+  whoever holds an address; `app.oidc.require-verified-email=false` relaxes it.
+- **Email is not unique.** Look people up with `UserRepo.findUniqueByEmail`, which answers empty for an
+  address held by several accounts — `InvitationService` then answers `SENT`, as for an unknown one.
+  There is deliberately no single-result finder: two accounts sharing an address made it throw.
+- **Logout** uses `OidcClientInitiatedLogoutSuccessHandler`: it ends the provider's session when the
+  provider advertises an end-session endpoint, and is a local logout otherwise.
 
 Roles are **two independent axes** (§2.1):
 
@@ -392,6 +421,8 @@ TEST_DB=sqlite ./mvnw test                   # all, on SQLite; no server
 ./mvnw test -Dtest=ManagementApiTest         # the GraphQL API end to end
 ./mvnw test -Dtest=ApiLimitsTest             # depth, rate and body limits, with the ceilings lowered
 ./mvnw test -Dtest=PeopleScreenTest          # the People screen as an editor, not an admin
+./mvnw test -Dtest=OidcLoginTest             # real sign-in without the bypass: PKCE, accounts, logout
+./mvnw test -Dtest=LockedChainTest           # no provider, no dev: the back-office is closed
 ./mvnw test -Dtest=MemberSuspensionScreenTest # suspending and reinstating from the People screen
 ./mvnw test -Dtest=ResourceLimitsTest        # the quota convention; no Spring, no database
 ./mvnw test -Dtest=QuotaEnforcementTest      # the six quotas against the seed data
@@ -430,6 +461,12 @@ so no screen test notices a permission split, since the privileged half is alway
 screen as somebody else, override the actor: `PeopleScreenTest` replaces `CurrentUserService` with
 `@MockitoBean` and returns an editor. Do that whenever a screen shows different things to different
 roles, and assert **both** directions — what the role sees and what it must not.
+
+The exceptions are `OidcLoginTest` and `LockedChainTest`, which run **without** `dev`
+(`TestProfiles.WithoutDev`) because the bypass never reaches the real sign-in path. `OidcLoginTest`
+configures the provider through `spring.security.oauth2.client.*` properties — as a deployment does —
+so the auto-configured repository is what the chain sees; a test that supplied its own
+`ClientRegistrationRepository` bean would have hidden the bug described under **Authentication**.
 
 Back-office tests use `@ActiveProfiles(resolver = TestProfiles.class)`, which resolves to `dev, test`:
 `dev` provides the authentication bypass, `test` is listed second so its datasource wins over the dev
