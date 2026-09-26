@@ -49,6 +49,14 @@ docker run -d --name ojobpub -p 8080:8080 -v ojobpub-data:/data \
   `SPRING_DATASOURCE_PASSWORD`. The database must exist; its tables are created and upgraded on
   start.
 
+To keep the configuration in a file rather than in environment variables, start from
+[`docs/examples/application-prod.yml`](docs/examples/application-prod.yml). Mount it as
+`/config/application-prod.yml` and run with `SPRING_PROFILES_ACTIVE=prod`. It also switches off what
+production should not have: the unauthenticated JobRunr dashboard and the demo data.
+To sign in with Google, add [`docs/examples/application-google.yml`](docs/examples/application-google.yml)
+beside it and run with `SPRING_PROFILES_ACTIVE=prod,google`. Its comments walk through the Google Cloud
+Console, and explain how to limit sign-in to your own Workspace organisation.
+
 Anyone who signs in can create an employer, and becomes its owner. An owner invites colleagues by
 email; a colleague must have signed in once before they can be invited.
 

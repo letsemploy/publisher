@@ -1,0 +1,66 @@
+# Example: sign in with Google (profile: google).
+#
+# An overlay on application-prod.yml: it replaces only the identity provider, so
+# everything else - database, base URL, limits - still comes from there.
+#
+#   SPRING_PROFILES_ACTIVE=prod,google
+#   GOOGLE_CLIENT_ID=1234567890-abc.apps.googleusercontent.com
+#   GOOGLE_CLIENT_SECRET=GOCSPX-...
+#
+# Mount it next to the prod file, as /config/application-google.yml. With both
+# active, google is listed last and wins, so the OIDC_* variables of the prod file
+# are not needed.
+#
+# --- Setting it up in the Google Cloud Console -------------------------------
+#
+# 1. APIs & Services > OAuth consent screen (Google Auth Platform > Branding and
+#    Audience). The Audience decides WHO CAN SIGN IN - see "Who gets in" below.
+#    Scopes: openid, .../auth/userinfo.email, .../auth/userinfo.profile. Nothing
+#    else is needed, and none of these needs Google's verification review.
+# 2. Credentials > Create credentials > OAuth client ID > "Web application".
+#    Authorised redirect URIs:
+#      https://<your-host>/login/oauth2/code/oidc
+#    and, to try it locally first:
+#      http://localhost:8080/login/oauth2/code/oidc
+#    No JavaScript origins are needed: the browser never talks to Google's API.
+# 3. Copy the client ID and secret into the two variables above.
+#
+# --- What is different with Google -------------------------------------------
+#
+# Who gets in. An "External" audience admits ANY Google account, and anyone who
+# signs in may create an employer (spec 2.2) - bounded only by the quotas of
+# spec 8.4. That is fine for a public service and wrong for a team's own
+# installation. For a Google Workspace organisation, choose "Internal": only
+# accounts of your organisation can sign in, and Google enforces it. Otherwise
+# leave the app in "Testing" and list the permitted accounts as test users.
+#
+# Signing out. Google offers no end-session endpoint, so logging out ends the
+# session here but not at Google (spec 2.2: "where the provider supports it").
+# Pressing Sign in again goes straight back in with the same Google account. On
+# a shared computer, sign out of Google as well.
+#
+# Email. Google sends email_verified, and its addresses are verified, so
+# invitations work as described in spec 2.6 with no relaxing of
+# app.oidc.require-verified-email.
+#
+# Accounts. A person is identified by Google's issuer and subject, never by the
+# address (spec 2.2). Moving an installation from Google to another provider
+# later therefore gives everyone a new, empty account - their employers would
+# have to be handed over by invitation.
+
+spring:
+  security:
+    oauth2:
+      client:
+        registration:
+          # Keep the id "oidc": the sign-in button and the redirect URI registered
+          # at Google both contain it.
+          oidc:
+            client-id: ${GOOGLE_CLIENT_ID}
+            client-secret: ${GOOGLE_CLIENT_SECRET}
+            scope: openid,profile,email
+            redirect-uri: "{baseUrl}/login/oauth2/code/{registrationId}"
+        provider:
+          oidc:
+            # Discovered at startup: authorisation, token and key endpoints.
+            issuer-uri: https://accounts.google.com

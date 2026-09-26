@@ -1,0 +1,157 @@
+# Example production configuration for ojobpub publisher (profile: prod).
+#
+# Copy it, adjust it, and put it where Spring Boot looks for configuration next
+# to the application - no rebuild needed:
+#
+#   container:  -v ./application-prod.yml:/config/application-prod.yml:ro
+#               -e SPRING_PROFILES_ACTIVE=prod
+#   jar:        ./config/application-prod.yml, beside the jar, same profile
+#
+# Secrets stay out of this file: every ${VARIABLE} below is read from the
+# environment. Set all of them - a missing one is NOT caught at startup. Spring
+# Boot leaves it in place as the literal text "${NAME}", so the application
+# starts and fails later, and less clearly: a database host it cannot resolve,
+# or a provider that rejects a client id of "${OIDC_CLIENT_ID}".
+#
+# Never combine prod with the dev profile. dev switches authentication off, and
+# the application refuses to start with both (spec 2.3).
+#
+# The full reference is docs/spec/09-technical-shape.md (spec 9.5) and
+# docs/spec/08-cross-cutting.md (spec 8.4) for the limits.
+
+app:
+  # The public address people and job boards use. Every published feed URL is
+  # built from it, so it must be right behind a reverse proxy (spec 9.5).
+  base-url: ${APP_BASE_URL}
+
+  oidc:
+    # Invitations go to whoever holds an address, so only verified addresses are
+    # kept (spec 2.2). Set to false only for a provider that never sends
+    # email_verified at all.
+    require-verified-email: true
+
+  # Creation quotas (spec 8.4). 0 means unlimited: a single team with no abuse
+  # problem can switch them off. The values shown are the defaults.
+  limits:
+    memberships-per-user: 3
+    jobs-per-employer: 100
+    feeds-per-employer: 10
+    pending-invitations-per-employer: 20
+    tokens-per-employer: 10
+    members-per-employer: 25
+
+  # Service tokens for the management API (spec 2.8): the lifetime in months
+  # (0 = never expires) and how many days ahead the register flags an expiry.
+  tokens:
+    lifetime-months: 12
+    expiry-warning-days: 30
+
+  # Management API limits (spec 11.6). The rate limit is per token, per instance.
+  api:
+    rate-limit: 600
+    rate-limit-window: PT1M
+    max-request-bytes: 262144
+    max-query-depth: 10
+    max-query-complexity: 1000
+
+server:
+  # Behind a reverse proxy that terminates TLS, the application must build its
+  # own URLs - the OIDC redirect and post-logout URIs among them - from the
+  # proxy's X-Forwarded-* headers, or the identity provider is sent an
+  # http://internal-host address and refuses it. Only safe when the application
+  # is reachable through the proxy alone: anyone who can reach it directly can
+  # forge those headers. Remove this line if nothing sits in front of it.
+  forward-headers-strategy: framework
+  servlet:
+    session:
+      timeout: 8h
+      cookie:
+        secure: true
+        http-only: true
+        same-site: lax
+  shutdown: graceful
+
+spring:
+  # --- Database: MariaDB ------------------------------------------------------
+  # The database must exist; its tables are created and upgraded on start.
+  datasource:
+    url: jdbc:mariadb://${DB_HOST}:${DB_PORT:3306}/${DB_NAME:publisher_prod}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+    hikari:
+      maximum-pool-size: 10
+
+  # --- Or SQLite, for a single instance ----------------------------------------
+  # Delete the datasource block above and add the sqlite profile:
+  #   SPRING_PROFILES_ACTIVE=prod,sqlite
+  #   APP_SQLITE_PATH=/data/ojobpub.db   (on a volume)
+  # Everything SQLite needs is in the sqlite profile; nothing else changes here.
+
+  flyway:
+    # The history table's name, as everywhere else in this project. Set it before
+    # the first start: changing it later makes Flyway think nothing is applied.
+    table: migrations
+
+  sql:
+    init:
+      # Never load the demo seed in production. This is Spring's default for a
+      # database server already; stated so nobody switches it on by accident.
+      mode: never
+
+  # --- Sign-in: your OpenID Connect provider (spec 2.2, 9.5) ------------------
+  # The provider needs a confidential client with the redirect URI
+  #   https://<your-host>/login/oauth2/code/oidc
+  # and the post-logout redirect URI
+  #   https://<your-host>/login?logout
+  # Without this block the application starts and serves its feeds, but nobody
+  # can sign in (spec 9.4).
+  security:
+    oauth2:
+      client:
+        registration:
+          oidc:
+            client-id: ${OIDC_CLIENT_ID}
+            client-secret: ${OIDC_CLIENT_SECRET}
+            scope: openid,profile,email
+            # Required: Spring defaults it only for providers it knows by name.
+            redirect-uri: "{baseUrl}/login/oauth2/code/{registrationId}"
+        provider:
+          oidc:
+            # Discovered at startup, so the provider must be reachable then.
+            issuer-uri: ${OIDC_ISSUER_URI}
+
+  # Development conveniences stay off (spec 11.6). These are the defaults too.
+  graphql:
+    graphiql:
+      enabled: false
+    schema:
+      introspection:
+        enabled: false
+
+# JobRunr runs no jobs in this application, and its dashboard has no
+# authentication of its own - it would answer anyone who can reach port 8000.
+jobrunr:
+  dashboard:
+    enabled: false
+  background-job-server:
+    enabled: false
+
+management:
+  endpoints:
+    web:
+      exposure:
+        # Public by design (spec 2.4). Do not add prometheus or others here:
+        # the back-office admits every signed-in user, not only admins, so any
+        # endpoint listed would be readable by all of them. Scrape metrics from a
+        # separate management port instead (management.server.port) that is not
+        # published to the outside.
+        include: health,info
+  endpoint:
+    health:
+      # Up or down, without component details, for anyone.
+      show-details: never
+
+logging:
+  level:
+    root: INFO
+    org.letsemploy.ojobpub_publisher: INFO

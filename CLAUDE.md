@@ -54,7 +54,12 @@ Locally, run either `dev` or `keycloak`; plain startup has no datasource. Both a
 `application-dev.yml`: the bypass is `@Profile("dev")` beans, so it cannot leak into `keycloak`, and
 the two differ in exactly that. A deployment sets `SPRING_DATASOURCE_*` for MariaDB or runs with
 `SPRING_PROFILES_ACTIVE=sqlite` and `APP_SQLITE_PATH` on a volume, plus the five `SPRING_SECURITY_OAUTH2_*`
-variables of §9.5 — see **Authentication** below.
+variables of §9.5 — see **Authentication** below. `docs/examples/application-prod.yml` is a complete,
+commented `prod` configuration, meant to be mounted, not packaged. It also turns off the JobRunr
+dashboard, which has no authentication, and pins the Flyway table name, which is otherwise set only in
+the local and test profiles. Keep it in step when adding a setting a deployment must know about. Spring's
+binder leaves an unresolved `${VAR}` as literal text instead of failing, so a missing variable is not
+caught at startup.
 
 JobRunr's dashboard binds port 8000 whenever the app runs. Actuator and the Prometheus registry are on
 the main port.
