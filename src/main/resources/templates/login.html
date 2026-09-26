@@ -50,9 +50,13 @@
                     Use your organisation's account.
                 </p>
 
-                <a class="btn btn-primary w-100" th:href="@{/oauth2/authorization/oidc}">
-                    <svg th:replace="~{fragments/icon :: i('user','icon')}"></svg>
-                    <span th:text="#{login.submit}">Sign in</span>
+                <!-- One button per configured provider, sorted by name (spec 7.19).
+                     A single provider keeps the primary button; several are all neutral,
+                     so none looks like the one to pick. -->
+                <a th:each="o : ${options}" th:href="@{${o.href}}"
+                   class="btn w-100 mb-2" th:classappend="${options.size() == 1} ? 'btn-primary'">
+                    <th:block th:replace="~{fragments/provider :: icon(${o.brand})}"></th:block>
+                    <span th:text="${o.label != null} ? #{login.continueWith(${o.label})} : #{login.submit}">Sign in</span>
                 </a>
             </div>
         </div>

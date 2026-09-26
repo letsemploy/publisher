@@ -104,7 +104,8 @@ spring:
   # and the post-logout redirect URI
   #   https://<your-host>/login?logout
   # Without this block the application starts and serves its feeds, but nobody
-  # can sign in (spec 9.4).
+  # can sign in (spec 9.4). For several providers - Google, GitLab, Microsoft,
+  # your own - delete this block and use application-providers.yml instead.
   security:
     oauth2:
       client:

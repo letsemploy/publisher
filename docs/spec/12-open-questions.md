@@ -59,3 +59,9 @@
    behaviour near zero. Nothing currently measures or bounds it. Whether a size budget, or a rule that
    each addition names the server round trip it replaces, is worth adopting is deferred — the module
    covers three interactions today (modal dismissal, chip removal, copy to clipboard).
+15. **Linking identities.** With several providers (§7.19), one person may end up with an account per
+   provider, and their employers are not shared between them (§2.2). Joining accounts by email is
+   ruled out because it hands an account to whoever controls the address elsewhere. What would be
+   safe is linking **by consent from inside a signed-in session**: signing in to the second provider
+   while already signed in through the first. Whether that is worth building depends on how often
+   installations actually offer more than one provider.

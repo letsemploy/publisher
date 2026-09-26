@@ -151,6 +151,19 @@ auto-configured bean. `OidcLoginTest` and `LockedChainTest` guard both direction
   There is deliberately no single-result finder: two accounts sharing an address made it throw.
 - **Logout** uses `OidcClientInitiatedLogoutSuccessHandler`: it ends the provider's session when the
   provider advertises an end-session endpoint, and is a local logout otherwise.
+- **Several providers, one button each** (`security/LoginOptions`, §7.19). The buttons are read from
+  the registration repository, so a provider is configuration only. They are **sorted by label**,
+  because Boot binds registrations into a `HashMap` and the configured order is gone before we see
+  it. The label is `client-name`, or the brand when that is only the default id. The brand comes
+  from the **authorisation host**, never the registration id. A new brand is one host in
+  `LoginOptions`, one literal case in `fragments/provider.html`, and `make assets`: the sprite
+  scanner only finds literal icon names.
+- **OpenID Connect only**, enforced at startup by `LoginOptions.requireOpenIdConnect`. A registration
+  without `openid`, GitHub being the known case, would log in as an `OAuth2User`, which
+  `CurrentUserService` treats as anonymous: a completed login that goes nowhere. Do not "support"
+  one by relaxing the check. It needs an identity and a verified email the provider does not give.
+- Overlays **merge** registrations, they do not replace them: a profile cannot remove `oidc` added by
+  another file. `docs/examples/application-providers.yml` says to delete the prod example's block.
 
 Roles are **two independent axes** (§2.1):
 
@@ -444,6 +457,8 @@ TEST_DB=sqlite ./mvnw test                   # all, on SQLite; no server
 ./mvnw test -Dtest=PeopleScreenTest          # the People screen as an editor, not an admin
 ./mvnw test -Dtest=OidcLoginTest             # real sign-in without the bypass: PKCE, accounts, logout
 ./mvnw test -Dtest=LockedChainTest           # no provider, no dev: the back-office is closed
+./mvnw test -Dtest=LoginProvidersTest        # several providers: one button each, sorted, branded
+./mvnw test -Dtest=LoginOptionsTest          # OIDC-only check and brand by host; no Spring
 ./mvnw test -Dtest=MemberSuspensionScreenTest # suspending and reinstating from the People screen
 ./mvnw test -Dtest=ResourceLimitsTest        # the quota convention; no Spring, no database
 ./mvnw test -Dtest=QuotaEnforcementTest      # the six quotas against the seed data

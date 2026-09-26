@@ -123,6 +123,10 @@ public class SecurityConfig {
      */
     private SecurityFilterChain oidcLogin(HttpSecurity http, ClientRegistrationRepository registrations)
             throws Exception {
+        // Refuse a provider that would sign people in as nobody (spec 2.2) - at
+        // startup, rather than as a login that completes and then goes nowhere.
+        LoginOptions.requireOpenIdConnect(registrations);
+
         DefaultOAuth2AuthorizationRequestResolver authorizationRequests =
                 new DefaultOAuth2AuthorizationRequestResolver(registrations,
                         OAuth2AuthorizationRequestRedirectFilter.DEFAULT_AUTHORIZATION_REQUEST_BASE_URI);

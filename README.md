@@ -13,7 +13,8 @@ job boards and aggregators can read without an API key.
   members.
 - **Management API**: GraphQL at `/graphql`, authenticated with service tokens an owner creates, for
   integrations with other systems.
-- **Sign-in** through your own OpenID Connect provider. The application stores no passwords.
+- **Sign-in** through one or more OpenID Connect providers, such as Google, GitLab, Microsoft or your
+  own Keycloak, with a button for each. The application stores no passwords.
 - English and German.
 
 ## Run it
@@ -55,7 +56,8 @@ To keep the configuration in a file rather than in environment variables, start 
 production should not have: the unauthenticated JobRunr dashboard and the demo data.
 To sign in with Google, add [`docs/examples/application-google.yml`](docs/examples/application-google.yml)
 beside it and run with `SPRING_PROFILES_ACTIVE=prod,google`. Its comments walk through the Google Cloud
-Console, and explain how to limit sign-in to your own Workspace organisation.
+Console, and explain how to limit sign-in to your own Workspace organisation. For several providers at
+once, use [`docs/examples/application-providers.yml`](docs/examples/application-providers.yml) instead.
 
 Anyone who signs in can create an employer, and becomes its owner. An owner invites colleagues by
 email; a colleague must have signed in once before they can be invited.

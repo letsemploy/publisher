@@ -51,6 +51,13 @@ below depends on there being a *human* answerable, it says so.
   a code intercepted in transit.
 - A user is identified by the stable pair **(issuer, subject)** from the ID token — never by email
   alone, which is mutable and may be reassigned.
+- **Only OpenID Connect providers.** Several may be configured side by side (§7.19), and each must
+  issue ID tokens: a provider that only offers OAuth 2.0 has no issuer and subject to identify a
+  person by, and no verified email to invite them at. Such a registration **refuses to start**
+  rather than completing a login that leaves the person as nobody. GitHub is the well-known case.
+- **One account per identity, never joined by email.** The same person signing in through two
+  providers has two accounts. Joining them by a shared address would let whoever controls that
+  address at one provider take over the account made through the other (§12).
 - On first successful login the application **must** provision a local user record from the ID token
   claims (issuer, subject, email, preferred display name). This record holds the application's own
   authorization data: role and employer memberships.

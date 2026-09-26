@@ -173,6 +173,19 @@ class OidcLoginTest {
                 .doesNotContain("??");
     }
 
+    /**
+     * One provider, configured without a client-name: exactly one button, the
+     * primary one, saying a plain "Sign in" - the page as it was before several
+     * providers were possible (spec 7.19).
+     */
+    @Test
+    void aSingleProviderGetsOnePrimarySignInButton() throws Exception {
+        String body = page("/login");
+        assertThat(body.split("/oauth2/authorization/", -1)).hasSize(2);
+        assertThat(body).contains("btn-primary").contains(">Sign in</span>")
+                .doesNotContain("Continue with");
+    }
+
     /** The strict CSP of spec 9.4 would break anything inline, so nothing is. */
     @Test
     void theSignInPageHasNothingInline() throws Exception {

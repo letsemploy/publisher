@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 public class LoginController {
 
     private final CurrentUserService currentUserService;
+    private final LoginOptions loginOptions;
 
     @GetMapping("/login")
     public String login(HttpServletRequest request, Model model) {
@@ -30,6 +31,8 @@ public class LoginController {
         // Present or not; the parameters carry no value (/login?error).
         model.addAttribute("error", request.getParameterMap().containsKey("error"));
         model.addAttribute("loggedOut", request.getParameterMap().containsKey("logout"));
+        // One button per configured provider, sorted by name (spec 7.19).
+        model.addAttribute("options", loginOptions.all());
         return "login";
     }
 }

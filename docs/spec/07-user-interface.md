@@ -452,6 +452,15 @@ Where a signed-out visitor starts, where a failed sign-in lands, and where signi
 centred card — the logo, "Sign in to oJobPub Publisher", one line saying the visitor will be taken to
 their organisation's sign-in page and brought back, a **Sign in** button, and the language choice.
 
+- **One button per configured identity provider.** Adding one is configuration alone. Each button
+  says "Continue with …", naming the provider by its configured display name, or by the brand when
+  none is configured. It carries the provider's logo when the provider is recognised by the host of
+  its authorisation endpoint (Google, GitLab, Microsoft, Apple, Auth0), and a generic icon otherwise.
+  - They are **sorted by name**, with an unnamed one last. The configured order is not kept
+    underneath, so sorting is the only order a reader can predict.
+  - With several, all look alike, so none is presented as the one to pick. A single provider keeps
+    one primary "Sign in" button, as before.
+
 - **No credentials are entered here.** The application must not handle passwords (§2.2); the button
   hands over to the identity provider, whose own page asks for them. A username and password form on
   this page would be one.

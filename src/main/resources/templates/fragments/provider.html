@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<!--
+  The logo on a sign-in button (spec 7.19), chosen by LoginOptions from the
+  provider's authorisation host.
+
+  Every icon name is written out literally, one case per brand: the sprite is
+  built from the names scripts/vendor-assets.sh finds in the templates, so a name
+  computed at runtime would never reach static/vendor/icons.svg. A new brand is
+  one case here, one host in LoginOptions, and a `make assets` run.
+
+  Each case is a th:block around the svg, never th:case on the svg itself:
+  th:replace runs before th:case, just as before th:if, and every icon would
+  render on every button.
+-->
+<th:block th:fragment="icon(brand)" th:switch="${brand}">
+    <th:block th:case="'google'"><svg th:replace="~{fragments/icon :: i('brand-google','icon')}"></svg></th:block>
+    <th:block th:case="'gitlab'"><svg th:replace="~{fragments/icon :: i('brand-gitlab','icon')}"></svg></th:block>
+    <th:block th:case="'microsoft'"><svg th:replace="~{fragments/icon :: i('brand-windows','icon')}"></svg></th:block>
+    <th:block th:case="'apple'"><svg th:replace="~{fragments/icon :: i('brand-apple','icon')}"></svg></th:block>
+    <th:block th:case="'auth0'"><svg th:replace="~{fragments/icon :: i('brand-auth0','icon')}"></svg></th:block>
+    <th:block th:case="*"><svg th:replace="~{fragments/icon :: i('user','icon')}"></svg></th:block>
+</th:block>
+</body>
+</html>

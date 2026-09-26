@@ -1,0 +1,92 @@
+# Example: several sign-in providers side by side (profile: providers).
+#
+# An overlay on application-prod.yml, replacing its single provider:
+#
+#   SPRING_PROFILES_ACTIVE=prod,providers
+#
+# FIRST delete the "spring: security:" block from application-prod.yml.
+# Registrations from both files are merged, not replaced, so its "oidc" entry
+# would stay - one more button, and without the OIDC_* variables the application
+# does not start ("Not enough variable values available to expand
+# 'OIDC_ISSUER_URI'").
+#
+# Mount it next to the prod file, as /config/application-providers.yml. The
+# sign-in page shows one button per registration below, sorted by name, with the
+# provider's logo where it is recognised (spec 7.19). Adding or removing a
+# provider is only a matter of this file.
+#
+# Rules that hold for every provider here:
+#
+# * OpenID Connect only (spec 2.2). A registration without the openid scope stops
+#   the application at startup with an explanation. GitHub is therefore not
+#   possible: it offers OAuth 2.0 but no ID token and no verified email.
+# * Each provider has its own callback, to register there as the redirect URI:
+#     https://<your-host>/login/oauth2/code/<registration-id>
+#   The id is the key under "registration:" - google, gitlab, microsoft, acme.
+#   Choose it once: changing it changes the URI every provider has on file.
+# * One account per provider. Signing in with Google and then with GitLab gives
+#   the same person two separate accounts, even with the same email address.
+#   Accounts are never joined by email: whoever controls an address at one
+#   provider would otherwise take over the account made through another.
+# * Invitations go to verified email addresses only (spec 2.6). A provider that
+#   does not send email_verified - Microsoft, below - signs people in, but
+#   they cannot be invited until the setting is relaxed, and that setting
+#   (app.oidc.require-verified-email) applies to every provider at once.
+
+spring:
+  security:
+    oauth2:
+      client:
+        registration:
+
+          # Google: Spring knows it by this id, so the client id and secret are
+          # all it needs - scopes, endpoints, the name "Google" and the callback
+          # come built in. Setup: see application-google.yml.
+          google:
+            client-id: ${GOOGLE_CLIENT_ID}
+            client-secret: ${GOOGLE_CLIENT_SECRET}
+
+          # GitLab.com, or your own GitLab with its address as issuer-uri below.
+          # Setup: User settings > Applications (or a group's), scopes openid,
+          # profile and email, "Confidential" ticked.
+          gitlab:
+            client-id: ${GITLAB_CLIENT_ID}
+            client-secret: ${GITLAB_CLIENT_SECRET}
+            client-name: GitLab
+            scope: openid,profile,email
+            redirect-uri: "{baseUrl}/login/oauth2/code/{registrationId}"
+
+          # Microsoft Entra ID: an app registration in your tenant, platform
+          # "Web", with a client secret. Add the optional ID token claim "email",
+          # or no address arrives at all.
+          microsoft:
+            client-id: ${MICROSOFT_CLIENT_ID}
+            client-secret: ${MICROSOFT_CLIENT_SECRET}
+            client-name: Microsoft
+            scope: openid,profile,email
+            redirect-uri: "{baseUrl}/login/oauth2/code/{registrationId}"
+
+          # Your organisation's own provider - Keycloak, Authentik, Okta, Auth0,
+          # Zitadel... Any OpenID Connect provider works; client-name is the text
+          # on its button ("Continue with Acme SSO").
+          acme:
+            client-id: ${ACME_CLIENT_ID}
+            client-secret: ${ACME_CLIENT_SECRET}
+            client-name: Acme SSO
+            scope: openid,profile,email
+            redirect-uri: "{baseUrl}/login/oauth2/code/{registrationId}"
+
+        provider:
+          # Google needs no entry: Spring knows its endpoints.
+          gitlab:
+            issuer-uri: https://gitlab.com
+          microsoft:
+            # Your tenant's issuer, with its id. Not "common" or "organizations":
+            # tokens from those name the user's real tenant as issuer, and issuer
+            # validation rejects every one of them.
+            issuer-uri: https://login.microsoftonline.com/${MICROSOFT_TENANT_ID}/v2.0
+          acme:
+            issuer-uri: https://sso.acme.example/realms/acme
+
+  # Every issuer-uri above is discovered at startup, so each provider must be
+  # reachable when the application starts - one that is down stops it.
