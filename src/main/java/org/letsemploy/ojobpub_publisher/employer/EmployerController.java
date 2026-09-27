@@ -13,6 +13,7 @@ import org.letsemploy.ojobpub_publisher.location.Location;
 import org.letsemploy.ojobpub_publisher.location.LocationService;
 import org.letsemploy.ojobpub_publisher.membership.MembershipService;
 import org.letsemploy.ojobpub_publisher.web.view.*;
+import org.letsemploy.ojobpub_publisher.web.EmployerContext;
 import org.letsemploy.ojobpub_publisher.web.Scope;
 import org.letsemploy.ojobpub_publisher.web.Views;
 import org.springframework.context.MessageSource;
@@ -35,6 +36,7 @@ public class EmployerController {
     private final MembershipService membershipService;
     private final JobService jobService;
     private final Scope scope;
+    private final EmployerContext employerContext;
     private final Views views;
     private final MessageSource messages;
 
@@ -110,6 +112,11 @@ public class EmployerController {
             // Every employer gets a working URL the moment it exists (spec 3.5).
             if (id == null) {
                 feedService.createDefaultFeed(saved);
+                // Whoever creates an employer is about to work on it: its locations,
+                // jobs and feeds. Switching to it spares them finding it in the
+                // switcher first, and keeps new rows from landing on the employer
+                // that happened to be active before (spec 2.5).
+                employerContext.setActiveEmployerId(saved.getId());
             }
             flash.addFlashAttribute("successMsg", "msg.success.saved");
             return "redirect:/employers/" + saved.getId();

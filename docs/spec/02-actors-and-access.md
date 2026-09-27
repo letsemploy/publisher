@@ -167,6 +167,10 @@ pre-fills the employer on every create form.
 - If the user is a member of exactly one employer, that employer is selected automatically and the
   switcher is hidden.
 - An admin's switcher also offers an "all employers" option, which is the default for admins.
+- **Creating an employer makes it the active one.** Whoever creates it is about to fill it with
+  locations, jobs and feeds, and would otherwise have to find it in the switcher first. Staying on the
+  previous employer would also silently attach new rows to the wrong one. Editing an employer
+  leaves the active employer as it was.
 
 ## 2.6 Invitations
 
