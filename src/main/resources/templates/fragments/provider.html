@@ -16,6 +16,7 @@
 -->
 <th:block th:fragment="icon(brand)" th:switch="${brand}">
     <th:block th:case="'google'"><svg th:replace="~{fragments/icon :: i('brand-google','icon')}"></svg></th:block>
+    <th:block th:case="'github'"><svg th:replace="~{fragments/icon :: i('brand-github','icon')}"></svg></th:block>
     <th:block th:case="'gitlab'"><svg th:replace="~{fragments/icon :: i('brand-gitlab','icon')}"></svg></th:block>
     <th:block th:case="'microsoft'"><svg th:replace="~{fragments/icon :: i('brand-windows','icon')}"></svg></th:block>
     <th:block th:case="'apple'"><svg th:replace="~{fragments/icon :: i('brand-apple','icon')}"></svg></th:block>
