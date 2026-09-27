@@ -138,7 +138,9 @@ installation with no provider configured runs with the back-office closed (§9.4
 example `google`, `gitlab` or `microsoft`. Each gets its own button (§7.19) and its own callback,
 `https://<host>/login/oauth2/code/<id>`, which is what that provider must allow. Spring knows Google's
 endpoints by the id `google`, so a client id and secret are enough there. Every other provider needs its
-`issuer-uri`. A registration that does not request `openid` stops the application at startup (§2.2). For local work the
+`issuer-uri`. GitHub is known by the id `github` too, but must add the `user:email` scope
+(`scope: read:user,user:email`), which Spring's defaults leave out. Any other registration that does
+not request `openid` stops the application at startup (§2.2). For local work the
 `keycloak` profile points at the Keycloak in the repository's compose file.
 
 The database is MariaDB unless the `sqlite` profile is active (§9.3), in which case the file is

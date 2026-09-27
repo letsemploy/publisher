@@ -30,26 +30,49 @@ class LoginOptionsTest {
     }
 
     /**
-     * GitHub is OAuth 2.0 without OpenID Connect. Its login would complete at
-     * GitHub and then be nobody here, so it is refused at startup, saying why.
+     * GitHub is the one provider accepted without OpenID Connect, but only with the
+     * user:email scope: without it no verified address can be read, and nobody who
+     * signs in through it could ever be invited (spec 2.2, 2.6). Spring's own
+     * GitHub defaults ask for read:user alone, so this is the common mistake.
      */
     @Test
-    void gitHubIsRefusedAndTheReasonNamed() {
+    void gitHubWithoutTheEmailScopeIsRefusedWithTheFix() {
         ClientRegistration github = CommonOAuth2Provider.GITHUB.getBuilder("github")
                 .clientId("id").clientSecret("secret").build();
-        assertThatThrownBy(() -> LoginOptions.requireOpenIdConnect(
-                new InMemoryClientRegistrationRepository(oidc("google", "https://accounts.google.com/auth"), github)))
+        assertThatThrownBy(() -> LoginOptions.requireSupportedProviders(
+                new InMemoryClientRegistrationRepository(github)))
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessageContaining("'github'")
-                .hasMessageContaining("OpenID Connect")
-                .hasMessageContaining("no ID token");
+                .hasMessageContaining("user:email")
+                .hasMessageContaining("scope: read:user,user:email");
+    }
+
+    @Test
+    void gitHubWithTheEmailScopeIsAccepted() {
+        ClientRegistration github = CommonOAuth2Provider.GITHUB.getBuilder("github")
+                .clientId("id").clientSecret("secret").scope("read:user", "user:email").build();
+        assertThatCode(() -> LoginOptions.requireSupportedProviders(
+                new InMemoryClientRegistrationRepository(github)))
+                .doesNotThrowAnyException();
+    }
+
+    /** Any other provider without OpenID Connect would sign people in as nobody. */
+    @Test
+    void otherOAuth2OnlyProvidersAreStillRefused() {
+        ClientRegistration facebook = CommonOAuth2Provider.FACEBOOK.getBuilder("facebook")
+                .clientId("id").clientSecret("secret").build();
+        assertThatThrownBy(() -> LoginOptions.requireSupportedProviders(
+                new InMemoryClientRegistrationRepository(facebook)))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("'facebook'")
+                .hasMessageContaining("openid scope");
     }
 
     @Test
     void openIdConnectProvidersPass() {
         ClientRegistration google = CommonOAuth2Provider.GOOGLE.getBuilder("google")
                 .clientId("id").clientSecret("secret").build();
-        assertThatCode(() -> LoginOptions.requireOpenIdConnect(new InMemoryClientRegistrationRepository(
+        assertThatCode(() -> LoginOptions.requireSupportedProviders(new InMemoryClientRegistrationRepository(
                 google, oidc("keycloak", "https://sso.example.com/realms/x/auth"))))
                 .doesNotThrowAnyException();
     }
@@ -63,6 +86,8 @@ class LoginOptionsTest {
                 .isEqualTo("gitlab");
         assertThat(LoginOptions.brandOf(oidc("x", "https://login.microsoftonline.com/t/oauth2/v2.0/authorize")).key())
                 .isEqualTo("microsoft");
+        assertThat(LoginOptions.brandOf(oidc("x", "https://github.com/login/oauth/authorize")).key())
+                .isEqualTo("github");
         assertThat(LoginOptions.brandOf(oidc("x", "https://acme.eu.auth0.com/authorize")).key())
                 .isEqualTo("auth0");
         // A registration merely *called* google is not Google.

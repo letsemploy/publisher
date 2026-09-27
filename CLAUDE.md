@@ -158,10 +158,19 @@ auto-configured bean. `OidcLoginTest` and `LockedChainTest` guard both direction
   from the **authorisation host**, never the registration id. A new brand is one host in
   `LoginOptions`, one literal case in `fragments/provider.html`, and `make assets`: the sprite
   scanner only finds literal icon names.
-- **OpenID Connect only**, enforced at startup by `LoginOptions.requireOpenIdConnect`. A registration
-  without `openid`, GitHub being the known case, would log in as an `OAuth2User`, which
-  `CurrentUserService` treats as anonymous: a completed login that goes nowhere. Do not "support"
-  one by relaxing the check. It needs an identity and a verified email the provider does not give.
+- **OpenID Connect providers plus GitHub**, enforced at startup by
+  `LoginOptions.requireSupportedProviders`. Any other registration without `openid` would log in as a
+  plain `OAuth2User`, which `CurrentUserService` treats as anonymous: a completed login that goes
+  nowhere. Do not "support" one by relaxing the check. It needs an identity and a verified email the
+  provider does not give.
+- **GitHub is the one exception, handled by name** (§2.2). `GitHubUserService`, which Spring uses only
+  for non-OIDC registrations, loads `/user` and then `/user/emails`. It returns a `GitHubUser` with
+  issuer = the origin of the authorisation URI, subject = the numeric `id` (never `login`), and the
+  primary-and-verified address or null. A failed email call signs in without an address instead of
+  failing the login. `CurrentUserService.identityOf` turns an `OidcUser` or a `GitHubUser` into one
+  `Identity`, and a single `signIn` does the rest. GitHub requires `user:email`, which Spring's
+  built-in GitHub defaults omit, so a GitHub registration without it is refused at startup with the
+  fix. Only `github.com` counts; GitHub Enterprise Server is refused like any OAuth2-only provider.
 - Overlays **merge** registrations, they do not replace them: a profile cannot remove `oidc` added by
   another file. `docs/examples/application-providers.yml` says to delete the prod example's block.
 
@@ -458,7 +467,8 @@ TEST_DB=sqlite ./mvnw test                   # all, on SQLite; no server
 ./mvnw test -Dtest=OidcLoginTest             # real sign-in without the bypass: PKCE, accounts, logout
 ./mvnw test -Dtest=LockedChainTest           # no provider, no dev: the back-office is closed
 ./mvnw test -Dtest=LoginProvidersTest        # several providers: one button each, sorted, branded
-./mvnw test -Dtest=LoginOptionsTest          # OIDC-only check and brand by host; no Spring
+./mvnw test -Dtest=LoginOptionsTest          # provider check (OIDC + GitHub) and brand by host; no Spring
+./mvnw test -Dtest=GitHubUserServiceTest     # GitHub identity and verified email; mock server, no Spring
 ./mvnw test -Dtest=MemberSuspensionScreenTest # suspending and reinstating from the People screen
 ./mvnw test -Dtest=ResourceLimitsTest        # the quota convention; no Spring, no database
 ./mvnw test -Dtest=QuotaEnforcementTest      # the six quotas against the seed data

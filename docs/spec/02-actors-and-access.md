@@ -51,10 +51,20 @@ below depends on there being a *human* answerable, it says so.
   a code intercepted in transit.
 - A user is identified by the stable pair **(issuer, subject)** from the ID token — never by email
   alone, which is mutable and may be reassigned.
-- **Only OpenID Connect providers.** Several may be configured side by side (§7.19), and each must
-  issue ID tokens: a provider that only offers OAuth 2.0 has no issuer and subject to identify a
-  person by, and no verified email to invite them at. Such a registration **refuses to start**
-  rather than completing a login that leaves the person as nobody. GitHub is the well-known case.
+- **OpenID Connect providers, plus GitHub.** Several may be configured side by side (§7.19). An OpenID
+  Connect provider identifies a person by the issuer and subject of its ID token. A provider that only
+  offers OAuth 2.0 has neither, and no verified email to invite them at; such a registration
+  **refuses to start** rather than completing a login that leaves the person as nobody.
+- **GitHub is the one OAuth 2.0 exception**, supported by name because it is where many developers
+  already have an account:
+  - The **issuer** is `https://github.com`, and the **subject** is the numeric user id. The login
+    handle can be renamed and is only a label.
+  - The **email** is the address GitHub reports as primary *and* verified, read from its email API.
+    Without one, the person can sign in and create an employer but cannot be invited — the same
+    rule as an unverified OIDC address.
+  - Reading that address needs the `user:email` scope, so a GitHub registration without it refuses
+    to start.
+  - GitHub Enterprise Server is not supported.
 - **One account per identity, never joined by email.** The same person signing in through two
   providers has two accounts. Joining them by a shared address would let whoever controls that
   address at one provider take over the account made through the other (§12).

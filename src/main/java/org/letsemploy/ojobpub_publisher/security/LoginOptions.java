@@ -29,6 +29,12 @@ public class LoginOptions {
     public record LoginOption(String href, String label, String brand) {
     }
 
+    /** The one provider accepted without OpenID Connect (spec 2.2). */
+    static final String GITHUB_HOST = "github.com";
+
+    /** What GitHubUserService needs to read the verified address. */
+    static final String GITHUB_EMAIL_SCOPE = "user:email";
+
     /**
      * Recognised by the host of the authorisation endpoint, which every
      * registration has - not by the registration id, which is whatever the
@@ -38,7 +44,9 @@ public class LoginOptions {
             "accounts.google.com", new Brand("google", "Google"),
             "gitlab.com", new Brand("gitlab", "GitLab"),
             "login.microsoftonline.com", new Brand("microsoft", "Microsoft"),
-            "appleid.apple.com", new Brand("apple", "Apple"));
+            "appleid.apple.com", new Brand("apple", "Apple"),
+            GITHUB_HOST, new Brand("github", "GitHub"));
+
 
     record Brand(String key, String name) {
     }
@@ -65,24 +73,41 @@ public class LoginOptions {
     }
 
     /**
-     * Only OpenID Connect providers can sign someone in here (spec 2.2): a person is
-     * the issuer and subject of an ID token, and invitations need a verified email.
-     * A registration that does not ask for {@code openid} would complete its login
-     * at the provider and then be nobody here, so it is refused at startup instead.
+     * Which providers can sign someone in here (spec 2.2). A person is an issuer and
+     * a subject, and invitations need a verified email.
+     *
+     * <p>OpenID Connect providers give both in the ID token. GitHub gives neither,
+     * but is accepted as the one exception: {@link GitHubUserService} takes the
+     * subject from GitHub's numeric id and the address from {@code /user/emails} -
+     * which needs the {@code user:email} scope, so a GitHub registration without it
+     * is refused. Any other provider without {@code openid} would complete its
+     * login at the provider and then be nobody here, so it is refused at startup
+     * instead.
      */
-    public static void requireOpenIdConnect(ClientRegistrationRepository repository) {
+    public static void requireSupportedProviders(ClientRegistrationRepository repository) {
         for (ClientRegistration registration : registrations(repository)) {
-            if (!registration.getScopes().contains(OidcScopes.OPENID)) {
-                String id = registration.getRegistrationId();
-                String why = registration.getProviderDetails().getAuthorizationUri().contains("github.com")
-                        ? " GitHub offers OAuth 2.0 but not OpenID Connect: it has no ID token or"
-                                + " verified email to identify a person by."
-                        : " Add the openid scope if the provider supports OpenID Connect.";
-                throw new IllegalStateException("Sign-in provider '" + id + "' does not request the"
-                        + " openid scope. Only OpenID Connect providers are supported (spec 2.2)."
-                        + why);
+            String id = registration.getRegistrationId();
+            if (registration.getScopes().contains(OidcScopes.OPENID)) {
+                continue;
             }
+            if (isGitHub(registration)) {
+                if (!registration.getScopes().contains(GITHUB_EMAIL_SCOPE)) {
+                    throw new IllegalStateException("Sign-in provider '" + id + "' is GitHub but does"
+                            + " not request the " + GITHUB_EMAIL_SCOPE + " scope, without which no"
+                            + " verified email can be read and nobody signing in through it could"
+                            + " ever be invited (spec 2.6). Set: scope: read:user," + GITHUB_EMAIL_SCOPE);
+                }
+                continue;
+            }
+            throw new IllegalStateException("Sign-in provider '" + id + "' does not request the"
+                    + " openid scope. Only OpenID Connect providers are supported, and GitHub"
+                    + " (spec 2.2). Add the openid scope if the provider supports OpenID Connect.");
         }
+    }
+
+    /** github.com only; GitHub Enterprise Server is not supported. */
+    static boolean isGitHub(ClientRegistration registration) {
+        return GITHUB_HOST.equals(URI.create(registration.getProviderDetails().getAuthorizationUri()).getHost());
     }
 
     /** Boot's repository is iterable; anything else offers nothing to list. */

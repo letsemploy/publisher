@@ -17,9 +17,9 @@
 #
 # Rules that hold for every provider here:
 #
-# * OpenID Connect only (spec 2.2). A registration without the openid scope stops
-#   the application at startup with an explanation. GitHub is therefore not
-#   possible: it offers OAuth 2.0 but no ID token and no verified email.
+# * OpenID Connect providers, plus GitHub (spec 2.2). GitHub is OAuth 2.0 only and
+#   is handled specially; any other registration without the openid scope stops
+#   the application at startup with an explanation.
 # * Each provider has its own callback, to register there as the redirect URI:
 #     https://<your-host>/login/oauth2/code/<registration-id>
 #   The id is the key under "registration:" - google, gitlab, microsoft, acme.
@@ -38,6 +38,32 @@ spring:
     oauth2:
       client:
         registration:
+
+          # GitHub: Spring knows it by this id too, but its defaults ask only for
+          # read:user. user:email must be added - it is how the verified address
+          # is read - and the application refuses to start without it.
+          #
+          # Setup: GitHub > Settings > Developer settings > OAuth Apps > New.
+          #   Homepage URL:               https://<your-host>
+          #   Authorization callback URL: https://<your-host>/login/oauth2/code/github
+          # Then "Generate a new client secret". An OAuth App holds exactly ONE
+          # callback URL, so trying it locally needs a second app with
+          # http://localhost:8080/login/oauth2/code/github.
+          #
+          # What differs from the others:
+          # - A person is github.com plus their numeric user id. Renaming the
+          #   GitHub handle keeps the account.
+          # - The address is the one GitHub marks primary AND verified; if there is
+          #   none, they can sign in and create an employer, but not be invited.
+          # - Anyone with a GitHub account can sign in: an OAuth App cannot be
+          #   limited to your organisation's members.
+          # - GitHub has no end-session endpoint, so logging out ends the session
+          #   here but not at GitHub (as with Google).
+          # - github.com only; GitHub Enterprise Server is not supported.
+          github:
+            client-id: ${GITHUB_CLIENT_ID}
+            client-secret: ${GITHUB_CLIENT_SECRET}
+            scope: read:user,user:email
 
           # Google: Spring knows it by this id, so the client id and secret are
           # all it needs - scopes, endpoints, the name "Google" and the callback

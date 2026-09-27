@@ -455,7 +455,8 @@ their organisation's sign-in page and brought back, a **Sign in** button, and th
 - **One button per configured identity provider.** Adding one is configuration alone. Each button
   says "Continue with …", naming the provider by its configured display name, or by the brand when
   none is configured. It carries the provider's logo when the provider is recognised by the host of
-  its authorisation endpoint (Google, GitLab, Microsoft, Apple, Auth0), and a generic icon otherwise.
+  its authorisation endpoint (Google, GitHub, GitLab, Microsoft, Apple, Auth0), and a generic icon
+  otherwise.
   - They are **sorted by name**, with an unnamed one last. The configured order is not kept
     underneath, so sorting is the only order a reader can predict.
   - With several, all look alike, so none is presented as the one to pick. A single provider keeps

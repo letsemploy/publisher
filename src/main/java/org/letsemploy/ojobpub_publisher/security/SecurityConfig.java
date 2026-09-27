@@ -125,7 +125,7 @@ public class SecurityConfig {
             throws Exception {
         // Refuse a provider that would sign people in as nobody (spec 2.2) - at
         // startup, rather than as a login that completes and then goes nowhere.
-        LoginOptions.requireOpenIdConnect(registrations);
+        LoginOptions.requireSupportedProviders(registrations);
 
         DefaultOAuth2AuthorizationRequestResolver authorizationRequests =
                 new DefaultOAuth2AuthorizationRequestResolver(registrations,
@@ -154,6 +154,9 @@ public class SecurityConfig {
                 .oauth2Login(login -> login
                         .loginPage("/login")
                         .authorizationEndpoint(a -> a.authorizationRequestResolver(authorizationRequests))
+                        // Used only for providers without OpenID Connect - which, after
+                        // the check above, means GitHub (spec 2.2).
+                        .userInfoEndpoint(u -> u.userService(new GitHubUserService()))
                         .defaultSuccessUrl("/", true))
                 .logout(logout -> logout.logoutSuccessHandler(providerLogout))
                 .headers(h -> h.contentSecurityPolicy(csp ->

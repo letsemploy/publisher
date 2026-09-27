@@ -55,14 +55,11 @@ public class CurrentUserService {
 
         // Development mode: no identity provider, but a real user record all the same -
         // anything keyed on user identity is otherwise unreachable locally (spec 2.3).
-        if (isDevMode() && (auth == null || !(auth.getPrincipal() instanceof OidcUser))) {
+        Identity identity = auth == null ? null : identityOf(auth.getPrincipal());
+        if (isDevMode() && identity == null) {
             return toAppUser(devUser());
         }
-
-        if (auth != null && auth.getPrincipal() instanceof OidcUser oidc) {
-            return toAppUser(signIn(oidc));
-        }
-        return Actor.anonymous();
+        return identity == null ? Actor.anonymous() : toAppUser(signIn(identity));
     }
 
     /** Seeded by data.sql, but provisioned on demand so dev works on an empty database. */
@@ -89,34 +86,54 @@ public class CurrentUserService {
     }
 
     /**
+     * Who a signed-in principal is, whichever way they signed in (spec 2.2): the
+     * issuer and subject that identify them, the name to show, and an email only
+     * if it may be trusted - or null when the principal is nobody we recognise.
+     */
+    private record Identity(String issuer, String subject, String displayName, String email) {
+    }
+
+    private Identity identityOf(Object principal) {
+        if (principal instanceof OidcUser oidc) {
+            return new Identity(String.valueOf(oidc.getIssuer()), oidc.getSubject(),
+                    displayName(oidc), trustedEmail(oidc));
+        }
+        // GitHub: OAuth 2.0 without OpenID Connect, identified by GitHubUserService.
+        if (principal instanceof GitHubUser github) {
+            String email = github.getVerifiedEmail() != null || requireVerifiedEmail
+                    ? github.getVerifiedEmail()
+                    : github.getPublicEmail();
+            return new Identity(github.getIssuer(), github.getSubject(), github.getDisplayName(), email);
+        }
+        return null;
+    }
+
+    /**
      * The local account for this identity: found by the stable (issuer, subject)
      * pair, never by email, and created on first sign-in (spec 2.2).
      *
      * <p>A new account has the User platform role and no memberships, so it sees
      * an empty state until it creates an employer or is invited. Name and email
-     * are the provider's to change, so they are refreshed from the token - and
-     * written only when they differ, since this runs on every request.
+     * are the provider's to change, so they are refreshed from it - and written
+     * only when they differ, since this runs on every request.
      */
-    private UserEntity signIn(OidcUser oidc) {
-        String issuer = String.valueOf(oidc.getIssuer());
-        String email = trustedEmail(oidc);
-        String name = displayName(oidc);
-        UserEntity user = userRepo.findByIssuerAndSubject(issuer, oidc.getSubject())
+    private UserEntity signIn(Identity identity) {
+        UserEntity user = userRepo.findByIssuerAndSubject(identity.issuer(), identity.subject())
                 .orElseGet(() -> {
                     UserEntity created = new UserEntity();
-                    created.setIssuer(issuer);
-                    created.setSubject(oidc.getSubject());
+                    created.setIssuer(identity.issuer());
+                    created.setSubject(identity.subject());
                     created.setRole(UserEntity.Role.USER);
-                    log.info("New account for {} at {}", oidc.getSubject(), issuer);
+                    log.info("New account for {} at {}", identity.subject(), identity.issuer());
                     return created;
                 });
         if (user.getId() != null
-                && Objects.equals(user.getEmail(), email)
-                && Objects.equals(user.getDisplayName(), name)) {
+                && Objects.equals(user.getEmail(), identity.email())
+                && Objects.equals(user.getDisplayName(), identity.displayName())) {
             return user;
         }
-        user.setEmail(email);
-        user.setDisplayName(name);
+        user.setEmail(identity.email());
+        user.setDisplayName(identity.displayName());
         return userRepo.save(user);
     }
 

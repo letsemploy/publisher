@@ -14,7 +14,7 @@ job boards and aggregators can read without an API key.
 - **Management API**: GraphQL at `/graphql`, authenticated with service tokens an owner creates, for
   integrations with other systems.
 - **Sign-in** through one or more OpenID Connect providers, such as Google, GitLab, Microsoft or your
-  own Keycloak, with a button for each. The application stores no passwords.
+  own Keycloak, and through GitHub, with a button for each. The application stores no passwords.
 - English and German.
 
 ## Run it
