@@ -14,6 +14,7 @@ import org.letsemploy.ojobpub_publisher.common.exception.ValidationFailure;
 import org.letsemploy.ojobpub_publisher.employer.Employer;
 import org.letsemploy.ojobpub_publisher.employer.EmployerRepo;
 import org.letsemploy.ojobpub_publisher.employer.EmployerService;
+import org.letsemploy.ojobpub_publisher.employer.Headquarters;
 import org.letsemploy.ojobpub_publisher.feed.FeedRepo;
 import org.letsemploy.ojobpub_publisher.feed.FeedService;
 import org.letsemploy.ojobpub_publisher.invitation.InvitationRepo;
@@ -155,7 +156,7 @@ class QuotaEnforcementTest {
     @Test
     void theDefaultFeedIsNeverRefused() {
         Employer fresh = employerService.save(null, "Quota Co " + UUID.randomUUID(), null, null,
-                null, locationRepo.findAll().get(0).getId(), admin);
+                null, Headquarters.newLocation("Quotaville", "CH"), admin);
         feedService.save(null, fresh, "One", null, null);
         feedService.save(null, fresh, "Two", null, null);
         assertThatThrownBy(() -> feedService.save(null, fresh, "Three", null, null))

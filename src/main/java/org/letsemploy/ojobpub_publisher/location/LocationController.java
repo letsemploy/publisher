@@ -1,12 +1,12 @@
 package org.letsemploy.ojobpub_publisher.location;
 
-import com.neovisionaries.i18n.CountryCode;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.letsemploy.ojobpub_publisher.common.exception.ValidationFailure;
+import org.letsemploy.ojobpub_publisher.employer.Employer;
+import org.letsemploy.ojobpub_publisher.web.Scope;
 import org.letsemploy.ojobpub_publisher.web.view.*;
 import org.letsemploy.ojobpub_publisher.web.Views;
 import org.springframework.context.MessageSource;
@@ -16,28 +16,38 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+/**
+ * The employer's locations (spec 7.14): the list covers the employers in scope
+ * (spec 2.5), a new one belongs to the active employer, and every other route goes
+ * through {@link LocationService#findVisible}, so another employer's location is a
+ * 404 (spec 2.4).
+ */
 @Controller
 @RequestMapping("/locations")
 @RequiredArgsConstructor
 public class LocationController {
 
     private final LocationService locationService;
+    private final Scope scope;
     private final Views views;
     private final MessageSource messages;
 
     @GetMapping
     public String list(Model model) {
-        List<LocationRow> rows = locationService.findAll().stream()
+        List<LocationRow> rows = locationService.visibleTo(scope.employerIds()).stream()
                 .map(l -> views.locationRow(l, locationService.usageCount(l.getId())))
                 .toList();
         model.addAttribute("page", PageMeta.of(message("nav.locations")));
         model.addAttribute("locations", rows);
+        // Several employers' locations side by side need saying whose each is.
+        model.addAttribute("showEmployer", !scope.hasSingleEmployer());
         return "location/list";
     }
 
     @GetMapping("/create")
     public String createForm(Model model) {
-        model.addAttribute("page", new PageMeta(message("location.create"), null,
+        Employer employer = scope.requireActiveEmployer();
+        model.addAttribute("page", new PageMeta(message("location.create"), employer.getName(),
                 List.of(new Crumb(message("nav.locations"), "/locations"),
                         new Crumb(message("location.create"), null))));
         formModel(model, new LocationFormView(null, null, null), Map.of());
@@ -46,8 +56,8 @@ public class LocationController {
 
     @GetMapping("/{id}/update")
     public String editForm(@PathVariable UUID id, Model model) {
-        Location location = locationService.findById(id);
-        model.addAttribute("page", new PageMeta(message("location.edit"), null,
+        Location location = locationService.findVisible(id, scope.user());
+        model.addAttribute("page", new PageMeta(message("location.edit"), location.getEmployer().getName(),
                 List.of(new Crumb(message("nav.locations"), "/locations"),
                         new Crumb(location.getLabel(), null))));
         formModel(model, new LocationFormView(location.getId().toString(), location.getCity(),
@@ -61,7 +71,11 @@ public class LocationController {
                        @RequestParam String country,
                        Model model, RedirectAttributes flash) {
         try {
-            locationService.save(id, city, country);
+            if (id == null) {
+                locationService.create(scope.requireActiveEmployer(), city, country);
+            } else {
+                locationService.update(id, city, country, scope.user());
+            }
             flash.addFlashAttribute("successMsg", "msg.success.saved");
             return "redirect:/locations";
         } catch (ValidationFailure e) {
@@ -75,7 +89,7 @@ public class LocationController {
 
     @GetMapping("/{id}/delete")
     public String deleteConfirm(@PathVariable UUID id, Model model) {
-        Location location = locationService.findById(id);
+        Location location = locationService.findVisible(id, scope.user());
         model.addAttribute("location", Map.of("id", id.toString()));
         model.addAttribute("message", messages.getMessage("location.delete.body",
                 new Object[]{location.getLabel()}, LocaleContextHolder.getLocale()));
@@ -85,7 +99,7 @@ public class LocationController {
     @PostMapping("/{id}/delete")
     public String delete(@PathVariable UUID id, RedirectAttributes flash) {
         try {
-            locationService.delete(id);
+            locationService.delete(id, scope.user());
             flash.addFlashAttribute("successMsg", "msg.success.deleted");
         } catch (ValidationFailure e) {
             flash.addFlashAttribute("errorMsg", "location.inUse");
@@ -98,13 +112,7 @@ public class LocationController {
         model.addAttribute("fieldErrors", fieldErrors);
         model.addAttribute("errors", fieldErrors.entrySet().stream()
                 .map(e -> new FieldError(e.getKey(), e.getValue())).toList());
-        // A native select: browsers already provide type-ahead, so no library (spec 7.8).
-        Map<String, String> countries = new LinkedHashMap<>();
-        java.util.Arrays.stream(CountryCode.values())
-                .filter(c -> c != CountryCode.UNDEFINED && c.getAssignment() == CountryCode.Assignment.OFFICIALLY_ASSIGNED)
-                .sorted(java.util.Comparator.comparing(CountryCode::getName))
-                .forEach(c -> countries.put(c.getAlpha2().toUpperCase(), c.getName()));
-        model.addAttribute("countryOptions", countries);
+        model.addAttribute("countryOptions", Countries.options());
     }
 
     private String message(String key) {

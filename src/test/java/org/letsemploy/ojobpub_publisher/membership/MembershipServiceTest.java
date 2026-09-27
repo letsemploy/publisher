@@ -13,6 +13,7 @@ import org.letsemploy.ojobpub_publisher.common.exception.ValidationFailure;
 import org.letsemploy.ojobpub_publisher.employer.Employer;
 import org.letsemploy.ojobpub_publisher.employer.EmployerRepo;
 import org.letsemploy.ojobpub_publisher.employer.EmployerService;
+import org.letsemploy.ojobpub_publisher.employer.Headquarters;
 import org.letsemploy.ojobpub_publisher.location.LocationRepo;
 import org.letsemploy.ojobpub_publisher.security.Actor;
 import org.letsemploy.ojobpub_publisher.security.UserEntity;
@@ -78,7 +79,7 @@ class MembershipServiceTest {
         assertThat(creator.isAdmin()).as("an ordinary user").isFalse();
 
         Employer created = employerService.save(null, "Newco AG", null, null, null,
-                locationRepo.findAll().get(0).getId(), creator);
+                Headquarters.newLocation("Newtown", "CH"), creator);
 
         assertThat(membershipRepo.findByUserIdAndEmployerId(outsider.getId(), created.getId()))
                 .get().extracting(Membership::getRole).isEqualTo(MembershipRole.OWNER);
@@ -91,7 +92,7 @@ class MembershipServiceTest {
     void anEditorMayNotEditTheEmployerRecord() {
         Actor asEditor = asUser(editor);
         assertThatThrownBy(() -> employerService.save(employer.getId(), "Renamed", null, null, null,
-                employer.getHeadquarters().getId(), asEditor))
+                Headquarters.existing(employer.getHeadquarters().getId()), asEditor))
                 .isInstanceOf(NotFoundException.class);
     }
 
@@ -99,7 +100,7 @@ class MembershipServiceTest {
     void anOwnerMayEditTheEmployerRecord() {
         membershipService.changeRole(employer.getId(), editor.getId(), MembershipRole.OWNER, admin);
         employerService.save(employer.getId(), "Renamed AG", null, null, null,
-                employer.getHeadquarters().getId(), asUser(editor));
+                Headquarters.existing(employer.getHeadquarters().getId()), asUser(editor));
         assertThat(employerRepo.findById(employer.getId()).orElseThrow().getName())
                 .isEqualTo("Renamed AG");
     }

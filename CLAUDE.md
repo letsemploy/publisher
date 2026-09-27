@@ -339,6 +339,37 @@ count against a quota in some later class and fail it for reasons that look unre
 and `ManagementApiTest` both do; `ManagementApiTest` additionally switches the token quota off, because
 a run killed before its cleanup would otherwise poison the next one.
 
+### Locations and tags belong to an employer (§3.2, §3.4)
+
+Like jobs and feeds, each `Location` and `Tag` has an immutable `employer`. `LocationService` and `TagService`
+follow the `FeedService` pattern:
+- `findVisible(id, actor)` answers 404 to a non-member (§2.4);
+- `create` takes the `Employer`;
+- duplicates are checked **within the employer**, as a field error.
+
+**`requireOwn(id, employer, field)` is the rule that matters.** `JobService.apply` runs every location
+and tag id through it, and so does the headquarters on `EmployerService.save`. That is the whole defence
+for the form **and** the API, since both arrive there. Another employer's id is refused exactly like an
+unknown one, so it discloses nothing. `ApiErrors` maps the fields `locations` and `tags` to the inputs
+`locationIds` and `tagIds`.
+
+**The headquarters cycle.** `employers.location_id` points at one of the employer's own locations, and
+`locations.employer_id` points back. So the column is **nullable in the database, and required by the
+service**. On create, `EmployerService.save` saves the employer, then find-or-creates its location, then
+sets the headquarters, all in one transaction. The input is a `Headquarters` value: an own location's
+id, or a new city and country, which wins. A new employer can only give the latter. The seed files
+follow the same order: employer, then locations, then the headquarters `UPDATE`.
+
+The job-form pickers search `?employer=` the job's employer, and check membership. Lists show an employer
+column when the scope covers more than one employer (`Scope.hasSingleEmployer()`).
+
+`V7` divided the once-global rows. The oldest user keeps each row and its id, every other user gets a
+copy, and unused rows went to the oldest employer. **SQLite's V7 is non-transactional**, set by
+`V7__….sql.conf`: rebuilding `employers` needs foreign keys OFF, or dropping it would cascade-delete
+everything, and SQLite ignores that pragma inside a transaction. It opens its own transaction with
+`SAVEPOINT`/`RELEASE`, because Flyway's parser reads a bare `BEGIN` as a trigger body.
+`MigrationV7Test` proves it on both databases.
+
 ### Persistence
 
 - Flyway owns the schema (`src/main/resources/db/migration/{vendor}`, history table `migrations`);
@@ -482,6 +513,8 @@ TEST_DB=sqlite ./mvnw test                   # all, on SQLite; no server
 ./mvnw test -Dtest=GitHubUserServiceTest     # GitHub identity and verified email; mock server, no Spring
 ./mvnw test -Dtest=AdminPolicyTest           # admin rules: issuer scope, verified email, claims; no Spring
 ./mvnw test -Dtest=AdminSyncTest             # admins promoted and demoted through real sign-ins
+./mvnw test -Dtest=LocationTagScopeTest      # another employer's locations and tags: 404, refused on a job
+./mvnw test -Dtest=MigrationV7Test           # V7 divides shared rows correctly, on MariaDB and SQLite
 ./mvnw test -Dtest=MemberSuspensionScreenTest # suspending and reinstating from the People screen
 ./mvnw test -Dtest=ResourceLimitsTest        # the quota convention; no Spring, no database
 ./mvnw test -Dtest=QuotaEnforcementTest      # the six quotas against the seed data

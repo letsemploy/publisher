@@ -46,7 +46,7 @@
                         </div>
                         <label class="form-label" th:text="#{label.tags}">Tags</label>
                         <div id="tags-chips"><div th:replace="~{fragments/picker :: chips('tags', ${tagChips}, true)}"></div></div>
-                        <div th:replace="~{fragments/picker :: search('tagSearch','/jobs/tags/search','tag-results','tag.search.placeholder')}"></div>
+                        <div th:replace="~{fragments/picker :: search('tagSearch',${tagSearchUrl},'tag-results','tag.search.placeholder')}"></div>
                         <small class="form-hint" th:text="#{job.tags.hint}">At most 16 tags.</small>
                     </div>
                 </div>
@@ -99,7 +99,7 @@
                     <div class="card-header"><h3 class="card-title" th:text="#{label.locations}">Locations</h3></div>
                     <div class="card-body">
                         <div id="locations-chips"><div th:replace="~{fragments/picker :: chips('locations', ${locationChips}, true)}"></div></div>
-                        <div th:replace="~{fragments/picker :: search('locationSearch','/jobs/locations/search','location-results','location.search.placeholder')}"></div>
+                        <div th:replace="~{fragments/picker :: search('locationSearch',${locationSearchUrl},'location-results','location.search.placeholder')}"></div>
                         <small class="form-hint" th:text="#{job.locations.hint}">At least one location is required to publish.</small>
                     </div>
                 </div>

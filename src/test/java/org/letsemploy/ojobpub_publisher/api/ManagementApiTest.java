@@ -14,6 +14,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.letsemploy.ojobpub_publisher.TestProfiles;
 import org.letsemploy.ojobpub_publisher.employer.EmployerService;
+import org.letsemploy.ojobpub_publisher.employer.Headquarters;
 import org.letsemploy.ojobpub_publisher.membership.MembershipRole;
 import org.letsemploy.ojobpub_publisher.security.Actor;
 import org.letsemploy.ojobpub_publisher.token.ServiceTokenService;
@@ -203,7 +204,7 @@ class ManagementApiTest {
     @Test
     void aTokenCannotReachAnotherEmployersJob() throws Exception {
         var other = employers.save(null, "Other Co " + UUID.randomUUID(), null, null, null,
-                UUID.fromString(HEADQUARTERS), devAdmin());
+                Headquarters.newLocation("Othertown", "DE"), devAdmin());
         JsonNode response = query(tokenWith(TokenScope.JOBS_READ),
                 "{ job(id: \"" + JOB_INCOMPLETE + "\") { id } }");
         assertThat(response.path("data").path("job").isNull()).isFalse();
@@ -219,6 +220,32 @@ class ManagementApiTest {
      * JobInput refers to locations and tags by id, so a caller that cannot list
      * them cannot write a job. The round trip is the test: read an id, then use it.
      */
+    /**
+     * Locations and tags belong to one employer (spec 3.2, 3.4): another employer's
+     * token lists only its own, and cannot put Acme's on a job of its own - the
+     * refusal is a userError, like any other domain refusal (spec 11.4).
+     */
+    @Test
+    void anotherEmployersTokenSeesAndUsesOnlyItsOwnLocationsAndTags() throws Exception {
+        var other = employers.save(null, "Other Co " + UUID.randomUUID(), null, null, null,
+                Headquarters.newLocation("Othertown", "DE"), devAdmin());
+        String foreign = tokens.create(other.getId(), "foreign", MembershipRole.OWNER,
+                Set.of(TokenScope.JOBS_WRITE), devAdmin()).getSecret();
+
+        JsonNode locations = query(foreign, "{ locations { id city } }").path("data").path("locations");
+        assertThat(locations.findValuesAsText("city")).containsExactly("Othertown");
+        assertThat(query(foreign, "{ tags { name } }").path("data").path("tags")).isEmpty();
+
+        JsonNode refused = query(foreign,
+                "mutation { createJob(input: { title: \"API written\", "
+                        + "url: \"https://other.example/jobs/1\", language: \"en\", "
+                        + "jobType: PERMANENT, locationIds: [\"" + HEADQUARTERS + "\"], "
+                        + "tagIds: [\"1\"] }) { job { id } userErrors { field code } } }")
+                .path("data").path("createJob");
+        assertThat(refused.path("job").isNull()).isTrue();
+        assertThat(refused.path("userErrors").findValuesAsText("field")).containsExactly("locationIds");
+    }
+
     @Test
     void aJobCanBeWrittenFromIdsTheApiItselfHandsOut() throws Exception {
         String secret = tokenWith(TokenScope.JOBS_WRITE);

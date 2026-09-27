@@ -51,7 +51,9 @@ class ScreenRenderingTest {
                 "/jobs/create", "/jobs/" + JOB_PUBLISHED, "/jobs/" + JOB_DRAFT,
                 "/jobs/" + JOB_INCOMPLETE, "/jobs/" + JOB_PUBLISHED + "/update",
                 "/jobs/" + JOB_PUBLISHED + "/delete",
-                "/jobs/tags/search?q=ja", "/jobs/locations/search?q=ber",
+                // The pickers search the job's employer, named on the request (spec 3.3).
+                "/jobs/tags/search?employer=" + EMPLOYER + "&q=ja",
+                "/jobs/locations/search?employer=" + EMPLOYER + "&q=ber",
                 "/feeds", "/feeds/create", "/feeds/" + FEED_ALL,
                 "/feeds/" + FEED_ALL + "/update", "/feeds/" + FEED_ALL + "/delete",
                 "/feeds/" + FEED_ALL + "/candidates",

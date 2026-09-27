@@ -9,6 +9,7 @@ import org.letsemploy.ojobpub_publisher.api.ApiTypes.*;
 import org.letsemploy.ojobpub_publisher.common.exception.ValidationFailure;
 import org.letsemploy.ojobpub_publisher.employer.Employer;
 import org.letsemploy.ojobpub_publisher.employer.EmployerService;
+import org.letsemploy.ojobpub_publisher.employer.Headquarters;
 import org.letsemploy.ojobpub_publisher.security.Actor;
 import org.letsemploy.ojobpub_publisher.token.TokenScope;
 import org.springframework.graphql.data.method.annotation.Argument;
@@ -67,10 +68,12 @@ public class EmployerApiController {
                     employerId,
                     str(input, "name"), str(input, "slug"), str(input, "url"),
                     str(input, "industry"),
-                    headquarters == null
+                    // An omitted headquartersId keeps the current one; a given one must
+                    // be one of this employer's own locations (spec 3.1).
+                    Headquarters.existing(headquarters == null
                             ? (current.getHeadquarters() == null
                                     ? null : current.getHeadquarters().getId())
-                            : uuid(headquarters.toString(), "location"),
+                            : uuid(headquarters.toString(), "location")),
                     actor);
             return EmployerPayload.ok(mapper.readEmployer(employerId, actor));
         } catch (ValidationFailure e) {

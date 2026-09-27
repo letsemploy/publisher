@@ -137,11 +137,13 @@ public class Views {
 
     public LocationRow locationRow(Location location, long usages) {
         return new LocationRow(location.getId().toString(), location.getCity(),
-                location.getCountryCode(), location.getCountry().getName(), (int) usages);
+                location.getCountryCode(), location.getCountry().getName(), (int) usages,
+                location.getEmployer().getName());
     }
 
     public TagRow tagRow(Tag tag, long jobCount) {
-        return new TagRow(String.valueOf(tag.getId()), tag.getName(), (int) jobCount);
+        return new TagRow(String.valueOf(tag.getId()), tag.getName(), (int) jobCount,
+                tag.getEmployer().getName());
     }
 
     public InvitationRow invitationRow(Invitation invitation) {

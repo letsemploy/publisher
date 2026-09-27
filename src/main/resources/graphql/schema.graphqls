@@ -8,9 +8,10 @@ type Query {
     job(id: ID!): Job
     feeds: [Feed!]!
     """
-    Locations and tags are platform-wide, not an employer's own (spec 3.6, 3.7).
-    They are readable because JobInput refers to them by id, and a caller has no
-    other way to learn one.
+    The token's employer's own locations and tags (spec 3.2, 3.4); another
+    employer's are neither listed nor accepted in JobInput. They are readable
+    because JobInput refers to them by id, and a caller has no other way to
+    learn one.
     """
     locations(q: String): [Location!]!
     tags(q: String): [Tag!]!

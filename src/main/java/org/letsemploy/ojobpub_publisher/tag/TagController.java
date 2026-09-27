@@ -6,6 +6,7 @@ import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import org.letsemploy.ojobpub_publisher.common.exception.ValidationFailure;
 import org.letsemploy.ojobpub_publisher.web.view.*;
+import org.letsemploy.ojobpub_publisher.web.Scope;
 import org.letsemploy.ojobpub_publisher.web.Views;
 import org.springframework.context.MessageSource;
 import org.springframework.context.i18n.LocaleContextHolder;
@@ -14,12 +15,18 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+/**
+ * The employer's tags (spec 7.15): the list covers the employers in scope (spec
+ * 2.5), a new one belongs to the active employer, and every other route goes
+ * through {@link TagService#findVisible}, so another employer's tag is a 404.
+ */
 @Controller
 @RequestMapping("/tags")
 @RequiredArgsConstructor
 public class TagController {
 
     private final TagService tagService;
+    private final Scope scope;
     private final Views views;
     private final MessageSource messages;
 
@@ -38,16 +45,18 @@ public class TagController {
     }
 
     private void populate(Model model, String q) {
-        List<TagRow> rows = tagService.search(q).stream()
+        List<TagRow> rows = tagService.search(scope.employerIds(), q).stream()
                 .map(t -> views.tagRow(t, tagService.jobCount(t.getId())))
                 .toList();
         model.addAttribute("tags", rows);
         model.addAttribute("query", q);
+        // Several employers' tags side by side need saying whose each is.
+        model.addAttribute("showEmployer", !scope.hasSingleEmployer());
     }
 
     @GetMapping("/create")
     public String createForm(Model model) {
-        model.addAttribute("page", new PageMeta(message("tag.create"), null,
+        model.addAttribute("page", new PageMeta(message("tag.create"), scope.requireActiveEmployer().getName(),
                 List.of(new Crumb(message("nav.tags"), "/tags"),
                         new Crumb(message("tag.create"), null))));
         formModel(model, new TagFormView(null, null), Map.of());
@@ -56,8 +65,8 @@ public class TagController {
 
     @GetMapping("/{id}/update")
     public String editForm(@PathVariable Long id, Model model) {
-        Tag tag = tagService.findById(id);
-        model.addAttribute("page", new PageMeta(message("tag.edit"), null,
+        Tag tag = tagService.findVisible(id, scope.user());
+        model.addAttribute("page", new PageMeta(message("tag.edit"), tag.getEmployer().getName(),
                 List.of(new Crumb(message("nav.tags"), "/tags"), new Crumb(tag.getName(), null))));
         formModel(model, new TagFormView(String.valueOf(tag.getId()), tag.getName()), Map.of());
         return "tag/form";
@@ -67,7 +76,11 @@ public class TagController {
     public String save(@PathVariable(required = false) Long id, @RequestParam String name,
                        Model model, RedirectAttributes flash) {
         try {
-            tagService.save(id, name);
+            if (id == null) {
+                tagService.create(scope.requireActiveEmployer(), name);
+            } else {
+                tagService.update(id, name, scope.user());
+            }
             flash.addFlashAttribute("successMsg", "msg.success.saved");
             return "redirect:/tags";
         } catch (ValidationFailure e) {
@@ -81,7 +94,7 @@ public class TagController {
 
     @GetMapping("/{id}/delete")
     public String deleteConfirm(@PathVariable Long id, Model model) {
-        Tag tag = tagService.findById(id);
+        Tag tag = tagService.findVisible(id, scope.user());
         model.addAttribute("tag", Map.of("id", String.valueOf(id)));
         model.addAttribute("message", messages.getMessage("tag.delete.body",
                 new Object[]{tag.getName(), tagService.jobCount(id)},
@@ -91,7 +104,7 @@ public class TagController {
 
     @PostMapping("/{id}/delete")
     public String delete(@PathVariable Long id, RedirectAttributes flash) {
-        tagService.delete(id);
+        tagService.delete(id, scope.user());
         flash.addFlashAttribute("successMsg", "msg.success.deleted");
         return "redirect:/tags";
     }

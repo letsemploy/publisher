@@ -128,13 +128,16 @@ public class JobService {
         job.setEndDate(form.getEndDate());
         job.setApplyBefore(form.getApplyBefore());
 
+        // Only the job's own employer's locations and tags (spec 3.3) - for the form
+        // and the API alike, since both arrive here. Another employer's id is
+        // refused the same way as one that does not exist.
         job.getLocations().clear();
         for (UUID locationId : new LinkedHashSet<>(form.getLocations())) {
-            job.getLocations().add(locationService.findById(locationId));
+            job.getLocations().add(locationService.requireOwn(locationId, job.getEmployer(), "locations"));
         }
         job.getTags().clear();
         for (Long tagId : new LinkedHashSet<>(form.getTags())) {
-            job.getTags().add(tagService.findById(tagId));
+            job.getTags().add(tagService.requireOwn(tagId, job.getEmployer(), "tags"));
         }
     }
 

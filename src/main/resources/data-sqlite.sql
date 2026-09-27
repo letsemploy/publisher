@@ -10,19 +10,27 @@
 -- ON CONFLICT DO NOTHING rather than INSERT OR IGNORE: the latter also swallows
 -- CHECK and NOT NULL violations, and a broken seed must fail loudly.
 
-INSERT INTO locations (id, created_at, last_modified_at, city, country) VALUES
-  ('2c2e59d5-0b1a-11f1-938c-42a3421a666f', strftime('%Y-%m-%d %H:%M:%f', 'now'), strftime('%Y-%m-%d %H:%M:%f', 'now'), 'Bern', 'CH'),
-  ('c7a9dc61-2bb3-4b06-8c66-0af6174dfd49', strftime('%Y-%m-%d %H:%M:%f', 'now'), strftime('%Y-%m-%d %H:%M:%f', 'now'), 'Zürich', 'CH'),
-  ('d1b0f4a2-6c31-4d55-9a77-2f1c3e5b7a90', strftime('%Y-%m-%d %H:%M:%f', 'now'), strftime('%Y-%m-%d %H:%M:%f', 'now'), 'Berlin', 'DE')
-ON CONFLICT DO NOTHING;
-
+-- Acme first, without its headquarters: a location belongs to an employer, and
+-- the headquarters is one of its own locations (spec 3.1, 3.2) - so the employer
+-- exists before its locations do, and the headquarters is set once they exist.
 INSERT INTO employers (id, created_at, last_modified_at, name, slug, url, industry, location_id) VALUES
   ('003d6aec-021b-11f1-aefa-f649a5d91690', strftime('%Y-%m-%d %H:%M:%f', 'now'), strftime('%Y-%m-%d %H:%M:%f', 'now'), 'Acme AG', 'acme-ag',
-   'https://www.acme.example', 'Software', '2c2e59d5-0b1a-11f1-938c-42a3421a666f')
+   'https://www.acme.example', 'Software', NULL)
 ON CONFLICT DO NOTHING;
 
-INSERT INTO tags (id, name) VALUES
-  (1, 'java'), (2, 'kubernetes'), (3, 'spring'), (4, 'documentation')
+-- Acme's locations. Berlin is unused, so the screens show a deletable one.
+INSERT INTO locations (id, created_at, last_modified_at, employer_id, city, country) VALUES
+  ('2c2e59d5-0b1a-11f1-938c-42a3421a666f', strftime('%Y-%m-%d %H:%M:%f', 'now'), strftime('%Y-%m-%d %H:%M:%f', 'now'), '003d6aec-021b-11f1-aefa-f649a5d91690', 'Bern', 'CH'),
+  ('c7a9dc61-2bb3-4b06-8c66-0af6174dfd49', strftime('%Y-%m-%d %H:%M:%f', 'now'), strftime('%Y-%m-%d %H:%M:%f', 'now'), '003d6aec-021b-11f1-aefa-f649a5d91690', 'Zürich', 'CH'),
+  ('d1b0f4a2-6c31-4d55-9a77-2f1c3e5b7a90', strftime('%Y-%m-%d %H:%M:%f', 'now'), strftime('%Y-%m-%d %H:%M:%f', 'now'), '003d6aec-021b-11f1-aefa-f649a5d91690', 'Berlin', 'DE')
+ON CONFLICT DO NOTHING;
+
+UPDATE employers SET location_id = '2c2e59d5-0b1a-11f1-938c-42a3421a666f'
+WHERE id = '003d6aec-021b-11f1-aefa-f649a5d91690' AND location_id IS NULL;
+
+-- Acme's tags.
+INSERT INTO tags (id, employer_id, name) VALUES
+  (1, '003d6aec-021b-11f1-aefa-f649a5d91690', 'java'), (2, '003d6aec-021b-11f1-aefa-f649a5d91690', 'kubernetes'), (3, '003d6aec-021b-11f1-aefa-f649a5d91690', 'spring'), (4, '003d6aec-021b-11f1-aefa-f649a5d91690', 'documentation')
 ON CONFLICT DO NOTHING;
 
 -- A published job, an expired one and a draft, so every status is visible at once.

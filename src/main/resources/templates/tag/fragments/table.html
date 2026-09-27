@@ -11,6 +11,7 @@
                     <thead>
                     <tr>
                         <th th:text="#{label.name}">Name</th>
+                        <th th:if="${showEmployer}" th:text="#{label.employer}">Employer</th>
                         <th th:text="#{label.jobCount}">Jobs</th>
                         <th class="w-1"></th>
                     </tr>
@@ -18,6 +19,7 @@
                     <tbody>
                     <tr th:each="t : ${tags}">
                         <td><span class="badge bg-blue-lt" th:text="${t.name}">tag</span></td>
+                        <td class="text-secondary" th:if="${showEmployer}" th:text="${t.employerName}">Acme AG</td>
                         <td th:text="${t.jobCount}">0</td>
                         <td>
                             <div class="btn-list flex-nowrap">

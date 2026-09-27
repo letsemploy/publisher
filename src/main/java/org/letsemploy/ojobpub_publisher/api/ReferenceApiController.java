@@ -1,6 +1,7 @@
 package org.letsemploy.ojobpub_publisher.api;
 
 import java.util.List;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.letsemploy.ojobpub_publisher.api.ApiTypes.LocationDto;
 import org.letsemploy.ojobpub_publisher.api.ApiTypes.TagDto;
@@ -15,10 +16,10 @@ import org.springframework.transaction.annotation.Transactional;
 /**
  * Locations and tags (spec 11.3).
  *
- * <p>Both are platform-wide rather than an employer's own, and {@code JobInput}
- * refers to them by id, so without these a caller could not write a job at all.
- * They are gated on {@code jobs:read} for that reason: they exist to fill a
- * posting in.
+ * <p>Both belong to an employer (spec 3.2, 3.4), so a token sees its own
+ * employer's and nobody else's. {@code JobInput} refers to them by id, so without
+ * these a caller could not write a job at all; they are gated on {@code jobs:read}
+ * for that reason: they exist to fill a posting in.
  */
 @Controller
 @RequiredArgsConstructor
@@ -33,7 +34,9 @@ public class ReferenceApiController {
     @Transactional(readOnly = true)
     public List<LocationDto> locations(@Argument String q) {
         api.requireScope(TokenScope.JOBS_READ);
-        return (q == null || q.isBlank() ? locationService.findAll() : locationService.search(q))
+        UUID employerId = api.employerId();
+        return (q == null || q.isBlank() ? locationService.ofEmployer(employerId)
+                : locationService.search(employerId, q))
                 .stream().map(mapper::location).toList();
     }
 
@@ -41,7 +44,9 @@ public class ReferenceApiController {
     @Transactional(readOnly = true)
     public List<TagDto> tags(@Argument String q) {
         api.requireScope(TokenScope.JOBS_READ);
-        return (q == null || q.isBlank() ? tagService.findAll() : tagService.search(q))
+        UUID employerId = api.employerId();
+        return (q == null || q.isBlank() ? tagService.ofEmployer(employerId)
+                : tagService.search(List.of(employerId), q))
                 .stream().map(mapper::tag).toList();
     }
 }

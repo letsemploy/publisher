@@ -26,8 +26,13 @@ public class Employer extends Base {
     private String industry;
 
     /** Required: the published document must carry the employer's location (spec 3.1). */
-    @ManyToOne(fetch = FetchType.EAGER, optional = false)
-    @JoinColumn(name = "location_id", nullable = false)
+    /**
+     * One of the employer's own locations (spec 3.1). Required - EmployerService
+     * refuses to save without it - but nullable in the database: the location
+     * belongs to this employer, so the employer has to exist before it can.
+     */
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "location_id")
     private Location headquarters;
 
     /** The first path segment of every public feed URL (spec 5.1). */

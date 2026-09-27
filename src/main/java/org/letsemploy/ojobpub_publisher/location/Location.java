@@ -6,6 +6,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.letsemploy.ojobpub_publisher.common.Base;
+import org.letsemploy.ojobpub_publisher.employer.Employer;
 
 @Entity
 @Table(name = "locations")
@@ -13,6 +14,11 @@ import org.letsemploy.ojobpub_publisher.common.Base;
 @Setter
 @NoArgsConstructor
 public class Location extends Base {
+
+    /** The employer this location belongs to, and only it (spec 3.2). Fixed at creation. */
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "employer_id", nullable = false, updatable = false)
+    private Employer employer;
 
     @Column(nullable = false)
     private String city;
@@ -29,6 +35,11 @@ public class Location extends Base {
     public Location(String city, CountryCode country) {
         this.city = city;
         this.country = country;
+    }
+
+    public Location(Employer employer, String city, CountryCode country) {
+        this(city, country);
+        this.employer = employer;
     }
 
     /** The alpha-2 code as the published document must carry it: upper case (spec 6.3). */

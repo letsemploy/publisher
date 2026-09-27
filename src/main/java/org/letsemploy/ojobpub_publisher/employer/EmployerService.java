@@ -1,5 +1,6 @@
 package org.letsemploy.ojobpub_publisher.employer;
 
+import com.neovisionaries.i18n.CountryCode;
 import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -73,13 +74,23 @@ public class EmployerService {
      */
     @Transactional
     public Employer save(UUID id, String name, String slug, String url, String industry,
-                         UUID locationId, Actor actor) {
+                         Headquarters headquarters, Actor actor) {
         if (name == null || name.isBlank()) {
             throw new ValidationFailure("name", "A name is required.");
         }
-        if (locationId == null) {
+        if (headquarters == null || headquarters.isEmpty()) {
             throw new ValidationFailure("headquarters",
                     "A headquarters location is required; the published document must carry it.");
+        }
+        if (headquarters.isNew()) {
+            // Checked before anything is written, under the form's own field names.
+            CountryCode country = CountryCode.getByCodeIgnoreCase(headquarters.newCountry());
+            if (country == null || country == CountryCode.UNDEFINED) {
+                throw new ValidationFailure("hqCountry", "Select the country of the headquarters.");
+            }
+        } else if (id == null) {
+            throw new ValidationFailure("headquarters",
+                    "A new employer has no locations yet: enter the headquarters city and country.");
         }
         boolean creating = id == null;
         Employer employer;
@@ -99,8 +110,14 @@ public class EmployerService {
         employer.setSlug(Slugs.slugify(slug == null || slug.isBlank() ? name : slug, "employer"));
         employer.setUrl(blankToNull(url));
         employer.setIndustry(blankToNull(industry));
-        employer.setHeadquarters(locationService.findById(locationId));
         Employer saved = employerRepo.save(employer);
+        // The headquarters is one of the employer's own locations (spec 3.1), so a
+        // new employer is saved first and its location created against it - the
+        // reason location_id may be null in the database, never once this returns.
+        saved.setHeadquarters(headquarters.isNew()
+                ? locationService.findOrCreate(saved, headquarters.newCity(), headquarters.newCountry())
+                : locationService.requireOwn(headquarters.locationId(), saved, "headquarters"));
+        saved = employerRepo.save(saved);
 
         if (creating) {
             // No employer ever exists without someone responsible for it (spec 2.7).

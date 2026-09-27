@@ -8,6 +8,7 @@ import lombok.RequiredArgsConstructor;
 import org.letsemploy.ojobpub_publisher.common.exception.ValidationFailure;
 import org.letsemploy.ojobpub_publisher.feed.FeedService;
 import org.letsemploy.ojobpub_publisher.job.JobService;
+import org.letsemploy.ojobpub_publisher.location.Countries;
 import org.letsemploy.ojobpub_publisher.location.Location;
 import org.letsemploy.ojobpub_publisher.location.LocationService;
 import org.letsemploy.ojobpub_publisher.membership.MembershipService;
@@ -71,7 +72,7 @@ public class EmployerController {
         model.addAttribute("page", new PageMeta(message("employer.create"), null,
                 List.of(new Crumb(message("nav.employers"), "/employers"),
                         new Crumb(message("employer.create"), null))));
-        formModel(model, new EmployerFormView(null, null, null, null, null, null), Map.of());
+        formModel(model, new EmployerFormView(null, null, null, null, null, null, null, null), Map.of());
         return "employer/form";
     }
 
@@ -84,7 +85,8 @@ public class EmployerController {
                         new Crumb(employer.getName(), "/employers/" + id))));
         formModel(model, new EmployerFormView(employer.getId().toString(), employer.getName(),
                 employer.getSlug(), employer.getUrl(), employer.getIndustry(),
-                employer.getHeadquarters().getId().toString()), Map.of());
+                employer.getHeadquarters() == null ? null : employer.getHeadquarters().getId().toString(),
+                null, null), Map.of());
         return "employer/form";
     }
 
@@ -95,12 +97,16 @@ public class EmployerController {
                        @RequestParam(required = false) String url,
                        @RequestParam(required = false) String industry,
                        @RequestParam(required = false) String headquarters,
+                       @RequestParam(required = false) String hqCity,
+                       @RequestParam(required = false) String hqCountry,
                        Model model, RedirectAttributes flash) {
         try {
+            // A new city and country win over the select: typing one is the more
+            // deliberate act, and on create it is the only way (spec 3.1).
             UUID locationId = headquarters == null || headquarters.isBlank()
                     ? null : UUID.fromString(headquarters);
-            Employer saved = employerService.save(id, name, slug, url, industry, locationId,
-                    scope.user());
+            Employer saved = employerService.save(id, name, slug, url, industry,
+                    new Headquarters(locationId, hqCity, hqCountry), scope.user());
             // Every employer gets a working URL the moment it exists (spec 3.5).
             if (id == null) {
                 feedService.createDefaultFeed(saved);
@@ -111,7 +117,7 @@ public class EmployerController {
             model.addAttribute("page", PageMeta.of(
                     id == null ? message("employer.create") : message("employer.edit")));
             formModel(model, new EmployerFormView(id == null ? null : id.toString(),
-                    name, slug, url, industry, headquarters), e.getFieldErrors());
+                    name, slug, url, industry, headquarters, hqCity, hqCountry), e.getFieldErrors());
             return "employer/form";
         }
     }
@@ -121,11 +127,16 @@ public class EmployerController {
         model.addAttribute("fieldErrors", fieldErrors);
         model.addAttribute("errors", fieldErrors.entrySet().stream()
                 .map(e -> new FieldError(e.getKey(), e.getValue())).toList());
+        // Only this employer's own locations: the headquarters is one of them
+        // (spec 3.1). A new employer has none yet, and enters its first below.
         Map<String, String> locations = new LinkedHashMap<>();
-        for (Location location : locationService.findAll()) {
-            locations.put(location.getId().toString(), location.getLabel());
+        if (form.getId() != null) {
+            for (Location location : locationService.ofEmployer(UUID.fromString(form.getId()))) {
+                locations.put(location.getId().toString(), location.getLabel());
+            }
         }
         model.addAttribute("locationOptions", locations);
+        model.addAttribute("countryOptions", Countries.options());
     }
 
     private String message(String key) {

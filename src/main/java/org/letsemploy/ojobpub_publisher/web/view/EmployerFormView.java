@@ -9,5 +9,9 @@ public class EmployerFormView {
     String slug;
     String url;
     String industry;
+    /** One of the employer's own locations, by id - editing only. */
     String headquarters;
+    /** Or a new location, which joins the employer's locations (spec 3.1). */
+    String hqCity;
+    String hqCountry;
 }

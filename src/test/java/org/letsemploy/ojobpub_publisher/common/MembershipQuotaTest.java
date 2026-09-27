@@ -12,10 +12,10 @@ import org.letsemploy.ojobpub_publisher.TestProfiles;
 import org.letsemploy.ojobpub_publisher.common.exception.ValidationFailure;
 import org.letsemploy.ojobpub_publisher.employer.EmployerRepo;
 import org.letsemploy.ojobpub_publisher.employer.EmployerService;
+import org.letsemploy.ojobpub_publisher.employer.Headquarters;
 import org.letsemploy.ojobpub_publisher.invitation.InvitationRepo;
 import org.letsemploy.ojobpub_publisher.invitation.InvitationService;
 import org.letsemploy.ojobpub_publisher.invitation.InvitationStatus;
-import org.letsemploy.ojobpub_publisher.location.LocationRepo;
 import org.letsemploy.ojobpub_publisher.membership.MembershipRepo;
 import org.letsemploy.ojobpub_publisher.membership.MembershipRole;
 import org.letsemploy.ojobpub_publisher.security.Actor;
@@ -53,18 +53,15 @@ class MembershipQuotaTest {
     @Autowired private InvitationService invitationService;
     @Autowired private InvitationRepo invitationRepo;
     @Autowired private MembershipRepo membershipRepo;
-    @Autowired private LocationRepo locationRepo;
     @Autowired private UserRepo userRepo;
 
     private Actor admin;
     private UserEntity invitee;
-    private UUID location;
 
     @BeforeEach
     void setUp() {
         admin = asUser(userRepo.findUniqueByEmail("dev@localhost").orElseThrow());
         invitee = userRepo.findUniqueByEmail("editor@example.com").orElseThrow();
-        location = locationRepo.findAll().get(0).getId();
     }
 
     private Actor asUser(UserEntity user) {
@@ -77,7 +74,7 @@ class MembershipQuotaTest {
 
     private UUID createEmployer(Actor actor, String name) {
         return employerService.save(null, name + " " + UUID.randomUUID(), null, null, null,
-                location, actor).getId();
+                Headquarters.newLocation("Quotaville", "CH"), actor).getId();
     }
 
     /** Creating grants a membership, so the per-user quota governs it (spec 2.2). */

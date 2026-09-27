@@ -36,6 +36,8 @@ wrong layer.
 ## 11.3 Shape of the schema
 
 - **Queries** read: an employer, its jobs, feeds, locations, tags, members and pending invitations.
+  Locations and tags are the token's employer's own (§3.2, §3.4). A job input naming another
+  employer's is refused in `userErrors` on `locationIds` or `tagIds`, like any unknown id.
 - **Mutations** are named for the act, not for CRUD: `createJob`, `updateJob`, `activateJob`,
   `deactivateJob`, `deleteJob`, `addJobToFeed`, `removeJobFromFeed`, `createFeed`, `updateFeed`,
   `updateEmployer`, `inviteMember`, `revokeInvitation`, `changeMemberRole`, `suspendMember`,

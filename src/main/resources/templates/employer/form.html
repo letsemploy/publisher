@@ -15,8 +15,29 @@
                         <div th:replace="~{fragments/form :: input('slug','label.slug',${form.slug},'text',true,'employer.slug.hint',${fieldErrors['slug']},64)}"></div>
                         <div th:replace="~{fragments/form :: input('url','label.website',${form.url},'url',false,null,${fieldErrors['url']},255)}"></div>
                         <div th:replace="~{fragments/form :: input('industry','label.industry',${form.industry},'text',false,null,${fieldErrors['industry']},255)}"></div>
-                        <div th:replace="~{fragments/form :: select('headquarters','employer.headquarters',${form.headquarters},${locationOptions},true,'label.pleaseChoose',${fieldErrors['headquarters']})}"></div>
-                        <small class="form-hint" th:text="#{employer.hq.hint}">Required by the published schema.</small>
+                        <!-- The headquarters is one of the employer's own locations (spec 3.1):
+                             picked from them when editing, or entered as a new one, which joins
+                             them. A new employer has none yet, so it can only enter one. -->
+                        <fieldset class="form-fieldset">
+                            <legend class="form-label required" th:text="#{employer.headquarters}">Headquarters</legend>
+                            <small class="form-hint mb-2" th:text="#{employer.hq.hint}">Required by the published schema.</small>
+                            <th:block th:if="${form.id != null}">
+                                <div th:replace="~{fragments/form :: select('headquarters','employer.hq.existing',${form.headquarters},${locationOptions},false,'label.pleaseChoose',${fieldErrors['headquarters']})}"></div>
+                                <p class="text-secondary small mb-2" th:text="#{employer.hq.orNew}">Or add a new location:</p>
+                            </th:block>
+                            <th:block th:if="${form.id == null and fieldErrors['headquarters'] != null}">
+                                <div class="invalid-feedback d-block mb-2" th:text="${fieldErrors['headquarters']}">Required.</div>
+                            </th:block>
+                            <div class="row">
+                                <div class="col-md-7">
+                                    <div th:replace="~{fragments/form :: input('hqCity','label.city',${form.hqCity},'text',${form.id == null},null,${fieldErrors['hqCity']},255)}"></div>
+                                </div>
+                                <div class="col-md-5">
+                                    <div th:replace="~{fragments/form :: select('hqCountry','label.country',${form.hqCountry},${countryOptions},${form.id == null},'label.pleaseChoose',${fieldErrors['hqCountry']})}"></div>
+                                </div>
+                            </div>
+                            <small class="form-hint" th:text="#{employer.hq.newHint}">A new location is added to this employer's locations.</small>
+                        </fieldset>
                     </div>
                     <div th:replace="~{fragments/form :: actions('label.save','/employers')}"></div>
                 </div>

@@ -35,7 +35,8 @@ owner may change it. What an editor is shown is the membership itself — who be
 not the owner's working material: pending invitations, the invite form and the role, suspension and
 removal controls are absent rather than disabled (§7.18).
 
-Tags are global and every signed-in user may manage them.
+Locations and tags belong to an employer, like its jobs (§3.2, §3.4). Its members, editors and owners
+alike, manage them, and nobody else sees them.
 
 An admin is not automatically a member. They act on any employer by virtue of the platform role, and
 when they need to belong to one — to be listed as a person responsible for it — they are invited or

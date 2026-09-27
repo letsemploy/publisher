@@ -284,7 +284,7 @@ last modification. Columns: title, status badge (§7.6), locations, job type, fe
 
 **Create / edit** — one form per §7.7, grouped as *Basics* (title, description, url, language, reference
 id, category), *Classification* (job type, work type, experience level, tags), *Workload & salary*,
-*Dates*, *Locations*. Locations and tags use the §7.8 picker. A new job is created as `DRAFT`; the form
+*Dates*, *Locations*. Locations and tags use the §7.8 picker, which searches the job's own employer only. A new job is created as `DRAFT`; the form
 offers *Save draft* and *Save and activate*, the latter running the §4.3 checks and, on failure, saving
 the draft and listing precisely what is missing.
 
@@ -325,7 +325,9 @@ dead end that only an administrator can resolve.
 **Detail** — the record, its headquarters, its feeds and its job counts.
 **Create** — open to every signed-in user. Creating an employer also creates its `all` feed (§3.5) and
 makes the creator its **owner** (§2.7).
-**Edit** — name, slug, url, industry, headquarters location; slug behaviour per §7.12. **Owners and
+**Edit** — name, slug, url, industry, headquarters location; slug behaviour per §7.12. The
+headquarters is picked from the employer's own locations, or entered as a new city and country,
+which joins them. On **create** there are none yet, so the city and country are entered. **Owners and
 admins only**; an editor works on jobs and feeds, not on the employer record.
 **Delete** — **admins only**, unchanged. An owner may hand a workspace on but not destroy it along with
 the feed URLs its consumers depend on.
@@ -335,13 +337,17 @@ the feed URLs its consumers depend on.
 
 ## 7.14 Locations
 
-List, create, edit and delete of city/country pairs, per §7.6 and §7.7. The country field is the native
-select described in §7.8. A location still referenced by an employer or a job cannot be deleted, and the
-UI names what references it rather than only refusing.
+The locations of the employers in scope (§2.5), with list, create, edit and delete, per §7.6 and §7.7.
+A new one belongs to the active employer. When the list covers more than one employer, as it does under
+"All employers", each row names its employer. The country field is the native select described in
+§7.8. A location still referenced by its employer or a job cannot be deleted, and the UI names what
+references it rather than only refusing. Another employer's location is not found (§2.4).
 
 ## 7.15 Tags
 
-List of all tags with the number of jobs carrying each, searchable, sorted by name. Create and rename
+The tags of the employers in scope (§2.5), with the number of jobs carrying each, searchable, sorted by
+name. A new one belongs to the active employer, and each row names its employer when the list covers
+more than one. Another employer's tag is not found (§2.4). Create and rename
 apply the §3.4 normalization and surface the 28-character and uniqueness rules as field errors. Delete
 confirms through a modal stating how many jobs will lose the tag.
 

@@ -42,6 +42,9 @@ public class ApiErrors {
         }
         return switch (key) {
             case "readiness.locations" -> "locationIds";
+            // The service names the form's fields; the API's inputs are the ids.
+            case "locations" -> "locationIds";
+            case "tags" -> "tagIds";
             case "readiness.salary" -> "salaryCurrency";
             // "Title, URL, language and job type are present" is about four fields
             // at once, so naming one of them would be a guess.

@@ -12,6 +12,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.letsemploy.ojobpub_publisher.common.exception.ValidationFailure;
 import org.letsemploy.ojobpub_publisher.employer.Employer;
+import org.letsemploy.ojobpub_publisher.employer.EmployerService;
 import org.letsemploy.ojobpub_publisher.feed.Feed;
 import org.letsemploy.ojobpub_publisher.feed.FeedService;
 import org.letsemploy.ojobpub_publisher.location.Location;
@@ -46,6 +47,7 @@ public class JobController {
     private final FeedService feedService;
     private final TagService tagService;
     private final LocationService locationService;
+    private final EmployerService employerService;
     private final Scope scope;
     private final Views views;
     private final MessageSource messages;
@@ -180,7 +182,7 @@ public class JobController {
         JobForm form = new JobForm();
         form.setLanguage("en");
         form.setJobType("permanent");
-        formModel(model, form, Map.of(), List.of(), List.of());
+        formModel(model, form, Map.of(), List.of(), List.of(), scope.requireActiveEmployer());
         return "job/form";
     }
 
@@ -193,7 +195,8 @@ public class JobController {
         formModel(model, JobForm.of(job), Map.of(),
                 job.getTags().stream().map(t -> new Ref(String.valueOf(t.getId()), t.getName())).toList(),
                 job.getLocations().stream()
-                        .map(l -> new Ref(l.getId().toString(), l.getLabel())).toList());
+                        .map(l -> new Ref(l.getId().toString(), l.getLabel())).toList(),
+                job.getEmployer());
         return "job/form";
     }
 
@@ -216,31 +219,48 @@ public class JobController {
             // Re-render with every entered value preserved (spec 7.7).
             model.addAttribute("page", new PageMeta(
                     id == null ? message("job.create") : message("job.edit"), null, List.of()));
-            formModel(model, form, e.getFieldErrors(), refsForTags(form), refsForLocations(form));
+            formModel(model, form, e.getFieldErrors(), refsForTags(form, employer),
+                    refsForLocations(form, employer), employer);
             return "job/form";
         }
     }
 
-    private List<Ref> refsForTags(JobForm form) {
+    /**
+     * The chips of a form that failed to save. Only the employer's own tags are
+     * shown again: an id from elsewhere was already refused by the save, and must
+     * not come back with another employer's name on it (spec 3.3).
+     */
+    private List<Ref> refsForTags(JobForm form, Employer employer) {
         List<Ref> refs = new ArrayList<>();
         for (Long tagId : form.getTags()) {
-            Tag tag = tagService.findById(tagId);
-            refs.add(new Ref(String.valueOf(tag.getId()), tag.getName()));
+            try {
+                Tag tag = tagService.requireOwn(tagId, employer, "tags");
+                refs.add(new Ref(String.valueOf(tag.getId()), tag.getName()));
+            } catch (ValidationFailure foreign) {
+                // dropped, and the error already says why
+            }
         }
         return refs;
     }
 
-    private List<Ref> refsForLocations(JobForm form) {
+    private List<Ref> refsForLocations(JobForm form, Employer employer) {
         List<Ref> refs = new ArrayList<>();
         for (UUID locationId : form.getLocations()) {
-            Location location = locationService.findById(locationId);
-            refs.add(new Ref(location.getId().toString(), location.getLabel()));
+            try {
+                Location location = locationService.requireOwn(locationId, employer, "locations");
+                refs.add(new Ref(location.getId().toString(), location.getLabel()));
+            } catch (ValidationFailure foreign) {
+                // dropped, and the error already says why
+            }
         }
         return refs;
     }
 
     private void formModel(Model model, JobForm form, Map<String, String> fieldErrors,
-                           List<Ref> tagChips, List<Ref> locationChips) {
+                           List<Ref> tagChips, List<Ref> locationChips, Employer employer) {
+        // The pickers search the job's employer, and only it (spec 3.3, 7.8).
+        model.addAttribute("tagSearchUrl", "/jobs/tags/search?employer=" + employer.getId());
+        model.addAttribute("locationSearchUrl", "/jobs/locations/search?employer=" + employer.getId());
         model.addAttribute("form", form);
         model.addAttribute("fieldErrors", fieldErrors);
         model.addAttribute("errors", fieldErrors.entrySet().stream()
@@ -297,8 +317,11 @@ public class JobController {
     // ------------------------------------------------------------- pickers
 
     @GetMapping("/tags/search")
-    public String searchTags(@RequestParam(required = false) String q, Model model) {
-        model.addAttribute("results", tagService.search(q).stream()
+    public String searchTags(@RequestParam UUID employer, @RequestParam(required = false) String q,
+                             Model model) {
+        // Membership of that employer, or 404 like any other refusal (spec 2.4).
+        employerService.findVisible(employer, scope.user());
+        model.addAttribute("results", tagService.search(List.of(employer), q).stream()
                 .map(t -> new Ref(String.valueOf(t.getId()), t.getName())).toList());
         model.addAttribute("query", q);
         model.addAttribute("targetName", "tags");
@@ -306,8 +329,10 @@ public class JobController {
     }
 
     @GetMapping("/locations/search")
-    public String searchLocations(@RequestParam(required = false) String q, Model model) {
-        model.addAttribute("results", locationService.search(q).stream()
+    public String searchLocations(@RequestParam UUID employer, @RequestParam(required = false) String q,
+                                  Model model) {
+        employerService.findVisible(employer, scope.user());
+        model.addAttribute("results", locationService.search(employer, q).stream()
                 .map(l -> new Ref(l.getId().toString(), l.getLabel())).toList());
         model.addAttribute("query", q);
         model.addAttribute("targetName", "locations");

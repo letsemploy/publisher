@@ -4,7 +4,7 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import org.hibernate.annotations.NaturalId;
+import org.letsemploy.ojobpub_publisher.employer.Employer;
 
 @Entity
 @Table(name = "tags")
@@ -23,12 +23,22 @@ public class Tag {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @NaturalId(mutable = true)
-    @Column(nullable = false, unique = true, length = MAX_LENGTH)
+    /** The employer this tag belongs to, and only it (spec 3.4). Fixed at creation. */
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "employer_id", nullable = false, updatable = false)
+    private Employer employer;
+
+    /** Unique within its employer, not across the installation (spec 3.4). */
+    @Column(nullable = false, length = MAX_LENGTH)
     private String name;
 
     public Tag(String name) {
         this.name = name;
+    }
+
+    public Tag(Employer employer, String name) {
+        this(name);
+        this.employer = employer;
     }
 
     /** Tags are normalized on input: trimmed and lower-cased (spec 3.4). */

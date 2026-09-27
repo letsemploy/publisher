@@ -11,7 +11,8 @@ Employer 1 ──── * Job            Job * ──── * Location
    │ 1                            Job * ──── * Tag
    │                              Job's employer is fixed at creation
    └── * Feed  * ──── * Job  (membership; both sides same employer)
-Employer 1 ──── 1 Location (headquarters)
+Employer 1 ──── * Location, Employer 1 ──── * Tag   (each belongs to one employer)
+Employer 1 ──── 1 Location (headquarters: one of its own)
 
 User         1 ──── * Membership * ──── 1 Employer   (carries the role: OWNER or EDITOR)
 ServiceToken 1 ──── * Membership * ──── 1 Employer   (a token holds a role too)
@@ -29,20 +30,23 @@ The organization offering the jobs. Exactly one employer appears in each publish
 | `slug` | string(1..64) | **yes** | lowercase `[a-z0-9-]`, derived from `name`, freely editable; **not** required to be unique (§5.1) |
 | `url` | URL | no | absolute `http(s)` URI |
 | `industry` | string(1..255) | no | free text, e.g. *Software*, *Healthcare* |
-| `headquarters` | Location | **yes** | the schema requires `employer.location`, so this cannot be optional |
+| `headquarters` | Location | **yes** | **one of the employer's own locations**. The schema requires `employer.location`, so this cannot be optional. It is entered on the employer form as a new city and country, which joins the employer's locations, or picked from them when editing. The database allows it to be empty only because a location needs its employer to exist first; it is never empty once the employer is saved |
 
 Deleting an employer deletes its jobs and feeds and immediately stops serving its feed URLs. Only an
 admin may delete an employer, and only through an explicit confirmation naming the employer.
 
 ## 3.2 Location
 
-A city/country pair, reused across employers and jobs. Locations are shared reference data within an
-employer's workspace.
+A city/country pair belonging to **one employer**: its headquarters and the places its jobs are.
+Only that employer's members see and manage it, and only its own jobs may use it (§3.3). Two employers
+with an office in Bern each have their own location, so renaming one can never change the other's
+jobs or published document.
 
 | Field | Type | Required | Rules |
 |---|---|---|---|
 | `id` | UUID | yes | generated |
-| `city` | string(1..255) | **yes** | |
+| `employer` | Employer | **yes** | immutable |
+| `city` | string(1..255) | **yes** | unique with `country` **within the employer** |
 | `country` | ISO 3166-1 alpha-2 | **yes** | stored as a **two-character uppercase string** (`CH`, `DE`, `US`) |
 
 `country` **must** be persisted as its alpha-2 string, never as the ordinal of an enum. Ordinal storage
@@ -95,11 +99,17 @@ A free-form keyword — a skill, technology or attribute.
 | Field | Type | Required | Rules |
 |---|---|---|---|
 | `id` | long | yes | generated |
-| `name` | string(1..28) | **yes** | lowercase, trimmed, **globally unique**; the schema caps tag length at 28 characters |
+| `employer` | Employer | **yes** | immutable |
+| `name` | string(1..28) | **yes** | lowercase, trimmed, **unique within the employer**; the schema caps tag length at 28 characters |
 
-Tags are global, shared across all employers, and normalized on input (trimmed, lowercased). Creating a
-tag that already exists returns the existing tag rather than an error. Deleting a tag removes it from
-every job that carries it, and the confirmation screen **must** state how many jobs are affected.
+Tags belong to **one employer**, like its locations: only its members see and manage them, and only its
+own jobs may carry them (§3.3). They are normalized on input (trimmed, lowercased). Creating a tag the
+employer already has returns the existing tag rather than an error. Deleting a tag removes it from
+every one of *this employer's* jobs that carries it, and the confirmation screen **must** state how many
+jobs are affected.
+
+When they were shared across employers, a rename or deletion by one employer rewrote every other
+employer's jobs and published documents. Ownership is what makes managing them safe for every member.
 
 ## 3.5 Feed
 
