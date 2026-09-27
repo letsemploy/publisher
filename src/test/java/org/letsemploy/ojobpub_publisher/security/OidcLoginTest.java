@@ -265,6 +265,25 @@ class OidcLoginTest {
         assertThat(membershipService.of(alice.getId())).isEmpty();
     }
 
+    /**
+     * No admin rules are configured here, so the stored role stands: an admin made
+     * by hand stays one. Upgrading to configured admins must not demote anybody
+     * until the operator actually configures them (spec 2.2).
+     */
+    @Test
+    void withoutAdminRulesAStoredAdminStaysAdmin() throws Exception {
+        UserEntity handMade = new UserEntity();
+        handMade.setIssuer(IDP);
+        handMade.setSubject("hand-made");
+        handMade.setRole(UserEntity.Role.ADMIN);
+        userRepo.save(handMade);
+
+        mvc.perform(get("/employers/" + ACME)
+                        .with(signedIn("hand-made", "Hand Made", "hand@example.com", true)))
+                .andExpect(status().isOk());
+        assertThat(account("hand-made").getRole()).isEqualTo(UserEntity.Role.ADMIN);
+    }
+
     /** An account created by sign-in is not silently given access (spec 2.4). */
     @Test
     void aNewAccountCannotSeeAnExistingEmployer() throws Exception {

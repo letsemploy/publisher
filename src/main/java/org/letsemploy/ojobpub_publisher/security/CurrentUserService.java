@@ -33,6 +33,7 @@ public class CurrentUserService {
 
     private final UserRepo userRepo;
     private final MembershipService membershipService;
+    private final AdminPolicy adminPolicy;
     private final Environment environment;
 
     /**
@@ -90,20 +91,25 @@ public class CurrentUserService {
      * issuer and subject that identify them, the name to show, and an email only
      * if it may be trusted - or null when the principal is nobody we recognise.
      */
-    private record Identity(String issuer, String subject, String displayName, String email) {
+    private record Identity(String issuer, String subject, String displayName, String email,
+                            boolean emailVerified, Map<String, Object> claims) {
     }
 
     private Identity identityOf(Object principal) {
         if (principal instanceof OidcUser oidc) {
+            // getAttributes() merges ID-token and user-info claims: groups often
+            // arrive through user-info, and the admin mapping reads them (spec 2.2).
             return new Identity(String.valueOf(oidc.getIssuer()), oidc.getSubject(),
-                    displayName(oidc), trustedEmail(oidc));
+                    displayName(oidc), trustedEmail(oidc),
+                    Boolean.TRUE.equals(oidc.getEmailVerified()), oidc.getAttributes());
         }
         // GitHub: OAuth 2.0 without OpenID Connect, identified by GitHubUserService.
         if (principal instanceof GitHubUser github) {
             String email = github.getVerifiedEmail() != null || requireVerifiedEmail
                     ? github.getVerifiedEmail()
                     : github.getPublicEmail();
-            return new Identity(github.getIssuer(), github.getSubject(), github.getDisplayName(), email);
+            return new Identity(github.getIssuer(), github.getSubject(), github.getDisplayName(), email,
+                    github.getVerifiedEmail() != null, github.getAttributes());
         }
         return null;
     }
@@ -127,13 +133,28 @@ public class CurrentUserService {
                     log.info("New account for {} at {}", identity.subject(), identity.issuer());
                     return created;
                 });
+        // Admin as configured, or the stored role when admins are not managed here.
+        UserEntity.Role role = adminPolicy.isAdmin(identity.issuer(), identity.subject(),
+                        identity.email(), identity.emailVerified(), identity.claims())
+                .map(admin -> admin ? UserEntity.Role.ADMIN : UserEntity.Role.USER)
+                .orElse(user.getRole());
         if (user.getId() != null
                 && Objects.equals(user.getEmail(), identity.email())
-                && Objects.equals(user.getDisplayName(), identity.displayName())) {
+                && Objects.equals(user.getDisplayName(), identity.displayName())
+                && user.getRole() == role) {
             return user;
+        }
+        if (user.getId() != null && user.getRole() != role) {
+            // Names the account, never the rule that matched: a claim value is the
+            // provider's data and has no business in a log line.
+            log.info("User {} ({} at {}) {}", user.getId(), identity.subject(), identity.issuer(),
+                    role == UserEntity.Role.ADMIN ? "granted admin" : "is no longer admin");
+        } else if (user.getId() == null && role == UserEntity.Role.ADMIN) {
+            log.info("New account for {} at {} granted admin", identity.subject(), identity.issuer());
         }
         user.setEmail(identity.email());
         user.setDisplayName(identity.displayName());
+        user.setRole(role);
         return userRepo.save(user);
     }
 

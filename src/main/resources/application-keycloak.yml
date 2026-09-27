@@ -7,6 +7,11 @@
 # starts, and without it the context fails. Sign in as alice/alice or bob/bob;
 # mallory/mallory has an unverified email and so cannot be invited (spec 2.2).
 #
+# alice is a platform admin, by the group mapping below: she is in the realm's
+# ojobpub-admin group, which Keycloak sends as the "groups" claim. bob and
+# mallory are plain users. Remove alice from the group in Keycloak and she is
+# demoted at her next sign-in (spec 2.2).
+#
 # A deployment sets the same five properties from the environment instead, with
 # its own provider (spec 9.5):
 #
@@ -33,3 +38,10 @@ spring:
         provider:
           oidc:
             issuer-uri: http://localhost:${KEYCLOAK_PORT:8083}/realms/ojobpub
+
+app:
+  admin:
+    groups:
+      - issuer: http://localhost:${KEYCLOAK_PORT:8083}/realms/ojobpub
+        claim: groups
+        value: ojobpub-admin

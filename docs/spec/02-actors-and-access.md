@@ -16,6 +16,9 @@ having no standing anywhere else.
 | **User** | The employers they are a member of | Create an employer, becoming its owner (§2.7); work on employers they belong to, as their membership role allows |
 | **Admin** | All employers | Everything, on any employer, without being a member: platform staff who keep the installation working. Delete employers; override `publishedAt` |
 
+**Becoming an admin** is the operator's decision, made in configuration (§2.2) and never through the
+application — no screen can grant or remove it (§2.7).
+
 **Membership role** — one per (user, employer) pair, on the membership:
 
 | Role | May do within that employer |
@@ -96,8 +99,25 @@ below depends on there being a *human* answerable, it says so.
   merely a display name and a set of employer ids. An invitation is addressed to a person, so a
   principal that cannot be identified as a specific user has nothing to attach one to.
 - Role and membership are **local** data. The application should not depend on custom OIDC claims, so
-  that it works against any standards-compliant provider. It *may* optionally map a configured group
-  claim onto the Admin role, and this mapping must be off by default.
+  that it works against any standards-compliant provider.
+- **Admins come from configuration**, through two kinds of rule. Neither is active unless configured.
+  - A **list of people**, each named by provider *and* either a **verified** email or the provider's
+    subject.
+  - A **group claim**: a provider, a claim (a dotted path reaches a nested one) and a value the claim
+    must equal or contain.
+- **Every rule is scoped to one provider** by its issuer. An email is not an identity. With several
+  providers, an unscoped address would make admin whoever got it verified at any of them, and an
+  unscoped claim would let any provider grant admin by sending the right value.
+- **An email grants admin only if the provider verified it**, even where
+  `app.oidc.require-verified-email` is relaxed. That setting decides what is kept for invitations,
+  never who is admin.
+- **Once any rule is configured, the rules are authoritative.** Each request re-decides the role: a
+  person matched is an admin, and an admin not matched is demoted. Both are logged, naming the account
+  and never the rule. With no rule configured, stored roles are left alone, so adopting this demotes
+  nobody.
+- **When changes take effect:** a changed rule applies after a restart, at each person's next request.
+  A change at the provider, such as leaving the group, applies at their next sign-in, because claims
+  travel with the sign-in.
 - Sessions are server-side. Logout must clear the local session and should trigger OIDC RP-initiated
   logout where the provider supports it.
 

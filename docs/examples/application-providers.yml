@@ -28,6 +28,9 @@
 #   the same person two separate accounts, even with the same email address.
 #   Accounts are never joined by email: whoever controls an address at one
 #   provider would otherwise take over the account made through another.
+# * Platform admins are configured in application-prod.yml (app.admin), each rule
+#   naming its provider by issuer: https://accounts.google.com, https://github.com,
+#   https://gitlab.com, the Microsoft tenant issuer below, or your provider's own.
 # * Invitations go to verified email addresses only (spec 2.6). A provider that
 #   does not send email_verified - Microsoft, below - signs people in, but
 #   they cannot be invited until the setting is relaxed, and that setting

@@ -20,6 +20,29 @@
 # docs/spec/08-cross-cutting.md (spec 8.4) for the limits.
 
 app:
+  # Platform admins (spec 2.1, 2.2). Commented out, nothing changes: roles stay as
+  # they are. Once ANY rule below is set, the rules are authoritative - whoever
+  # they match is an admin, and every other admin is demoted at their next request.
+  #
+  # Each rule names the provider by its issuer, so an address verified at some
+  # other provider cannot claim it. An email matches only if the provider says it
+  # is verified. A subject is the provider's stable id for the person: after they
+  # have signed in once, it is in the users table (issuer, subject).
+  #
+  # admin:
+  #   people:
+  #     - issuer: https://accounts.google.com
+  #       email: alice@example.com
+  #     - issuer: https://github.com
+  #       subject: "583231"
+  #   groups:                       # for a provider you run
+  #     - issuer: https://sso.example.com/realms/acme
+  #       claim: groups             # or a nested claim: realm_access.roles
+  #       value: ojobpub-admin
+  #
+  # As environment variables: APP_ADMIN_PEOPLE_0_ISSUER, APP_ADMIN_PEOPLE_0_EMAIL,
+  # APP_ADMIN_GROUPS_0_CLAIM, ... - numbered from 0.
+
   # The public address people and job boards use. Every published feed URL is
   # built from it, so it must be right behind a reverse proxy (spec 9.5).
   base-url: ${APP_BASE_URL}

@@ -5,6 +5,7 @@
   "registrationAllowed": false,
   "verifyEmail": false,
   "loginWithEmailAllowed": true,
+  "groups": [{ "name": "ojobpub-admin" }],
   "clients": [
     {
       "clientId": "ojobpub-publisher",
@@ -23,7 +24,21 @@
       "attributes": {
         "pkce.code.challenge.method": "S256",
         "post.logout.redirect.uris": "http://localhost:8080/*"
-      }
+      },
+      "protocolMappers": [
+        {
+          "name": "groups",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-group-membership-mapper",
+          "config": {
+            "claim.name": "groups",
+            "full.path": "false",
+            "id.token.claim": "true",
+            "access.token.claim": "false",
+            "userinfo.token.claim": "true"
+          }
+        }
+      ]
     }
   ],
   "users": [
@@ -34,6 +49,7 @@
       "firstName": "Alice",
       "lastName": "Anders",
       "enabled": true,
+      "groups": ["/ojobpub-admin"],
       "credentials": [{ "type": "password", "value": "alice", "temporary": false }]
     },
     {

@@ -134,6 +134,12 @@ The provider must allow `https://<host>/login/oauth2/code/oidc` as a redirect UR
 RP-initiated logout, `https://<host>/login?logout` as a post-logout redirect (§7.19). None of these has a default: an
 installation with no provider configured runs with the back-office closed (§9.4).
 
+**Admins** (§2.2) are `app.admin.people` (each `issuer` plus `email` *or* `subject`) and
+`app.admin.groups` (each `issuer`, `claim`, `value`). A malformed entry stops the application at
+startup rather than locking admins out or letting someone in. The issuer to use is the provider's own,
+for example `https://accounts.google.com` or `https://github.com`. A person's subject is in the
+`users` table once they have signed in.
+
 **Several providers** are several registrations, each under its own id in place of `oidc`, for
 example `google`, `gitlab` or `microsoft`. Each gets its own button (§7.19) and its own callback,
 `https://<host>/login/oauth2/code/<id>`, which is what that provider must allow. Spring knows Google's

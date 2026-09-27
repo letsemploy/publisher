@@ -22,7 +22,8 @@ Two databases (§9.3): **MariaDB**, the default, and **SQLite** for a single-ins
 **Two databases** under Architecture. With MariaDB, a server is needed to run *and* to test. `podman-compose up -d` (or `docker compose up -d`) brings up
 `docker-compose.yml`: the `db` service on **3307** (root/root), adminer on **8082**, and **Keycloak on
 8083** (admin/admin), which imports `keycloak/ojobpub-realm.json` — realm `ojobpub`, users alice/alice
-and bob/bob, and mallory/mallory whose email is unverified. The realm is imported only into a fresh
+and bob/bob, and mallory/mallory whose email is unverified. alice is in the group `ojobpub-admin`, which
+the `keycloak` profile maps to platform admin. The realm is imported only into a fresh
 container, so after editing it: `podman rm -f ojobpub-publisher_keycloak_1 && podman-compose up -d
 keycloak` (podman-compose has no `rm`).
 
@@ -149,6 +150,16 @@ auto-configured bean. `OidcLoginTest` and `LockedChainTest` guard both direction
 - **Email is not unique.** Look people up with `UserRepo.findUniqueByEmail`, which answers empty for an
   address held by several accounts — `InvitationService` then answers `SENT`, as for an unknown one.
   There is deliberately no single-result finder: two accounts sharing an address made it throw.
+- **Admins come from configuration** (`AdminPolicy`, `app.admin.people` / `app.admin.groups`, §2.2).
+  This is the project's first `@ConfigurationProperties` record, because a list of entries cannot be
+  a `@Value`. Every rule is **scoped to an issuer**. An email entry matches only a *verified* address,
+  **regardless of `require-verified-email`**, which governs storage, not privilege. Once any rule
+  exists they are **authoritative**: `CurrentUserService.signIn` re-decides the role on every
+  request, promoting and demoting, and logs the account but never the matching rule. With no rules,
+  `isAdmin` returns empty and the stored role stands. That is deliberate, so upgrading never demotes
+  hand-made admins. A malformed entry fails startup. The dev bypass never reaches `signIn`, so the
+  seeded admin is untouched. The `keycloak` profile maps the realm group `ojobpub-admin`, so alice is
+  an admin locally.
 - **Logout** uses `OidcClientInitiatedLogoutSuccessHandler`: it ends the provider's session when the
   provider advertises an end-session endpoint, and is a local logout otherwise.
 - **Several providers, one button each** (`security/LoginOptions`, §7.19). The buttons are read from
@@ -469,6 +480,8 @@ TEST_DB=sqlite ./mvnw test                   # all, on SQLite; no server
 ./mvnw test -Dtest=LoginProvidersTest        # several providers: one button each, sorted, branded
 ./mvnw test -Dtest=LoginOptionsTest          # provider check (OIDC + GitHub) and brand by host; no Spring
 ./mvnw test -Dtest=GitHubUserServiceTest     # GitHub identity and verified email; mock server, no Spring
+./mvnw test -Dtest=AdminPolicyTest           # admin rules: issuer scope, verified email, claims; no Spring
+./mvnw test -Dtest=AdminSyncTest             # admins promoted and demoted through real sign-ins
 ./mvnw test -Dtest=MemberSuspensionScreenTest # suspending and reinstating from the People screen
 ./mvnw test -Dtest=ResourceLimitsTest        # the quota convention; no Spring, no database
 ./mvnw test -Dtest=QuotaEnforcementTest      # the six quotas against the seed data
