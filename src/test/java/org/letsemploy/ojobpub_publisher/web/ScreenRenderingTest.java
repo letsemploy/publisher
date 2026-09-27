@@ -10,7 +10,9 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.letsemploy.ojobpub_publisher.TestProfiles;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.info.BuildProperties;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.test.context.ActiveProfiles;
@@ -42,6 +44,8 @@ class ScreenRenderingTest {
 
     @Autowired
     private MockMvc mvc;
+    @Autowired
+    private ObjectProvider<BuildProperties> buildProperties;
 
     static Stream<String> everyScreen() {
         return Stream.of(
@@ -414,6 +418,22 @@ class ScreenRenderingTest {
                 .andExpect(status().is3xxRedirection())
                 .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers
                         .redirectedUrl("/"));
+    }
+
+    /**
+     * Every page links the source and the license and names the running version
+     * (spec 7.3): the build's, or "development" when run from classes an IDE
+     * compiled without the build-info step.
+     */
+    @Test
+    void theFooterNamesSourceLicenseAndVersion() throws Exception {
+        String version = buildProperties.getIfAvailable() == null
+                ? "development" : buildProperties.getIfAvailable().getVersion();
+        assertThat(html("/"))
+                .contains("href=\"https://github.com/letsemploy/publisher\"")
+                .contains("href=\"https://www.apache.org/licenses/LICENSE-2.0\"")
+                .contains("Version " + version);
+        assertThat(html("/jobs?lang=de")).contains("Quellcode").contains("Apache-Lizenz 2.0");
     }
 
     @Test

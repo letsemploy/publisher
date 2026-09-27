@@ -88,6 +88,11 @@ click while the user works down a long job list.
 Implemented with Tabler's vertical navbar (`navbar navbar-vertical navbar-expand-lg`) inside
 `page` / `page-wrapper`.
 
+**Footer** — at the bottom of every page, quietly: a link to the source code, the license (Apache
+License 2.0) and the running version, from the build. The project address is configurable
+(`app.project-url`), so a fork points at its own repository. Nothing in it needs JavaScript, and it is
+left out when printing.
+
 **Sidebar** — navigation, and nothing else:
 
 - The product brand, linking to the dashboard.

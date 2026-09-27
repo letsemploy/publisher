@@ -16,4 +16,7 @@ public class UiContext {
     List<String> languages;
     /** Drives the sidebar badge; 0 hides it (spec 7.3). */
     long pendingInvitations;
+    /** The footer (spec 7.3): the running version, and where the source is. */
+    String version;
+    String projectUrl;
 }

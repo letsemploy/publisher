@@ -13,6 +13,9 @@ import org.letsemploy.ojobpub_publisher.security.CurrentUserService;
 import org.letsemploy.ojobpub_publisher.web.view.NavItem;
 import org.letsemploy.ojobpub_publisher.web.view.Ref;
 import org.letsemploy.ojobpub_publisher.web.view.UiContext;
+import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.info.BuildProperties;
 import org.springframework.stereotype.Component;
 
 /**
@@ -31,6 +34,11 @@ public class UiContextFactory {
     private final EmployerService employerService;
     private final EmployerContext employerContext;
     private final InvitationService invitationService;
+    /** Present when the build wrote META-INF/build-info.properties. */
+    private final ObjectProvider<BuildProperties> buildProperties;
+
+    @Value("${app.project-url}")
+    private String projectUrl;
     private final MembershipService membershipService;
 
     public UiContext build(HttpServletRequest request) {
@@ -66,7 +74,14 @@ public class UiContextFactory {
         return new UiContext(user.getDisplayName(), user.isAdmin(),
                 currentUserService.isDevMode(), employerContext.getTheme(),
                 active, employers.stream().map(e -> new Ref(e.getId().toString(), e.getName())).toList(),
-                nav, List.of("en", "de"), invitationService.countPendingFor(user));
+                nav, List.of("en", "de"), invitationService.countPendingFor(user),
+                version(), projectUrl);
+    }
+
+    /** The build's version; "development" when run from classes with no build info. */
+    private String version() {
+        BuildProperties build = buildProperties.getIfAvailable();
+        return build == null ? "development" : build.getVersion();
     }
 
     /**

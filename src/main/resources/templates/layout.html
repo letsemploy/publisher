@@ -54,6 +54,35 @@
                 <div layout:fragment="content"></div>
             </div>
         </div>
+
+        <!-- Where the source is, under which license, and which version is running
+             (spec 7.3). Plain links: nothing here needs JavaScript. -->
+        <footer class="footer footer-transparent d-print-none">
+            <div class="container-xl">
+                <div class="row text-center align-items-center flex-row-reverse">
+                    <div class="col-lg-auto ms-lg-auto">
+                        <ul class="list-inline list-inline-dots mb-0">
+                            <li class="list-inline-item">
+                                <a class="link-secondary" th:href="${ui.projectUrl}" rel="noopener">
+                                    <svg th:replace="~{fragments/icon :: i('brand-github','icon')}"></svg>
+                                    <span th:text="#{footer.source}">Source code</span>
+                                </a>
+                            </li>
+                            <li class="list-inline-item">
+                                <a class="link-secondary" href="https://www.apache.org/licenses/LICENSE-2.0"
+                                   rel="license noopener" th:text="#{footer.license}">Apache License 2.0</a>
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="col-12 col-lg-auto mt-3 mt-lg-0">
+                        <ul class="list-inline list-inline-dots mb-0 text-secondary">
+                            <li class="list-inline-item" th:text="#{app.name}">oJobPub Publisher</li>
+                            <li class="list-inline-item" th:text="#{footer.version(${ui.version})}">Version 1.0</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </footer>
     </div>
 </div>
 
