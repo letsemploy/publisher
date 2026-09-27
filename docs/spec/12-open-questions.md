@@ -11,7 +11,8 @@
    a natural key?) need specification.
 3. **Feed-level filters.** Feed membership is explicit. Whether a feed may instead be defined as a saved
    filter (all jobs with tag *java*) is deferred; the URL contract is unaffected either way.
-4. **Scheduled work.** The date window is evaluated at serving time, so no scheduler is required. If
+4. **Scheduled work.** The date window is evaluated at serving time, so no scheduler is required, and
+   the application ships none. If
    notifications ("three postings expire next week") are wanted, a scheduled job and its delivery
    channel need specification.
 5. **Analytics.** Whether feed consumption is measured per consumer, and whether employers see it, is

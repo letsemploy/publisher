@@ -49,11 +49,15 @@ docker run -d --name ojobpub -p 8080:8080 -v ojobpub-data:/data \
   (`jdbc:mariadb://host:3306/ojobpub`), `SPRING_DATASOURCE_USERNAME` and
   `SPRING_DATASOURCE_PASSWORD`. The database must exist; its tables are created and upgraded on
   start.
+- **Memory.** The image is tuned for a small instance: it runs in a 512 MB container at about 450 MB
+  resident; 768 MB leaves headroom. Its JVM options are set in `JAVA_TOOL_OPTIONS`, and setting your
+  own replaces them. Keep the heap cap at 256 MB or more: starting needs about 200 MB, much more than
+  the application uses afterwards.
 
 To keep the configuration in a file rather than in environment variables, start from
 [`docs/examples/application-prod.yml`](docs/examples/application-prod.yml). Mount it as
-`/config/application-prod.yml` and run with `SPRING_PROFILES_ACTIVE=prod`. It also switches off what
-production should not have: the unauthenticated JobRunr dashboard and the demo data.
+`/config/application-prod.yml` and run with `SPRING_PROFILES_ACTIVE=prod`. It also switches off the
+demo data, which production should not have.
 To sign in with Google, add [`docs/examples/application-google.yml`](docs/examples/application-google.yml)
 beside it and run with `SPRING_PROFILES_ACTIVE=prod,google`. Its comments walk through the Google Cloud
 Console, and explain how to limit sign-in to your own Workspace organisation. For several providers at

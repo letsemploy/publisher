@@ -56,17 +56,48 @@ Locally, run either `dev` or `keycloak`; plain startup has no datasource. Both a
 the two differ in exactly that. A deployment sets `SPRING_DATASOURCE_*` for MariaDB or runs with
 `SPRING_PROFILES_ACTIVE=sqlite` and `APP_SQLITE_PATH` on a volume, plus the five `SPRING_SECURITY_OAUTH2_*`
 variables of §9.5 — see **Authentication** below. `docs/examples/application-prod.yml` is a complete,
-commented `prod` configuration, meant to be mounted, not packaged. It also turns off the JobRunr
-dashboard, which has no authentication, and pins the Flyway table name, which is otherwise set only in
-the local and test profiles. Keep it in step when adding a setting a deployment must know about. Spring's
+commented `prod` configuration, meant to be mounted, not packaged. It pins the Flyway table name,
+which is otherwise set only in the local and test profiles. Keep it in step when adding a setting a deployment must know about. Spring's
 binder leaves an unresolved `${VAR}` as literal text instead of failing, so a missing variable is not
 caught at startup.
 
-JobRunr's dashboard binds port 8000 whenever the app runs. Actuator and the Prometheus registry are on
-the main port.
+Actuator and the Prometheus registry are on the main port; the app binds no other.
 
 Container builds use `Dockerfile.multistage`, which is what CI pushes to ghcr.io. The plain
-`Containerfile`/`Dockerfile` expects a pre-built `target/app.jar`.
+`Containerfile` expects a pre-built `target/app.jar`. `Dockerfile` is a **symlink** to it, so edit one
+file, never both.
+
+### Memory
+
+Measured in 2-CPU containers of 512 MB and 1 GB with a warm-up of about 300 requests. RSS went from
+about 575 MB to about 450 MB, on SQLite and MariaDB alike. The old image needed about 1 GB just to start:
+its default cap of a quarter of the container gave 192 MB at 768 MB, which ran out of memory. This one
+runs in 512 MB. The measures, and what each is worth:
+
+- **The JVM options** are `JAVA_TOOL_OPTIONS` in both container files, which a deployment replaces
+  by setting its own.
+  - **`MinHeapFreeRatio=10`/`MaxHeapFreeRatio=30`** is the largest single gain. It lets the heap
+    shrink back after the startup peak instead of staying at its cap.
+  - **`MaxRAMPercentage=50`**, not the default 25. The live heap after warm-up is about 70 MB, but
+    **startup needs about 200 MB**. A quarter of the container runs out of memory while the
+    context is built below about 1 GB, which is why the old image needed that much. The free ratios hand the startup peak back
+    afterwards, so the larger cap costs nothing in steady state. Do not "tune" it down to a small
+    `-Xmx` for the same reason.
+  - **`UseSerialGC` is pinned.** The JVM picks Serial by itself below 2 CPUs or about 1.8 GB, and G1
+    above, which measured larger.
+  - A 64 MB code cache, and **compact object headers** (a product feature since Java 25).
+- **Measured and rejected:**
+  - C1-only compilation, no gain once the others are in;
+  - G1 with periodic uncommit, which used more;
+  - **virtual threads** (`spring.threads.virtual.enabled`). Spring GraphQL then runs requests
+    asynchronously on the task executor. `ManagementApiTest` got empty responses, and resolvers
+    would leave the request thread that holds the security and request context. NMT puts all thread
+    memory at 2–3 MB, so there was nothing to gain. Don't turn them on without first making the API
+    async-safe.
+- **Why startup needs so much heap:** Spring Data's and Hibernate's ANTLR parsers work through
+  `JobRepo.search`, whose nested `Publication.JPQL_PRESENTATION_FILTER` takes about 9 s at startup on
+  2 CPUs. ANTLR then keeps about 17 MB of prediction cache for the life of the process. Simplifying that
+  query is the next lever for memory and startup time.
 
 ## Architecture
 
@@ -611,10 +642,9 @@ credential — the seed runs wherever the dev or test profile starts. Keep that 
 files**, or the tests lose it on one database.
 
 Test configuration lives in `src/test/resources/application-test.yml` (profile `test`), pointing at
-`publisher_test` and disabling JobRunr. **It must stay profile-specific.** A plain
+`publisher_test` and starting sessions in admin mode. **It must stay profile-specific.** A plain
 `src/test/resources/application.yml` loses to `src/main/resources/application.properties`, so its
-overrides are silently ignored and the dashboard binds its fixed port, colliding with a running
-instance.
+overrides are silently ignored.
 
 **Every back-office test runs as the seeded admin, in admin mode** (`application-test.yml` starts
 sessions in it, §2.10), because that is who the dev bypass resolves to —
@@ -638,8 +668,8 @@ locally 3307, see **Commands**) and SQLite.
 
 ## Known loose ends
 
-- **Configured but unused.** JobRunr has no jobs and `@EnableScheduling` has no scheduled methods.
-  Nothing here needs a scheduler by design: the job date window is evaluated at serving time.
+- **No scheduler, by design.** The job date window and token expiry are evaluated when read (§4.4,
+  §2.8). JobRunr, configured but never used, was removed; `V9` drops the tables it had created.
 - **SQLite folds case for ASCII only.** "Zürich" and "zürich" are distinct there and equal on MariaDB,
   so a tag or city differing only in a non-ASCII capital can exist twice on SQLite.
 - **MariaDB DDL is not transactional.** A migration that fails halfway leaves the schema half-changed

@@ -156,14 +156,6 @@ spring:
       introspection:
         enabled: false
 
-# JobRunr runs no jobs in this application, and its dashboard has no
-# authentication of its own - it would answer anyone who can reach port 8000.
-jobrunr:
-  dashboard:
-    enabled: false
-  background-job-server:
-    enabled: false
-
 management:
   endpoints:
     web:
