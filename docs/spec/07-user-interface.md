@@ -237,16 +237,27 @@ Status badge mapping, used identically in every list, detail and picker:
 ## 7.8 Pickers without a JavaScript library
 
 Job locations and job tags are many-to-many selections over sets too large for a checkbox list. Instead
-of an autocomplete library, both use one server-rendered pattern:
+of an autocomplete library, both use one pattern:
 
-1. Selected items render as a list of removable chips, each backed by a hidden input, so the selection
-   posts with a plain form and survives with JavaScript off.
-2. A search input issues `hx-get` on `input changed delay:300ms` and swaps a result list below it.
-3. Choosing a result posts it and swaps the chip list and the result list together.
-4. For tags, a search matching nothing offers *Create "…"*, which creates the tag and selects it in one
-   request (§3.4 normalization applies).
-5. Without JavaScript the same screen still works: the result list is rendered on submit of the search
-   field, and choosing an item is an ordinary form post.
+1. **Selected items are chips**, each backed by a hidden input, so the selection posts with the job
+   form. Each chip has a remove button; removing it removes its input.
+2. **A search input** issues `hx-get` on `input changed delay:300ms` and on `search`, and swaps a
+   server-rendered result list below it. The search covers the job's own employer only (§3.3).
+3. **Choosing a result adds a chip in the browser**, with no request: `app.js` builds the chip from
+   the id and label the result carries as data. It uses `createElement` and `textContent`, never a
+   string of markup, so the CSP needs neither `unsafe-inline` nor `unsafe-eval` (§7.2). Choosing an
+   item already chosen adds nothing, and the result leaves the list either way.
+4. **Results are not form fields.** Only chips post, so what is listed but not chosen is never
+   submitted. The server still checks every id against the job's employer (§3.3); the picker only
+   limits what is offered.
+5. **New tags and locations are not created here.** They are made on the Tags and Locations screens
+   (§7.14, §7.15), and a search matching nothing says so.
+
+**The one exception to §7.1.** Assembling a chip in the browser departs from point 1, and point 2 does
+not hold here: without JavaScript the chips still render and post, so saving keeps the selection, but
+it cannot be changed. The remove buttons are hidden, and the results only ever arrive through htmx.
+Changing locations and tags therefore needs JavaScript. A round trip per chosen item was judged a
+contrived way to append one element (§7.1, point 3).
 
 The country field on a location is a plain `<select>` over the ISO 3166-1 list showing localized names —
 browsers already provide type-ahead on a native select, so no library is warranted.
