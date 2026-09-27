@@ -29,6 +29,7 @@ the text such as §2.6 means the same thing: find the chapter below, then the se
   - [2.6 Invitations](spec/02-actors-and-access.md#26-invitations)
   - [2.7 Ownership and role changes](spec/02-actors-and-access.md#27-ownership-and-role-changes)
   - [2.8 API authentication](spec/02-actors-and-access.md#28-api-authentication)
+  - [2.9 Viewing as another user](spec/02-actors-and-access.md#29-viewing-as-another-user)
 - **[3. Domain model](spec/03-domain-model.md)**
   - [3.1 Employer](spec/03-domain-model.md#31-employer)
   - [3.2 Location](spec/03-domain-model.md#32-location)
@@ -81,6 +82,7 @@ the text such as §2.6 means the same thing: find the chapter below, then the se
   - [7.17 API tokens](spec/07-user-interface.md#717-api-tokens)
   - [7.18 People](spec/07-user-interface.md#718-people)
   - [7.19 Sign-in](spec/07-user-interface.md#719-sign-in)
+  - [7.20 Users](spec/07-user-interface.md#720-users)
 - **[8. Cross-cutting behaviour](spec/08-cross-cutting.md)**
   - [8.1 Internationalization](spec/08-cross-cutting.md#81-internationalization)
   - [8.2 Validation and errors](spec/08-cross-cutting.md#82-validation-and-errors)

@@ -65,7 +65,7 @@ class ScreenRenderingTest {
                 "/employers/" + EMPLOYER + "/update", "/employers/" + EMPLOYER + "/delete",
                 "/locations", "/locations/create",
                 "/tags", "/tags/create", "/tags?q=jav",
-                "/invitations", "/people", "/tokens",
+                "/invitations", "/people", "/tokens", "/users", "/users?q=mara",
                 "/employers/" + EMPLOYER + "/people",
                 "/employers/" + EMPLOYER + "/people/members/" + MEMBER + "/remove",
                 "/employers/" + EMPLOYER + "/tokens",

@@ -97,7 +97,7 @@ left out when printing.
 
 - The product brand, linking to the dashboard.
 - The primary navigation: **Dashboard, Jobs, Feeds, People, API tokens, Employers, Locations, Tags,
-  Invitations**, each with a Tabler icon and label. *Employers* is visible to everyone but only offers
+  Invitations, Users**, each with a Tabler icon and label. *Employers* is visible to everyone but only offers
   create/delete to admins.
 - **People** (§7.18) covers the **active employer** (§2.5), which is why it sits beside Jobs and Feeds
   rather than under Employers: it answers "who am I working with here", the same scope those two
@@ -491,3 +491,17 @@ their organisation's sign-in page and brought back, a **Sign in** button, and th
   login route (§2.3).
 - With **no identity provider configured** the page is refused like the rest of the back-office
   (§9.4). A Sign in button that cannot work would be worse than the refusal.
+
+## 7.20 Users
+
+Everyone who has signed in, for **platform admins only**: a sidebar destination only they are offered,
+and a `404` for anyone else asking for it (§2.4). It lists each person's name, email, the identity
+provider they sign in with, their platform role, and how many employers they belong to. It is searchable
+by name or email, sorted by name, and paginated (§8.3).
+
+Each ordinary user's row offers **View as** (§2.9). An admin's row, and the viewer's own, say why they
+cannot be viewed as, rather than showing a disabled button.
+
+While viewing as someone, the actor *is* that user, not an admin, so this destination disappears from
+the sidebar. The banner's *Stop viewing* is the way back.
+

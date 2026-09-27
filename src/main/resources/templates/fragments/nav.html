@@ -3,6 +3,25 @@
 <body>
 
 <!-- Dev-mode banner: authentication bypassed (spec 2.3, 7.3) -->
+<!--
+  Viewing as another user (spec 2.9): strongly coloured, never dismissable, and on
+  every page for as long as it lasts, with the one way out. The view is read-only.
+-->
+<div th:fragment="impersonationBanner" th:if="${ui.viewingAs}"
+     class="alert alert-important alert-danger m-0 rounded-0 d-print-none" role="status">
+    <div class="container-xl d-flex align-items-center flex-wrap gap-2">
+        <svg th:replace="~{fragments/icon :: i('eye','icon alert-icon')}"></svg>
+        <span>
+            <strong th:text="#{impersonation.banner(${ui.viewingAsName})}">Viewing as Mara Member</strong>
+            <span th:if="${ui.viewingAsEmail != null}" th:text="'(' + ${ui.viewingAsEmail} + ')'">(a@b.c)</span>
+            <span th:text="#{impersonation.readOnlyNote}">Read-only: nothing can be changed.</span>
+        </span>
+        <form class="ms-auto" th:action="@{/impersonation/stop}" method="post">
+            <button type="submit" class="btn btn-sm btn-light" th:text="#{impersonation.stop}">Stop viewing</button>
+        </form>
+    </div>
+</div>
+
 <div th:fragment="devBanner" th:if="${ui.devMode}" class="alert alert-important alert-warning m-0 rounded-0 d-print-none" role="alert">
     <div class="container-xl d-flex align-items-center">
         <svg th:replace="~{fragments/icon :: i('alert-triangle','icon alert-icon')}"></svg>

@@ -1,9 +1,12 @@
 package org.letsemploy.ojobpub_publisher.membership;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 public interface MembershipRepo extends JpaRepository<Membership, UUID> {
 
@@ -36,4 +39,8 @@ public interface MembershipRepo extends JpaRepository<Membership, UUID> {
      * membership too, so the plain count would report one member too many.
      */
     long countByEmployerIdAndUserIsNotNull(UUID employerId);
+
+    /** Memberships per person for a page of users, in one query (spec 7.20). */
+    @Query("SELECT m.user.id, COUNT(m) FROM Membership m WHERE m.user.id IN :userIds GROUP BY m.user.id")
+    List<Object[]> countByUserIds(@Param("userIds") Collection<UUID> userIds);
 }

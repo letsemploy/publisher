@@ -14,7 +14,7 @@ having no standing anywhere else.
 | Role | Sees | May do |
 |---|---|---|
 | **User** | The employers they are a member of | Create an employer, becoming its owner (§2.7); work on employers they belong to, as their membership role allows |
-| **Admin** | All employers | Everything, on any employer, without being a member: platform staff who keep the installation working. Delete employers; override `publishedAt` |
+| **Admin** | All employers, and all users (§7.20) | Everything, on any employer, without being a member: platform staff who keep the installation working. Delete employers; override `publishedAt`; view the application as a user (§2.9) |
 
 **Becoming an admin** is the operator's decision, made in configuration (§2.2) and never through the
 application — no screen can grant or remove it (§2.7).
@@ -352,3 +352,31 @@ owner role beside it.
 
 It cannot sign in to the back-office, accept an invitation, be invited, or create an employer. Those
 are acts of consent or identity, and a credential has neither.
+
+## 2.9 Viewing as another user
+
+A platform admin may **view the application as another user**: that person's employers, roles, screens
+and empty states, exactly as they see them. It answers the questions support is asked — *what does this
+editor see?*, *why can't she find that job?* — which the admin's own view, seeing everything, cannot.
+
+- **Read-only.** While viewing, **nothing can be changed**: every request that would change something
+  is refused, with a message saying why. Nothing is ever done in someone else's name:
+  - no consent given on their behalf. Accepting an invitation or creating an employer grants a
+    membership, which §2.2 forbids anyone to do for someone else;
+  - no audit record naming them for an act that was not theirs.
+
+  Only what changes the admin's own view gets through: stopping, the employer switcher and the theme.
+- **Ordinary users only.** Never another admin, whose view adds nothing and would blur who did what,
+  and never oneself. It starts from the Users screen (§7.20). Anyone else asking is told the user does
+  not exist (§2.4).
+- **Plainly visible.** A banner on every page names who is being viewed, says it is read-only, and
+  offers the way back. It cannot be dismissed.
+- **Re-checked on every request.** It ends at once if the admin is no longer an admin — for example
+  demoted by the admin rules of §2.2 — or if the user no longer exists or has become an admin. Logging
+  out ends it.
+- **The viewed user is untouched.** Their name, email and role are never refreshed from the admin's
+  sign-in; viewing is not signing in.
+- **Logged.** Starting and stopping are recorded with the admin and the user.
+- **Server-side, per session**, like the active employer (§2.5). The management API is untouched: it
+  has no session, and a token acts only as itself.
+

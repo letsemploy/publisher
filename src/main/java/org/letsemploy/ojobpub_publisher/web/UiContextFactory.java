@@ -10,6 +10,7 @@ import org.letsemploy.ojobpub_publisher.invitation.InvitationService;
 import org.letsemploy.ojobpub_publisher.membership.MembershipService;
 import org.letsemploy.ojobpub_publisher.security.Actor;
 import org.letsemploy.ojobpub_publisher.security.CurrentUserService;
+import org.letsemploy.ojobpub_publisher.security.UserEntity;
 import org.letsemploy.ojobpub_publisher.web.view.NavItem;
 import org.letsemploy.ojobpub_publisher.web.view.Ref;
 import org.letsemploy.ojobpub_publisher.web.view.UiContext;
@@ -70,12 +71,20 @@ public class UiContextFactory {
                 && membershipService.canAdminister(user, UUID.fromString(active.getId()))) {
             nav.add(4, new NavItem("key", "nav.tokens", "/tokens", path.startsWith("/tokens")));
         }
+        // Platform staff only (spec 7.20). While viewing as someone the actor is that
+        // user, never an admin, so the entry is gone and the banner is the way back.
+        if (user.isAdmin()) {
+            nav.add(new NavItem("user", "nav.users", "/users", path.startsWith("/users")));
+        }
+        UserEntity viewing = currentUserService.viewedUser().orElse(null);
 
         return new UiContext(user.getDisplayName(), user.isAdmin(),
                 currentUserService.isDevMode(), employerContext.getTheme(),
                 active, employers.stream().map(e -> new Ref(e.getId().toString(), e.getName())).toList(),
                 nav, List.of("en", "de"), invitationService.countPendingFor(user),
-                version(), projectUrl);
+                version(), projectUrl,
+                viewing == null ? null : user.getDisplayName(),
+                viewing == null ? null : viewing.getEmail());
     }
 
     /** The build's version; "development" when run from classes with no build info. */

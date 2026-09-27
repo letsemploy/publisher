@@ -160,6 +160,17 @@ auto-configured bean. `OidcLoginTest` and `LockedChainTest` guard both direction
   hand-made admins. A malformed entry fails startup. The dev bypass never reaches `signIn`, so the
   seeded admin is untouched. The `keycloak` profile maps the realm group `ojobpub-admin`, so alice is
   an admin locally.
+- **Viewing as a user** (§2.9) is **read-only**, for admins, on non-admins only.
+  - **State:** a session **attribute** (`Impersonation`), read with `getSession(false)`, never a
+    session-scoped bean, so the stateless API can't create a session or find a state.
+  - **Resolution:** `CurrentUserService.current()` resolves the real actor first (`realActor()`), then
+    `viewAs` re-checks, on every request, that the real actor is still that admin and the target
+    still a non-admin, and returns the target's `Actor`. **It never calls `signIn()` for the
+    target**, because that would refresh their record from the admin's token.
+  - **The guard:** `ImpersonationGuard`, one interceptor, refuses every non-GET except stop and the
+    view switches. That's what stops consent acts (accepting invitations, creating employers) on
+    someone's behalf. Don't add write routes to its allowlist.
+  - **Starting:** `ImpersonationService.start` clears the active employer, as does stopping.
 - **Logout** uses `OidcClientInitiatedLogoutSuccessHandler`: it ends the provider's session when the
   provider advertises an end-session endpoint, and is a local logout otherwise.
 - **Several providers, one button each** (`security/LoginOptions`, §7.19). The buttons are read from
@@ -473,12 +484,12 @@ advice would fail to render and turn every 404 into a 500.
 `ScreenRenderingTest.notFoundRendersTheErrorPage` guards it.
 
 Each controller supplies its own `page` (`PageMeta`); one that forgets it will not render. A new
-sidebar destination is added in `UiContextFactory` — there are nine: Dashboard, Jobs, Feeds, People,
-API tokens, Employers, Locations, Tags, Invitations. Its icon name lives in the `NavItem`, so a new one
+sidebar destination is added in `UiContextFactory` — there are ten: Dashboard, Jobs, Feeds, People,
+API tokens, Employers, Locations, Tags, Invitations, Users. Its icon name lives in the `NavItem`, so a new one
 needs `make assets` to reach the sprite.
 
-**API tokens is the only role-conditional entry**, added to a mutable list only when an employer is
-active *and* the actor administers it. Two consequences worth knowing: a nav item renders on every
+**Two entries are role-conditional.** API tokens is added only when an employer is active *and* the
+actor administers it; Users only when the actor is a platform admin. Two consequences worth knowing: a nav item renders on every
 screen, so a missing `nav.*` key in either bundle fails the unresolved-key assertion for *every* path
 at once; and an unconditional `nav.add` passes every test except
 `PeopleScreenTest.anEditorIsNotOfferedApiTokensInTheSidebar`, which exists for that reason.
@@ -522,6 +533,7 @@ TEST_DB=sqlite ./mvnw test                   # all, on SQLite; no server
 ./mvnw test -Dtest=LocationTagScopeTest      # another employer's locations and tags: 404, refused on a job
 ./mvnw test -Dtest=MigrationV7Test           # V7 divides shared rows correctly, on MariaDB and SQLite
 ./mvnw test -Dtest=EmployerDeleteTest        # owners and admins delete; editors, strangers and tokens cannot
+./mvnw test -Dtest=ImpersonationTest         # view-as: the user's view, read-only, never on admins
 ./mvnw test -Dtest=MemberSuspensionScreenTest # suspending and reinstating from the People screen
 ./mvnw test -Dtest=ResourceLimitsTest        # the quota convention; no Spring, no database
 ./mvnw test -Dtest=QuotaEnforcementTest      # the six quotas against the seed data

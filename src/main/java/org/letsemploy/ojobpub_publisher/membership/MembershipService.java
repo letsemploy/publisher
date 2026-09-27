@@ -1,6 +1,7 @@
 package org.letsemploy.ojobpub_publisher.membership;
 
 import java.time.Instant;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -90,6 +91,15 @@ public class MembershipService {
                             () -> membershipRepo.countByEmployerIdAndUserIsNotNull(employer.getId()));
                     return membershipRepo.save(new Membership(user, employer, role));
                 });
+    }
+
+    /** How many employers each of these people belongs to, in one query (spec 7.20). */
+    public Map<UUID, Long> countsByUser(Collection<UUID> userIds) {
+        if (userIds.isEmpty()) {
+            return Map.of();
+        }
+        return membershipRepo.countByUserIds(userIds).stream()
+                .collect(Collectors.toMap(row -> (UUID) row[0], row -> (Long) row[1]));
     }
 
     /** The quota counts, for callers that refuse before doing any work (spec 8.4). */

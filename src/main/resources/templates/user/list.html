@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout}">
+<head><title th:text="#{nav.users}">Users</title></head>
+<body>
+<div layout:fragment="content">
+    <!-- Everyone who has signed in, for platform staff (spec 7.20); "View as" shows
+         the application as that person sees it, read-only (spec 2.9). -->
+    <div class="card">
+        <div class="card-body border-bottom">
+            <form th:action="@{/users}" method="get" class="d-flex gap-2" role="search">
+                <label class="visually-hidden" for="q" th:text="#{users.search}">Search</label>
+                <input class="form-control" type="search" id="q" name="q" th:value="${query}"
+                       th:placeholder="#{users.search}"/>
+                <button type="submit" class="btn" th:text="#{label.search}">Search</button>
+            </form>
+        </div>
+        <th:block th:if="${users.content.isEmpty()}">
+            <div th:replace="~{fragments/empty :: state('user','users.empty.title','users.empty.subtitle',null,null)}"></div>
+        </th:block>
+        <div class="table-responsive" th:unless="${users.content.isEmpty()}">
+            <table class="table table-vcenter card-table">
+                <thead>
+                <tr>
+                    <th th:text="#{label.name}">Name</th>
+                    <th th:text="#{label.email}">Email</th>
+                    <th th:text="#{users.provider}">Signs in with</th>
+                    <th th:text="#{label.role}">Role</th>
+                    <th th:text="#{nav.employers}">Employers</th>
+                    <th class="w-1"></th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="u : ${users.content}">
+                    <td class="fw-bold" th:text="${u.displayName}">Mara Member</td>
+                    <td class="text-secondary" th:text="${u.email ?: '—'}">a@b.c</td>
+                    <td class="text-secondary" th:text="${u.provider}">accounts.google.com</td>
+                    <td>
+                        <span class="badge" th:classappend="${u.admin} ? 'bg-azure-lt' : 'bg-secondary-lt'"
+                              th:text="${u.admin} ? #{users.role.admin} : #{users.role.user}">User</span>
+                    </td>
+                    <td th:text="${u.employers}">1</td>
+                    <td>
+                        <form th:if="${u.viewable}" th:action="@{'/users/' + ${u.id} + '/impersonate'}" method="post">
+                            <button type="submit" class="btn btn-sm">
+                                <svg th:replace="~{fragments/icon :: i('eye','icon')}"></svg>
+                                <span th:text="#{users.viewAs}">View as</span>
+                            </button>
+                        </form>
+                        <!-- Said, not greyed out (spec 7.1): why this one cannot be viewed as. -->
+                        <span class="text-secondary small" th:unless="${u.viewable}"
+                              th:text="#{'users.notViewable.' + ${u.notViewableBecause}}">admin</span>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+        <div th:replace="~{fragments/pagination :: bar(${users}, '#main')}"></div>
+    </div>
+</div>
+</body>
+</html>

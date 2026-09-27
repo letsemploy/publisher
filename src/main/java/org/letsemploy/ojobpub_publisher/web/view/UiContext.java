@@ -19,4 +19,11 @@ public class UiContext {
     /** The footer (spec 7.3): the running version, and where the source is. */
     String version;
     String projectUrl;
+    /** Whom an admin is viewing the application as (spec 2.9), or null. */
+    String viewingAsName;
+    String viewingAsEmail;
+
+    public boolean isViewingAs() {
+        return viewingAsName != null;
+    }
 }

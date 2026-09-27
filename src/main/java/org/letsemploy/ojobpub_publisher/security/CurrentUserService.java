@@ -50,8 +50,22 @@ public class CurrentUserService {
         return List.of(environment.getActiveProfiles()).contains("dev");
     }
 
+    /**
+     * Whoever the application acts for on this request: the signed-in person, or -
+     * while an admin views the application as someone (spec 2.9) - that someone.
+     */
     @Transactional
     public Actor current() {
+        Actor real = realActor();
+        return Impersonation.current().map(state -> viewAs(state, real)).orElse(real);
+    }
+
+    /**
+     * The person actually signed in, ignoring any impersonation: who may start or
+     * stop one, and who is answerable for it (spec 2.9).
+     */
+    @Transactional
+    public Actor realActor() {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
 
         // Development mode: no identity provider, but a real user record all the same -
@@ -61,6 +75,43 @@ public class CurrentUserService {
             return toAppUser(devUser());
         }
         return identity == null ? Actor.anonymous() : toAppUser(signIn(identity));
+    }
+
+    /**
+     * The user being viewed, with their own memberships and never admin standing.
+     * Re-checked on every request: the viewer must still be the admin who started
+     * it - demoted by the admin rules since (spec 2.2), it ends at once - and the
+     * target must still exist and not be an admin. Otherwise it ends.
+     *
+     * <p>signIn() is deliberately not called for the target: it refreshes name,
+     * email and role from the signed-in token, which is the admin's.
+     */
+    private Actor viewAs(Impersonation.State state, Actor real) {
+        if (real.isToken() || !real.isAdmin() || !state.adminId().equals(real.getId())) {
+            Impersonation.clear();
+            return real;
+        }
+        return userRepo.findById(state.targetId())
+                .filter(target -> target.getRole() != UserEntity.Role.ADMIN)
+                .map(this::toAppUser)
+                .orElseGet(() -> {
+                    Impersonation.clear();
+                    return real;
+                });
+    }
+
+    /** The user being viewed, for the banner - or empty when nobody is (spec 2.9). */
+    @Transactional(readOnly = true)
+    public Optional<UserEntity> viewedUser() {
+        Actor actor = current();
+        return Impersonation.current().isPresent() && !actor.isAnonymous()
+                ? userRepo.findById(actor.getId()).filter(u -> Impersonation.current()
+                        .map(state -> state.targetId().equals(u.getId())).orElse(false))
+                : Optional.empty();
+    }
+
+    public boolean isImpersonating() {
+        return viewedUser().isPresent();
     }
 
     /** Seeded by data.sql, but provisioned on demand so dev works on an empty database. */
