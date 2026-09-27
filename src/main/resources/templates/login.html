@@ -65,7 +65,7 @@
         <nav class="text-center text-secondary mt-3" th:attr="aria-label=#{label.language}">
             <th:block th:each="l, it : ${ui.languages}">
                 <a class="text-secondary"
-                   th:href="@{/login(lang=${l}, error=${error} ? '' : null, logout=${loggedOut} ? '' : null)}"
+                   th:href="@{/login(lang=${l})}"
                    th:attrappend="aria-current=${l == #locale.language} ? 'true' : null"
                    th:classappend="${l == #locale.language} ? 'fw-bold'"
                    th:text="#{'lang.' + ${l}}">English</a>
