@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<!--
+  Deleting an employer (spec 7.13): irreversible, and every public feed URL of it
+  starts answering 404 - so the modal says what goes, and asks for the name.
+
+  The name is checked by the server (EmployerService.delete), whatever happens
+  here. app.js only keeps the button disabled until the name matches; without
+  JavaScript the button works and the server refuses a wrong name.
+-->
+<div class="modal modal-blur fade show d-block" tabindex="-1" role="dialog" aria-modal="true"
+     aria-labelledby="delete-employer-title">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <form th:action="@{'/employers/' + ${employer.id} + '/delete'}" method="post">
+                <div class="modal-status bg-danger"></div>
+                <div class="modal-header">
+                    <h5 class="modal-title" id="delete-employer-title"
+                        th:text="#{employer.delete.title(${employer.name})}">Delete Acme AG?</h5>
+                    <button type="button" class="btn-close" th:aria-label="#{label.close}"
+                            data-action="dismiss-modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p th:text="#{employer.delete.intro}">This removes permanently:</p>
+                    <ul>
+                        <li th:text="#{employer.delete.jobs(${jobs})}">6 jobs</li>
+                        <li th:text="#{employer.delete.feeds(${feeds})}">2 feeds</li>
+                        <li th:text="#{employer.delete.members(${members})}">2 members</li>
+                        <li th:text="#{employer.delete.tokens(${tokens})}">2 API tokens</li>
+                        <li th:text="#{employer.delete.rest}">its locations, tags and invitations</li>
+                    </ul>
+                    <div class="alert alert-danger" role="alert">
+                        <svg th:replace="~{fragments/icon :: i('alert-triangle','icon alert-icon flex-shrink-0')}"></svg>
+                        <div th:text="#{employer.delete.urls}">Its public feed URLs will stop working.</div>
+                    </div>
+                    <label class="form-label" for="confirmName"
+                           th:text="#{employer.delete.typeName(${employer.name})}">Type Acme AG to confirm</label>
+                    <input class="form-control" type="text" id="confirmName" name="confirmName"
+                           autocomplete="off" spellcheck="false" required
+                           th:attr="data-confirm-name=${employer.name}"/>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-link link-secondary me-auto"
+                            data-action="dismiss-modal" th:text="#{label.cancel}">Cancel</button>
+                    <button type="submit" class="btn btn-danger"
+                            th:text="#{employer.delete.submit}">Delete employer</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+</body>
+</html>

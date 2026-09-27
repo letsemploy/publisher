@@ -237,8 +237,14 @@ the address. That is deliberate: the form must not become an oracle for which ad
 screen. Do not "improve" this by reporting unknown addresses.
 
 Owners invite, change roles, remove members and edit the employer record; editors work on jobs and
-feeds. Employer **creation is open to any signed-in user**; deletion is admin-only and **no delete route
-exists yet**.
+feeds. Employer **creation is open to any signed-in user**.
+
+**Deleting an employer** is for its owners and admins, never editors, and **never a service token**
+(`EmployerService.delete` refuses `actor.isToken()` before anything else, and the API has no delete).
+The typed name is checked **in the service**; `app.js` only disables the button until it matches.
+`EmployerRepo.deleteWithEverything` is a bulk JPQL `DELETE`, and the database's foreign keys cascade the
+rest. `delete(entity)` would fail: the eagerly loaded headquarters would still point at the removed
+employer when Hibernate flushes.
 
 **The People screen** (`membership/PeopleController`, §7.18) is where all of this surfaces. Two routes,
 one handler, so they cannot drift:
@@ -515,6 +521,7 @@ TEST_DB=sqlite ./mvnw test                   # all, on SQLite; no server
 ./mvnw test -Dtest=AdminSyncTest             # admins promoted and demoted through real sign-ins
 ./mvnw test -Dtest=LocationTagScopeTest      # another employer's locations and tags: 404, refused on a job
 ./mvnw test -Dtest=MigrationV7Test           # V7 divides shared rows correctly, on MariaDB and SQLite
+./mvnw test -Dtest=EmployerDeleteTest        # owners and admins delete; editors, strangers and tokens cannot
 ./mvnw test -Dtest=MemberSuspensionScreenTest # suspending and reinstating from the People screen
 ./mvnw test -Dtest=ResourceLimitsTest        # the quota convention; no Spring, no database
 ./mvnw test -Dtest=QuotaEnforcementTest      # the six quotas against the seed data
@@ -577,4 +584,3 @@ locally 3307, see **Commands**) and SQLite.
   and the `migrations` row marked failed, and every later start fails on the part that did apply. It
   will not rename a column a foreign key still points at, either — drop the key, rename, re-add, which
   is why `V4` does the `invitations` rename in three statements.
-- **No employer delete route**, though the spec reserves deletion for admins (§7.13).

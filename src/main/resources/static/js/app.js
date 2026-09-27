@@ -77,8 +77,34 @@
         }
     });
 
+    /**
+     * A typed confirmation (spec 7.13): the form's submit stays disabled until the
+     * input matches its data-confirm-name. Only a convenience - the server checks
+     * the name, and without this module the button simply works.
+     */
+    const syncConfirmName = (input) => {
+        const submit = input.form?.querySelector('[type="submit"]');
+        if (submit) {
+            submit.disabled = input.value.trim() !== input.dataset.confirmName;
+        }
+    };
+    const armConfirmNames = (root = document) => {
+        root.querySelectorAll('[data-confirm-name]').forEach(syncConfirmName);
+    };
+
+    document.addEventListener('input', (event) => {
+        const input = event.target.closest('[data-confirm-name]');
+        if (input) {
+            syncConfirmName(input);
+        }
+    });
+
     // htmx replaces regions wholesale; anything swapped in needs revealing too.
-    document.body.addEventListener('htmx:afterSwap', (event) => revealEnhancedControls(event.target));
+    document.body.addEventListener('htmx:afterSwap', (event) => {
+        revealEnhancedControls(event.target);
+        armConfirmNames(event.target);
+    });
 
     revealEnhancedControls();
+    armConfirmNames();
 })();

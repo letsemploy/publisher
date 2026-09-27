@@ -18,6 +18,10 @@
             <svg th:replace="~{fragments/icon :: i('pencil','icon')}"></svg>
             <span th:text="#{label.edit}">Edit</span>
         </a>
+        <!-- Owners and admins (spec 2.7); confirmed by typing the name (spec 7.13). -->
+        <button class="btn btn-ghost-danger" th:if="${canAdminister}"
+                th:attr="hx-get=@{'/employers/' + ${employer.id} + '/delete'},hx-target='#modal-container'"
+                th:text="#{label.delete}">Delete</button>
     </div>
 </div>
 <div layout:fragment="content">

@@ -4,6 +4,7 @@ import com.neovisionaries.i18n.CountryCode;
 import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.letsemploy.ojobpub_publisher.common.Slugs;
 import org.letsemploy.ojobpub_publisher.common.ResourceLimits;
 import org.letsemploy.ojobpub_publisher.common.exception.NotFoundException;
@@ -19,6 +20,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
+@Slf4j
 @RequiredArgsConstructor
 public class EmployerService {
 
@@ -134,5 +136,33 @@ public class EmployerService {
 
     private String blankToNull(String s) {
         return s == null || s.isBlank() ? null : s.trim();
+    }
+
+    /**
+     * Delete an employer, and with it everything it holds (spec 2.7, 7.13): its
+     * jobs, feeds - whose public URLs then answer 404 - locations, tags, members,
+     * invitations and API tokens. The database cascades all of it.
+     *
+     * <p>Its owners may, and platform admins. Nobody else learns it exists: an
+     * editor or a stranger gets 404 (spec 2.4). A service token never may, even
+     * one holding the owner role - a credential in some CI configuration must not
+     * be able to destroy the workspace it was issued for.
+     *
+     * <p>The name must be typed back exactly. The screen asks for it, and this is
+     * where it is checked, so skipping the screen does not skip the check.
+     */
+    @Transactional
+    public void delete(UUID id, String typedName, Actor actor) {
+        if (actor.isToken()) {
+            throw new NotFoundException("Employer not found: " + id);
+        }
+        membershipService.requireOwner(actor, id);
+        Employer employer = employerRepo.findById(id)
+                .orElseThrow(() -> new NotFoundException("Employer not found: " + id));
+        if (typedName == null || !typedName.trim().equals(employer.getName())) {
+            throw new ValidationFailure("confirmName", "Type the employer's name exactly to delete it.");
+        }
+        employerRepo.deleteWithEverything(id);
+        log.info("User {} deleted employer {} ({})", actor.getId(), id, employer.getName());
     }
 }

@@ -53,6 +53,11 @@ public class ServiceTokenService {
     @org.springframework.beans.factory.annotation.Value("${app.tokens.expiry-warning-days:30}")
     private int expiryWarningDays;
 
+    /** Tokens that would stop working with their employer; revoked ones already have. */
+    public long countActive(UUID employerId) {
+        return tokenRepo.countByEmployerIdAndRevokedAtIsNull(employerId);
+    }
+
     public int getExpiryWarningDays() {
         return expiryWarningDays;
     }

@@ -40,8 +40,11 @@ class ActiveEmployerTest {
         return Collections.list(session.getAttributeNames()).stream()
                 .map(session::getAttribute)
                 .filter(EmployerContext.class::isInstance)
-                .map(context -> ((EmployerContext) context).getActiveEmployerId())
-                .findFirst().orElse(null);
+                .map(EmployerContext.class::cast)
+                .findFirst()
+                // Optional.map, not Stream.map: "no active employer" is null.
+                .map(EmployerContext::getActiveEmployerId)
+                .orElse(null);
     }
 
     @Test

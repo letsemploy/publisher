@@ -24,7 +24,7 @@ application — no screen can grant or remove it (§2.7).
 | Role | May do within that employer |
 |---|---|
 | **Editor** | Full create/read/update/delete on the employer's jobs, feeds and locations; **see who else belongs to the employer and with which role** (§7.18) |
-| **Owner** | Everything an editor may do, plus: edit the employer record, invite people (§2.6), change a member's role, suspend and reinstate members, and remove members (§2.7) |
+| **Owner** | Everything an editor may do, plus: edit the employer record, invite people (§2.6), change a member's role, suspend and reinstate members, remove members, and delete the employer (§2.7) |
 
 There is no read-only role in v1. Every member may edit that employer's jobs and feeds; the difference
 between owner and editor is authority over **the employer and its people**, not over its content.
@@ -276,10 +276,21 @@ ownerless employer would still be reachable by platform admins, but its own peop
 invite, change roles, or edit the record — the workspace would be frozen to everyone who actually uses
 it.
 
-**What an owner may not do**
+**Deleting an employer**
 
-Deleting an employer remains an **admin** action (§7.13). Ownership is authority over a workspace, not
-the power to destroy it along with every feed URL its consumers depend on.
+An **owner may delete the employer they own**, and so may an admin. It is the workspace's own people
+who decide it is finished, and a platform admin should not have to be asked to clean up. What it
+destroys is spelled out before it happens (§7.13):
+- its jobs, feeds, locations, tags, invitations and API tokens;
+- every member's access;
+- every public feed URL, which from then on answers `404` to whoever consumes it.
+
+The confirmation requires the employer's name to be typed back, checked by the server. It cannot be
+undone.
+
+An **editor may not**: their authority is over the content, not the workspace. **A service token may
+not**, whatever its role: a credential sitting in some CI configuration must not be able to destroy the
+employer it was issued for, and the API offers no such operation.
 
 ## 2.8 API authentication
 

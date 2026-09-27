@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import org.letsemploy.ojobpub_publisher.common.exception.NotFoundException;
 import org.letsemploy.ojobpub_publisher.common.exception.ValidationFailure;
 import org.letsemploy.ojobpub_publisher.feed.FeedService;
 import org.letsemploy.ojobpub_publisher.job.JobService;
@@ -13,6 +14,7 @@ import org.letsemploy.ojobpub_publisher.location.Location;
 import org.letsemploy.ojobpub_publisher.location.LocationService;
 import org.letsemploy.ojobpub_publisher.membership.MembershipService;
 import org.letsemploy.ojobpub_publisher.web.view.*;
+import org.letsemploy.ojobpub_publisher.token.ServiceTokenService;
 import org.letsemploy.ojobpub_publisher.web.EmployerContext;
 import org.letsemploy.ojobpub_publisher.web.Scope;
 import org.letsemploy.ojobpub_publisher.web.Views;
@@ -37,6 +39,7 @@ public class EmployerController {
     private final JobService jobService;
     private final Scope scope;
     private final EmployerContext employerContext;
+    private final ServiceTokenService serviceTokenService;
     private final Views views;
     private final MessageSource messages;
 
@@ -127,6 +130,44 @@ public class EmployerController {
                     name, slug, url, industry, headquarters, hqCity, hqCountry), e.getFieldErrors());
             return "employer/form";
         }
+    }
+
+    /**
+     * The confirmation (spec 7.13): what will be gone, and the name to type back.
+     * Owners and admins only - anyone else is told the employer does not exist.
+     */
+    @GetMapping("/{id}/delete")
+    public String deleteConfirm(@PathVariable UUID id, Model model) {
+        if (scope.user().isToken()) {
+            throw new NotFoundException("Employer not found: " + id);
+        }
+        membershipService.requireOwner(scope.user(), id);
+        Employer employer = employerService.findVisible(id, scope.user());
+        model.addAttribute("employer", employer);
+        model.addAttribute("jobs", jobService.findByEmployer(id).size());
+        model.addAttribute("feeds", feedService.findByEmployer(id).size());
+        model.addAttribute("members", membershipService.countMembersOf(id));
+        model.addAttribute("tokens", serviceTokenService.countActive(id));
+        return "employer/delete";
+    }
+
+    @PostMapping("/{id}/delete")
+    public String delete(@PathVariable UUID id, @RequestParam(required = false) String confirmName,
+                         RedirectAttributes flash) {
+        try {
+            employerService.delete(id, confirmName, scope.user());
+        } catch (ValidationFailure e) {
+            // The name did not match: nothing was deleted, and the page says so.
+            flash.addFlashAttribute("errorMsg", "employer.delete.nameMismatch");
+            return "redirect:/employers/" + id;
+        }
+        // Working on an employer that no longer exists would scope every screen to
+        // nothing; fall back to the default choice (spec 2.5).
+        if (id.equals(employerContext.getActiveEmployerId())) {
+            employerContext.setActiveEmployerId(null);
+        }
+        flash.addFlashAttribute("successMsg", "employer.deleted");
+        return "redirect:/employers";
     }
 
     private void formModel(Model model, EmployerFormView form, Map<String, String> fieldErrors) {

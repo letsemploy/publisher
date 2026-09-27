@@ -62,7 +62,7 @@ class ScreenRenderingTest {
                 "/feeds/" + FEED_ALL + "/update", "/feeds/" + FEED_ALL + "/delete",
                 "/feeds/" + FEED_ALL + "/candidates",
                 "/employers", "/employers/create", "/employers/" + EMPLOYER,
-                "/employers/" + EMPLOYER + "/update",
+                "/employers/" + EMPLOYER + "/update", "/employers/" + EMPLOYER + "/delete",
                 "/locations", "/locations/create",
                 "/tags", "/tags/create", "/tags?q=jav",
                 "/invitations", "/people", "/tokens",

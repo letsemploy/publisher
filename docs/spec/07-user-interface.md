@@ -334,8 +334,12 @@ makes the creator its **owner** (§2.7).
 headquarters is picked from the employer's own locations, or entered as a new city and country,
 which joins them. On **create** there are none yet, so the city and country are entered. **Owners and
 admins only**; an editor works on jobs and feeds, not on the employer record.
-**Delete** — **admins only**, unchanged. An owner may hand a workspace on but not destroy it along with
-the feed URLs its consumers depend on.
+**Delete** — **owners and admins** (§2.7), from the employer record. A modal states what goes — the
+number of jobs, feeds, members and API tokens, and its locations, tags and invitations — and that its
+public feed URLs will answer "not found" from then on. The employer's **name must be typed back**. The
+server checks it; the page only keeps the button disabled until it matches, and without JavaScript the
+button works and a wrong name is refused. Afterwards, if it was the active employer, the active employer
+falls back to the default (§2.5).
 **API tokens** (owners only) — §7.17.
 
 **People** — §7.18. Reachable from here for any employer, and from the sidebar for the active one.
