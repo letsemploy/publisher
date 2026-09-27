@@ -7,6 +7,7 @@ import lombok.Value;
 @Value
 public class UiContext {
     String userName;
+    /** Acting with admin reach right now: an admin in admin mode (spec 2.10). */
     boolean admin;
     boolean devMode;
     String theme;
@@ -22,6 +23,8 @@ public class UiContext {
     /** Whom an admin is viewing the application as (spec 2.9), or null. */
     String viewingAsName;
     String viewingAsEmail;
+    /** May switch admin mode on or off: an admin, acting as themselves (spec 2.10). */
+    boolean adminModeAvailable;
 
     public boolean isViewingAs() {
         return viewingAsName != null;

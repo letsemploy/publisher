@@ -160,6 +160,19 @@ auto-configured bean. `OidcLoginTest` and `LockedChainTest` guard both direction
   hand-made admins. A malformed entry fails startup. The dev bypass never reaches `signIn`, so the
   seeded admin is untouched. The `keycloak` profile maps the realm group `ojobpub-admin`, so alice is
   an admin locally.
+- **Admin mode** (§2.10): an admin works in the **user view** until they switch up from the user
+  menu. It is enforced in **one line**: `CurrentUserService.toAppUser` sets `Actor.admin` to "stored
+  role is `ADMIN` **and** admin mode is on". Every admin power reads `Actor.isAdmin()`, so all of them
+  follow the switch — never check `UserEntity.Role.ADMIN` to grant a power, or that power ignores the
+  mode. (Stored-role checks that remain are about *who someone is*: the Users list, and "never view as
+  an admin".)
+  - **State:** `AdminMode`, a session attribute like `Impersonation`, holding the user id and on/off.
+    `AdminModeService` switches it, clears the active employer and records `ADMIN_MODE_ENTERED`/`_LEFT`.
+    `canSwitchAdminMode()` means stored role `ADMIN`, not a token, and not viewing as someone.
+  - **Defaults:** `app.admin.start-in-admin-mode` is **false**. The **test profile sets it true**, so
+    every back-office test written before admin mode keeps full reach; `AdminModeTest` overrides it
+    to test the default. A new test of an admin power in the user view must do the same.
+  - Viewing as a user needs admin mode, because `realActor().isAdmin()` is the switched flag.
 - **Viewing as a user** (§2.9) is **read-only**, for admins, on non-admins only.
   - **State:** a session **attribute** (`Impersonation`), read with `getSession(false)`, never a
     session-scoped bean, so the stateless API can't create a session or find a state.
@@ -569,6 +582,7 @@ TEST_DB=sqlite ./mvnw test                   # all, on SQLite; no server
 ./mvnw test -Dtest=EmployerDeleteTest        # owners and admins delete; editors, strangers and tokens cannot
 ./mvnw test -Dtest=ImpersonationTest         # view-as: the user's view, read-only, never on admins
 ./mvnw test -Dtest=AuditLogTest              # the audit log: what lands in which log, and who reads it
+./mvnw test -Dtest=AdminModeTest             # admins start in the user view; every power follows the switch
 ./mvnw test -Dtest=MemberSuspensionScreenTest # suspending and reinstating from the People screen
 ./mvnw test -Dtest=ResourceLimitsTest        # the quota convention; no Spring, no database
 ./mvnw test -Dtest=QuotaEnforcementTest      # the six quotas against the seed data
@@ -602,7 +616,8 @@ Test configuration lives in `src/test/resources/application-test.yml` (profile `
 overrides are silently ignored and the dashboard binds its fixed port, colliding with a running
 instance.
 
-**Every back-office test runs as the seeded admin**, because that is who the dev bypass resolves to —
+**Every back-office test runs as the seeded admin, in admin mode** (`application-test.yml` starts
+sessions in it, §2.10), because that is who the dev bypass resolves to —
 so no screen test notices a permission split, since the privileged half is always present. To render a
 screen as somebody else, override the actor: `PeopleScreenTest` replaces `CurrentUserService` with
 `@MockitoBean` and returns an editor. Do that whenever a screen shows different things to different

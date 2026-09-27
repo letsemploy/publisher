@@ -87,7 +87,8 @@ public class UiContextFactory {
                 nav, List.of("en", "de"), invitationService.countPendingFor(user),
                 version(), projectUrl,
                 viewing == null ? null : user.getDisplayName(),
-                viewing == null ? null : viewing.getEmail());
+                viewing == null ? null : viewing.getEmail(),
+                currentUserService.canSwitchAdminMode());
     }
 
     /** The build's version; "development" when run from classes with no build info. */

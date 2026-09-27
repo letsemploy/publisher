@@ -40,6 +40,12 @@ spring:
 app:
   sqlite:
     path: target/publisher_test.db
+  # Every back-office test acts as the seeded admin, and was written when an admin
+  # always had full reach. Admin mode (spec 2.10) is off by default in the
+  # application; here sessions start in it, so those tests keep that reach.
+  # AdminModeTest turns it off to test the default.
+  admin:
+    start-in-admin-mode: true
 
 # Nothing in a test may bind a port: the dashboard's is fixed and would collide
 # with a locally running instance.

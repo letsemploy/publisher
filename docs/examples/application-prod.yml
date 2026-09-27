@@ -42,6 +42,10 @@ app:
   #
   # As environment variables: APP_ADMIN_PEOPLE_0_ISSUER, APP_ADMIN_PEOPLE_0_EMAIL,
   # APP_ADMIN_GROUPS_0_CLAIM, ... - numbered from 0.
+  #
+  # An admin works in the user view until they switch to admin mode from the user
+  # menu (spec 2.10). To start every admin session in admin mode instead:
+  #   start-in-admin-mode: true
 
   # The public address people and job boards use. Every published feed URL is
   # built from it, so it must be right behind a reverse proxy (spec 9.5).

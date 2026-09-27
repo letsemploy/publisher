@@ -119,6 +119,8 @@ left out when printing.
   user has exactly one employer. For admins it also offers *All employers*. Switching posts to the
   server, which stores the choice in the session and redirects back to the current screen.
 - The **user menu**: the current user, with *My activity* (§7.22), *Language*, *Theme* and *Log out*.
+  For an admin it also offers *Switch to admin mode* or *Leave admin mode* (§2.10).
+- An **Admin mode** badge while admin mode is on, so it is never on unnoticed.
 
 These belong together and apart from the navigation: which employer am I working on, who am I, and how
 do I want the application presented. Keeping them in the top bar also keeps them in one fixed place on

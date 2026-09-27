@@ -14,7 +14,7 @@ having no standing anywhere else.
 | Role | Sees | May do |
 |---|---|---|
 | **User** | The employers they are a member of | Create an employer, becoming its owner (§2.7); work on employers they belong to, as their membership role allows |
-| **Admin** | All employers, and all users (§7.20) | Everything, on any employer, without being a member: platform staff who keep the installation working. Delete employers; override `publishedAt`; view the application as a user (§2.9) |
+| **Admin** | In admin mode (§2.10): all employers, and all users (§7.20). Otherwise what their memberships give them, like a user | In admin mode, everything, on any employer, without being a member: platform staff who keep the installation working. Delete employers; override `publishedAt`; view the application as a user (§2.9) |
 
 **Becoming an admin** is the operator's decision, made in configuration (§2.2) and never through the
 application — no screen can grant or remove it (§2.7).
@@ -380,4 +380,27 @@ editor see?*, *why can't she find that job?* — which the admin's own view, see
   and they appear in **the viewed user's own activity**: being looked at is something done to them.
 - **Server-side, per session**, like the active employer (§2.5). The management API is untouched: it
   has no session, and a token acts only as itself.
+
+## 2.10 Admin mode
+
+An admin's reach is **switched on when needed**, not held all the time. Most of the time an admin is
+working as a member of their own employers, and seeing every employer and every user is noise at best
+and, at worst, a change made to the wrong employer by someone who did not mean to act as staff.
+
+- **The user view by default.** Every session starts with admin mode off. An admin then sees exactly
+  what a user with the same memberships sees: their own employers, no *All employers*, no Users
+  screen, no All activity.
+- **Switched deliberately.** The user menu offers *Switch to admin mode* and *Leave admin mode*
+  (§7.3), each a form post. While it is on, a badge in the top bar says so, in words.
+- **Until switched off or the session ends.** Logging out ends it. Nothing expires in between.
+- **Everything follows the switch.** Every admin power — seeing any employer, deleting one, the Users
+  screen, All activity (§7.21), viewing as a user (§2.9) — is granted by the one flag that admin mode
+  sets. None of them can be reached with it off, and a `404` answers any attempt (§2.4).
+- **Only for someone whose platform role is admin**, acting as themselves: never a token, and not while
+  viewing as a user. It counts only while the role lasts, so a demotion by the admin rules (§2.2) ends
+  it on the next request.
+- **Recorded.** Switching on and off is in the admin's own audit log (§3.12). Logging out records
+  nothing: the session simply ends.
+- **A deployment may start every session in admin mode** (§9.5), for an installation run by a small
+  team who would rather not switch.
 

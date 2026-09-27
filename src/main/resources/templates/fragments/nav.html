@@ -83,6 +83,11 @@
     <div class="container-xl">
         <div class="navbar-nav flex-row order-md-last ms-auto">
 
+            <!-- Admin reach is on (spec 2.10): said in words, not only by colour (spec 7.9). -->
+            <div class="nav-item me-3" th:if="${ui.admin}">
+                <span class="badge bg-red-lt" th:text="#{adminMode.badge}">Admin mode</span>
+            </div>
+
             <!-- Employer switcher: hidden when the user has exactly one employer (spec 2.5) -->
             <div class="nav-item dropdown me-3" th:if="${ui.employers.size() > 1 or ui.admin}">
                 <a href="#" class="nav-link d-flex align-items-center text-reset dropdown-toggle"
@@ -123,6 +128,15 @@
                         <svg th:replace="~{fragments/icon :: i('history','icon dropdown-item-icon')}"></svg>
                         <span th:text="#{activity.mine}">My activity</span>
                     </a>
+                    <!-- Only for an admin acting as themselves (spec 2.10); a POST, so the
+                         switch is a deliberate act and the audit log can record it. -->
+                    <form th:if="${ui.adminModeAvailable}" method="post"
+                          th:action="${ui.admin} ? @{/admin-mode/leave} : @{/admin-mode/enter}">
+                        <button type="submit" class="dropdown-item">
+                            <svg th:replace="~{fragments/icon :: i('key','icon dropdown-item-icon')}"></svg>
+                            <span th:text="${ui.admin} ? #{adminMode.leave} : #{adminMode.enter}">Switch to admin mode</span>
+                        </button>
+                    </form>
                     <div class="dropdown-divider"></div>
                     <h6 class="dropdown-header" th:text="#{label.language}">Language</h6>
                     <!--

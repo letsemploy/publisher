@@ -140,6 +140,9 @@ startup rather than locking admins out or letting someone in. The issuer to use 
 for example `https://accounts.google.com` or `https://github.com`. A person's subject is in the
 `users` table once they have signed in.
 
+**Admin mode** (§2.10) is off at the start of every session. `app.admin.start-in-admin-mode=true`
+starts every admin's session in it instead, for a team that would rather not switch.
+
 **Several providers** are several registrations, each under its own id in place of `oidc`, for
 example `google`, `gitlab` or `microsoft`. Each gets its own button (§7.19) and its own callback,
 `https://<host>/login/oauth2/code/<id>`, which is what that provider must allow. Spring knows Google's

@@ -50,6 +50,14 @@ public class CurrentUserService {
     @Value("${app.oidc.require-verified-email:true}")
     private boolean requireVerifiedEmail;
 
+    /**
+     * Whether an admin's session starts in admin mode (spec 2.10). Off by default:
+     * an admin works as an ordinary member until they switch up. The test profile
+     * turns it on, so tests written before admin mode still act with full reach.
+     */
+    @Value("${app.admin.start-in-admin-mode:false}")
+    private boolean startInAdminMode;
+
     public boolean isDevMode() {
         return List.of(environment.getActiveProfiles()).contains("dev");
     }
@@ -118,6 +126,18 @@ public class CurrentUserService {
         return viewedUser().isPresent();
     }
 
+    /**
+     * May the signed-in person switch admin mode on or off (spec 2.10)? Only a
+     * person whose stored role is admin, acting as themselves - not a token, and
+     * not while viewing as someone, whose view it is not.
+     */
+    @Transactional(readOnly = true)
+    public boolean canSwitchAdminMode() {
+        Actor real = realActor();
+        return !real.isToken() && !real.isAnonymous() && Impersonation.current().isEmpty()
+                && userRepo.findById(real.getId()).map(u -> u.getRole() == UserEntity.Role.ADMIN).orElse(false);
+    }
+
     /** Seeded by data.sql, but provisioned on demand so dev works on an empty database. */
     private UserEntity devUser() {
         return userRepo.findByIssuerAndSubject(DEV_ISSUER, DEV_SUBJECT).orElseGet(() -> {
@@ -137,8 +157,12 @@ public class CurrentUserService {
         // Suspended memberships are left out, so every check downstream sees a
         // suspended member exactly as it sees a non-member (spec 2.7).
         Map<UUID, MembershipRole> memberships = membershipService.activeRolesOf(user.getId());
-        return Actor.user(user.getId(), name, user.getEmail(),
-                user.getRole() == UserEntity.Role.ADMIN, memberships);
+        // The one place admin standing is granted, so switching admin mode off
+        // takes it away everywhere at once (spec 2.10). It counts only while the
+        // stored role is admin: a demotion ends it with no further check.
+        boolean admin = user.getRole() == UserEntity.Role.ADMIN
+                && AdminMode.chosenBy(user.getId()).orElse(startInAdminMode);
+        return Actor.user(user.getId(), name, user.getEmail(), admin, memberships);
     }
 
     /**
