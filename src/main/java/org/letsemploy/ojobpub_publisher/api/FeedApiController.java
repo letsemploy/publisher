@@ -46,7 +46,7 @@ public class FeedApiController {
         Actor actor = api.requireScope(TokenScope.FEEDS_WRITE);
         try {
             return ok(feedService.save(null, employerService.findVisible(api.employerId(), actor),
-                    str(input, "name"), str(input, "slug"), str(input, "description")), actor);
+                    str(input, "name"), str(input, "slug"), str(input, "description"), actor), actor);
         } catch (ValidationFailure e) {
             return new FeedPayload(null, errors.from(e));
         }
@@ -59,7 +59,7 @@ public class FeedApiController {
         Feed feed = feedService.findVisible(uuid(id, "feed"), actor);
         try {
             return ok(feedService.save(feed.getId(), feed.getEmployer(), str(input, "name"),
-                    str(input, "slug"), str(input, "description")), actor);
+                    str(input, "slug"), str(input, "description"), actor), actor);
         } catch (ValidationFailure e) {
             return new FeedPayload(null, errors.from(e));
         }

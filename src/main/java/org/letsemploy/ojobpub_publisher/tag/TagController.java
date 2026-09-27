@@ -77,7 +77,7 @@ public class TagController {
                        Model model, RedirectAttributes flash) {
         try {
             if (id == null) {
-                tagService.create(scope.requireActiveEmployer(), name);
+                tagService.create(scope.requireActiveEmployer(), name, scope.user());
             } else {
                 tagService.update(id, name, scope.user());
             }

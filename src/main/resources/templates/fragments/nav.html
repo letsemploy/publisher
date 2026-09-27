@@ -119,6 +119,11 @@
                           th:text="${ui.userName}">User</span>
                 </a>
                 <div class="dropdown-menu dropdown-menu-end">
+                    <a class="dropdown-item" th:href="@{/activity/mine}">
+                        <svg th:replace="~{fragments/icon :: i('history','icon dropdown-item-icon')}"></svg>
+                        <span th:text="#{activity.mine}">My activity</span>
+                    </a>
+                    <div class="dropdown-divider"></div>
                     <h6 class="dropdown-header" th:text="#{label.language}">Language</h6>
                     <!--
                       Not boosted: hx-boost swaps the body only, so the lang and

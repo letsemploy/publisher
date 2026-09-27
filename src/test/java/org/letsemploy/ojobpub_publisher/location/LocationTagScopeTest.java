@@ -141,7 +141,7 @@ class LocationTagScopeTest {
     @Test
     void theListsShowOnlyItsOwn() throws Exception {
         assertThat(page("/locations")).contains("Lausanne").doesNotContain("Zürich").doesNotContain("Berlin");
-        tagService.create(other, "cobol");
+        tagService.create(other, "cobol", owner);
         assertThat(page("/tags")).contains("cobol").doesNotContain(">java<").doesNotContain("kubernetes");
     }
 
@@ -209,7 +209,7 @@ class LocationTagScopeTest {
     /** An employer's locations and tags go with it, whichever way the rows point (spec 3.2). */
     @Test
     void deletingAnEmployerTakesItsLocationsAndTags() {
-        tagService.create(other, "cobol");
+        tagService.create(other, "cobol", owner);
         // Written first, then read back from the database rather than Hibernate's
         // cache - otherwise this would test the session, not the foreign keys.
         entityManager.flush();

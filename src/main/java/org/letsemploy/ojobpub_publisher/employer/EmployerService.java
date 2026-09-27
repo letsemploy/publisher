@@ -5,6 +5,9 @@ import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.letsemploy.ojobpub_publisher.audit.AuditAction;
+import org.letsemploy.ojobpub_publisher.audit.AuditEvent;
+import org.letsemploy.ojobpub_publisher.audit.AuditLog;
 import org.letsemploy.ojobpub_publisher.common.Slugs;
 import org.letsemploy.ojobpub_publisher.common.ResourceLimits;
 import org.letsemploy.ojobpub_publisher.common.exception.NotFoundException;
@@ -29,6 +32,7 @@ public class EmployerService {
     private final MembershipService membershipService;
     private final ResourceLimits limits;
     private final UserRepo userRepo;
+    private final AuditLog auditLog;
 
     /** Editors see only their employers; an admin sees all (spec 2.1). */
     public List<Employer> visibleTo(Actor user) {
@@ -117,7 +121,7 @@ public class EmployerService {
         // new employer is saved first and its location created against it - the
         // reason location_id may be null in the database, never once this returns.
         saved.setHeadquarters(headquarters.isNew()
-                ? locationService.findOrCreate(saved, headquarters.newCity(), headquarters.newCountry())
+                ? locationService.findOrCreate(saved, headquarters.newCity(), headquarters.newCountry(), actor)
                 : locationService.requireOwn(headquarters.locationId(), saved, "headquarters"));
         saved = employerRepo.save(saved);
 
@@ -127,6 +131,8 @@ public class EmployerService {
                     .orElseThrow(() -> new NotFoundException("User not found: " + actor.getId()));
             membershipService.createOwner(creator, saved);
         }
+        auditLog.record(AuditEvent.of(creating ? AuditAction.EMPLOYER_CREATED : AuditAction.EMPLOYER_UPDATED,
+                actor).in(saved).target(saved.getId(), saved.getName()));
         return saved;
     }
 
@@ -163,6 +169,10 @@ public class EmployerService {
             throw new ValidationFailure("confirmName", "Type the employer's name exactly to delete it.");
         }
         employerRepo.deleteWithEverything(id);
+        // Kept after the employer is gone - the one row that says what became of
+        // it - readable by admins only from here on (spec 3.12).
+        auditLog.record(AuditEvent.of(AuditAction.EMPLOYER_DELETED, actor).in(employer)
+                .target(id, employer.getName()));
         log.info("User {} deleted employer {} ({})", actor.getId(), id, employer.getName());
     }
 }

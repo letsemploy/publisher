@@ -7,6 +7,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import org.letsemploy.ojobpub_publisher.audit.AuditAction;
+import org.letsemploy.ojobpub_publisher.audit.AuditEvent;
+import org.letsemploy.ojobpub_publisher.audit.AuditLog;
 import lombok.extern.slf4j.Slf4j;
 import org.letsemploy.ojobpub_publisher.common.ResourceLimits;
 import org.letsemploy.ojobpub_publisher.common.exception.NotFoundException;
@@ -31,6 +34,7 @@ public class JobService {
     private final TagService tagService;
     private final LocationService locationService;
     private final ResourceLimits limits;
+    private final AuditLog auditLog;
 
     /**
      * @param presentation what the job presents as (spec 7.6), not the stored
@@ -84,7 +88,7 @@ public class JobService {
     }
 
     @Transactional
-    public Job save(JobForm form, Employer employer, boolean activate, String actor) {
+    public Job save(JobForm form, Employer employer, boolean activate, Actor actor) {
         Job job;
         if (form.getId() == null) {
             limits.requireRoomForJobs(() -> jobRepo.countByEmployerId(employer.getId()));
@@ -100,6 +104,8 @@ public class JobService {
         apply(form, job);
         validate(job);
         Job saved = jobRepo.save(job);
+        auditLog.record(AuditEvent.of(form.getId() == null ? AuditAction.JOB_CREATED : AuditAction.JOB_UPDATED,
+                actor).in(employer).target(saved.getId(), saved.getTitle()));
 
         if (activate && saved.getStatus() != JobStatus.ACTIVE) {
             transition(saved, JobStatus.ACTIVE, actor);
@@ -195,7 +201,7 @@ public class JobService {
      * rather than silently at serving time.
      */
     @Transactional
-    public Job transition(Job job, JobStatus target, String actor) {
+    public Job transition(Job job, JobStatus target, Actor actor) {
         if (job.getStatus() == target) {
             return job;
         }
@@ -218,19 +224,24 @@ public class JobService {
         JobStatus from = job.getStatus();
         job.setStatus(target);
         Job saved = jobRepo.save(job);
-        eventRepo.save(new JobStatusEvent(saved, from, target, actor));
-        log.info("Job {} moved {} -> {} by {}", saved.getId(), from, target, actor);
+        eventRepo.save(new JobStatusEvent(saved, from, target, actor.getDisplayName()));
+        auditLog.record(AuditEvent.of(AuditAction.JOB_STATUS_CHANGED, actor).in(saved.getEmployer())
+                .target(saved.getId(), saved.getTitle()).detail(from + " → " + target));
+        log.info("Job {} moved {} -> {} by {}", saved.getId(), from, target, actor.getDisplayName());
         return saved;
     }
 
     @Transactional
     public Job transition(UUID jobId, JobStatus target, Actor user) {
-        return transition(findVisible(jobId, user), target, user.getDisplayName());
+        return transition(findVisible(jobId, user), target, user);
     }
 
     @Transactional
     public void delete(UUID id, Actor user) {
-        jobRepo.delete(findVisible(id, user));
+        Job job = findVisible(id, user);
+        jobRepo.delete(job);
+        auditLog.record(AuditEvent.of(AuditAction.JOB_DELETED, user).in(job.getEmployer())
+                .target(job.getId(), job.getTitle()));
     }
 
     public long countByStatus(UUID employerId, JobStatus status) {

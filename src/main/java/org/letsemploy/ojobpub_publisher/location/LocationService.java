@@ -5,6 +5,9 @@ import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import org.letsemploy.ojobpub_publisher.audit.AuditAction;
+import org.letsemploy.ojobpub_publisher.audit.AuditEvent;
+import org.letsemploy.ojobpub_publisher.audit.AuditLog;
 import org.letsemploy.ojobpub_publisher.common.exception.NotFoundException;
 import org.letsemploy.ojobpub_publisher.common.exception.ValidationFailure;
 import org.letsemploy.ojobpub_publisher.employer.Employer;
@@ -22,6 +25,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class LocationService {
 
     private final LocationRepo locationRepo;
+    private final AuditLog auditLog;
 
     /** The list screen: every location of the employers in scope. */
     public List<Location> visibleTo(Collection<UUID> employerIds) {
@@ -67,15 +71,25 @@ public class LocationService {
     }
 
     @Transactional
-    public Location create(Employer employer, String city, String countryCode) {
+    public Location create(Employer employer, String city, String countryCode, Actor actor) {
         Location location = new Location();
         location.setEmployer(employer);
-        return store(location, city, countryCode);
+        Location saved = store(location, city, countryCode);
+        auditLog.record(AuditEvent.of(AuditAction.LOCATION_CREATED, actor).in(employer)
+                .target(saved.getId(), saved.getLabel()));
+        return saved;
     }
 
     @Transactional
     public Location update(UUID id, String city, String countryCode, Actor actor) {
-        return store(findVisible(id, actor), city, countryCode);
+        Location location = findVisible(id, actor);
+        String before = location.getLabel();
+        Location saved = store(location, city, countryCode);
+        if (!saved.getLabel().equals(before)) {
+            auditLog.record(AuditEvent.of(AuditAction.LOCATION_UPDATED, actor).in(saved.getEmployer())
+                    .target(saved.getId(), saved.getLabel()).detail(before + " → " + saved.getLabel()));
+        }
+        return saved;
     }
 
     /**
@@ -84,11 +98,11 @@ public class LocationService {
      * employer's locations without becoming a duplicate.
      */
     @Transactional
-    public Location findOrCreate(Employer employer, String city, String countryCode) {
+    public Location findOrCreate(Employer employer, String city, String countryCode, Actor actor) {
         CountryCode country = country(countryCode);
         String trimmed = city(city);
         return locationRepo.findFirstByEmployerIdAndCityIgnoreCaseAndCountry(employer.getId(), trimmed, country)
-                .orElseGet(() -> create(employer, trimmed, countryCode));
+                .orElseGet(() -> create(employer, trimmed, countryCode, actor));
     }
 
     /** A location still referenced cannot be deleted; the UI names what uses it (spec 7.14). */
@@ -99,6 +113,8 @@ public class LocationService {
             throw new ValidationFailure("id", "This location is still in use.");
         }
         locationRepo.delete(location);
+        auditLog.record(AuditEvent.of(AuditAction.LOCATION_DELETED, actor).in(location.getEmployer())
+                .target(location.getId(), location.getLabel()));
     }
 
     private Location store(Location location, String city, String countryCode) {

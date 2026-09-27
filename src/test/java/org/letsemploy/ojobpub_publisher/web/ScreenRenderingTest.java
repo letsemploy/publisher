@@ -66,6 +66,7 @@ class ScreenRenderingTest {
                 "/locations", "/locations/create",
                 "/tags", "/tags/create", "/tags?q=jav",
                 "/invitations", "/people", "/tokens", "/users", "/users?q=mara",
+                "/activity", "/activity/all", "/activity/mine", "/users/44444444-4444-4444-8444-444444444444/activity",
                 "/employers/" + EMPLOYER + "/people",
                 "/employers/" + EMPLOYER + "/people/members/" + MEMBER + "/remove",
                 "/employers/" + EMPLOYER + "/tokens",

@@ -8,6 +8,7 @@ import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.letsemploy.ojobpub_publisher.TestProfiles;
+import org.letsemploy.ojobpub_publisher.audit.AuditLog;
 import org.letsemploy.ojobpub_publisher.common.exception.ValidationFailure;
 import org.letsemploy.ojobpub_publisher.employer.Employer;
 import org.letsemploy.ojobpub_publisher.employer.EmployerRepo;
@@ -22,7 +23,7 @@ import org.springframework.test.context.ActiveProfiles;
 @DataJpaTest
 @ActiveProfiles(resolver = TestProfiles.WithoutDev.class)
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
-@Import(TagService.class)
+@Import({TagService.class, AuditLog.class})
 class TagServiceTest {
 
     /** Acme, from the seed. */
@@ -67,37 +68,37 @@ class TagServiceTest {
     /** Tags are normalized on input: trimmed and lower-cased (spec 3.4). */
     @Test
     void namesAreNormalised() {
-        Tag tag = tagService.create(acme, "  Terraform  ");
+        Tag tag = tagService.create(acme, "  Terraform  ", admin);
         assertThat(tag.getName()).isEqualTo("terraform");
     }
 
     @Test
     void duplicateNameIsRejectedWithinAnEmployer() {
-        tagService.create(acme, "ansible");
-        assertThatThrownBy(() -> tagService.create(acme, "ANSIBLE"))
+        tagService.create(acme, "ansible", admin);
+        assertThatThrownBy(() -> tagService.create(acme, "ANSIBLE", admin))
                 .isInstanceOf(ValidationFailure.class);
     }
 
     /** Unique within the employer, not across the installation: another may use the name. */
     @Test
     void anotherEmployerMayUseTheSameName() {
-        tagService.create(acme, "ansible");
-        Tag theirs = tagService.create(another(), "ansible");
+        tagService.create(acme, "ansible", admin);
+        Tag theirs = tagService.create(another(), "ansible", admin);
         assertThat(theirs.getId()).isNotNull();
     }
 
     /** The published schema caps a tag at 28 characters (spec 3.4). */
     @Test
     void overlongNameIsRejected() {
-        assertThatThrownBy(() -> tagService.create(acme, "x".repeat(29)))
+        assertThatThrownBy(() -> tagService.create(acme, "x".repeat(29), admin))
                 .isInstanceOf(ValidationFailure.class);
     }
 
     /** Creating a tag the employer already has returns the existing one, not an error. */
     @Test
     void findOrCreateIsIdempotent() {
-        Tag first = tagService.findOrCreate(acme, "podman");
-        Tag second = tagService.findOrCreate(acme, "Podman");
+        Tag first = tagService.findOrCreate(acme, "podman", admin);
+        Tag second = tagService.findOrCreate(acme, "Podman", admin);
         assertThat(second.getId()).isEqualTo(first.getId());
     }
 }

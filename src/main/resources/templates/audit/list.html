@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout}">
+<head><title th:text="${page.title}">Activity</title></head>
+<body>
+<div layout:fragment="content">
+    <!-- An audit log (spec 7.21, 7.22): newest first, named as things were called
+         when they happened. What each viewer may read is decided in AuditService. -->
+    <div class="card">
+        <!-- Platform staff only; AuditService refuses anyone else the route itself. -->
+        <div class="card-header d-flex gap-2 align-items-center" th:if="${offerEverything}">
+            <p class="text-secondary m-0" th:text="#{activity.everything.hint}">Events about people…</p>
+            <a class="btn btn-sm ms-auto" th:href="@{/activity/all}" th:text="#{activity.everything}">All activity</a>
+        </div>
+        <th:block th:if="${events.content.isEmpty()}">
+            <div th:replace="~{fragments/empty :: state('history','activity.empty.title','activity.empty.subtitle',null,null)}"></div>
+        </th:block>
+        <div class="table-responsive" th:unless="${events.content.isEmpty()}">
+            <table class="table table-vcenter card-table">
+                <thead>
+                <tr>
+                    <th th:text="#{activity.when}">When</th>
+                    <th th:text="#{activity.who}">Who</th>
+                    <th th:text="#{activity.what}">What</th>
+                    <th th:if="${showEmployer}" th:text="#{label.employer}">Employer</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="e : ${events.content}">
+                    <td class="text-secondary text-nowrap" th:text="${e.at}">2026-09-27 10:00</td>
+                    <td>
+                        <span th:text="${e.actor}">Mara Member</span>
+                        <!-- A token or the application is said in words, never only by colour (spec 7.9). -->
+                        <span class="badge bg-azure-lt ms-1" th:if="${e.actorKind == 'token'}"
+                              th:text="#{activity.actor.token}">API token</span>
+                    </td>
+                    <td th:text="${e.text}">created the job "Engineer"</td>
+                    <td th:if="${showEmployer}" class="text-secondary" th:text="${e.employer ?: '—'}">Acme</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+        <div th:replace="~{fragments/pagination :: bar(${events}, '#main')}"></div>
+    </div>
+</div>
+</body>
+</html>

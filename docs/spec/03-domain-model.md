@@ -252,3 +252,45 @@ An audit record names the **token**, not the person who created it. The token is
 its actions to a human would put words in the mouth of someone who may have been asleep. The person is
 still reachable — `ServiceToken.createdBy` records who decided the integration should exist — so the
 question "who is answerable for this?" is answerable, one step removed.
+
+## 3.12 AuditEvent
+
+One thing that happened: **who** did **what**, to **which thing**, in **which employer**, and **about
+whom**. Written once, in the same transaction as the change it records, and never changed. A change
+that is refused or rolled back is not recorded, and neither is one that changes nothing.
+
+| Field | Notes |
+|---|---|
+| `occurredAt` | When. |
+| `action` | What kind of event, from a fixed catalogue: an employer, job, feed, location or tag created, edited or deleted; a job's status changed; a job added to or removed from a feed; a member joined, changed role, suspended, reinstated or removed; an invitation sent, withdrawn or declined; a token created, renewed or revoked; an account created; admin granted or removed by the configured rules (§2.2); viewing as a user started or stopped (§2.9). |
+| actor | A user, a token (§3.11) — or **the application itself**, for what nobody did by hand, such as the admin rules applied at sign-in. |
+| `employer` | Nullable. Which employer's log it belongs to. |
+| `subject` | Nullable. The person it is about, whose own log it belongs to. |
+| target | What was acted on, as an id and a label. |
+| `detail` | Nullable. A short note, such as a job's old and new status or a member's old and new role. |
+
+**Two scopes, one row.** An event is not *either* an employer's *or* a person's: it has a place in
+each where it has an `employer` and a `subject`. "An owner suspended Mara" is in the employer's log
+and in Mara's own, as the same row, so the two can never disagree.
+
+**Who reads what:**
+
+- **An employer's log** — every member reads it, but the events about invitations and tokens only
+  owners (and admins) read, because the People and API tokens screens show those to owners only
+  (§7.17, §7.18). The log must not be a way round a screen.
+- **A person's own log** — what was done to them, and what they did, even in an employer they have
+  since left. Nobody else reads it, except admins.
+- **Platform admins** read everything.
+- **A token** reads nothing.
+
+**It outlives what it names.** Unlike §3.11, the actor, the employer and the subject are stored as
+bare ids, with **no reference the database enforces**, and each comes with a **label copied at the
+time**. A log is a record, not a relation: it must never be refused or altered afterwards. Deleting an
+employer deletes everything that refers to it (§2.7), and the record of that deletion must survive
+it. From then on only admins can read it, since no one else is a member any more.
+
+**What it never holds:** secrets, IP addresses, and the address typed into the invite form. An
+invitation to an address with no account and one to an address with an account are recorded
+identically in the employer's log. Otherwise the log would answer the question the invite form
+refuses to (§2.6). Only the invitee's own log learns the invitation was about them.
+

@@ -10,6 +10,9 @@ import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
+import org.letsemploy.ojobpub_publisher.audit.AuditAction;
+import org.letsemploy.ojobpub_publisher.audit.AuditEvent;
+import org.letsemploy.ojobpub_publisher.audit.AuditLog;
 import org.letsemploy.ojobpub_publisher.common.ResourceLimits;
 import org.letsemploy.ojobpub_publisher.common.exception.NotFoundException;
 import org.letsemploy.ojobpub_publisher.common.exception.ValidationFailure;
@@ -45,6 +48,7 @@ public class ServiceTokenService {
     private final UserRepo userRepo;
     private final PasswordEncoder passwordEncoder;
     private final ResourceLimits limits;
+    private final AuditLog auditLog;
 
     /** 0 switches expiry off entirely, as 0 disables a quota (spec 2.8, 8.4). */
     @org.springframework.beans.factory.annotation.Value("${app.tokens.lifetime-months:12}")
@@ -118,8 +122,10 @@ public class ServiceTokenService {
 
         // The token holds a membership role of its own (spec 2.8), but never
         // satisfies the last-owner rule (spec 2.7).
-        membershipRepo.save(new Membership(saved, employer,
-                role == null ? MembershipRole.EDITOR : role));
+        MembershipRole granted = role == null ? MembershipRole.EDITOR : role;
+        membershipRepo.save(new Membership(saved, employer, granted));
+        auditLog.record(AuditEvent.of(AuditAction.TOKEN_CREATED, actor).in(employer)
+                .target(saved.getId(), saved.getLabel()).detail(granted.name()));
 
         log.info("User {} created service token {} for employer {}",
                 actor.getId(), prefix, employerId);
@@ -144,6 +150,8 @@ public class ServiceTokenService {
         }
         token.setRevokedAt(Instant.now());
         tokenRepo.save(token);
+        auditLog.record(AuditEvent.of(AuditAction.TOKEN_REVOKED, actor).in(token.getEmployer())
+                .target(token.getId(), token.getLabel()));
         log.info("User {} revoked service token {}", actor.getId(), token.getPrefix());
     }
 
@@ -174,6 +182,9 @@ public class ServiceTokenService {
         }
         token.setExpiresAt(TokenLifecycle.expiryFrom(Instant.now(), lifetimeMonths));
         ServiceToken saved = tokenRepo.save(token);
+        auditLog.record(AuditEvent.of(AuditAction.TOKEN_RENEWED, actor).in(token.getEmployer())
+                .target(token.getId(), token.getLabel())
+                .detail(token.getExpiresAt() == null ? null : token.getExpiresAt().toString().substring(0, 10)));
         log.info("User {} renewed service token {} until {}",
                 actor.getId(), token.getPrefix(), token.getExpiresAt());
         return saved;

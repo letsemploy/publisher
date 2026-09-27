@@ -4,9 +4,12 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
+import org.letsemploy.ojobpub_publisher.audit.AuditEvent;
 import org.letsemploy.ojobpub_publisher.employer.Employer;
 import org.letsemploy.ojobpub_publisher.feed.Feed;
 import org.letsemploy.ojobpub_publisher.job.Job;
@@ -21,6 +24,8 @@ import org.letsemploy.ojobpub_publisher.token.TokenLifecycle;
 import org.letsemploy.ojobpub_publisher.tag.Tag;
 import org.letsemploy.ojobpub_publisher.web.view.*;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.MessageSource;
+import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.stereotype.Component;
 
 /**
@@ -33,6 +38,8 @@ public class Views {
 
     private static final DateTimeFormatter TIMESTAMP =
             DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm").withZone(ZoneId.systemDefault());
+
+    private final MessageSource messages;
 
     /** Feed URLs must be absolute and correct behind a reverse proxy (spec 9.5). */
     @Value("${app.base-url:http://localhost:8080}")
@@ -80,6 +87,30 @@ public class Views {
                 readiness, feeds,
                 history.stream().map(this::event).toList(),
                 job.getStatus().allowedTransitions().stream().map(Enum::name).toList());
+    }
+
+    /**
+     * An audit event in words (spec 7.21). The labels are the snapshots taken when
+     * it happened, so a renamed or deleted thing is named as it was then.
+     */
+    public ActivityRow activityRow(AuditEvent e) {
+        String detail = e.getDetail();
+        if (detail != null && e.getAction().hasRoleDetail()) {
+            // "EDITOR → OWNER" in the reader's language.
+            detail = Arrays.stream(detail.split(" → "))
+                    .map(role -> message("role." + role.toLowerCase()))
+                    .collect(Collectors.joining(" → "));
+        }
+        String text = messages.getMessage("audit.action." + e.getAction().name(),
+                new Object[]{e.getTargetLabel(), detail == null ? "—" : detail}, LocaleContextHolder.getLocale());
+        String actor = e.getActorType() == AuditEvent.ActorType.SYSTEM
+                ? message("audit.actor.system") : e.getActorLabel();
+        return new ActivityRow(TIMESTAMP.format(e.getOccurredAt()), actor,
+                e.getActorType().name().toLowerCase(), text, e.getEmployerLabel());
+    }
+
+    private String message(String key) {
+        return messages.getMessage(key, null, key, LocaleContextHolder.getLocale());
     }
 
     private TransitionEvent event(JobStatusEvent e) {

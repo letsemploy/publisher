@@ -72,8 +72,8 @@ Container builds use `Dockerfile.multistage`, which is what CI pushes to ghcr.io
 
 ### Package by feature
 
-`employer`, `job`, `location`, `tag`, `feed`, `invitation`, `membership`, `token` — each owns its
-entity, repository, service, form objects and controllers. Plus `common` (shared base types, slugs,
+`employer`, `job`, `location`, `tag`, `feed`, `invitation`, `membership`, `token`, `user`, `audit` — each
+owns its entity, repository, service, form objects and controllers. Plus `common` (shared base types, slugs,
 exceptions), `config` (beans), `security` (actors, roles, filter chains), `web` (shell context, view
 models, error handling), `ojobpub/v1` (the published contract) and `api` (the GraphQL management API).
 
@@ -327,6 +327,40 @@ own and never satisfies the last-owner rule — which is why `MembershipRepo` co
 bean against every request, which would demand a bearer token on the whole back-office; the API chain
 constructs them.
 
+### Audit log (`audit/`, §3.12)
+
+One table, `audit_events`, and **two scopes that are columns, not types**: `employer_id` puts a row in
+that employer's log, `subject_user_id` in that person's own. Many rows set both — a suspension is in
+the employer's log and the member's — so the two logs cannot disagree.
+
+- **Written by services, never controllers**, with `auditLog.record(AuditEvent.of(action, actor)
+  .in(employer).about(user).target(id, label).detail(…))`. `AuditLog.record` is
+  `Propagation.MANDATORY`: it must run inside the change's transaction, so a rollback leaves no row and
+  a refusal, which throws first, is never recorded. **Record after the write and only on a real
+  change** — the early returns for a no-op (`changeRole` to the same role, re-suspending, renaming a
+  tag to its own name) come before it. A new write path in a service needs its `record` call;
+  `AuditLogTest` covers the scopes, not every call site.
+- **Who reads what is `AuditAction`'s audience** — `MEMBERS`, `OWNERS`, `PERSONAL` — applied in the
+  query (`AuditRepo.findForEmployers`), so pages stay full. Invitations and tokens are `OWNERS` because
+  the People and API tokens screens withhold them from editors; the log must not be a way round a
+  screen. `AuditService` refuses tokens, and anyone else asking for what they may not read gets 404.
+- **No foreign keys, deliberately.** Every table referencing an employer is deleted with it, and the
+  row recording that deletion must survive. The labels are snapshots for the same reason. It is also
+  why tests may act as synthetic actors with random ids. (§3.11's rule, that a *who* is a reference the
+  database enforces, holds for the model. This is a record of it.)
+- **The invitation row must not reveal whether the address has an account** (§2.6). No name, no
+  address, only the role, and `subject_user_id` only when there is an invitee — which only that
+  invitee's own log shows. `anInvitationRowDoesNotRevealWhetherTheAddressHasAnAccount` guards it.
+- `signIn` records only `ACCOUNT_CREATED` and `ADMIN_GRANTED`/`ADMIN_REVOKED`, with the application as
+  actor (`AuditEvent.of(action, null)`). It runs on every request; sign-ins themselves are the
+  identity provider's to log.
+- **Admins read everything at `/activity/all`, not through the switcher.** With exactly one employer,
+  `UiContextFactory` writes it into the session before any handler runs (§2.5), so "All employers" never
+  happens on a single-employer installation. Branching `/activity` on the choice left the events
+  about people unreachable there, and the multi-employer test database never showed it.
+- `job_status_events` still exists and feeds the job's history panel. A status change writes both.
+  Folding it into this log is a later step.
+
 ### Resource limits (`common/ResourceLimits.java`, §8.4)
 
 Six configurable creation quotas under `app.limits.*`, defaults in `application.properties`, `0` =
@@ -484,8 +518,8 @@ advice would fail to render and turn every 404 into a 500.
 `ScreenRenderingTest.notFoundRendersTheErrorPage` guards it.
 
 Each controller supplies its own `page` (`PageMeta`); one that forgets it will not render. A new
-sidebar destination is added in `UiContextFactory` — there are ten: Dashboard, Jobs, Feeds, People,
-API tokens, Employers, Locations, Tags, Invitations, Users. Its icon name lives in the `NavItem`, so a new one
+sidebar destination is added in `UiContextFactory` — there are eleven: Dashboard, Jobs, Feeds, People,
+API tokens, Employers, Locations, Tags, Invitations, Activity, Users. Its icon name lives in the `NavItem`, so a new one
 needs `make assets` to reach the sprite.
 
 **Two entries are role-conditional.** API tokens is added only when an employer is active *and* the
@@ -534,6 +568,7 @@ TEST_DB=sqlite ./mvnw test                   # all, on SQLite; no server
 ./mvnw test -Dtest=MigrationV7Test           # V7 divides shared rows correctly, on MariaDB and SQLite
 ./mvnw test -Dtest=EmployerDeleteTest        # owners and admins delete; editors, strangers and tokens cannot
 ./mvnw test -Dtest=ImpersonationTest         # view-as: the user's view, read-only, never on admins
+./mvnw test -Dtest=AuditLogTest              # the audit log: what lands in which log, and who reads it
 ./mvnw test -Dtest=MemberSuspensionScreenTest # suspending and reinstating from the People screen
 ./mvnw test -Dtest=ResourceLimitsTest        # the quota convention; no Spring, no database
 ./mvnw test -Dtest=QuotaEnforcementTest      # the six quotas against the seed data

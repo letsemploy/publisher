@@ -376,7 +376,8 @@ editor see?*, *why can't she find that job?* — which the admin's own view, see
   out ends it.
 - **The viewed user is untouched.** Their name, email and role are never refreshed from the admin's
   sign-in; viewing is not signing in.
-- **Logged.** Starting and stopping are recorded with the admin and the user.
+- **Logged.** Starting and stopping are recorded in the audit log (§3.12) with the admin and the user,
+  and they appear in **the viewed user's own activity**: being looked at is something done to them.
 - **Server-side, per session**, like the active employer (§2.5). The management API is untouched: it
   has no session, and a token acts only as itself.
 

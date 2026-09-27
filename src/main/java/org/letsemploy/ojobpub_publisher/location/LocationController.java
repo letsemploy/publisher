@@ -72,7 +72,7 @@ public class LocationController {
                        Model model, RedirectAttributes flash) {
         try {
             if (id == null) {
-                locationService.create(scope.requireActiveEmployer(), city, country);
+                locationService.create(scope.requireActiveEmployer(), city, country, scope.user());
             } else {
                 locationService.update(id, city, country, scope.user());
             }

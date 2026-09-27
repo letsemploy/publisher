@@ -114,7 +114,7 @@ class QuotaEnforcementTest {
     @Test
     void aSeventhJobIsRefused() {
         assertThat(jobRepo.countByEmployerId(acme.getId())).isEqualTo(6);
-        assertThatThrownBy(() -> jobService.save(jobForm("Seventh"), acme, false, "test"))
+        assertThatThrownBy(() -> jobService.save(jobForm("Seventh"), acme, false, admin))
                 .isInstanceOf(ValidationFailure.class)
                 .hasMessageContaining("limit.jobs");
         assertThat(jobRepo.countByEmployerId(acme.getId())).isEqualTo(6);
@@ -124,7 +124,7 @@ class QuotaEnforcementTest {
     void deletingAJobMakesRoomAgain() {
         UUID victim = jobRepo.findByEmployerIdOrderByTitleAsc(acme.getId()).get(0).getId();
         jobService.delete(victim, admin);
-        assertThatCode(() -> jobService.save(jobForm("Replacement"), acme, false, "test"))
+        assertThatCode(() -> jobService.save(jobForm("Replacement"), acme, false, admin))
                 .doesNotThrowAnyException();
     }
 
@@ -134,7 +134,7 @@ class QuotaEnforcementTest {
         var existing = jobRepo.findByEmployerIdOrderByTitleAsc(acme.getId()).get(0);
         JobForm form = JobForm.of(existing);
         form.setTitle(existing.getTitle() + " (edited)");
-        assertThatCode(() -> jobService.save(form, acme, false, "test"))
+        assertThatCode(() -> jobService.save(form, acme, false, admin))
                 .doesNotThrowAnyException();
     }
 
@@ -143,7 +143,7 @@ class QuotaEnforcementTest {
     @Test
     void aThirdFeedIsRefused() {
         assertThat(feedRepo.countByEmployerId(acme.getId())).isEqualTo(2);
-        assertThatThrownBy(() -> feedService.save(null, acme, "Marketing", null, null))
+        assertThatThrownBy(() -> feedService.save(null, acme, "Marketing", null, null, admin))
                 .isInstanceOf(ValidationFailure.class)
                 .hasMessageContaining("limit.feeds");
     }
@@ -157,9 +157,9 @@ class QuotaEnforcementTest {
     void theDefaultFeedIsNeverRefused() {
         Employer fresh = employerService.save(null, "Quota Co " + UUID.randomUUID(), null, null,
                 null, Headquarters.newLocation("Quotaville", "CH"), admin);
-        feedService.save(null, fresh, "One", null, null);
-        feedService.save(null, fresh, "Two", null, null);
-        assertThatThrownBy(() -> feedService.save(null, fresh, "Three", null, null))
+        feedService.save(null, fresh, "One", null, null, admin);
+        feedService.save(null, fresh, "Two", null, null, admin);
+        assertThatThrownBy(() -> feedService.save(null, fresh, "Three", null, null, admin))
                 .isInstanceOf(ValidationFailure.class);
 
         assertThatCode(() -> feedService.createDefaultFeed(fresh)).doesNotThrowAnyException();

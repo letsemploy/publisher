@@ -61,7 +61,10 @@ public class UiContextFactory {
                 // Stays visible when empty: a user with no memberships has nothing
                 // else to do, and an entry that vanishes cannot be checked (spec 7.3).
                 new NavItem("mail", "nav.invitations", "/invitations",
-                        path.startsWith("/invitations"))));
+                        path.startsWith("/invitations")),
+                // The employers in scope, like the lists above it (spec 7.21); a
+                // person's own log is in the user menu instead.
+                new NavItem("history", "nav.activity", "/activity", path.equals("/activity"))));
 
         // The one destination whose visibility depends on the role, and the one
         // that needs an employer to be about: holding the token list is close to

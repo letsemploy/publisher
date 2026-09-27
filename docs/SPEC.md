@@ -42,6 +42,7 @@ the text such as §2.6 means the same thing: find the chapter below, then the se
   - [3.9 Membership](spec/03-domain-model.md#39-membership)
   - [3.10 ServiceToken](spec/03-domain-model.md#310-servicetoken)
   - [3.11 Actor](spec/03-domain-model.md#311-actor)
+  - [3.12 AuditEvent](spec/03-domain-model.md#312-auditevent)
 - **[4. Job lifecycle](spec/04-job-lifecycle.md)**
   - [4.1 States](spec/04-job-lifecycle.md#41-states)
   - [4.2 `publishedAt`](spec/04-job-lifecycle.md#42-publishedat)
@@ -83,6 +84,8 @@ the text such as §2.6 means the same thing: find the chapter below, then the se
   - [7.18 People](spec/07-user-interface.md#718-people)
   - [7.19 Sign-in](spec/07-user-interface.md#719-sign-in)
   - [7.20 Users](spec/07-user-interface.md#720-users)
+  - [7.21 Activity](spec/07-user-interface.md#721-activity)
+  - [7.22 My activity](spec/07-user-interface.md#722-my-activity)
 - **[8. Cross-cutting behaviour](spec/08-cross-cutting.md)**
   - [8.1 Internationalization](spec/08-cross-cutting.md#81-internationalization)
   - [8.2 Validation and errors](spec/08-cross-cutting.md#82-validation-and-errors)

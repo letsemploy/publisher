@@ -7,6 +7,9 @@ import java.util.Optional;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.letsemploy.ojobpub_publisher.audit.AuditAction;
+import org.letsemploy.ojobpub_publisher.audit.AuditEvent;
+import org.letsemploy.ojobpub_publisher.audit.AuditLog;
 import org.letsemploy.ojobpub_publisher.membership.MembershipRole;
 import org.letsemploy.ojobpub_publisher.membership.MembershipService;
 import org.springframework.beans.factory.annotation.Value;
@@ -35,6 +38,7 @@ public class CurrentUserService {
     private final MembershipService membershipService;
     private final AdminPolicy adminPolicy;
     private final Environment environment;
+    private final AuditLog auditLog;
 
     /**
      * Keep an email only when the provider says it is verified (spec 2.2). An
@@ -203,10 +207,25 @@ public class CurrentUserService {
         } else if (user.getId() == null && role == UserEntity.Role.ADMIN) {
             log.info("New account for {} at {} granted admin", identity.subject(), identity.issuer());
         }
+        boolean created = user.getId() == null;
+        UserEntity.Role before = user.getRole();
         user.setEmail(identity.email());
         user.setDisplayName(identity.displayName());
         user.setRole(role);
-        return userRepo.save(user);
+        UserEntity saved = userRepo.save(user);
+        // Only what changes an account's standing; a refreshed name is not an
+        // event, and signing in is recorded by the identity provider (spec 3.12).
+        if (created) {
+            auditLog.record(AuditEvent.of(AuditAction.ACCOUNT_CREATED, null).about(saved)
+                    .target(saved.getId(), saved.getLabel()));
+        }
+        if (created ? role == UserEntity.Role.ADMIN : before != role) {
+            // By the application, from its configured rules - not by any person.
+            auditLog.record(AuditEvent.of(role == UserEntity.Role.ADMIN
+                            ? AuditAction.ADMIN_GRANTED : AuditAction.ADMIN_REVOKED, null)
+                    .about(saved).target(saved.getId(), saved.getLabel()));
+        }
+        return saved;
     }
 
     private String trustedEmail(OidcUser oidc) {

@@ -30,7 +30,9 @@ employer, the operation name and the outcome.
 
 **Auditability.** Every status transition records who made it and when — a user or a token (§3.11) —
 and the log is visible on the job's detail screen. "Why did this posting disappear from the feed?" must be answerable without database
-access.
+access. Beyond status, every change to an employer's content, people and credentials is in the audit
+log (§3.12), readable on the Activity screen (§7.21), and a person's own standing, including being
+viewed as, on theirs (§7.22).
 
 **Data protection.** The application stores no applicant data. Personal data is limited to back-office
 user records (issuer, subject, email, display name), which are deleted with the user.

@@ -66,7 +66,7 @@ Rules:
 ## 7.3 Layout
 
 A fixed left sidebar, a slim top bar and a content area — the conventional administration shell, chosen
-because the navigation is a flat set of nine destinations that must stay visible and reachable in one
+because the navigation is a flat set of destinations that must stay visible and reachable in one
 click while the user works down a long job list.
 
 ```
@@ -82,6 +82,7 @@ click while the user works down a long job list.
 │ ◻ Locations  │                                                  │
 │ ◻ Tags       │                                                  │
 │ ◻ Invites ②  │                                                  │
+│ ◻ Activity   │                                                  │
 └──────────────┴──────────────────────────────────────────────────┘
 ```
 
@@ -97,13 +98,13 @@ left out when printing.
 
 - The product brand, linking to the dashboard.
 - The primary navigation: **Dashboard, Jobs, Feeds, People, API tokens, Employers, Locations, Tags,
-  Invitations, Users**, each with a Tabler icon and label. *Employers* is visible to everyone but only offers
+  Invitations, Activity, Users**, each with a Tabler icon and label. *Employers* is visible to everyone but only offers
   create/delete to admins.
 - **People** (§7.18) covers the **active employer** (§2.5), which is why it sits beside Jobs and Feeds
   rather than under Employers: it answers "who am I working with here", the same scope those two
   answer. It is visible to every member, and what it offers depends on the membership role.
-- **API tokens** (§7.17) covers the active employer too, and is the **only entry whose visibility
-  depends on the role**: owners and admins only, because holding the list is close to holding the
+- **API tokens** (§7.17) covers the active employer too, and is one of the **two entries whose
+  visibility depends on the role** — the other is Users (§7.20), for admins: owners and admins only, because holding the list is close to holding the
   access. It is **absent** when no employer is active, rather than showing an empty state as People
   does — People is visible to every member, so an empty state is honest, whereas with no employer
   selected there is no ownership question to answer. An admin who chooses *All employers* therefore
@@ -117,7 +118,7 @@ left out when printing.
 - The **employer switcher** (§2.5), a dropdown showing the active employer's name. Hidden when the
   user has exactly one employer. For admins it also offers *All employers*. Switching posts to the
   server, which stores the choice in the session and redirects back to the current screen.
-- The **user menu**: the current user, with *Language*, *Theme* and *Log out*.
+- The **user menu**: the current user, with *My activity* (§7.22), *Language*, *Theme* and *Log out*.
 
 These belong together and apart from the navigation: which employer am I working on, who am I, and how
 do I want the application presented. Keeping them in the top bar also keeps them in one fixed place on
@@ -504,4 +505,30 @@ cannot be viewed as, rather than showing a disabled button.
 
 While viewing as someone, the actor *is* that user, not an admin, so this destination disappears from
 the sidebar. The banner's *Stop viewing* is the way back.
+
+Every row also links to that person's **activity** (§7.22), as they would see it.
+
+## 7.21 Activity
+
+The audit log (§3.12) of the **employers in scope** (§2.5), newest first, in pages of 50 (§8.3). It is
+a sidebar destination for everyone. Each row says when, who, and what — "created the job
+“Backend Engineer”" — naming things as they were called at the time. A token is marked as a token and
+the application's own acts as the application's, in words, not only by colour (§7.9). With several
+employers in scope, a column says which one each row belongs to.
+
+- A **member** reads the employer's log, without the owners-only events (§3.12).
+- An **owner** reads all of it.
+- An **admin** reads the log of the employers in scope, like anyone, and is offered **All activity**:
+  everything, including events about people, which belong to no employer, and the logs of employers
+  since deleted. It is a destination of its own rather than the switcher's *All employers*, because an
+  installation with a single employer never offers that choice (§2.5). Anyone else asking for it is
+  told it does not exist (§2.4).
+- With nothing in scope, the screen shows an empty state.
+
+## 7.22 My activity
+
+A person's own log (§3.12): what was done to them, such as being suspended, invited, or viewed by an
+admin (§2.9), and what they did. It is reached from the user menu rather than the sidebar, because it
+is about the person, not the employer being worked on. The same screen, for any user, is where an admin
+lands from the Users screen (§7.20).
 

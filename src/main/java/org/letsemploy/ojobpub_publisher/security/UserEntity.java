@@ -39,4 +39,10 @@ public class UserEntity extends Base {
     public enum Role {
         USER, ADMIN
     }
+
+    /** What to call them: the name, else the email, else the provider's subject. */
+    public String getLabel() {
+        return displayName != null && !displayName.isBlank() ? displayName
+                : email != null ? email : subject;
+    }
 }

@@ -5,6 +5,9 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import org.letsemploy.ojobpub_publisher.audit.AuditAction;
+import org.letsemploy.ojobpub_publisher.audit.AuditEvent;
+import org.letsemploy.ojobpub_publisher.audit.AuditLog;
 import org.letsemploy.ojobpub_publisher.common.ResourceLimits;
 import org.letsemploy.ojobpub_publisher.common.Slugs;
 import org.letsemploy.ojobpub_publisher.common.exception.NotFoundException;
@@ -25,6 +28,7 @@ public class FeedService {
     private final JobService jobService;
     private final ResourceLimits limits;
     private final OjobpubService ojobpubService;
+    private final AuditLog auditLog;
 
     public List<Feed> findByEmployer(UUID employerId) {
         return feedRepo.findByEmployerIdOrderByNameAsc(employerId);
@@ -49,7 +53,8 @@ public class FeedService {
     }
 
     @Transactional
-    public Feed save(UUID id, Employer employer, String name, String slug, String description) {
+    public Feed save(UUID id, Employer employer, String name, String slug, String description,
+                     Actor actor) {
         if (name == null || name.isBlank()) {
             throw new ValidationFailure("name", "A name is required.");
         }
@@ -70,7 +75,10 @@ public class FeedService {
         feed.setName(name.trim());
         feed.setSlug(Slugs.slugify(slug == null || slug.isBlank() ? name : slug, "feed"));
         feed.setDescription(description == null || description.isBlank() ? null : description.trim());
-        return feedRepo.save(feed);
+        Feed saved = feedRepo.save(feed);
+        auditLog.record(AuditEvent.of(id == null ? AuditAction.FEED_CREATED : AuditAction.FEED_UPDATED, actor)
+                .in(saved.getEmployer()).target(saved.getId(), saved.getName()));
+        return saved;
     }
 
     /**
@@ -100,20 +108,30 @@ public class FeedService {
         if (!job.getEmployer().getId().equals(feed.getEmployer().getId())) {
             throw new ValidationFailure("job", "That job belongs to a different employer.");
         }
-        feed.getJobs().add(job);
+        if (feed.getJobs().add(job)) {
+            auditLog.record(AuditEvent.of(AuditAction.FEED_JOB_ADDED, user).in(feed.getEmployer())
+                    .target(job.getId(), job.getTitle()).detail(feed.getName()));
+        }
         return feedRepo.save(feed);
     }
 
     @Transactional
     public Feed removeJob(UUID feedId, UUID jobId, Actor user) {
         Feed feed = findVisible(feedId, user);
-        feed.getJobs().removeIf(j -> j.getId().equals(jobId));
+        feed.getJobs().stream().filter(j -> j.getId().equals(jobId)).findFirst().ifPresent(job -> {
+            feed.getJobs().remove(job);
+            auditLog.record(AuditEvent.of(AuditAction.FEED_JOB_REMOVED, user).in(feed.getEmployer())
+                    .target(job.getId(), job.getTitle()).detail(feed.getName()));
+        });
         return feedRepo.save(feed);
     }
 
     @Transactional
     public void delete(UUID id, Actor user) {
-        feedRepo.delete(findVisible(id, user));
+        Feed feed = findVisible(id, user);
+        feedRepo.delete(feed);
+        auditLog.record(AuditEvent.of(AuditAction.FEED_DELETED, user).in(feed.getEmployer())
+                .target(feed.getId(), feed.getName()));
     }
 
     /** Jobs of the same employer not yet in this feed (spec 7.12). */

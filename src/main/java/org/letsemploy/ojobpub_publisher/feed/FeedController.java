@@ -164,7 +164,7 @@ public class FeedController {
                 ? scope.requireActiveEmployer()
                 : feedService.findVisible(id, scope.user()).getEmployer();
         try {
-            Feed saved = feedService.save(id, employer, name, slug, description);
+            Feed saved = feedService.save(id, employer, name, slug, description, scope.user());
             flash.addFlashAttribute("successMsg", "msg.success.saved");
             return "redirect:/feeds/" + saved.getId();
         } catch (ValidationFailure e) {

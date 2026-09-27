@@ -9,6 +9,9 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.letsemploy.ojobpub_publisher.audit.AuditAction;
+import org.letsemploy.ojobpub_publisher.audit.AuditEvent;
+import org.letsemploy.ojobpub_publisher.audit.AuditLog;
 import org.letsemploy.ojobpub_publisher.common.exception.NotFoundException;
 import org.letsemploy.ojobpub_publisher.common.ResourceLimits;
 import org.letsemploy.ojobpub_publisher.common.exception.ValidationFailure;
@@ -32,6 +35,7 @@ public class MembershipService {
 
     private final MembershipRepo membershipRepo;
     private final ResourceLimits limits;
+    private final AuditLog auditLog;
 
     /**
      * People only; a token's membership is managed on its own screen (spec 7.17).
@@ -141,8 +145,10 @@ public class MembershipService {
         if (target == MembershipRole.EDITOR) {
             refuseIfLastOwner(employerId, membership, "role");
         }
+        MembershipRole before = membership.getRole();
         membership.setRole(target);
         membershipRepo.save(membership);
+        record(AuditAction.MEMBER_ROLE_CHANGED, membership, actor, before + " → " + target);
         log.info("User {} set user {} to {} in employer {}",
                 actor.getId(), userId, target, employerId);
     }
@@ -154,6 +160,7 @@ public class MembershipService {
                 .orElseThrow(() -> new NotFoundException("Membership not found."));
         refuseIfLastOwner(employerId, membership, "member");
         membershipRepo.delete(membership);
+        record(AuditAction.MEMBER_REMOVED, membership, actor, null);
         log.info("User {} removed user {} from employer {}", actor.getId(), userId, employerId);
     }
 
@@ -179,6 +186,7 @@ public class MembershipService {
         refuseIfLastOwner(employerId, membership, "member");
         membership.setSuspendedAt(Instant.now());
         membershipRepo.save(membership);
+        record(AuditAction.MEMBER_SUSPENDED, membership, actor, null);
         log.info("User {} suspended user {} in employer {}", actor.getId(), userId, employerId);
     }
 
@@ -196,7 +204,15 @@ public class MembershipService {
         }
         membership.setSuspendedAt(null);
         membershipRepo.save(membership);
+        record(AuditAction.MEMBER_REINSTATED, membership, actor, null);
         log.info("User {} reinstated user {} in employer {}", actor.getId(), userId, employerId);
+    }
+
+    /** In the employer's log, and in the member's own: it was done to them (spec 3.12). */
+    private void record(AuditAction action, Membership membership, Actor actor, String detail) {
+        UserEntity member = membership.getUser();
+        auditLog.record(AuditEvent.of(action, actor).in(membership.getEmployer()).about(member)
+                .target(member.getId(), member.getLabel()).detail(detail));
     }
 
     /**

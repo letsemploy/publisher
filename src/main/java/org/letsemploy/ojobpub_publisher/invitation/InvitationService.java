@@ -5,6 +5,9 @@ import java.util.Optional;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.letsemploy.ojobpub_publisher.audit.AuditAction;
+import org.letsemploy.ojobpub_publisher.audit.AuditEvent;
+import org.letsemploy.ojobpub_publisher.audit.AuditLog;
 import org.letsemploy.ojobpub_publisher.common.ResourceLimits;
 import org.letsemploy.ojobpub_publisher.common.exception.NotFoundException;
 import org.letsemploy.ojobpub_publisher.common.exception.ValidationFailure;
@@ -43,6 +46,7 @@ public class InvitationService {
     private final EmployerRepo employerRepo;
     private final MembershipService membershipService;
     private final ResourceLimits limits;
+    private final AuditLog auditLog;
 
     // ------------------------------------------------------------- the invitee
 
@@ -71,6 +75,9 @@ public class InvitationService {
         membershipService.grant(invitee, invitation.getEmployer(), invitation.getRole());
         invitation.resolve(InvitationStatus.ACCEPTED);
         invitationRepo.save(invitation);
+        auditLog.record(AuditEvent.of(AuditAction.MEMBER_JOINED, user).in(invitation.getEmployer())
+                .about(invitee).target(invitee.getId(), invitee.getLabel())
+                .detail(invitation.getRole().name()));
         log.info("User {} accepted the invitation to employer {}",
                 invitee.getId(), invitation.getEmployer().getId());
         return invitation.getEmployer();
@@ -81,6 +88,8 @@ public class InvitationService {
         Invitation invitation = ownPending(invitationId, user);
         invitation.resolve(InvitationStatus.DECLINED);
         invitationRepo.save(invitation);
+        auditLog.record(AuditEvent.of(AuditAction.INVITATION_DECLINED, user).in(invitation.getEmployer())
+                .about(invitation.getInvitee()).target(invitation.getInvitee().getId(), invitation.getInvitee().getLabel()));
         return invitation.getEmployer();
     }
 
@@ -138,6 +147,7 @@ public class InvitationService {
             // Deliberately indistinguishable from success - for an address with no
             // account, and for one shared by several, which names nobody (spec 2.6).
             log.info("Invitation to employer {} addressed to an unregistered email", employerId);
+            recordSent(employer, null, role, actor);
             return InviteOutcome.SENT;
         }
         UserEntity invitee = found.get();
@@ -160,8 +170,21 @@ public class InvitationService {
                         .orElseThrow(() -> new NotFoundException("User not found: " + actor.getId())),
                         granted);
         invitationRepo.save(invitation);
+        recordSent(employer, invitee, granted, actor);
         log.info("{} invited user {} to employer {}", actor.getDisplayName(), invitee.getId(), employerId);
         return InviteOutcome.SENT;
+    }
+
+    /**
+     * The employer's log shows the same row whether or not the address belongs to
+     * an account - no name, no address, only the role - or it would become the
+     * oracle the invite form refuses to be (spec 2.6). Only the invitee's own log,
+     * when there is an invitee, learns more: that it was about them.
+     */
+    private void recordSent(Employer employer, UserEntity invitee, MembershipRole role, Actor actor) {
+        AuditEvent event = AuditEvent.of(AuditAction.INVITATION_SENT, actor).in(employer)
+                .detail((role == null ? MembershipRole.EDITOR : role).name());
+        auditLog.record(invitee == null ? event : event.about(invitee));
     }
 
     @Transactional
@@ -174,6 +197,8 @@ public class InvitationService {
         }
         invitation.resolve(InvitationStatus.REVOKED);
         invitationRepo.save(invitation);
+        UserEntity invitee = invitation.getInvitee();
+        auditLog.record(AuditEvent.of(AuditAction.INVITATION_REVOKED, actor).in(invitation.getEmployer())
+                .about(invitee).target(invitee.getId(), invitee.getLabel()));
     }
-
 }

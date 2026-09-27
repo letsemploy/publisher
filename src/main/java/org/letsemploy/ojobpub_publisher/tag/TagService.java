@@ -4,6 +4,9 @@ import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import org.letsemploy.ojobpub_publisher.audit.AuditAction;
+import org.letsemploy.ojobpub_publisher.audit.AuditEvent;
+import org.letsemploy.ojobpub_publisher.audit.AuditLog;
 import org.letsemploy.ojobpub_publisher.common.exception.NotFoundException;
 import org.letsemploy.ojobpub_publisher.common.exception.ValidationFailure;
 import org.letsemploy.ojobpub_publisher.employer.Employer;
@@ -21,6 +24,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class TagService {
 
     private final TagRepo tagRepo;
+    private final AuditLog auditLog;
 
     /** The list screen and the job form's picker: the first 20 matching, by name. */
     public List<Tag> search(Collection<UUID> employerIds, String query) {
@@ -63,29 +67,42 @@ public class TagService {
     }
 
     @Transactional
-    public Tag create(Employer employer, String rawName) {
+    public Tag create(Employer employer, String rawName, Actor actor) {
         Tag tag = new Tag();
         tag.setEmployer(employer);
-        return store(tag, rawName);
+        Tag saved = store(tag, rawName);
+        auditLog.record(AuditEvent.of(AuditAction.TAG_CREATED, actor).in(employer)
+                .target(saved.getId(), saved.getName()));
+        return saved;
     }
 
     @Transactional
     public Tag update(Long id, String rawName, Actor actor) {
-        return store(findVisible(id, actor), rawName);
+        Tag tag = findVisible(id, actor);
+        String before = tag.getName();
+        Tag saved = store(tag, rawName);
+        if (!saved.getName().equals(before)) {
+            auditLog.record(AuditEvent.of(AuditAction.TAG_UPDATED, actor).in(saved.getEmployer())
+                    .target(saved.getId(), saved.getName()).detail(before + " → " + saved.getName()));
+        }
+        return saved;
     }
 
     /** Creating a tag this employer already has returns the existing one (spec 3.4). */
     @Transactional
-    public Tag findOrCreate(Employer employer, String rawName) {
+    public Tag findOrCreate(Employer employer, String rawName, Actor actor) {
         String name = Tag.normalize(rawName);
         return tagRepo.findFirstByEmployerIdAndNameIgnoreCase(employer.getId(), name)
-                .orElseGet(() -> create(employer, name));
+                .orElseGet(() -> create(employer, name, actor));
     }
 
     /** Removes it from this employer's jobs, and only theirs (spec 3.4). */
     @Transactional
     public void delete(Long id, Actor actor) {
-        tagRepo.delete(findVisible(id, actor));
+        Tag tag = findVisible(id, actor);
+        tagRepo.delete(tag);
+        auditLog.record(AuditEvent.of(AuditAction.TAG_DELETED, actor).in(tag.getEmployer())
+                .target(tag.getId(), tag.getName()));
     }
 
     private Tag store(Tag tag, String rawName) {

@@ -41,15 +41,19 @@
                               th:text="${u.admin} ? #{users.role.admin} : #{users.role.user}">User</span>
                     </td>
                     <td th:text="${u.employers}">1</td>
-                    <td>
-                        <form th:if="${u.viewable}" th:action="@{'/users/' + ${u.id} + '/impersonate'}" method="post">
+                    <td class="text-nowrap">
+                        <a class="btn btn-sm" th:href="@{'/users/' + ${u.id} + '/activity'}">
+                            <svg th:replace="~{fragments/icon :: i('history','icon')}"></svg>
+                            <span th:text="#{nav.activity}">Activity</span>
+                        </a>
+                        <form class="d-inline" th:if="${u.viewable}" th:action="@{'/users/' + ${u.id} + '/impersonate'}" method="post">
                             <button type="submit" class="btn btn-sm">
                                 <svg th:replace="~{fragments/icon :: i('eye','icon')}"></svg>
                                 <span th:text="#{users.viewAs}">View as</span>
                             </button>
                         </form>
                         <!-- Said, not greyed out (spec 7.1): why this one cannot be viewed as. -->
-                        <span class="text-secondary small" th:unless="${u.viewable}"
+                        <span class="text-secondary small ms-1" th:unless="${u.viewable}"
                               th:text="#{'users.notViewable.' + ${u.notViewableBecause}}">admin</span>
                     </td>
                 </tr>

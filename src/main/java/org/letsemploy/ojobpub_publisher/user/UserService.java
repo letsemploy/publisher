@@ -48,18 +48,13 @@ public class UserService {
         Map<UUID, Long> employers = membershipService.countsByUser(
                 users.getContent().stream().map(UserEntity::getId).toList());
         List<UserRow> rows = users.getContent().stream()
-                .map(u -> new UserRow(u.getId().toString(), label(u), u.getEmail(), provider(u.getIssuer()),
+                .map(u -> new UserRow(u.getId().toString(), u.getLabel(), u.getEmail(), provider(u.getIssuer()),
                         u.getRole() == UserEntity.Role.ADMIN, employers.getOrDefault(u.getId(), 0L),
                         u.getId().equals(actor.getId()) ? "self"
                                 : u.getRole() == UserEntity.Role.ADMIN ? "admin" : null))
                 .toList();
         String base = q == null || q.isBlank() ? "/users" : "/users?q=" + URLEncoder.encode(q.trim(), UTF_8);
         return new PageView<>(rows, users.getNumber(), PAGE_SIZE, users.getTotalElements(), base);
-    }
-
-    private static String label(UserEntity user) {
-        return user.getDisplayName() != null && !user.getDisplayName().isBlank()
-                ? user.getDisplayName() : user.getEmail() != null ? user.getEmail() : user.getSubject();
     }
 
     /** "accounts.google.com" rather than the full issuer; "development" for the seed. */

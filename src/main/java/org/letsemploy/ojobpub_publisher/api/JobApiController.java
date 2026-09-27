@@ -89,7 +89,7 @@ public class JobApiController {
         form.setId(id);
         try {
             // Never activated as a side effect of a write: that is its own act below.
-            Job saved = jobService.save(form, employer, false, actor.getDisplayName());
+            Job saved = jobService.save(form, employer, false, actor);
             return JobPayload.ok(mapper.readJob(saved.getId(), actor));
         } catch (ValidationFailure e) {
             return new JobPayload(null, errors.from(e));

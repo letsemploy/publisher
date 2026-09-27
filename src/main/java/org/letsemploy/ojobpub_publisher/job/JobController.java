@@ -211,8 +211,7 @@ public class JobController {
                 ? scope.requireActiveEmployer()
                 : jobService.findVisible(id, scope.user()).getEmployer();
         try {
-            Job saved = jobService.save(form, employer, "activate".equals(action),
-                    scope.user().getDisplayName());
+            Job saved = jobService.save(form, employer, "activate".equals(action), scope.user());
             flash.addFlashAttribute("successMsg", "msg.success.saved");
             return "redirect:/jobs/" + saved.getId();
         } catch (ValidationFailure e) {
