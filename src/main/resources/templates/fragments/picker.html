@@ -6,7 +6,8 @@
   Chips are backed by hidden inputs, so the selection posts with a plain form
   and the screen still works with JavaScript disabled.
 -->
-<div th:fragment="chips(name, items, removable)" class="mb-2">
+<div th:fragment="chips(name, items, removable)" class="mb-2"
+     th:attr="data-chips=${name},data-remove-label=#{label.remove}">
     <span th:each="it : ${items}" class="badge bg-blue-lt me-1 mb-1" data-chip>
         <input type="hidden" th:name="${name}" th:value="${it.id}"/>
         <span th:text="${it.label}">item</span>
@@ -16,7 +17,8 @@
                 th:aria-label="#{label.remove}"
                 data-action="remove-chip" data-enhanced hidden></button>
     </span>
-    <span th:if="${items.isEmpty()}" class="text-secondary" th:text="#{picker.none}">None selected</span>
+    <span th:if="${items.isEmpty()}" class="text-secondary" th:text="#{picker.none}"
+          data-chips-empty>None selected</span>
 </div>
 
 <div th:fragment="search(id, searchUrl, targetId, placeholderKey)" class="mb-2">
@@ -29,20 +31,19 @@
 </div>
 
 <!--
-  Search results. Choosing one appends a chip; with JavaScript off the same list
-  renders on submit of the search field and the choice is an ordinary link.
+  Search results. Choosing one adds a chip, which app.js builds from the id and
+  label carried here as data - with createElement and textContent, never from a
+  string of markup: the CSP forbids evaluating code, and putting data inside
+  executable text is how injection happens (spec 7.2).
+
+  The results are not form fields. Only the chips post, so what is listed but
+  not chosen is never submitted. The list itself only ever arrives through htmx,
+  so these buttons never exist without the module that makes them work.
 -->
 <div th:fragment="results" th:remove="tag">
-    <!--
-      Choosing a result adds a chip. Built as real markup rather than assembled
-      from a string in an attribute: the CSP forbids evaluating code, and putting
-      data inside executable text is how injection happens (spec 7.2).
-    -->
-    <label class="list-group-item list-group-item-action" th:each="r : ${results}">
-        <input type="checkbox" class="form-check-input me-2" th:name="${targetName}"
-               th:value="${r.id}" checked hidden/>
-        <span th:text="${r.label}">label</span>
-    </label>
+    <button type="button" class="list-group-item list-group-item-action" th:each="r : ${results}"
+            data-action="pick" th:attr="data-target=${targetName},data-value=${r.id},data-label=${r.label}"
+            th:text="${r.label}">label</button>
     <div class="list-group-item text-secondary" th:if="${results.isEmpty()}"
          th:text="#{picker.noResults}">No matches.</div>
 </div>

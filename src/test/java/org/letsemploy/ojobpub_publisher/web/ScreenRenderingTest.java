@@ -122,6 +122,26 @@ class ScreenRenderingTest {
                 .contains("data-action=\"remove-chip\"").contains("data-enhanced");
     }
 
+    /**
+     * A search result is a choice, not a form field (spec 7.8). They were once
+     * checked, hidden checkboxes inside the job form: clicking one did nothing,
+     * and saving silently submitted every result still listed. Now a result
+     * carries its id and label for app.js to turn into a chip, and only the chips
+     * post - into the container the module looks for.
+     */
+    @Test
+    void pickerResultsAreChoicesThatBecomeChips() throws Exception {
+        for (String picker : new String[]{"locations", "tags"}) {
+            String results = html("/jobs/" + picker + "/search?employer=" + EMPLOYER + "&q=");
+            assertThat(results).as(picker).contains("data-action=\"pick\"")
+                    .contains("data-target=\"" + picker + "\"").contains("data-value=")
+                    .doesNotContain("<input").doesNotContain("name=\"" + picker + "\"");
+        }
+        assertThat(html("/jobs/" + JOB_PUBLISHED + "/update"))
+                .contains("data-chips=\"locations\"").contains("data-chips=\"tags\"")
+                .contains("data-remove-label=");
+    }
+
     /** Nothing evaluates code from a string any more, so the CSP needs no unsafe-eval. */
     @Test
     void noTemplateEvaluatesCodeFromAString() throws Exception {

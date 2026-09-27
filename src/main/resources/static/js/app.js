@@ -45,6 +45,40 @@
         }
     };
 
+    /**
+     * Turn a search result into a chip with its hidden input (spec 7.8), built as
+     * elements, never from a string of markup. Choosing one already chosen adds
+     * nothing. The result leaves the list either way.
+     */
+    const pick = (result) => {
+        const { target, value, label } = result.dataset;
+        const chips = document.querySelector(`[data-chips="${CSS.escape(target)}"]`);
+        if (!chips) {
+            return;
+        }
+        const chosen = [...chips.querySelectorAll('input[type="hidden"]')].some((input) => input.value === value);
+        if (!chosen) {
+            const chip = document.createElement('span');
+            chip.className = 'badge bg-blue-lt me-1 mb-1';
+            chip.dataset.chip = '';
+            const input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = target;
+            input.value = value;
+            const text = document.createElement('span');
+            text.textContent = label;
+            const remove = document.createElement('button');
+            remove.type = 'button';
+            remove.className = 'btn-close btn-close-white ms-1';
+            remove.dataset.action = 'remove-chip';
+            remove.setAttribute('aria-label', chips.dataset.removeLabel ?? '');
+            chip.append(input, text, remove);
+            chips.querySelector('[data-chips-empty]')?.remove();
+            chips.append(chip);
+        }
+        result.remove();
+    };
+
     document.addEventListener('click', (event) => {
         const action = event.target.closest('[data-action]');
         if (!action) {
@@ -60,6 +94,10 @@
                 // Removing the chip removes its hidden input, so the selection
                 // posts without it (spec 7.8).
                 action.closest('[data-chip]')?.remove();
+                break;
+            case 'pick':
+                event.preventDefault();
+                pick(action);
                 break;
             case 'copy':
                 event.preventDefault();
