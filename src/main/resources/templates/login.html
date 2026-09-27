@@ -58,7 +58,7 @@
                     <th:block th:replace="~{fragments/provider :: icon(${o.brand})}"></th:block>
                     <span th:text="${o.label != null} ? #{login.continueWith(${o.label})} : #{login.submit}">Sign in</span>
                 </a>
-                <a th:if="${loggedOut}" th:href="@{/login}" th:text="#{login.backToLogin}">Back to Login</a>
+                <a th:if="${loggedOut}" th:href="@{/}" th:text="#{login.backToLogin}">Back to Login</a>
             </div>
         </div>
 
