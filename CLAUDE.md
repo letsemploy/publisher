@@ -70,19 +70,25 @@ file, never both.
 ### Memory
 
 Measured in 2-CPU containers of 512 MB and 1 GB with a warm-up of about 300 requests. RSS went from
-about 575 MB to about 450 MB, on SQLite and MariaDB alike. The old image needed about 1 GB just to start:
-its default cap of a quarter of the container gave 192 MB at 768 MB, which ran out of memory. This one
-runs in 512 MB. The measures, and what each is worth:
+about 575 MB to about 400 MB, on SQLite and MariaDB alike, and startup from about 18 s to about 13 s.
+The old image needed about 1 GB just to start. This one runs in 512 MB with room to spare. What each
+measure is worth:
 
+- **No query text that the parsers choke on.** `JobRepo.search` used to be one JPQL string with a
+  five-way nested presentation filter.
+  - **What it cost:** Spring Data's and Hibernate's ANTLR HQL parsers took about 9 s on it at
+    startup, pushed the startup heap past 192 MB, and left about 17 MB of prediction cache for good.
+  - **What replaced it:** `Publication.presenting`, a Criteria `Specification`, which is never parsed.
+  - **The effect:** live heap fell from about 70 MB to about 52 MB, and a 96 MB heap cap now starts.
+  - **Keep big predicates out of `@Query` strings.** Short queries are fine; it was the nesting that
+    cost.
 - **The JVM options** are `JAVA_TOOL_OPTIONS` in both container files, which a deployment replaces
   by setting its own.
-  - **`MinHeapFreeRatio=10`/`MaxHeapFreeRatio=30`** is the largest single gain. It lets the heap
-    shrink back after the startup peak instead of staying at its cap.
-  - **`MaxRAMPercentage=50`**, not the default 25. The live heap after warm-up is about 70 MB, but
-    **startup needs about 200 MB**. A quarter of the container runs out of memory while the
-    context is built below about 1 GB, which is why the old image needed that much. The free ratios hand the startup peak back
-    afterwards, so the larger cap costs nothing in steady state. Do not "tune" it down to a small
-    `-Xmx` for the same reason.
+  - **`MinHeapFreeRatio=10`/`MaxHeapFreeRatio=30`** lets the heap shrink back after startup instead
+    of staying at its cap.
+  - **`MaxRAMPercentage=50`**, not the default 25. It is no longer needed to start, since 128 MB
+    does, but it gives the live set room to grow with the data, and the free ratios make it cost
+    nothing in steady state.
   - **`UseSerialGC` is pinned.** The JVM picks Serial by itself below 2 CPUs or about 1.8 GB, and G1
     above, which measured larger.
   - A 64 MB code cache, and **compact object headers** (a product feature since Java 25).
@@ -94,10 +100,6 @@ runs in 512 MB. The measures, and what each is worth:
     would leave the request thread that holds the security and request context. NMT puts all thread
     memory at 2–3 MB, so there was nothing to gain. Don't turn them on without first making the API
     async-safe.
-- **Why startup needs so much heap:** Spring Data's and Hibernate's ANTLR parsers work through
-  `JobRepo.search`, whose nested `Publication.JPQL_PRESENTATION_FILTER` takes about 9 s at startup on
-  2 CPUs. ANTLR then keeps about 17 MB of prediction cache for the life of the process. Simplifying that
-  query is the next lever for memory and startup time.
 
 ## Architecture
 
@@ -123,7 +125,9 @@ carries field errors back to a form; `NotFoundException` is unchecked and handle
 - `job/Publication.java` — the publication rules of spec 4.3/4.4: readiness requirements, the date
   window, and what a job *presents* as (`PUBLISHED`, `EXPIRED`, `INCOMPLETE`, `DRAFT`, `INACTIVE`). Both
   the feed serving path and the back-office readiness panel read it, so a screen and a published
-  document cannot disagree. Add publication logic here, not in a controller.
+  document cannot disagree. Add publication logic here, not in a controller. The job list filters on
+  the same rule in the database through `presenting`, its Criteria twin. A change to one needs the
+  other, and `PublicationFilterTest` fails if they disagree on any job.
 - `membership/MembershipService.java` — who belongs to an employer and with what role, including the
   last-owner rule.
 - `ojobpub/v1/service/OjobpubEnums.java` — explicit mapping for every published enum. **Never** derive a

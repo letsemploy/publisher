@@ -1,9 +1,15 @@
 package org.letsemploy.ojobpub_publisher.job;
 
+import jakarta.persistence.criteria.CriteriaBuilder;
+import jakarta.persistence.criteria.Path;
+import jakarta.persistence.criteria.Predicate;
+import jakarta.persistence.criteria.Root;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import lombok.Value;
+import org.springframework.data.jpa.domain.Specification;
 
 /**
  * The publication rules of specification sections 4.3 and 4.4, in one place.
@@ -117,7 +123,8 @@ public final class Publication {
     }
 
     /**
-     * The SQL twin of {@link #presentation(Job, LocalDate)}.
+     * The database twin of {@link #presentation(Job, LocalDate)}: the jobs that
+     * present as {@code presentation} on {@code today}.
      *
      * <p>Three of the five presentation values - PUBLISHED, EXPIRED and INCOMPLETE -
      * are *derived*: all three are stored as {@code ACTIVE} and told apart by the
@@ -125,49 +132,63 @@ public final class Publication {
      * the stored column; it has to evaluate the same rule in the database, or
      * "expired" silently returns every active job.
      *
-     * <p>These fragments live here, beside the Java rule they mirror, because two
-     * copies of a rule in two files drift. {@code PublicationFilterTest} asserts
-     * the two agree for every job in the database, so drift fails the build.
+     * <p>It lives here, beside the Java rule it mirrors, because two copies of a
+     * rule in two files drift. {@code PublicationFilterTest} asserts the two agree
+     * for every job in the database, so drift fails the build.
      *
-     * <p>They assume the alias {@code j} for the job.
+     * <p>Built with the Criteria API rather than as JPQL text. As one nested JPQL
+     * string it cost about nine seconds of startup and some 17 MB of heap that
+     * ANTLR kept for good, because Spring Data's and Hibernate's HQL parsers both
+     * worked through its five-way OR (CLAUDE.md, "Memory"). Criteria goes to
+     * Hibernate's query tree without being parsed at all.
      */
-    public static final String JPQL_COMPLETE = """
-            (j.publishedAt IS NOT NULL
-             AND LENGTH(TRIM(j.title)) > 0
-             AND LENGTH(TRIM(j.url)) > 0
-             AND LENGTH(TRIM(j.languageCode)) = 2
-             AND j.jobType IS NOT NULL
-             AND SIZE(j.locations) > 0
-             AND ((j.salaryMin IS NULL AND j.salaryMax IS NULL)
-                  OR (j.salaryCurrency IS NOT NULL AND LENGTH(TRIM(j.salaryCurrency)) > 0
-                      AND j.salaryInterval IS NOT NULL)))""";
+    public static Specification<Job> presenting(Presentation presentation, LocalDate today) {
+        return (job, query, cb) -> switch (presentation) {
+            case DRAFT -> cb.equal(job.get("status"), JobStatus.DRAFT);
+            case INACTIVE -> cb.equal(job.get("status"), JobStatus.INACTIVE);
+            case INCOMPLETE -> cb.and(active(job, cb), cb.not(complete(job, cb)));
+            case PUBLISHED -> cb.and(active(job, cb), complete(job, cb), withinWindow(job, cb, today));
+            case EXPIRED -> cb.and(active(job, cb), complete(job, cb), cb.not(withinWindow(job, cb, today)));
+        };
+    }
 
-    /** The date window of {@link #withinDateWindow}; needs a {@code :today} parameter. */
-    public static final String JPQL_WITHIN_WINDOW = """
-            ((j.applyBefore IS NULL OR j.applyBefore >= :today)
-             AND (j.endDate IS NULL OR j.endDate >= :today))""";
+    private static Predicate active(Root<Job> job, CriteriaBuilder cb) {
+        return cb.equal(job.get("status"), JobStatus.ACTIVE);
+    }
 
-    /** Matches one {@link Presentation} by name; needs {@code :presentation} and {@code :today}. */
-    public static final String JPQL_PRESENTATION_FILTER = """
-            (:presentation IS NULL
-             OR (:presentation = 'DRAFT'
-                 AND j.status = org.letsemploy.ojobpub_publisher.job.JobStatus.DRAFT)
-             OR (:presentation = 'INACTIVE'
-                 AND j.status = org.letsemploy.ojobpub_publisher.job.JobStatus.INACTIVE)
-             OR (:presentation = 'INCOMPLETE'
-                 AND j.status = org.letsemploy.ojobpub_publisher.job.JobStatus.ACTIVE
-                 AND NOT """ + JPQL_COMPLETE + """
-            )
-             OR (:presentation = 'PUBLISHED'
-                 AND j.status = org.letsemploy.ojobpub_publisher.job.JobStatus.ACTIVE
-                 AND """ + JPQL_COMPLETE + """
-                 AND """ + JPQL_WITHIN_WINDOW + """
-            )
-             OR (:presentation = 'EXPIRED'
-                 AND j.status = org.letsemploy.ojobpub_publisher.job.JobStatus.ACTIVE
-                 AND """ + JPQL_COMPLETE + """
-                 AND NOT """ + JPQL_WITHIN_WINDOW + """
-            ))""";
+    /**
+     * Requirements 1-5 and {@code publishedAt}, as {@link #presentation} checks
+     * them. Never SQL NULL: every nullable column is tested for NULL before it is
+     * measured, so {@code NOT complete} holds for an incomplete job instead of
+     * dropping it as unknown.
+     */
+    private static Predicate complete(Root<Job> job, CriteriaBuilder cb) {
+        Path<String> languageCode = job.get("languageCode");
+        return cb.and(
+                cb.isNotNull(job.get("publishedAt")),
+                notBlank(job.get("title"), cb),
+                notBlank(job.get("url"), cb),
+                cb.isNotNull(languageCode),
+                cb.equal(cb.length(cb.trim(languageCode)), 2),
+                cb.isNotNull(job.get("jobType")),
+                cb.isNotEmpty(job.<Collection<?>>get("locations")),
+                cb.or(
+                        cb.and(cb.isNull(job.get("salaryMin")), cb.isNull(job.get("salaryMax"))),
+                        cb.and(notBlank(job.get("salaryCurrency"), cb), cb.isNotNull(job.get("salaryInterval")))));
+    }
+
+    /** {@link #withinDateWindow}: a missing date never excludes a job. */
+    private static Predicate withinWindow(Root<Job> job, CriteriaBuilder cb, LocalDate today) {
+        Path<LocalDate> applyBefore = job.get("applyBefore");
+        Path<LocalDate> endDate = job.get("endDate");
+        return cb.and(
+                cb.or(cb.isNull(applyBefore), cb.greaterThanOrEqualTo(applyBefore, today)),
+                cb.or(cb.isNull(endDate), cb.greaterThanOrEqualTo(endDate, today)));
+    }
+
+    private static Predicate notBlank(Path<String> value, CriteriaBuilder cb) {
+        return cb.and(cb.isNotNull(value), cb.gt(cb.length(cb.trim(value)), 0));
+    }
 
     public enum Presentation {
         PUBLISHED, EXPIRED, INCOMPLETE, DRAFT, INACTIVE;

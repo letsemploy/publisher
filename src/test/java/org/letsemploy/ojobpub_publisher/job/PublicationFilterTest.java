@@ -22,7 +22,7 @@ import org.springframework.transaction.annotation.Transactional;
  * <p>PUBLISHED, EXPIRED and INCOMPLETE are all stored as ACTIVE and told apart by
  * the publication rules, so the filter evaluates those rules in SQL. That makes
  * two expressions of one rule - {@link Publication#presentation} in Java and
- * {@link Publication#JPQL_PRESENTATION_FILTER} in JPQL - and two copies drift.
+ * {@link Publication#presenting} as a Criteria query - and two copies drift.
  * These tests assert they agree for every job in the database.
  */
 @SpringBootTest

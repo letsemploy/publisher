@@ -21,6 +21,7 @@ import org.letsemploy.ojobpub_publisher.tag.Tag;
 import org.letsemploy.ojobpub_publisher.tag.TagService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -42,10 +43,25 @@ public class JobService {
      */
     public Page<Job> search(List<UUID> employerIds, String q, Publication.Presentation presentation,
                             JobType jobType, Pageable pageable) {
-        return jobRepo.search(employerIds == null || employerIds.isEmpty() ? null : employerIds,
-                q == null || q.isBlank() ? null : q.trim(),
-                presentation == null ? null : presentation.name(),
-                jobType, LocalDate.now(), pageable);
+        List<Specification<Job>> filters = new ArrayList<>();
+        if (employerIds != null && !employerIds.isEmpty()) {
+            filters.add((job, query, cb) -> job.get("employer").get("id").in(employerIds));
+        }
+        if (q != null && !q.isBlank()) {
+            // Lowered by the database on both sides, as before: SQLite lowers ASCII
+            // only, and a pattern lowered in Java would stop matching there (spec 9.3).
+            String pattern = "%" + q.trim() + "%";
+            filters.add((job, query, cb) -> cb.or(
+                    cb.like(cb.lower(job.get("title")), cb.lower(cb.literal(pattern))),
+                    cb.like(cb.lower(job.get("referenceId")), cb.lower(cb.literal(pattern)))));
+        }
+        if (jobType != null) {
+            filters.add((job, query, cb) -> cb.equal(job.get("jobType"), jobType));
+        }
+        if (presentation != null) {
+            filters.add(Publication.presenting(presentation, LocalDate.now()));
+        }
+        return jobRepo.findAll(Specification.allOf(filters), pageable);
     }
 
     public Job findVisible(UUID id, Actor user) {
