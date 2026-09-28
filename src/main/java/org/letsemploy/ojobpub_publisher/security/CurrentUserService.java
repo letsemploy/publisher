@@ -86,7 +86,27 @@ public class CurrentUserService {
         if (isDevMode() && identity == null) {
             return toAppUser(devUser());
         }
-        return identity == null ? Actor.anonymous() : toAppUser(signIn(identity));
+        if (identity == null) {
+            return Actor.anonymous();
+        }
+        // A suspended account is nobody (spec 2.11). SuspendedAccountFilter ends
+        // its session before a handler runs; this is what holds if it did not.
+        UserEntity user = signIn(identity);
+        return user.isSuspended() ? Actor.anonymous() : toAppUser(user);
+    }
+
+    /**
+     * Whether the person signed in on this request holds a suspended account
+     * (spec 2.11) - read by {@link SuspendedAccountFilter}, which signs them out.
+     * False for anyone not signed in, and for the development bypass, whose seeded
+     * admin cannot be suspended.
+     */
+    @Transactional(readOnly = true)
+    public boolean isSuspended() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        Identity identity = auth == null ? null : identityOf(auth.getPrincipal());
+        return identity != null && userRepo.findByIssuerAndSubject(identity.issuer(), identity.subject())
+                .map(UserEntity::isSuspended).orElse(false);
     }
 
     /**
@@ -212,6 +232,11 @@ public class CurrentUserService {
                     log.info("New account for {} at {}", identity.subject(), identity.issuer());
                     return created;
                 });
+        // Left exactly as it was: not refreshed from the token, and its role not
+        // re-decided, while nobody may act through it (spec 2.11).
+        if (user.isSuspended()) {
+            return user;
+        }
         // Admin as configured, or the stored role when admins are not managed here.
         UserEntity.Role role = adminPolicy.isAdmin(identity.issuer(), identity.subject(),
                         identity.email(), identity.emailVerified(), identity.claims())

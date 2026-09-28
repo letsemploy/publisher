@@ -31,6 +31,7 @@ the text such as §2.6 means the same thing: find the chapter below, then the se
   - [2.8 API authentication](spec/02-actors-and-access.md#28-api-authentication)
   - [2.9 Viewing as another user](spec/02-actors-and-access.md#29-viewing-as-another-user)
   - [2.10 Admin mode](spec/02-actors-and-access.md#210-admin-mode)
+  - [2.11 Suspending an account](spec/02-actors-and-access.md#211-suspending-an-account)
 - **[3. Domain model](spec/03-domain-model.md)**
   - [3.1 Employer](spec/03-domain-model.md#31-employer)
   - [3.2 Location](spec/03-domain-model.md#32-location)

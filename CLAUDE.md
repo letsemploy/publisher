@@ -219,6 +219,14 @@ auto-configured bean. `OidcLoginTest` and `LockedChainTest` guard both direction
     view switches. That's what stops consent acts (accepting invitations, creating employers) on
     someone's behalf. Don't add write routes to its allowlist.
   - **Starting:** `ImpersonationService.start` clears the active employer, as does stopping.
+- **Suspending an account** (§2.11) sets `UserEntity.suspendedAt`; admins only, never oneself or an
+  admin, done from the Users screen by `UserService`. It is enforced in two places that must both stay:
+  `SuspendedAccountFilter` (in the OIDC chain, not a bean) signs the session out on **every** request
+  and sends it to `/login?suspended`, or sets `HX-Redirect` for htmx; and `realActor()` answers
+  anonymous for a suspended account in case anything runs before the filter. `signIn` returns a
+  suspended account untouched, so it is neither refreshed nor re-decided by the admin rules.
+  Memberships stay, and a sole owner is named on the confirmation, not protected. The dev bypass never
+  checks it. `OidcLoginTest` covers the sign-in half, `AccountSuspensionTest` the admin half.
 - **Logout** uses `OidcClientInitiatedLogoutSuccessHandler`: it ends the provider's session when the
   provider advertises an end-session endpoint, and is a local logout otherwise.
 - **Several providers, one button each** (`security/LoginOptions`, §7.19). The buttons are read from
@@ -619,6 +627,7 @@ TEST_DB=sqlite ./mvnw test                   # all, on SQLite; no server
 ./mvnw test -Dtest=AuditLogTest              # the audit log: what lands in which log, and who reads it
 ./mvnw test -Dtest=AdminModeTest             # admins start in the user view; every power follows the switch
 ./mvnw test -Dtest=MemberSuspensionScreenTest # suspending and reinstating from the People screen
+./mvnw test -Dtest=AccountSuspensionTest     # suspending accounts: admins only, never self or an admin
 ./mvnw test -Dtest=ResourceLimitsTest        # the quota convention; no Spring, no database
 ./mvnw test -Dtest=QuotaEnforcementTest      # the six quotas against the seed data
 ./mvnw test -Dtest=MessageBundleTest         # the two bundles, at parity

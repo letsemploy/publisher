@@ -106,10 +106,11 @@ public class SecurityConfig {
     @Profile("!dev")
     @org.springframework.core.annotation.Order(2)
     SecurityFilterChain backOfficeChain(HttpSecurity http,
-                                        ObjectProvider<ClientRegistrationRepository> registrations)
+                                        ObjectProvider<ClientRegistrationRepository> registrations,
+                                        CurrentUserService currentUserService)
             throws Exception {
         ClientRegistrationRepository repository = registrations.getIfAvailable();
-        return repository == null ? locked(http) : oidcLogin(http, repository);
+        return repository == null ? locked(http) : oidcLogin(http, repository, currentUserService);
     }
 
     /**
@@ -121,7 +122,8 @@ public class SecurityConfig {
      * not. Logout ends the provider's session too where the provider advertises
      * an end-session endpoint, and falls back to a local logout where it does not.
      */
-    private SecurityFilterChain oidcLogin(HttpSecurity http, ClientRegistrationRepository registrations)
+    private SecurityFilterChain oidcLogin(HttpSecurity http, ClientRegistrationRepository registrations,
+                                          CurrentUserService currentUserService)
             throws Exception {
         // Refuse a provider that would sign people in as nobody (spec 2.2) - at
         // startup, rather than as a login that completes and then goes nowhere.
@@ -159,6 +161,10 @@ public class SecurityConfig {
                         .userInfoEndpoint(u -> u.userService(new GitHubUserService()))
                         .defaultSuccessUrl("/", true))
                 .logout(logout -> logout.logoutSuccessHandler(providerLogout))
+                // After the session's authentication is restored and before anything
+                // is authorised: a suspended account goes no further (spec 2.11).
+                .addFilterAfter(new SuspendedAccountFilter(currentUserService),
+                        org.springframework.security.web.authentication.AnonymousAuthenticationFilter.class)
                 .headers(h -> h.contentSecurityPolicy(csp ->
                         // Self-hosted assets only, so the policy can be genuinely strict (spec 9.4).
                         // No 'unsafe-inline' and no 'unsafe-eval': all behaviour lives in

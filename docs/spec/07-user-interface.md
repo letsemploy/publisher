@@ -504,9 +504,10 @@ their organisation's sign-in page and brought back, a **Sign in** button, and th
 - **It is shown before the provider**, not skipped. One click is the price of a first visit that says
   what this is and where the visitor is about to be sent, and of a sign-out that ends somewhere rather
   than bouncing straight back into the provider.
-- **Two states**, each in words and not only in colour (§7.9): a failed sign-in (`?error`) says it did
+- **Three states**, each in words and not only in colour (§7.9): a failed sign-in (`?error`) says it did
   not complete and to try again, without the technical detail of why; a completed sign-out
-  (`?logout`) says so. Switching language keeps the state.
+  (`?logout`) says so; and a suspended account (`?suspended`, §2.11) is told it is suspended and to
+  contact the administrator. Switching language keeps the state.
 - It is **standalone**: no sidebar, switcher or user menu, since a signed-out visitor has none of them.
 - A signed-in visitor asking for it is sent on to the dashboard. Under `dev` it is inert, like every
   login route (§2.3).
@@ -527,6 +528,12 @@ While viewing as someone, the actor *is* that user, not an admin, so this destin
 the sidebar. The banner's *Stop viewing* is the way back.
 
 Every row also links to that person's **activity** (§7.22), as they would see it.
+
+A suspended account says so in its row, with the date (§2.11), and the list can be narrowed to
+**suspended only**. Each ordinary user's row offers **Suspend**, which leads to a confirmation page:
+what stays, what keeps working, the employers left without an active owner, and an optional reason.
+A suspended row offers **Reinstate** instead, without confirmation. Admins and the viewer's own row
+offer neither, for the reason they cannot be viewed as.
 
 ## 7.21 Activity
 

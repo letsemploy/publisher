@@ -1,6 +1,7 @@
 package org.letsemploy.ojobpub_publisher.security;
 
 import jakarta.persistence.*;
+import java.time.Instant;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -31,6 +32,16 @@ public class UserEntity extends Base {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private Role role = Role.USER;
+
+    /**
+     * Set while a platform admin has suspended the account (spec 2.11): it cannot
+     * sign in, and an open session ends. Null means active.
+     */
+    private Instant suspendedAt;
+
+    public boolean isSuspended() {
+        return suspendedAt != null;
+    }
 
     /**
      * The platform role (spec 2.1). Per-employer standing lives on the membership,

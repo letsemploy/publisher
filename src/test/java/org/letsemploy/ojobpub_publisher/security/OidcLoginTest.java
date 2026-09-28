@@ -349,4 +349,81 @@ class OidcLoginTest {
                 .contains("id_token_hint=")
                 .contains("post_logout_redirect_uri=http://localhost/login?logout");
     }
+
+    // ------------------------------------------------------------- suspension
+
+    private void suspend(String subject) {
+        UserEntity user = account(subject);
+        user.setSuspendedAt(java.time.Instant.now());
+        userRepo.save(user);
+    }
+
+    /**
+     * A suspended account is signed out on its next request - whether that is
+     * the first after signing in or one in a session opened long before - and
+     * the sign-in page says why (spec 2.11).
+     */
+    @Test
+    void aSuspendedAccountIsSignedOutAndToldWhy() throws Exception {
+        mvc.perform(get("/").with(signedIn("sam-1", "Sam", "sam1@example.com", true)))
+                .andExpect(status().isOk());
+        suspend("sam-1");
+
+        mvc.perform(get("/jobs").with(signedIn("sam-1", "Sam", "sam1@example.com", true)))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/login?suspended"));
+        assertThat(mvc.perform(get("/login?suspended")).andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString())
+                .contains("This account is suspended");
+    }
+
+    /** Nothing is done through a suspended account, a write least of all (spec 2.11). */
+    @Test
+    void aSuspendedAccountCannotWrite() throws Exception {
+        mvc.perform(get("/").with(signedIn("sam-2", "Sam", "sam2@example.com", true)));
+        suspend("sam-2");
+
+        mvc.perform(post("/employers/create").with(signedIn("sam-2", "Sam", "sam2@example.com", true))
+                        .with(csrf()).param("name", "Sneaky AG"))
+                .andExpect(redirectedUrl("/login?suspended"));
+        assertThat(membershipService.countMembershipsOf(account("sam-2").getId())).isZero();
+    }
+
+    /** An htmx request navigates the whole page rather than swapping the sign-in page into it. */
+    @Test
+    void anHtmxRequestOfASuspendedAccountRedirectsThePage() throws Exception {
+        mvc.perform(get("/").with(signedIn("sam-3", "Sam", "sam3@example.com", true)));
+        suspend("sam-3");
+
+        mvc.perform(get("/jobs").header("HX-Request", "true")
+                        .with(signedIn("sam-3", "Sam", "sam3@example.com", true)))
+                .andExpect(status().isNoContent())
+                .andExpect(result -> assertThat(result.getResponse().getHeader("HX-Redirect"))
+                        .isEqualTo("/login?suspended"));
+    }
+
+    /** While suspended the record is left alone: not refreshed from the token (spec 2.11). */
+    @Test
+    void aSuspendedAccountIsNotRefreshed() throws Exception {
+        mvc.perform(get("/").with(signedIn("sam-4", "Sam", "sam4@example.com", true)));
+        suspend("sam-4");
+
+        mvc.perform(get("/").with(signedIn("sam-4", "Sam Changed", "changed@example.com", true)));
+
+        assertThat(account("sam-4").getDisplayName()).isEqualTo("Sam");
+        assertThat(account("sam-4").getEmail()).isEqualTo("sam4@example.com");
+    }
+
+    /** Reinstated, the same account signs in again with what it had. */
+    @Test
+    void aReinstatedAccountSignsInAgain() throws Exception {
+        mvc.perform(get("/").with(signedIn("sam-5", "Sam", "sam5@example.com", true)));
+        suspend("sam-5");
+        UserEntity sam = account("sam-5");
+        sam.setSuspendedAt(null);
+        userRepo.save(sam);
+
+        mvc.perform(get("/").with(signedIn("sam-5", "Sam", "sam5@example.com", true)))
+                .andExpect(status().isOk());
+    }
 }

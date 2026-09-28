@@ -31,6 +31,9 @@ public class LoginController {
         // Present or not; the parameters carry no value (/login?error).
         model.addAttribute("error", request.getParameterMap().containsKey("error"));
         model.addAttribute("loggedOut", request.getParameterMap().containsKey("logout"));
+        // Only ever shown to the person just signed out for it (spec 2.11), so it
+        // tells nobody else anything.
+        model.addAttribute("suspended", request.getParameterMap().containsKey("suspended"));
         // One button per configured provider, sorted by name (spec 7.19).
         model.addAttribute("options", loginOptions.all());
         return "login";

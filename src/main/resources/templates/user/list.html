@@ -6,13 +6,19 @@
 <body>
 <div layout:fragment="content">
     <!-- Everyone who has signed in, for platform staff (spec 7.20); "View as" shows
-         the application as that person sees it, read-only (spec 2.9). -->
+         the application as that person sees it, read-only (spec 2.9), and an
+         account can be suspended and reinstated here (spec 2.11). -->
     <div class="card">
         <div class="card-body border-bottom">
             <form th:action="@{/users}" method="get" class="d-flex gap-2" role="search">
                 <label class="visually-hidden" for="q" th:text="#{users.search}">Search</label>
                 <input class="form-control" type="search" id="q" name="q" th:value="${query}"
                        th:placeholder="#{users.search}"/>
+                <label class="form-check form-check-inline mb-0 align-self-center text-nowrap">
+                    <input class="form-check-input" type="checkbox" name="suspended" value="true"
+                           th:checked="${suspendedOnly}"/>
+                    <span class="form-check-label" th:text="#{users.filter.suspended}">Suspended only</span>
+                </label>
                 <button type="submit" class="btn" th:text="#{label.search}">Search</button>
             </form>
         </div>
@@ -39,6 +45,11 @@
                     <td>
                         <span class="badge" th:classappend="${u.admin} ? 'bg-azure-lt' : 'bg-secondary-lt'"
                               th:text="${u.admin} ? #{users.role.admin} : #{users.role.user}">User</span>
+                        <!-- A word and a date, not just a colour (spec 7.9). -->
+                        <span class="badge bg-red-lt ms-1" th:if="${u.suspended}"
+                              th:title="${u.suspendedAt}" th:text="#{users.suspendedBadge}">suspended</span>
+                        <div class="text-secondary small" th:if="${u.suspended}"
+                             th:text="#{users.suspendedSince(${u.suspendedAt})}">Suspended since …</div>
                     </td>
                     <td th:text="${u.employers}">1</td>
                     <td class="text-nowrap">
@@ -52,7 +63,14 @@
                                 <span th:text="#{users.viewAs}">View as</span>
                             </button>
                         </form>
-                        <!-- Said, not greyed out (spec 7.1): why this one cannot be viewed as. -->
+                        <!-- Suspending asks first, on a page of its own; reinstating is
+                             reversible and does not (spec 2.11). -->
+                        <a class="btn btn-sm btn-ghost-danger" th:if="${u.viewable and !u.suspended}"
+                           th:href="@{'/users/' + ${u.id} + '/suspend'}" th:text="#{users.suspend}">Suspend</a>
+                        <form class="d-inline" th:if="${u.suspended}" th:action="@{'/users/' + ${u.id} + '/reinstate'}" method="post">
+                            <button type="submit" class="btn btn-sm" th:text="#{users.reinstate}">Reinstate</button>
+                        </form>
+                        <!-- Said, not greyed out (spec 7.1): why this one cannot be viewed as or suspended. -->
                         <span class="text-secondary small ms-1" th:unless="${u.viewable}"
                               th:text="#{'users.notViewable.' + ${u.notViewableBecause}}">admin</span>
                     </td>

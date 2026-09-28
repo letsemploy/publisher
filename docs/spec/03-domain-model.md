@@ -169,6 +169,7 @@ application's own authorization data; the identity provider owns everything else
 | `email` | string | no | from the ID token. Mutable, and **never** an identity — only how a human addresses an invitation |
 | `displayName` | string | no | for display; falls back to email, then subject |
 | `role` | enum | **yes** | the **platform** role (§2.1): `USER` (default) or `ADMIN` |
+| `suspendedAt` | instant | no | set while an admin has suspended the account (§2.11); null means active |
 | `memberships` | set of Membership | no | the employers this user belongs to, and with what role (§3.9) |
 
 The development administrator (§2.3) is an ordinary row of this table, seeded rather than provisioned.
@@ -262,12 +263,12 @@ that is refused or rolled back is not recorded, and neither is one that changes 
 | Field | Notes |
 |---|---|
 | `occurredAt` | When. |
-| `action` | What kind of event, from a fixed catalogue: an employer, job, feed, location or tag created, edited or deleted; a job's status changed; a job added to or removed from a feed; a member joined, changed role, suspended, reinstated or removed; an invitation sent, withdrawn or declined; a token created, renewed or revoked; an account created; admin granted or removed by the configured rules (§2.2); viewing as a user started or stopped (§2.9); admin mode switched on or off (§2.10). |
+| `action` | What kind of event, from a fixed catalogue: an employer, job, feed, location or tag created, edited or deleted; a job's status changed; a job added to or removed from a feed; a member joined, changed role, suspended, reinstated or removed; an invitation sent, withdrawn or declined; a token created, renewed or revoked; an account created, suspended or reinstated (§2.11); admin granted or removed by the configured rules (§2.2); viewing as a user started or stopped (§2.9); admin mode switched on or off (§2.10). |
 | actor | A user, a token (§3.11) — or **the application itself**, for what nobody did by hand, such as the admin rules applied at sign-in. |
 | `employer` | Nullable. Which employer's log it belongs to. |
 | `subject` | Nullable. The person it is about, whose own log it belongs to. |
 | target | What was acted on, as an id and a label. |
-| `detail` | Nullable. A short note, such as a job's old and new status or a member's old and new role. |
+| `detail` | Nullable. A short note, such as a job's old and new status or a member's old and new role, or why an account was suspended. |
 
 **Two scopes, one row.** An event is not *either* an employer's *or* a person's: it has a place in
 each where it has an `employer` and a `subject`. "An owner suspended Mara" is in the employer's log

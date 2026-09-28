@@ -41,6 +41,11 @@ public class Views {
 
     private final MessageSource messages;
 
+    /** An instant as every screen shows one. */
+    public static String timestamp(java.time.Instant instant) {
+        return TIMESTAMP.format(instant);
+    }
+
     /** Feed URLs must be absolute and correct behind a reverse proxy (spec 9.5). */
     @Value("${app.base-url:http://localhost:8080}")
     private String baseUrl;

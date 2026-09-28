@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout}">
+<head><title th:text="#{users.suspend.title}">Suspend account</title></head>
+<body>
+<div layout:fragment="content">
+    <!-- Suspending an account (spec 2.11). A page rather than a modal: it takes a
+         reason and names what is left behind, and works without JavaScript. -->
+    <form class="card" th:action="@{'/users/' + ${suspension.id} + '/suspend'}" method="post">
+        <div class="card-header">
+            <h2 class="card-title" th:text="#{users.suspend.heading(${suspension.displayName})}">Suspend Mara Member?</h2>
+        </div>
+        <div class="card-body">
+            <p class="text-secondary" th:if="${suspension.email != null}" th:text="${suspension.email}">a@b.c</p>
+            <p th:text="#{users.suspend.intro}">They cannot sign in until reinstated.</p>
+            <ul>
+                <li th:text="#{users.suspend.keeps}">Memberships stay.</li>
+                <li th:text="#{users.suspend.tokens}">API tokens keep working.</li>
+                <li th:text="#{users.suspend.feeds}">Feeds keep being served.</li>
+            </ul>
+            <!-- Named, never a refusal: an admin can still act on these (spec 2.11). -->
+            <div class="alert alert-warning" role="alert" th:unless="${suspension.soleOwnerships.isEmpty()}">
+                <svg th:replace="~{fragments/icon :: i('alert-triangle','icon alert-icon flex-shrink-0')}"></svg>
+                <div>
+                    <div th:text="#{users.suspend.soleOwner}">They are the only active owner of:</div>
+                    <ul class="mb-0">
+                        <li th:each="name : ${suspension.soleOwnerships}" th:text="${name}">Acme AG</li>
+                    </ul>
+                </div>
+            </div>
+            <div th:replace="~{fragments/form :: textarea('reason', 'users.suspend.reason', ${reason}, false, 200, ${reasonError})}"></div>
+            <small class="form-hint" th:text="#{users.suspend.reasonHint}">Recorded in the activity log.</small>
+        </div>
+        <div class="card-footer d-flex align-items-center">
+            <a th:href="@{/users}" class="btn btn-link" th:text="#{label.cancel}">Cancel</a>
+            <button type="submit" class="btn btn-danger ms-auto" th:text="#{users.suspend.submit}">Suspend account</button>
+        </div>
+    </form>
+</div>
+</body>
+</html>

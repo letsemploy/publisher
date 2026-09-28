@@ -404,3 +404,35 @@ and, at worst, a change made to the wrong employer by someone who did not mean t
 - **A deployment may start every session in admin mode** (§9.5), for an installation run by a small
   team who would rather not switch.
 
+## 2.11 Suspending an account
+
+A platform admin may **suspend an account**, when it has to stop working at once: an account that is
+misused, or a person who has left and still holds a provider login. It is the platform's counterpart
+of suspending a membership (§2.7), which only ever reaches one employer.
+
+- **It cannot sign in.** A sign-in that completes at the provider ends on the sign-in page, which says
+  the account is suspended (§7.19). Only the person who has just proved they hold the account is told,
+  so it discloses nothing to anyone else.
+- **An open session ends at its next request.** A session outlives its sign-in by hours, so the check
+  is made on every request, not only at sign-in. Until the session is gone, the account is treated as
+  nobody.
+- **Nothing else changes.** Memberships, roles, invitations and history all stay, and a reinstatement
+  brings them back as they were. While suspended, the record is not refreshed from the provider, and
+  the admin rules (§2.2) do not re-decide its role.
+- **By an admin in admin mode (§2.10), from the Users screen (§7.20).** Anyone else asking is told the
+  account does not exist (§2.4). A token never can.
+- **Not oneself, and not an admin.** An admin made by the configured rules would be made again at every
+  request, and one stored by hand is a peer. Either way the admin role goes first.
+- **Last owners are named, not protected.** If the account is the last active owner of an employer,
+  the confirmation names that employer and suspends all the same. Admins can still act on the employer,
+  and a suspension must not be blocked by what it is meant to stop.
+- **What belongs to the employer keeps working.** Service tokens belong to the employer, not the person
+  (§2.8), and its feeds stay published. Stopping an employer is a different act, and this is not it.
+- **A reason is optional** and at most 200 characters. It goes in the audit log (§3.12), in the
+  person's own log, which they can read once reinstated.
+- **Reinstating** needs no confirmation: it is reversible. Both acts are recorded, and repeating one
+  records nothing.
+- **Viewing as a suspended account** (§2.9) is still possible, read-only, to see what it did.
+- **It is one account, not one person.** Suspension is keyed on (issuer, subject). The same person
+  signing in through another provider gets another account (§2.2).
+

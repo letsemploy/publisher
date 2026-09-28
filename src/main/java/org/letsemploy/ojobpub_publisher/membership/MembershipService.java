@@ -228,6 +228,20 @@ public class MembershipService {
     }
 
     /**
+     * The employers this person is the last active owner of (spec 2.11): what is
+     * left with nobody to administer it from inside if their account is
+     * suspended. The confirmation names them rather than refusing.
+     */
+    @Transactional(readOnly = true)
+    public List<Employer> soleOwnershipsOf(UUID userId) {
+        return membershipRepo.findByUserIdAndSuspendedAtIsNull(userId).stream()
+                .filter(m -> isLastOwner(m.getEmployer().getId(), m))
+                .map(Membership::getEmployer)
+                .sorted(Comparator.comparing(Employer::getName, String.CASE_INSENSITIVE_ORDER))
+                .toList();
+    }
+
+    /**
      * Only an active owner can be the last one: a suspended owner is already
      * unable to act, so demoting or removing them takes nothing away.
      */
