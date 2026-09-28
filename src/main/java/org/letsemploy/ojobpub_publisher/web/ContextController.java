@@ -18,11 +18,12 @@ public class ContextController {
     private final EmployerContext employerContext;
 
     @PostMapping("/context/employer")
-    public String switchEmployer(@RequestParam(required = false) String employerId,
-                                 HttpServletRequest request) {
+    public String switchEmployer(@RequestParam(required = false) String employerId) {
         employerContext.setActiveEmployerId(
                 employerId == null || employerId.isBlank() ? null : UUID.fromString(employerId));
-        return redirectBack(request);
+        // To the dashboard, not back: the screen the user was on may show a record
+        // of the employer they just left, which the new scope no longer covers.
+        return "redirect:/";
     }
 
     @PostMapping("/context/theme")
@@ -31,7 +32,7 @@ public class ContextController {
         return redirectBack(request);
     }
 
-    /** Return the user to the screen they were on, never to a fixed landing page. */
+    /** Return the user to the screen they were on: a theme changes nothing on it but the look. */
     private String redirectBack(HttpServletRequest request) {
         String referer = request.getHeader("Referer");
         if (referer != null && !referer.isBlank()) {

@@ -117,7 +117,9 @@ left out when printing.
 
 - The **employer switcher** (§2.5), a dropdown showing the active employer's name. Hidden when the
   user has exactly one employer. For admins it also offers *All employers*. Switching posts to the
-  server, which stores the choice in the session and redirects back to the current screen.
+  server, which stores the choice in the session and redirects to the dashboard (§7.10). Not back to
+  the current screen: that may show a record of the employer just left, which the new scope does not
+  cover.
 - The **user menu**: the current user, with *My activity* (§7.22), *Language*, *Theme* and *Log out*.
   For an admin it also offers *Switch to admin mode* or *Leave admin mode* (§2.10).
 - An **Admin mode** badge while admin mode is on, so it is never on unnoticed.

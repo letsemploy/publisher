@@ -3,6 +3,7 @@ package org.letsemploy.ojobpub_publisher.employer;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import java.util.Collections;
@@ -45,6 +46,19 @@ class ActiveEmployerTest {
                 // Optional.map, not Stream.map: "no active employer" is null.
                 .map(EmployerContext::getActiveEmployerId)
                 .orElse(null);
+    }
+
+    /**
+     * Switching lands on the dashboard (spec 7.3), not on the screen it came from,
+     * which may show a record of the employer just left.
+     */
+    @Test
+    void switchingGoesToTheDashboard() throws Exception {
+        mvc.perform(post("/context/employer").session(new MockHttpSession())
+                        .param("employerId", ACME)
+                        .header("Referer", "http://localhost/jobs/" + UUID.randomUUID()))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/"));
     }
 
     @Test
