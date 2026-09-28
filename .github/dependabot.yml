@@ -28,8 +28,8 @@ updates:
       docker-minor-and-patch:
         update-types: ["minor", "patch"]
 
-  # Grouped but never auto-merged: the files served are the copies committed in
-  # static/vendor/, so a bump needs `make assets` on the branch before merging.
+  # The files served are the copies committed in static/vendor/, so a bump fails
+  # the vendored-assets check until `make assets` is pushed to its branch.
   - package-ecosystem: "npm"
     directory: "/"
     schedule:
