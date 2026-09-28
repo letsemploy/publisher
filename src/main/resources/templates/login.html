@@ -12,12 +12,14 @@
 -->
 <html xmlns:th="http://www.thymeleaf.org"
       th:lang="${#locale.language}"
-      th:attr="data-bs-theme=${ui.theme}">
+      th:attr="data-bs-theme=${ui.theme}"
+      data-bs-theme-base="gray">
 <head>
     <meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
     <title th:text="#{login.title} + ' · ' + #{app.name}">Sign in · oJobPub Publisher</title>
     <link rel="stylesheet" th:href="@{/vendor/tabler.min.css}"/>
+    <link rel="stylesheet" th:href="@{/vendor/tabler-themes.min.css}"/>
     <script th:src="@{/js/theme.js}"></script>
     <link rel="stylesheet" th:href="@{/css/app.css}"/>
 </head>

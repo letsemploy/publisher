@@ -25,6 +25,7 @@ copy() { # source, name
 
 echo "Copying dist files:"
 copy "$MODULES/@tabler/core/dist/css/tabler.min.css" tabler.min.css
+copy "$MODULES/@tabler/core/dist/css/tabler-themes.min.css" tabler-themes.min.css
 copy "$MODULES/@tabler/core/dist/js/tabler.min.js"   tabler.min.js
 copy "$MODULES/htmx.org/dist/htmx.min.js"            htmx.min.js
 

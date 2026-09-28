@@ -564,6 +564,10 @@ Controls that only work with JavaScript are rendered `hidden` with `data-enhance
 module, so no screen offers a dead button — progressive enhancement is still mandatory (§7.1).
 `static/css/app.css` is the only custom stylesheet.
 
+The dark palette comes from `data-bs-theme-base="gray"` on `<html>` in `layout.html` **and**
+`login.html`, with the vendored `tabler-themes.min.css`. It matches the other letsemploy apps
+(ojobpub-sourcetracker does the same); Tabler 1.6 otherwise defaults to a neutral gray.
+
 **`login.html` is the one standalone template** (§7.19): it does not decorate `layout.html`, which
 assumes a signed-in user's sidebar, switcher and user menu. It is served by `security/LoginController`
 and permitted **by path** in the OIDC chain — `loginPage("/login").permitAll()` alone matches the

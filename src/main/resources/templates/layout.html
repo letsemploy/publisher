@@ -2,12 +2,14 @@
 <html xmlns:th="http://www.thymeleaf.org"
       xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
       th:lang="${#locale.language}"
-      th:attr="data-bs-theme=${ui.theme}">
+      th:attr="data-bs-theme=${ui.theme}"
+      data-bs-theme-base="gray">
 <head>
     <meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
     <title layout:title-pattern="$CONTENT_TITLE · $LAYOUT_TITLE" th:text="#{app.name}">ojobpub publisher</title>
     <link rel="stylesheet" th:href="@{/vendor/tabler.min.css}"/>
+    <link rel="stylesheet" th:href="@{/vendor/tabler-themes.min.css}"/>
     <script th:src="@{/js/theme.js}"></script>
     <link rel="stylesheet" th:href="@{/css/app.css}"/>
     <script defer th:src="@{/vendor/htmx.min.js}"></script>
