@@ -1,4 +1,6 @@
-# Set update schedule for GitHub Actions
+# Weekly updates, one grouped PR per ecosystem for minor and patch releases.
+# Majors fall outside the groups and still arrive one PR each, merged by hand;
+# the grouped PRs are auto-merged once CI passes (dependabot-automerge.yml).
 ---
 version: 2
 updates:
@@ -6,18 +8,32 @@ updates:
     directory: "/"
     schedule:
       interval: "weekly"
+    groups:
+      actions-minor-and-patch:
+        update-types: ["minor", "patch"]
 
   - package-ecosystem: "maven"
     directory: "/"
     schedule:
       interval: "weekly"
+    groups:
+      maven-minor-and-patch:
+        update-types: ["minor", "patch"]
 
   - package-ecosystem: "docker"
     directory: "/"
     schedule:
       interval: "weekly"
+    groups:
+      docker-minor-and-patch:
+        update-types: ["minor", "patch"]
 
+  # Grouped but never auto-merged: the files served are the copies committed in
+  # static/vendor/, so a bump needs `make assets` on the branch before merging.
   - package-ecosystem: "npm"
     directory: "/"
     schedule:
       interval: "weekly"
+    groups:
+      npm-minor-and-patch:
+        update-types: ["minor", "patch"]
