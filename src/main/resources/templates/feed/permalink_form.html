@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout}">
+<head><title th:text="${form.id != null} ? #{permalink.edit} : #{permalink.create}">Permalink</title></head>
+<body>
+<div layout:fragment="content">
+    <!-- A permalink: a URL that stays while the feed it publishes changes (spec 7.23). -->
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <form th:action="${form.id != null} ? @{'/feeds/permalinks/' + ${form.id} + '/update'} : @{/feeds/permalinks/create}" method="post">
+                <div th:replace="~{fragments/form :: errorSummary(${errors})}"></div>
+                <div class="card">
+                    <div class="card-body">
+                        <p class="text-secondary" th:text="#{permalink.intro}">A URL that stays the same.</p>
+                        <div th:replace="~{fragments/form :: input('name','label.name',${form.name},'text',true,null,${fieldErrors['name']},255)}"></div>
+                        <div th:replace="~{fragments/form :: input('description','label.description',${form.description},'text',false,null,${fieldErrors['description']},255)}"></div>
+                        <div th:replace="~{fragments/form :: select('feed','permalink.feed',${form.feedId},${feedOptions},false,'permalink.feed.none',${fieldErrors['feed']})}"></div>
+                        <div class="mb-3" th:if="${form.publicUrl != null}">
+                            <label class="form-label" th:text="#{permalink.url}">Permalink URL</label>
+                            <div class="form-control-plaintext font-monospace text-secondary text-break"
+                                 th:text="${form.publicUrl}">https://…</div>
+                        </div>
+                    </div>
+                    <div th:replace="~{fragments/form :: actions('label.save','/feeds')}"></div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+</body>
+</html>

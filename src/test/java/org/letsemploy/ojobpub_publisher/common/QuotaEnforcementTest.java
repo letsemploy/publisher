@@ -16,6 +16,8 @@ import org.letsemploy.ojobpub_publisher.employer.EmployerRepo;
 import org.letsemploy.ojobpub_publisher.employer.EmployerService;
 import org.letsemploy.ojobpub_publisher.employer.Headquarters;
 import org.letsemploy.ojobpub_publisher.feed.FeedRepo;
+import org.letsemploy.ojobpub_publisher.feed.PermalinkRepo;
+import org.letsemploy.ojobpub_publisher.feed.PermalinkService;
 import org.letsemploy.ojobpub_publisher.feed.FeedService;
 import org.letsemploy.ojobpub_publisher.invitation.InvitationRepo;
 import org.letsemploy.ojobpub_publisher.invitation.InvitationService;
@@ -40,7 +42,7 @@ import org.springframework.test.context.TestPropertySource;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * The six quotas of spec 8.4, against the real seed data.
+ * The seven quotas of spec 8.4, against the real seed data.
  *
  * <p>Every cap is set to exactly what {@code data.sql} already contains, so each
  * test is "create one more, be refused" and each has a companion proving the
@@ -56,6 +58,7 @@ import org.springframework.transaction.annotation.Transactional;
         "app.limits.feeds-per-employer=2",
         "app.limits.pending-invitations-per-employer=1",
         "app.limits.tokens-per-employer=1",
+        "app.limits.permalinks-per-employer=2",
         // The two membership quotas are off here and switched on in
         // MembershipQuotaTest. They interfere with these: an employer at its
         // member cap cannot invite anybody, which would refuse the invitation
@@ -70,6 +73,8 @@ class QuotaEnforcementTest {
     @Autowired private JobRepo jobRepo;
     @Autowired private FeedService feedService;
     @Autowired private FeedRepo feedRepo;
+    @Autowired private PermalinkService permalinkService;
+    @Autowired private PermalinkRepo permalinkRepo;
     @Autowired private InvitationService invitationService;
     @Autowired private InvitationRepo invitationRepo;
     @Autowired private ServiceTokenService tokenService;
@@ -163,6 +168,20 @@ class QuotaEnforcementTest {
                 .isInstanceOf(ValidationFailure.class);
 
         assertThatCode(() -> feedService.createDefaultFeed(fresh)).doesNotThrowAnyException();
+    }
+
+    // ------------------------------------------------------- permalinks
+
+    @Test
+    void aThirdPermalinkIsRefusedUntilOneIsDeleted() {
+        assertThat(permalinkRepo.countByEmployerId(acme.getId())).isEqualTo(2);
+        assertThatThrownBy(() -> permalinkService.save(null, acme, "Intranet", null, null, admin))
+                .isInstanceOf(ValidationFailure.class)
+                .hasMessageContaining("limit.permalinks");
+
+        permalinkService.delete(permalinkRepo.findByEmployerIdOrderByNameAsc(acme.getId()).get(0).getId(), admin);
+        assertThatCode(() -> permalinkService.save(null, acme, "Intranet", null, null, admin))
+                .doesNotThrowAnyException();
     }
 
     // ------------------------------------------------------ invitations

@@ -341,7 +341,8 @@ overridden; a hint shows the resulting canonical URL live and states in one line
 safe because old links keep working (§5.1).
 
 **Delete** — modal confirmation stating that the public URL will stop working and that consumers will
-receive `404`. Jobs are not deleted.
+receive `404`. Jobs are not deleted. Permalinks publishing the feed (§5.5) are named, since they will
+publish no jobs afterwards; the detail screen lists them too.
 
 ## 7.13 Employers
 
@@ -559,3 +560,18 @@ admin (§2.9), and what they did. It is reached from the user menu rather than t
 is about the person, not the employer being worked on. The same screen, for any user, is where an admin
 lands from the Users screen (§7.20).
 
+## 7.23 Permalinks
+
+Part of the Feeds screen (§7.12), below the feeds, rather than a destination of its own: a permalink is
+a way of publishing them.
+
+- **A list** of the employer's permalinks: name and description, the feed it publishes, and its URL
+  with a copy action and an *Open* link. With several employers in scope, a column names each one's.
+- **The switch is on the list.** Each row carries a select of the employer's feeds plus *No feed*, and
+  a *Switch* button, as a plain form: the one thing done here often, and under time pressure, needs no
+  second screen and no JavaScript. No feed is also said in words (§7.9). The confirmation says a switch
+  reaches consumers within the cache lifetime (§5.5).
+- **Create / edit** — name, description and the feed, on a form of its own. The URL is shown once the
+  permalink exists.
+- **Delete** — modal confirmation stating that the URL will stop working and consumers will receive
+  `404`, and pointing to *No feed* for anyone who meant to stop publishing but keep the URL.

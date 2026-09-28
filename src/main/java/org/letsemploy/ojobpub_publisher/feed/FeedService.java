@@ -29,6 +29,7 @@ public class FeedService {
     private final ResourceLimits limits;
     private final OjobpubService ojobpubService;
     private final AuditLog auditLog;
+    private final PermalinkService permalinkService;
 
     public List<Feed> findByEmployer(UUID employerId) {
         return feedRepo.findByEmployerIdOrderByNameAsc(employerId);
@@ -129,6 +130,9 @@ public class FeedService {
     @Transactional
     public void delete(UUID id, Actor user) {
         Feed feed = findVisible(id, user);
+        // Its permalinks now serve no jobs; the database clears their target
+        // (spec 5.5). Recorded first, while they still point here.
+        permalinkService.feedDeleted(feed, user);
         feedRepo.delete(feed);
         auditLog.record(AuditEvent.of(AuditAction.FEED_DELETED, user).in(feed.getEmployer())
                 .target(feed.getId(), feed.getName()));

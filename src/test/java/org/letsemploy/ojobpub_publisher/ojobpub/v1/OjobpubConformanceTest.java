@@ -164,6 +164,15 @@ class OjobpubConformanceTest {
         assertConforms(feed(employer()));
     }
 
+    /** A permalink with no feed publishes the employer with no jobs, validly (spec 5.5). */
+    @Test
+    void noFeedConforms() {
+        var document = service.generateEmpty(employer(), java.time.Instant.parse("2026-09-21T10:00:00Z"))
+                .getDocument();
+        assertThat(document.getJobs()).isEmpty();
+        assertThat(validator.validate(document)).as("schema violations").isEmpty();
+    }
+
     @Test
     void workTypeUsesTheHyphenatedFormTheSchemaRequires() {
         Employer employer = employer();

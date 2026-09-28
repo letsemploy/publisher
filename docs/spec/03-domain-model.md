@@ -263,7 +263,7 @@ that is refused or rolled back is not recorded, and neither is one that changes 
 | Field | Notes |
 |---|---|
 | `occurredAt` | When. |
-| `action` | What kind of event, from a fixed catalogue: an employer, job, feed, location or tag created, edited or deleted; a job's status changed; a job added to or removed from a feed; a member joined, changed role, suspended, reinstated or removed; an invitation sent, withdrawn or declined; a token created, renewed or revoked; an account created, suspended or reinstated (§2.11); admin granted or removed by the configured rules (§2.2); viewing as a user started or stopped (§2.9); admin mode switched on or off (§2.10). |
+| `action` | What kind of event, from a fixed catalogue: an employer, job, feed, location or tag created, edited or deleted; a job's status changed; a job added to or removed from a feed; a permalink created, edited, switched or deleted (§3.13); a member joined, changed role, suspended, reinstated or removed; an invitation sent, withdrawn or declined; a token created, renewed or revoked; an account created, suspended or reinstated (§2.11); admin granted or removed by the configured rules (§2.2); viewing as a user started or stopped (§2.9); admin mode switched on or off (§2.10). |
 | actor | A user, a token (§3.11) — or **the application itself**, for what nobody did by hand, such as the admin rules applied at sign-in. |
 | `employer` | Nullable. Which employer's log it belongs to. |
 | `subject` | Nullable. The person it is about, whose own log it belongs to. |
@@ -295,3 +295,20 @@ invitation to an address with no account and one to an address with an account a
 identically in the employer's log. Otherwise the log would answer the question the invite form
 refuses to (§2.6). Only the invitee's own log learns the invitation was about them.
 
+## 3.13 Permalink
+
+A stable public URL that publishes one of its employer's feeds, or none (§5.5).
+
+| Field | Type | Required | Rules |
+|---|---|---|---|
+| `id` | UUID | yes | generated; the whole of the public URL's identity |
+| `employer` | Employer | **yes** | immutable |
+| `name` | string | **yes** | 1..255, unique within the employer (case-insensitive) |
+| `description` | string | no | 0..255 |
+| `feed` | Feed | no | the feed it publishes; **one of the employer's own**. None publishes no jobs |
+
+- **Only the employer's own feeds.** Another employer's feed is refused exactly like one that does not
+  exist, so the refusal discloses nothing.
+- **Deleting the feed clears it**, and deleting the employer deletes its permalinks.
+- Created, edited, switched and deleted by the employer's members, owners and editors alike, like
+  feeds (§2.1), and counted against their own quota (§8.4).

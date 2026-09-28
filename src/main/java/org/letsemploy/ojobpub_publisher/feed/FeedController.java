@@ -25,6 +25,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import org.springframework.web.util.HtmlUtils;
 
 @Controller
 @RequestMapping("/feeds")
@@ -39,13 +40,19 @@ public class FeedController {
     private final Views views;
     private final MessageSource messages;
     private final ObjectMapper objectMapper;
+    private final PermalinkService permalinkService;
 
     @GetMapping
     public String list(Model model) {
         LocalDate today = LocalDate.now();
         List<FeedRow> rows = new ArrayList<>();
+        List<PermalinkRow> permalinks = new ArrayList<>();
         for (Employer employer : scope.employers()) {
-            for (Feed feed : feedService.findByEmployer(employer.getId())) {
+            List<Feed> feeds = feedService.findByEmployer(employer.getId());
+            // The switch offers the permalink's own employer's feeds only (spec 3.13).
+            permalinkService.findByEmployer(employer.getId())
+                    .forEach(p -> permalinks.add(views.permalinkRow(p, feeds)));
+            for (Feed feed : feeds) {
                 Feed loaded = feedService.findForPublishing(feed.getId()).orElse(feed);
                 int published = (int) loaded.getJobs().stream()
                         .filter(j -> Publication.isPublishable(j, today)).count();
@@ -54,6 +61,8 @@ public class FeedController {
         }
         model.addAttribute("page", PageMeta.of(message("nav.feeds")));
         model.addAttribute("feeds", rows);
+        model.addAttribute("permalinks", permalinks);
+        model.addAttribute("singleEmployer", scope.hasSingleEmployer());
         return "feed/list";
     }
 
@@ -62,6 +71,8 @@ public class FeedController {
                          @RequestParam(required = false) String q) {
         model.addAttribute("feed", detailView(id, q));
         Feed feed = feedService.findVisible(id, scope.user());
+        model.addAttribute("permalinks", permalinkService.pointingAt(id).stream()
+                .map(p -> views.permalinkRow(p, List.of())).toList());
         model.addAttribute("page", new PageMeta(feed.getName(), null,
                 List.of(new Crumb(message("nav.feeds"), "/feeds"), new Crumb(feed.getName(), null))));
         return "feed/detail";
@@ -185,8 +196,17 @@ public class FeedController {
     public String deleteConfirm(@PathVariable UUID id, Model model) {
         Feed feed = feedService.findVisible(id, scope.user());
         model.addAttribute("feed", Map.of("id", id.toString()));
-        model.addAttribute("message", messages.getMessage("feed.delete.body",
-                new Object[]{feed.getName()}, LocaleContextHolder.getLocale()));
+        // The modal renders its body unescaped; names are the employer's to choose.
+        String message = messages.getMessage("feed.delete.body",
+                new Object[]{HtmlUtils.htmlEscape(feed.getName())}, LocaleContextHolder.getLocale());
+        List<String> permalinks = permalinkService.pointingAt(id).stream()
+                .map(p -> HtmlUtils.htmlEscape(p.getName())).toList();
+        if (!permalinks.isEmpty()) {
+            // Said before it happens: these URLs will publish no jobs (spec 5.5).
+            message += " " + messages.getMessage("feed.delete.permalinks",
+                    new Object[]{String.join(", ", permalinks)}, LocaleContextHolder.getLocale());
+        }
+        model.addAttribute("message", message);
         return "feed/delete";
     }
 

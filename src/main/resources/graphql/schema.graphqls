@@ -7,6 +7,8 @@ type Query {
     jobs(page: Int = 0, size: Int = 20, presentation: Presentation, jobType: JobType, q: String): JobPage!
     job(id: ID!): Job
     feeds: [Feed!]!
+    "Stable URLs whose feed can be switched (spec 5.5)."
+    permalinks: [Permalink!]!
     """
     The token's employer's own locations and tags (spec 3.2, 3.4); another
     employer's are neither listed nor accepted in JobInput. They are readable
@@ -30,6 +32,13 @@ type Mutation {
     updateFeed(id: ID!, input: FeedInput!): FeedPayload!
     addJobToFeed(feedId: ID!, jobId: ID!): FeedPayload!
     removeJobFromFeed(feedId: ID!, jobId: ID!): FeedPayload!
+
+    createPermalink(input: PermalinkInput!): PermalinkPayload!
+    updatePermalink(id: ID!, input: PermalinkInput!): PermalinkPayload!
+    "Switch what the permalink publishes; a null feedId publishes no jobs (spec 5.5)."
+    setPermalinkFeed(id: ID!, feedId: ID): PermalinkPayload!
+    "The URL stops working (404) for everyone using it. To publish nothing, set no feed instead."
+    deletePermalink(id: ID!): DeletePayload!
 
     updateEmployer(input: EmployerInput!): EmployerPayload!
 
@@ -56,6 +65,7 @@ type UserError {
 
 type JobPayload { job: Job, userErrors: [UserError!]! }
 type FeedPayload { feed: Feed, userErrors: [UserError!]! }
+type PermalinkPayload { permalink: Permalink, userErrors: [UserError!]! }
 type EmployerPayload { employer: Employer, userErrors: [UserError!]! }
 """
 What an invite attempt did. SENT is deliberately returned both when an invitation
@@ -130,6 +140,16 @@ type Feed {
     jobs: [Job!]!
 }
 
+type Permalink {
+    id: ID!
+    name: String!
+    description: String
+    "The public ojobpub.json URL, which never changes (spec 5.5)."
+    url: String!
+    "What it publishes; null publishes the employer with no jobs."
+    feed: Feed
+}
+
 type Member {
     userId: ID!
     displayName: String
@@ -176,6 +196,9 @@ input JobInput {
 }
 
 input FeedInput { name: String!, slug: String, description: String }
+
+"A null or absent feedId publishes no jobs."
+input PermalinkInput { name: String!, description: String, feedId: ID }
 
 input EmployerInput { name: String!, slug: String, url: String, industry: String, headquartersId: ID }
 

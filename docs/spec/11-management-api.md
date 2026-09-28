@@ -35,13 +35,14 @@ wrong layer.
 
 ## 11.3 Shape of the schema
 
-- **Queries** read: an employer, its jobs, feeds, locations, tags, members and pending invitations.
+- **Queries** read: an employer, its jobs, feeds, permalinks, locations, tags, members and pending invitations.
   Locations and tags are the token's employer's own (§3.2, §3.4). A job input naming another
   employer's is refused in `userErrors` on `locationIds` or `tagIds`, like any unknown id.
 - **Mutations** are named for the act, not for CRUD: `createJob`, `updateJob`, `activateJob`,
   `deactivateJob`, `deleteJob`, `addJobToFeed`, `removeJobFromFeed`, `createFeed`, `updateFeed`,
   `updateEmployer`, `inviteMember`, `revokeInvitation`, `changeMemberRole`, `suspendMember`,
-  `reinstateMember`, `removeMember`. Activation
+  `reinstateMember`, `removeMember`, `createPermalink`, `updatePermalink`, `setPermalinkFeed`,
+  `deletePermalink`. Activation
   is not `updateJob(status: ACTIVE)`; it is a transition with its own rules (§4.1), and naming it so
   keeps the API honest about that.
 - **Every mutation returns a payload**, never a bare entity: the result, and a list of `userErrors`
@@ -50,6 +51,10 @@ wrong layer.
   Returning the invitation would disclose whether an address has an account — a null invitation for an
   unknown address and a populated one otherwise is precisely the oracle §2.6 forbids — so the payload
   carries `SENT`, `ALREADY_MEMBER` or `ALREADY_INVITED` and nothing else.
+- **Permalinks go with the feed scopes** (§5.5): reading them needs `FEEDS_READ`, changing them
+  `FEEDS_WRITE`. `setPermalinkFeed` with no `feedId` publishes no jobs; a feed that is not the
+  employer's is refused in `userErrors` on `feedId`, like an unknown one. It is how a deployment
+  script switches what a website shows without touching the website.
 - Enum values are the **published** spellings where one exists (§6.5), so `jobType: PERMANENT` in the
   API and `"permanent"` in the document are visibly the same thing.
 

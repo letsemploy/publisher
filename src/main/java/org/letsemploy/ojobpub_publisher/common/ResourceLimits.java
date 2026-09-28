@@ -12,9 +12,9 @@ import org.springframework.stereotype.Component;
  * and {@code api/ApiRateLimiter}, which bound the shape and rate of a request
  * rather than how much may exist.
  *
- * <p>The comparison lives here and not at the six call sites because of one
- * convention: <strong>0 means unlimited</strong>. Spread across six services,
- * that rule gets written six times and the sixth one forgets the zero, turning
+ * <p>The comparison lives here and not at the seven call sites because of one
+ * convention: <strong>0 means unlimited</strong>. Spread across seven services,
+ * that rule gets written seven times and the last one forgets the zero, turning
  * "unlimited" into "none allowed".
  *
  * <p>Counts arrive as a {@link LongSupplier} rather than a number so that an
@@ -35,6 +35,7 @@ public class ResourceLimits {
     private final int pendingInvitationsPerEmployer;
     private final int tokensPerEmployer;
     private final int membersPerEmployer;
+    private final int permalinksPerEmployer;
 
     public ResourceLimits(
             @Value("${app.limits.memberships-per-user:3}") int membershipsPerUser,
@@ -42,13 +43,15 @@ public class ResourceLimits {
             @Value("${app.limits.feeds-per-employer:10}") int feedsPerEmployer,
             @Value("${app.limits.pending-invitations-per-employer:20}") int pendingInvitations,
             @Value("${app.limits.tokens-per-employer:10}") int tokensPerEmployer,
-            @Value("${app.limits.members-per-employer:25}") int membersPerEmployer) {
+            @Value("${app.limits.members-per-employer:25}") int membersPerEmployer,
+            @Value("${app.limits.permalinks-per-employer:10}") int permalinksPerEmployer) {
         this.membershipsPerUser = membershipsPerUser;
         this.jobsPerEmployer = jobsPerEmployer;
         this.feedsPerEmployer = feedsPerEmployer;
         this.pendingInvitationsPerEmployer = pendingInvitations;
         this.tokensPerEmployer = tokensPerEmployer;
         this.membersPerEmployer = membersPerEmployer;
+        this.permalinksPerEmployer = permalinksPerEmployer;
     }
 
     /** Counts a person's own memberships; a token's membership is not a person's. */
@@ -81,6 +84,11 @@ public class ResourceLimits {
     public void requireRoomForMembers(LongSupplier current) {
         check(membersPerEmployer, current, "limit.members",
                 "This employer has reached its limit of %d members. Remove one to add another.");
+    }
+
+    public void requireRoomForPermalinks(LongSupplier current) {
+        check(permalinksPerEmployer, current, "limit.permalinks",
+                "This employer has reached its limit of %d permalinks. Delete one to add another.");
     }
 
     private void check(int limit, LongSupplier current, String key, String template) {

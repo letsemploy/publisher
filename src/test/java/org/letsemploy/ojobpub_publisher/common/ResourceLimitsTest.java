@@ -19,7 +19,7 @@ import org.letsemploy.ojobpub_publisher.common.exception.ValidationFailure;
 class ResourceLimitsTest {
 
     private static ResourceLimits limits(int all) {
-        return new ResourceLimits(all, all, all, all, all, all);
+        return new ResourceLimits(all, all, all, all, all, all, all);
     }
 
     @Test

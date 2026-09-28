@@ -138,9 +138,9 @@ carries field errors back to a form; `NotFoundException` is unchecked and handle
   derived at read time and **nothing is written as a token lapses**, which is what makes reactivating
   one a date change rather than an undo, and what keeps this project free of a scheduler. Revoked
   outranks expired: one is permanent, the other is not.
-- `common/ResourceLimits.java` — the six creation quotas of §8.4 and, more importantly, the two rules
-  around them: **`0` means unlimited**, and a quota refuses **at** the cap. Spread across six services
-  those get written six times and one of them forgets the zero, turning "unlimited" into "none". It
+- `common/ResourceLimits.java` — the seven creation quotas of §8.4 and, more importantly, the two rules
+  around them: **`0` means unlimited**, and a quota refuses **at** the cap. Spread across seven services
+  those get written seven times and one of them forgets the zero, turning "unlimited" into "none". It
   takes a `LongSupplier`, so a disabled quota issues no `COUNT` at all. It injects no repositories —
   `common` depends on nothing, and each service owns the repository that answers its own count.
 
@@ -155,6 +155,23 @@ The document is built by `OjobpubService` and validated by `OjobpubValidator` ag
 schema at `src/main/resources/ojobpub/v1/ojobpub.schema.json` (upstream:
 `https://raw.githubusercontent.com/letsemploy/schema/refs/heads/main/v1/ojobpub.json`). The feed screen
 shows a validity badge from the same validator.
+
+**Permalinks** (`feed/Permalink*`, §3.13, §5.5): `GET /ojobpub/v1/permalink/{uuid}/ojobpub.json` serves
+whichever of its employer's feeds it points at — **served, never redirected** — or, with no feed, a
+valid document with the employer and no jobs (`OjobpubService.generateEmpty`). The point is a URL a
+website configures once while the feed behind it is switched.
+- **The served date only moves forward:** `PermalinkService.publish` takes the later of the document's
+  `lastUpdated` and the permalink's own `lastModifiedAt`, and `retarget` stamps it. Without that,
+  switching to an older feed moves `Last-Modified` backwards and Spring answers a revalidating cache
+  `304` with the old document.
+- **Only the employer's own feeds**, checked in the service (`ownFeed`); a stranger's is refused like
+  an unknown id, field `feed` (API: `feedId`).
+- **Deleting a feed clears its permalinks in `PermalinkService.feedDeleted`**, called by
+  `FeedService.delete` before the delete. The FK's `ON DELETE SET NULL` is only the backstop for bulk
+  deletes: left to the database, the loaded permalinks still reference the removed feed at flush and
+  Hibernate throws.
+- Managed on the Feeds list (`PermalinkController`, `/feeds/permalinks/...`), with the switch as a
+  plain form per row; in the API under the feed scopes.
 
 ### Authentication and roles
 
@@ -419,7 +436,7 @@ the employer's log and the member's — so the two logs cannot disagree.
 
 ### Resource limits (`common/ResourceLimits.java`, §8.4)
 
-Six configurable creation quotas under `app.limits.*`, defaults in `application.properties`, `0` =
+Seven configurable creation quotas under `app.limits.*`, defaults in `application.properties`, `0` =
 unlimited. Checked in the services at the single creation method for each resource. Two exemptions that
 must stay: `FeedService.createDefaultFeed` (an employer without its `all` feed is broken) and every
 edit path — only creation is refused.
@@ -629,9 +646,11 @@ TEST_DB=sqlite ./mvnw test                   # all, on SQLite; no server
 ./mvnw test -Dtest=MemberSuspensionScreenTest # suspending and reinstating from the People screen
 ./mvnw test -Dtest=AccountSuspensionTest     # suspending accounts: admins only, never self or an admin
 ./mvnw test -Dtest=ResourceLimitsTest        # the quota convention; no Spring, no database
-./mvnw test -Dtest=QuotaEnforcementTest      # the six quotas against the seed data
+./mvnw test -Dtest=QuotaEnforcementTest      # the seven quotas against the seed data
 ./mvnw test -Dtest=MessageBundleTest         # the two bundles, at parity
 ./mvnw test -Dtest=TokenLifecycleTest        # the expiry boundaries; no Spring, no database
+./mvnw test -Dtest=PermalinkServingTest      # the permalink URL: switched, empty, dated forward, 404/301
+./mvnw test -Dtest=PermalinkServiceTest      # own feeds only, members only, what the log records
 ./mvnw test -Dtest=ServiceTokenExpiryTest    # expiry, renewal and what renewal must not touch
 make assets                                  # refresh vendored front-end deps (needs Node)
 ```

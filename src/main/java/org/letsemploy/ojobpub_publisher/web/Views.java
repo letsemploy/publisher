@@ -5,13 +5,16 @@ import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.letsemploy.ojobpub_publisher.audit.AuditEvent;
 import org.letsemploy.ojobpub_publisher.employer.Employer;
 import org.letsemploy.ojobpub_publisher.feed.Feed;
+import org.letsemploy.ojobpub_publisher.feed.Permalink;
 import org.letsemploy.ojobpub_publisher.job.Job;
 import org.letsemploy.ojobpub_publisher.job.JobStatusEvent;
 import org.letsemploy.ojobpub_publisher.invitation.Invitation;
@@ -42,7 +45,7 @@ public class Views {
     private final MessageSource messages;
 
     /** An instant as every screen shows one. */
-    public static String timestamp(java.time.Instant instant) {
+    public static String timestamp(Instant instant) {
         return TIMESTAMP.format(instant);
     }
 
@@ -53,6 +56,26 @@ public class Views {
     public String feedUrl(Feed feed) {
         return baseUrl + "/ojobpub/v1/" + feed.getEmployer().getUrlSegment()
                 + "/" + feed.getUrlSegment() + "/ojobpub.json";
+    }
+
+    /** A permalink's URL: the id alone, since it names no one feed (spec 5.5). */
+    public String permalinkUrl(Permalink permalink) {
+        return baseUrl + "/ojobpub/v1/permalink/" + permalink.getId() + "/ojobpub.json";
+    }
+
+    /**
+     * A permalink as the Feeds screen lists it.
+     *
+     * @param feeds the employer's feeds, for the switch
+     */
+    public PermalinkRow permalinkRow(Permalink permalink, List<Feed> feeds) {
+        Map<String, String> options = new LinkedHashMap<>();
+        feeds.forEach(f -> options.put(f.getId().toString(), f.getName()));
+        Feed feed = permalink.getFeed();
+        return new PermalinkRow(permalink.getId().toString(), permalink.getName(),
+                permalink.getDescription(), permalink.getEmployer().getName(),
+                feed == null ? null : feed.getId().toString(), feed == null ? null : feed.getName(),
+                permalinkUrl(permalink), options);
     }
 
     public PublicationStatus status(Job job, LocalDate today) {

@@ -44,6 +44,9 @@ public final class ApiTypes {
                           List<JobDto> jobs) {
     }
 
+    public record PermalinkDto(String id, String name, String description, String url, FeedDto feed) {
+    }
+
     public record MemberDto(String userId, String displayName, String email, String role,
                             boolean suspended, String suspendedAt) {
     }
@@ -65,6 +68,12 @@ public final class ApiTypes {
     public record FeedPayload(FeedDto feed, List<UserError> userErrors) {
         public static FeedPayload ok(FeedDto feed) {
             return new FeedPayload(feed, List.of());
+        }
+    }
+
+    public record PermalinkPayload(PermalinkDto permalink, List<UserError> userErrors) {
+        public static PermalinkPayload ok(PermalinkDto permalink) {
+            return new PermalinkPayload(permalink, List.of());
         }
     }
 

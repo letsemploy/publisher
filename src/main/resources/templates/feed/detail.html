@@ -14,6 +14,11 @@
             <svg th:replace="~{fragments/icon :: i('external-link','icon')}"></svg>
             <span th:text="#{label.open}">Open</span>
         </a>
+        <!-- Any member may delete a feed (spec 2.1); the modal says what stops
+             working, and names the permalinks left publishing nothing (spec 7.12). -->
+        <button class="btn btn-ghost-danger"
+                th:attr="hx-get=@{'/feeds/' + ${feed.id} + '/delete'},hx-target='#modal-container'"
+                th:text="#{label.delete}">Delete</button>
     </div>
 </div>
 
@@ -36,6 +41,16 @@
                 </span>
             </div>
             <small class="form-hint" th:text="#{feed.url.hint}">Anyone with this link can read the feed.</small>
+            <!-- What else serves this feed, so editing or deleting it holds no surprise (spec 7.12). -->
+            <div class="mt-3" th:unless="${permalinks.isEmpty()}">
+                <div class="form-label" th:text="#{permalink.pointingHere}">Permalinks publishing this feed</div>
+                <ul class="mb-0">
+                    <li th:each="p : ${permalinks}">
+                        <span th:text="${p.name}">Careers page</span>
+                        <span class="text-secondary font-monospace small ms-1" th:text="${p.publicUrl}">url</span>
+                    </li>
+                </ul>
+            </div>
         </div>
     </div>
 

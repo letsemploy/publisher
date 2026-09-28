@@ -88,3 +88,33 @@ human rather than buried in a log.
 - `Cache-Control: public, max-age=300` by default, configurable per deployment.
 - Because the date window (§4.4) is time-dependent, cached documents must not be held beyond the end of
   the current day; the cache key **must** include the evaluation date.
+
+## 5.5 Permalinks
+
+```
+GET /ojobpub/v1/permalink/{permalinkId}/ojobpub.json
+```
+
+A feed's URL publishes that feed and nothing else. A website or a webserver configured with it can
+only change what it shows by changing the feed: removing jobs, or deactivating them. A **permalink**
+(§3.13) is a URL that stays the same while the feed it publishes is switched — to another of the
+employer's feeds, or to none. Configure it once; take every job down, or publish a different
+selection, with one switch.
+
+- **Identity is the UUID alone.** A permalink names no one feed, so the segment has no slug and no
+  underscore. A malformed segment or an unknown permalink is `404` with the same JSON body as §5.1; an
+  upper-case UUID answers `301` to the lower-case form.
+- **Served, not redirected.** The body is the document of the feed it points at, byte for byte in its
+  jobs and employer, with the same headers as §5.1: anonymous, `GET` only, CORS open, cacheable. A
+  redirect would fail every consumer that does not follow one, and would hand out the feed's own URL.
+  Nothing in the document or the headers names the feed.
+- **No feed publishes the employer with no jobs** — a valid document, not an error, so switching
+  everything off is a switch and nothing reading the URL breaks. Deleting a feed leaves every
+  permalink on it publishing no jobs, and the feed's delete confirmation names them (§7.12).
+- **The date only moves forward.** `lastUpdated`, and with it `Last-Modified`, is the later of the
+  document's own (§5.4) and the permalink's last change. Switching to a feed that changed long ago
+  would otherwise move the date backwards, and a cache revalidating with `If-Modified-Since` would
+  keep the old document.
+- **A switch reaches consumers within the cache lifetime** (`max-age`, five minutes by default). The
+  back-office says so when it confirms one.
+- Deleting a permalink ends its URL: `404`, like a deleted feed.

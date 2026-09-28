@@ -9,19 +9,22 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.letsemploy.ojobpub_publisher.feed.Feed;
 import org.letsemploy.ojobpub_publisher.feed.FeedService;
+import org.letsemploy.ojobpub_publisher.feed.Permalink;
+import org.letsemploy.ojobpub_publisher.feed.PermalinkService;
 import org.letsemploy.ojobpub_publisher.ojobpub.v1.dto.OjobpubDto;
 import org.springframework.http.CacheControl;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.servlet.view.RedirectView;
 
 /**
  * The public feed endpoint (spec 5.1):
- * {@code /ojobpub/v1/{employerSlug}_{employerId}/{feedSlug}_{feedId}/ojobpub.json}
+ * {@code /ojobpub/v1/{employerSlug}_{employerId}/{feedSlug}_{feedId}/ojobpub.json},
+ * and the permalink endpoint (spec 5.5): {@code /ojobpub/v1/permalink/{id}/ojobpub.json}.
  *
  * <p>Anonymous, cacheable, GET only. Identity lives in the UUID; the slug is
  * decorative, so a stale slug still resolves and redirects to the canonical URL.
@@ -40,7 +43,12 @@ public class OjobpubController {
             "^(?<slug>[a-z0-9-]+)_(?<id>[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}"
                     + "-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})$");
 
+    /** A bare UUID: a permalink has no slug, since it names no one feed (spec 5.5). */
+    private static final Pattern PERMALINK = Pattern.compile(
+            "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$");
+
     private final FeedService feedService;
+    private final PermalinkService permalinkService;
 
     @GetMapping(value = "/ojobpub/v1/{employerSegment}/{feedSegment}/ojobpub.json",
             produces = MediaType.APPLICATION_JSON_VALUE)
@@ -63,22 +71,48 @@ public class OjobpubController {
         }
         Feed feed = found.get();
 
-        // URLs repair themselves: an old link keeps working and is nudged onward.
         String canonicalEmployer = feed.getEmployer().getUrlSegment();
         String canonicalFeed = feed.getUrlSegment();
         if (!canonicalEmployer.equals(employerSegment) || !canonicalFeed.equals(feedSegment)) {
-            String canonical = "/ojobpub/v1/" + canonicalEmployer + "/" + canonicalFeed + "/ojobpub.json";
-            RedirectView redirect = new RedirectView(canonical);
-            redirect.setStatusCode(org.springframework.http.HttpStatus.MOVED_PERMANENTLY);
-            return ResponseEntity.status(org.springframework.http.HttpStatus.MOVED_PERMANENTLY)
-                    .header("Location", canonical).build();
+            return movedTo("/ojobpub/v1/" + canonicalEmployer + "/" + canonicalFeed + "/ojobpub.json");
         }
+        return ok(feedService.publish(feed).getDocument());
+    }
 
-        OjobpubDto document = feedService.publish(feed).getDocument();
+    /**
+     * A permalink (spec 5.5): the document of whichever feed it points at, or the
+     * employer with no jobs. Served here, never redirected, so a consumer that
+     * does not follow redirects works and the feed's own URL is never handed out.
+     */
+    @GetMapping(value = "/ojobpub/v1/permalink/{id}/ojobpub.json",
+            produces = MediaType.APPLICATION_JSON_VALUE)
+    @CrossOrigin(origins = "*")
+    public ResponseEntity<?> permalink(@PathVariable String id) {
+        if (!PERMALINK.matcher(id).matches()) {
+            return notFound();
+        }
+        UUID permalinkId = UUID.fromString(id.toLowerCase());
+        Optional<Permalink> found = permalinkService.findForPublishing(permalinkId);
+        if (found.isEmpty()) {
+            return notFound();
+        }
+        // One spelling per resource, as for a feed (spec 5.1).
+        if (!id.equals(permalinkId.toString())) {
+            return movedTo("/ojobpub/v1/permalink/" + permalinkId + "/ojobpub.json");
+        }
+        return ok(permalinkService.publish(found.get()));
+    }
+
+    private static ResponseEntity<?> ok(OjobpubDto document) {
         return ResponseEntity.ok()
                 .cacheControl(CacheControl.maxAge(Duration.ofMinutes(5)).cachePublic())
                 .lastModified(document.getLastUpdated())
                 .body(document);
+    }
+
+    /** URLs repair themselves: an old link keeps working and is nudged onward. */
+    private static ResponseEntity<?> movedTo(String canonical) {
+        return ResponseEntity.status(HttpStatus.MOVED_PERMANENTLY).header("Location", canonical).build();
     }
 
     /** Feed callers are machines, so errors are JSON and never an HTML page (spec 8.2). */

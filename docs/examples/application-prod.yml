@@ -66,6 +66,7 @@ app:
     pending-invitations-per-employer: 20
     tokens-per-employer: 10
     members-per-employer: 25
+    permalinks-per-employer: 10
 
   # Service tokens for the management API (spec 2.8): the lifetime in months
   # (0 = never expires) and how many days ahead the register flags an expiry.

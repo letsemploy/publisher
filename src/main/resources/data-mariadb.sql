@@ -90,6 +90,15 @@ INSERT INTO feed_jobs (feed_id, job_id) VALUES
   ('cd58289d-022e-4a1e-df83-7e5f60718293', 'de69390e-133f-4b2f-e094-8f6071829301')
 ON DUPLICATE KEY UPDATE feed_id = feed_id;
 
+-- Permalinks (spec 3.13): one publishing a feed, one publishing nothing, so both
+-- states render and serve.
+INSERT INTO permalinks (id, created_at, last_modified_at, employer_id, name, description, feed_id) VALUES
+  ('5a5a5a5a-5a5a-4a5a-8a5a-5a5a5a5a5a5a', now(), now(), '003d6aec-021b-11f1-aefa-f649a5d91690',
+   'Careers page', 'The jobs on acme.example/careers.', 'de69390e-133f-4b2f-e094-8f6071829304'),
+  ('5b5b5b5b-5b5b-4b5b-8b5b-5b5b5b5b5b5b', now(), now(), '003d6aec-021b-11f1-aefa-f649a5d91690',
+   'Partner board', NULL, NULL)
+ON DUPLICATE KEY UPDATE id = id;
+
 -- The development administrator (spec 2.3): a real record, because anything keyed
 -- on user identity is otherwise unreachable locally and in the tests.
 INSERT INTO users (id, created_at, last_modified_at, issuer, subject, email, display_name, role) VALUES

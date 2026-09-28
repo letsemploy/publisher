@@ -54,6 +54,88 @@
             </table>
         </div>
     </div>
+
+    <!-- Permalinks (spec 7.23): a URL that stays while the feed it publishes is
+         switched. The switch is a plain form, so it works without JavaScript. -->
+    <div class="card mt-3" id="permalinks">
+        <div class="card-header">
+            <h3 class="card-title" th:text="#{permalink.title}">Permalinks</h3>
+            <div class="card-actions">
+                <a class="btn btn-sm" th:href="@{/feeds/permalinks/create}">
+                    <svg th:replace="~{fragments/icon :: i('plus','icon')}"></svg>
+                    <span th:text="#{permalink.create}">New permalink</span>
+                </a>
+            </div>
+        </div>
+        <div class="card-body">
+            <p class="text-secondary mb-0" th:text="#{permalink.intro}">A URL that stays the same.</p>
+        </div>
+        <div class="card-body border-top text-secondary" th:if="${permalinks.isEmpty()}"
+             th:text="#{permalink.empty}">No permalinks yet.</div>
+        <div class="table-responsive" th:unless="${permalinks.isEmpty()}">
+            <table class="table table-vcenter card-table">
+                <thead>
+                <tr>
+                    <th th:text="#{label.name}">Name</th>
+                    <th th:unless="${singleEmployer}" th:text="#{nav.employers}">Employer</th>
+                    <th th:text="#{permalink.feed}">Publishes</th>
+                    <th th:text="#{permalink.url}">URL</th>
+                    <th class="w-1"></th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="p : ${permalinks}">
+                    <td>
+                        <span class="fw-bold" th:text="${p.name}">Careers page</span>
+                        <div class="text-secondary small" th:if="${p.description != null}" th:text="${p.description}">desc</div>
+                    </td>
+                    <td th:unless="${singleEmployer}" th:text="${p.employerName}">Acme</td>
+                    <td>
+                        <form class="d-flex gap-2" th:action="@{'/feeds/permalinks/' + ${p.id} + '/target'}" method="post">
+                            <label class="visually-hidden" th:for="'feed-' + ${p.id}" th:text="#{permalink.feed}">Publishes</label>
+                            <select class="form-select form-select-sm" name="feed" th:id="'feed-' + ${p.id}">
+                                <option value="" th:selected="${p.feedId == null}" th:text="#{permalink.feed.none}">No feed</option>
+                                <option th:each="o : ${p.feedOptions}" th:value="${o.key}" th:text="${o.value}"
+                                        th:selected="${o.key == p.feedId}">Feed</option>
+                            </select>
+                            <button type="submit" class="btn btn-sm" th:text="#{permalink.switch}">Switch</button>
+                        </form>
+                        <!-- In words, not only as a selected option (spec 7.9). -->
+                        <div class="text-secondary small mt-1" th:if="${p.feedId == null}"
+                             th:text="#{permalink.publishesNothing}">Publishes no jobs.</div>
+                    </td>
+                    <td>
+                        <div class="input-group input-group-flat">
+                            <input type="text" class="form-control form-control-sm font-monospace" readonly
+                                   th:value="${p.publicUrl}" th:aria-label="#{permalink.url}"/>
+                            <span class="input-group-text">
+                                <button type="button" class="btn btn-link link-secondary p-0 border-0"
+                                        th:title="#{label.copy}" th:aria-label="#{label.copy}"
+                                        th:attr="data-copied-label=#{label.copied}"
+                                        data-action="copy" data-enhanced hidden>
+                                    <svg th:replace="~{fragments/icon :: i('copy','icon')}"></svg>
+                                </button>
+                            </span>
+                        </div>
+                    </td>
+                    <td class="text-nowrap">
+                        <a class="btn btn-sm" th:href="${p.publicUrl}" target="_blank" rel="noopener">
+                            <svg th:replace="~{fragments/icon :: i('external-link','icon')}"></svg>
+                            <span th:text="#{label.open}">Open</span>
+                        </a>
+                        <a class="btn btn-sm" th:href="@{'/feeds/permalinks/' + ${p.id} + '/update'}">
+                            <svg th:replace="~{fragments/icon :: i('pencil','icon')}"></svg>
+                            <span th:text="#{label.edit}">Edit</span>
+                        </a>
+                        <button class="btn btn-sm btn-ghost-danger"
+                                th:attr="hx-get=@{'/feeds/permalinks/' + ${p.id} + '/delete'},hx-target='#modal-container'"
+                                th:text="#{label.delete}">Delete</button>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
 </div>
 </body>
 </html>

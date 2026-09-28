@@ -46,6 +46,7 @@ may exist is a question the application has to answer rather than leave to good 
 | Pending invitations per employer | `app.limits.pending-invitations-per-employer` | 20 |
 | Service tokens per employer | `app.limits.tokens-per-employer` | 10 |
 | Members per employer | `app.limits.members-per-employer` | 25 |
+| Permalinks per employer (§3.13) | `app.limits.permalinks-per-employer` | 10 |
 
 - **`0` means unlimited.** A single-installation team has no abuse problem to solve, and a quota that
   cannot be removed is an obstacle rather than a protection.

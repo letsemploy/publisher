@@ -40,6 +40,8 @@ class ScreenRenderingTest {
     private static final String JOB_INCOMPLETE = "de69390e-133f-4b2f-e094-8f6071829301";
     private static final String FEED_ALL = "cd58289d-022e-4a1e-df83-7e5f60718293";
     private static final String MEMBER = "44444444-4444-4444-8444-444444444444";
+    /** The seeded permalink publishing the Engineering feed. */
+    private static final String PERMALINK = "5a5a5a5a-5a5a-4a5a-8a5a-5a5a5a5a5a5a";
     private static final String TOKEN = "77777777-7777-4777-8777-777777777777";
 
     @Autowired
@@ -61,6 +63,8 @@ class ScreenRenderingTest {
                 "/feeds", "/feeds/create", "/feeds/" + FEED_ALL,
                 "/feeds/" + FEED_ALL + "/update", "/feeds/" + FEED_ALL + "/delete",
                 "/feeds/" + FEED_ALL + "/candidates",
+                "/feeds/permalinks/create", "/feeds/permalinks/" + PERMALINK + "/update",
+                "/feeds/permalinks/" + PERMALINK + "/delete",
                 "/employers", "/employers/create", "/employers/" + EMPLOYER,
                 "/employers/" + EMPLOYER + "/update", "/employers/" + EMPLOYER + "/delete",
                 "/locations", "/locations/create",
@@ -262,6 +266,16 @@ class ScreenRenderingTest {
                 .contains("Must be an absolute http(s) URL.")
                 .contains("value=\"not-a-url\"")
                 .contains("value=\"Engineering\"");
+    }
+
+    /**
+     * A feed can be deleted from its own screen, through the confirmation that
+     * names the permalinks publishing it (spec 7.12) - not only by typing the URL.
+     */
+    @Test
+    void aFeedOffersItsDeleteConfirmation() throws Exception {
+        assertThat(html("/feeds/" + FEED_ALL)).contains("hx-get=\"/feeds/" + FEED_ALL + "/delete\"");
+        assertThat(html("/feeds/de69390e-133f-4b2f-e094-8f6071829304/delete")).contains("Careers page");
     }
 
     /** The feed screen shows the canonical URL of spec 5.1 and explains omissions. */

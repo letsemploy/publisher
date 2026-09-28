@@ -10,6 +10,8 @@ import org.letsemploy.ojobpub_publisher.feed.Feed;
 import org.letsemploy.ojobpub_publisher.invitation.Invitation;
 import org.letsemploy.ojobpub_publisher.employer.EmployerService;
 import org.letsemploy.ojobpub_publisher.feed.FeedService;
+import org.letsemploy.ojobpub_publisher.feed.Permalink;
+import org.letsemploy.ojobpub_publisher.feed.PermalinkService;
 import org.letsemploy.ojobpub_publisher.job.Job;
 import org.letsemploy.ojobpub_publisher.job.JobService;
 import org.letsemploy.ojobpub_publisher.job.Publication;
@@ -38,6 +40,7 @@ public class ApiMapper {
     private final Views views;
     private final JobService jobService;
     private final FeedService feedService;
+    private final PermalinkService permalinkService;
     private final EmployerService employerService;
     private final MembershipService membershipService;
 
@@ -59,6 +62,11 @@ public class ApiMapper {
     @Transactional(readOnly = true)
     public FeedDto readFeed(UUID id, Actor actor) {
         return feed(feedService.findVisible(id, actor), LocalDate.now());
+    }
+
+    @Transactional(readOnly = true)
+    public PermalinkDto readPermalink(UUID id, Actor actor) {
+        return permalink(permalinkService.findVisible(id, actor), LocalDate.now());
     }
 
     @Transactional(readOnly = true)
@@ -110,6 +118,12 @@ public class ApiMapper {
         return new FeedDto(feed.getId().toString(), feed.getName(), feed.getSlug(),
                 feed.getDescription(), views.feedUrl(feed),
                 feed.getJobs().stream().map(job -> job(job, today)).toList());
+    }
+
+    public PermalinkDto permalink(Permalink permalink, LocalDate today) {
+        return new PermalinkDto(permalink.getId().toString(), permalink.getName(),
+                permalink.getDescription(), views.permalinkUrl(permalink),
+                permalink.getFeed() == null ? null : feed(permalink.getFeed(), today));
     }
 
     public MemberDto member(Membership membership) {

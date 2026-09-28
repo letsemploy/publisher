@@ -60,6 +60,10 @@ class ManagementApiTest {
     /** Mara Member, an editor of Acme. */
     private static final String MEMBER = "44444444-4444-4444-8444-444444444444";
     private static final String HEADQUARTERS = "2c2e59d5-0b1a-11f1-938c-42a3421a666f";
+    private static final String FEED_ALL = "cd58289d-022e-4a1e-df83-7e5f60718293";
+    private static final String FEED_ENGINEERING = "de69390e-133f-4b2f-e094-8f6071829304";
+    /** The seeded permalink publishing Engineering; "Partner board" publishes nothing. */
+    private static final String CAREERS = "5a5a5a5a-5a5a-4a5a-8a5a-5a5a5a5a5a5a";
 
     @Autowired
     private MockMvc mvc;
@@ -82,6 +86,9 @@ class ManagementApiTest {
         jdbc.update("DELETE FROM employers WHERE name LIKE 'Other Co %'");
         // The seed suspends nobody, so any suspension is one of ours.
         jdbc.update("UPDATE memberships SET suspended_at = NULL");
+        // Permalinks: ours by name, and the seeded one put back on its feed.
+        jdbc.update("DELETE FROM permalinks WHERE name LIKE 'API %'");
+        jdbc.update("UPDATE permalinks SET feed_id = ? WHERE id = ?", FEED_ENGINEERING, CAREERS);
     }
 
     private Actor devAdmin() {
@@ -390,5 +397,66 @@ class ManagementApiTest {
         assertThat(response.path("errors").isMissingNode()).isTrue();
         assertThat(response.path("data").path("suspendMember").path("userErrors")
                 .findValuesAsText("code")).containsExactly("LAST_OWNER");
+    }
+
+    // ----------------------------------------------------------- permalinks
+
+    @Test
+    void permalinksAreReadWithWhatTheyPublish() throws Exception {
+        JsonNode permalinks = query(tokenWith(TokenScope.FEEDS_READ),
+                "{ permalinks { id name url feed { name } } }").path("data").path("permalinks");
+        assertThat(permalinks.findValuesAsText("name")).contains("Careers page", "Partner board");
+        for (JsonNode permalink : permalinks) {
+            assertThat(permalink.path("url").asText())
+                    .endsWith("/ojobpub/v1/permalink/" + permalink.path("id").asText() + "/ojobpub.json");
+            if (permalink.path("name").asText().equals("Careers page")) {
+                assertThat(permalink.path("feed").path("name").asText()).isEqualTo("Engineering");
+            }
+            if (permalink.path("name").asText().equals("Partner board")) {
+                assertThat(permalink.path("feed").isNull()).isTrue();
+            }
+        }
+    }
+
+    /** A deploy script's whole use: create once, then switch what the URL publishes. */
+    @Test
+    void aPermalinkIsCreatedSwitchedAndDeleted() throws Exception {
+        String secret = tokenWith(TokenScope.FEEDS_WRITE);
+        JsonNode created = query(secret, "mutation { createPermalink(input: {name: \"API page\", feedId: \""
+                + FEED_ALL + "\"}) { permalink { id feed { name } } userErrors { field } } }")
+                .path("data").path("createPermalink");
+        assertThat(created.path("userErrors")).isEmpty();
+        assertThat(created.path("permalink").path("feed").path("name").asText()).isEqualTo("All jobs");
+        String id = created.path("permalink").path("id").asText();
+
+        JsonNode cleared = query(secret, "mutation { setPermalinkFeed(id: \"" + id
+                + "\", feedId: null) { permalink { feed { name } } userErrors { field } } }")
+                .path("data").path("setPermalinkFeed");
+        assertThat(cleared.path("userErrors")).isEmpty();
+        assertThat(cleared.path("permalink").path("feed").isNull()).isTrue();
+        String published = mvc.perform(get("/ojobpub/v1/permalink/" + id + "/ojobpub.json"))
+                .andReturn().getResponse().getContentAsString();
+        assertThat(json.readTree(published).path("jobs")).isEmpty();
+
+        assertThat(query(secret, "mutation { deletePermalink(id: \"" + id + "\") { deletedId } }")
+                .path("data").path("deletePermalink").path("deletedId").asText()).isEqualTo(id);
+    }
+
+    /** Not one of the employer's feeds is a refusal - data, naming the argument (spec 11.4). */
+    @Test
+    void anotherFeedIdIsAUserErrorOnFeedId() throws Exception {
+        JsonNode response = query(tokenWith(TokenScope.FEEDS_WRITE), "mutation { setPermalinkFeed(id: \""
+                + CAREERS + "\", feedId: \"" + UUID.randomUUID() + "\") { permalink { id } userErrors { field } } }");
+        assertThat(response.path("errors").isMissingNode()).isTrue();
+        assertThat(response.path("data").path("setPermalinkFeed").path("userErrors")
+                .findValuesAsText("field")).containsExactly("feedId");
+    }
+
+    @Test
+    void aFeedsReadTokenCannotSwitchAPermalink() throws Exception {
+        assertThat(firstErrorCode(query(tokenWith(TokenScope.FEEDS_READ), "mutation { setPermalinkFeed(id: \""
+                + CAREERS + "\", feedId: null) { permalink { id } } }"))).isEqualTo("FORBIDDEN");
+        assertThat(firstErrorCode(query(tokenWith(TokenScope.JOBS_WRITE), "{ permalinks { id } }")))
+                .isEqualTo("FORBIDDEN");
     }
 }
