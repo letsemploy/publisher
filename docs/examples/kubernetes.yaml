@@ -1,0 +1,208 @@
+# Example Kubernetes deployment for ojobpub publisher.
+#
+# It runs the prod profile against a MariaDB server you already have, behind an
+# ingress that terminates TLS. The configuration file is the one beside this
+# example, loaded into a ConfigMap unchanged, so there is one file to maintain:
+#
+#   kubectl create namespace ojobpub
+#   kubectl -n ojobpub create configmap ojobpub-config \
+#     --from-file=application-prod.yml=docs/examples/application-prod.yml
+#   kubectl -n ojobpub apply -f docs/examples/kubernetes.yaml
+#
+# Adjust application-prod.yml first (admins, limits), then recreate the
+# ConfigMap and restart the deployment to apply a change:
+#
+#   kubectl -n ojobpub rollout restart deployment/ojobpub
+#
+# Replace every example.com value and every "change-me" below. A variable that
+# is not set is NOT caught at startup (see application-prod.yml).
+#
+# For SQLite instead of MariaDB, follow the three "SQLite:" comments below.
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: ojobpub
+  namespace: ojobpub
+type: Opaque
+stringData:
+  # The public address people and job boards use; every feed URL is built from
+  # it. Must match the ingress host below.
+  APP_BASE_URL: https://jobs.example.com
+  # MariaDB. The database must exist; tables are created and upgraded on start.
+  # SQLite: delete these five.
+  DB_HOST: mariadb.example.svc.cluster.local
+  DB_PORT: "3306"
+  DB_NAME: ojobpub
+  DB_USERNAME: ojobpub
+  DB_PASSWORD: change-me
+  # The identity provider's confidential client, with the redirect URI
+  # https://jobs.example.com/login/oauth2/code/oidc and the post-logout
+  # redirect https://jobs.example.com/login?logout.
+  OIDC_ISSUER_URI: https://login.example.com/realms/example
+  OIDC_CLIENT_ID: ojobpub-publisher
+  OIDC_CLIENT_SECRET: change-me
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ojobpub
+  namespace: ojobpub
+  labels:
+    app.kubernetes.io/name: ojobpub
+spec:
+  # One replica. Sessions and the API rate limit are held in memory, per
+  # instance: with several, a sign-in on one pod is unknown to the next.
+  # SQLite allows exactly one writer in any case.
+  replicas: 1
+  strategy:
+    # Stop the old pod before starting the new one. Required for SQLite, whose
+    # volume is ReadWriteOnce and whose file must not have two writers; with
+    # MariaDB, RollingUpdate works too, at the cost of the sessions above.
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: ojobpub
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: ojobpub
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        # Makes a mounted volume writable for that group (the SQLite file).
+        fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: ojobpub
+          # Pin a release. 0.3 follows its patch releases; main is the latest
+          # build and not meant for production.
+          image: ghcr.io/letsemploy/publisher:0.3
+          ports:
+            - name: http
+              containerPort: 8080
+          env:
+            # SQLite: "prod,sqlite", and add
+            #   - name: APP_SQLITE_PATH
+            #     value: /data/ojobpub.db
+            - name: SPRING_PROFILES_ACTIVE
+              value: prod
+          envFrom:
+            - secretRef:
+                name: ojobpub
+          volumeMounts:
+            # Spring Boot reads ./config/, and the image's working directory
+            # is /, so this is /config/application-prod.yml.
+            - name: config
+              mountPath: /config
+              readOnly: true
+            # Tomcat's work directory. Needed because the root filesystem is
+            # read-only.
+            - name: tmp
+              mountPath: /tmp
+            # SQLite: uncomment, together with the volume and the claim below.
+            # - name: data
+            #   mountPath: /data
+          # The image is tuned for 512 MB (JAVA_TOOL_OPTIONS in the image;
+          # setting your own replaces them). The heap is capped at half the
+          # limit, so raising the limit raises the heap with it.
+          resources:
+            requests:
+              cpu: 250m
+              memory: 512Mi
+            limits:
+              memory: 512Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: [ALL]
+          # Spring Boot turns on the liveness and readiness groups by itself
+          # when it runs in Kubernetes. Both are public and show no details.
+          # Startup takes about 13 s on 2 CPUs and more on less, hence the
+          # startup probe's allowance of up to five minutes.
+          startupProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: http
+            periodSeconds: 5
+            failureThreshold: 60
+          livenessProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: http
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /actuator/health/readiness
+              port: http
+            periodSeconds: 10
+      # server.shutdown is graceful in application-prod.yml; give it time.
+      terminationGracePeriodSeconds: 40
+      volumes:
+        - name: config
+          configMap:
+            name: ojobpub-config
+        - name: tmp
+          emptyDir: {}
+        # SQLite:
+        # - name: data
+        #   persistentVolumeClaim:
+        #     claimName: ojobpub-data
+---
+# SQLite: uncomment. The database is one file; back this volume up.
+# apiVersion: v1
+# kind: PersistentVolumeClaim
+# metadata:
+#   name: ojobpub-data
+#   namespace: ojobpub
+# spec:
+#   accessModes: [ReadWriteOnce]
+#   resources:
+#     requests:
+#       storage: 1Gi
+# ---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ojobpub
+  namespace: ojobpub
+spec:
+  selector:
+    app.kubernetes.io/name: ojobpub
+  ports:
+    - name: http
+      port: 80
+      targetPort: http
+---
+# TLS ends here. application-prod.yml trusts the X-Forwarded-* headers
+# (server.forward-headers-strategy), which is what makes the OIDC redirect an
+# https:// address; that is only safe because the Service is reachable through
+# this ingress alone. Do not expose it with a NodePort or LoadBalancer as well.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ojobpub
+  namespace: ojobpub
+  annotations:
+    # For cert-manager; drop it if the certificate comes from elsewhere.
+    cert-manager.io/cluster-issuer: letsencrypt
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts: [jobs.example.com]
+      secretName: ojobpub-tls
+  rules:
+    - host: jobs.example.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: ojobpub
+                port:
+                  name: http

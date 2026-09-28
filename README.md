@@ -61,7 +61,7 @@ docker run -d --name ojobpub -p 8080:8080 -v ojobpub-data:/data \
   start.
 - **Memory.** The image runs in a 512 MB container at about 400 MB resident. Its JVM options are set
   in `JAVA_TOOL_OPTIONS`, and setting your own replaces them.
-- **Monitoring.** Actuator and the Prometheus metrics are served on the same port as the application.
+- **Health.** `/actuator/health` answers up or down, without details, on the application's port.
 
 ### Configuration files
 
@@ -75,6 +75,8 @@ demo data, which production should not have.
   Cloud Console and explain how to limit sign-in to your own Workspace organisation.
 - **Several providers at once:** use
   [`docs/examples/application-providers.yml`](docs/examples/application-providers.yml) instead.
+- **Kubernetes:** [`docs/examples/kubernetes.yaml`](docs/examples/kubernetes.yaml) runs it with the
+  prod file in a ConfigMap, secrets in a Secret, health probes and an ingress, on MariaDB or SQLite.
 
 ### First steps
 
