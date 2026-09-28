@@ -197,13 +197,14 @@ class ScreenRenderingTest {
 
     /**
      * Until the user chooses, the theme follows the system (spec 7.3): "auto" on
-     * <html>, and the stylesheet that turns it dark under prefers-color-scheme.
+     * <html>, resolved by theme.js - loaded without defer or async, or the page
+     * would paint light before turning dark.
      */
     @Test
     void aFreshSessionFollowsTheSystemTheme() throws Exception {
         assertThat(html("/jobs"))
                 .containsPattern("<html[^>]*data-bs-theme=\"auto\"")
-                .contains("/vendor/tabler-auto.css");
+                .containsPattern("<script src=\"/js/theme\\.js\"></script>");
     }
 
     @Test

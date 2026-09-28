@@ -143,11 +143,12 @@ at 360 px width.
 
 **Theme** — Tabler light and dark themes are both supported. The choice is stored server-side with the
 user and rendered into the `<html>` element on the first response, so there is no flash of the wrong
-theme and no JavaScript involved. There are three choices — *System*, *Light* and *Dark* — and
-*System* is the default: it renders `data-bs-theme="auto"`, which a `prefers-color-scheme` media query
-turns dark when the operating system is, via CSS only. Choosing *Light* or *Dark* overrides it until
-*System* is chosen again. The menu offers all three rather than a toggle, because without JavaScript the
-server cannot know what the system prefers. Printing is always light.
+theme. There are three choices — *System*, *Light* and *Dark* — and *System* is the default: it renders
+`data-bs-theme="auto"`, which a small synchronous script in `<head>` (`theme.js`, not deferred, so it
+runs before the first paint) resolves to light or dark from the operating system's preference, following
+it while the page is open. *Light* and *Dark* need no JavaScript; without it, *System* shows light.
+Choosing *Light* or *Dark* overrides the system until *System* is chosen again. The menu offers all
+three rather than a toggle, because the server cannot know what the system prefers.
 
 **Dev banner** — when authentication is bypassed (§2.3), a persistent, high-contrast banner is pinned
 above the top bar on every screen.

@@ -28,11 +28,6 @@ copy "$MODULES/@tabler/core/dist/css/tabler.min.css" tabler.min.css
 copy "$MODULES/@tabler/core/dist/js/tabler.min.js"   tabler.min.js
 copy "$MODULES/htmx.org/dist/htmx.min.js"            htmx.min.js
 
-# The system theme (spec 7.3): Tabler's dark rules again, for data-bs-theme="auto"
-# under prefers-color-scheme. Needs only python3, so it also runs without Node.
-echo "Deriving the system theme:"
-python3 scripts/tabler-auto-theme.py "$VENDOR/tabler.min.css" "$VENDOR/tabler-auto.css"
-
 # The sprite carries only the icons actually referenced, from BOTH sources:
 # templates use fragments/icon, and the sidebar's icon names live in Java.
 echo "Building the icon sprite from referenced icons only:"
