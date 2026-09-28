@@ -20,5 +20,6 @@ import org.springframework.web.context.annotation.SessionScope;
 public class EmployerContext implements Serializable {
 
     private UUID activeEmployerId;
-    private String theme = "light";
+    /** {@code auto} follows the operating system until the user chooses (spec 7.3). */
+    private String theme = "auto";
 }

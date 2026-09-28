@@ -150,12 +150,16 @@
                        th:classappend="${l == #locale.language} ? 'active'"
                        th:text="#{'lang.' + ${l}}">English</a>
                     <div class="dropdown-divider"></div>
-                    <form th:action="@{/context/theme}" method="post" hx-boost="false">
-                        <input type="hidden" name="theme" th:value="${ui.theme == 'dark'} ? 'light' : 'dark'"/>
-                        <button type="submit" class="dropdown-item">
-                            <svg th:replace="~{fragments/icon :: i('moon','icon dropdown-item-icon')}"></svg>
-                            <span th:text="${ui.theme == 'dark'} ? #{theme.light} : #{theme.dark}">Dark mode</span>
-                        </button>
+                    <h6 class="dropdown-header" th:text="#{label.theme}">Theme</h6>
+                    <!-- Three choices, not a toggle: without JavaScript the server cannot know
+                         what the system prefers, and a toggle could never return to it. -->
+                    <form th:each="t : ${ {'auto', 'light', 'dark'} }"
+                          th:action="@{/context/theme}" method="post" hx-boost="false">
+                        <input type="hidden" name="theme" th:value="${t}"/>
+                        <button type="submit" class="dropdown-item"
+                                th:classappend="${t == ui.theme} ? 'active'"
+                                th:attr="aria-current=${t == ui.theme} ? 'true' : null"
+                                th:text="#{'theme.' + ${t}}">System</button>
                     </form>
                     <div class="dropdown-divider"></div>
                     <form th:action="@{/logout}" method="post">

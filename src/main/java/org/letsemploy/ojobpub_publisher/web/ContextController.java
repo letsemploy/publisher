@@ -28,7 +28,10 @@ public class ContextController {
 
     @PostMapping("/context/theme")
     public String switchTheme(@RequestParam String theme, HttpServletRequest request) {
-        employerContext.setTheme("dark".equals(theme) ? "dark" : "light");
+        employerContext.setTheme(switch (theme) {
+            case "light", "dark" -> theme;
+            default -> "auto";
+        });
         return redirectBack(request);
     }
 

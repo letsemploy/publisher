@@ -192,7 +192,18 @@ class ScreenRenderingTest {
     /** The attribute the theme actually depends on is on <html>, and reflects the session. */
     @Test
     void themeIsRenderedOnTheHtmlElement() throws Exception {
-        assertThat(html("/jobs")).containsPattern("<html[^>]*data-bs-theme=\"(light|dark)\"");
+        assertThat(html("/jobs")).containsPattern("<html[^>]*data-bs-theme=\"(auto|light|dark)\"");
+    }
+
+    /**
+     * Until the user chooses, the theme follows the system (spec 7.3): "auto" on
+     * <html>, and the stylesheet that turns it dark under prefers-color-scheme.
+     */
+    @Test
+    void aFreshSessionFollowsTheSystemTheme() throws Exception {
+        assertThat(html("/jobs"))
+                .containsPattern("<html[^>]*data-bs-theme=\"auto\"")
+                .contains("/vendor/tabler-auto.css");
     }
 
     @Test

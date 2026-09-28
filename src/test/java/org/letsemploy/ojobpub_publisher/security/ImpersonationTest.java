@@ -159,6 +159,9 @@ class ImpersonationTest {
                 .andExpect(status().is3xxRedirection())
                 .andExpect(flash().attributeCount(0));
         assertThat(page("/")).contains("data-bs-theme=\"dark\"");
+        mvc.perform(post("/context/theme").session(session).param("theme", "auto"))
+                .andExpect(status().is3xxRedirection());
+        assertThat(page("/")).contains("data-bs-theme=\"auto\"");
     }
 
     // ----------------------------------------------------------------- limits
