@@ -289,6 +289,31 @@ class ScreenRenderingTest {
                 .contains("Schema valid");
     }
 
+    /**
+     * The dashboard offers the permalink URLs a website is configured with, and not
+     * the feeds' own URLs, which are for testing (spec 7.10).
+     */
+    @Test
+    void theDashboardShowsPermalinkUrlsNotFeedUrls() throws Exception {
+        String body = html("/");
+        assertThat(body)
+                .contains("/ojobpub/v1/permalink/" + PERMALINK + "/ojobpub.json")
+                .contains("Careers page")
+                .doesNotContain("acme-ag_" + EMPLOYER);
+    }
+
+    /** A feed's screen leads with the permalinks publishing it; its own URL is for testing (spec 7.12). */
+    @Test
+    void theFeedScreenLeadsWithItsPermalinks() throws Exception {
+        String engineering = html("/feeds/de69390e-133f-4b2f-e094-8f6071829304");
+        assertThat(engineering)
+                .contains("/ojobpub/v1/permalink/" + PERMALINK + "/ojobpub.json")
+                .contains("Feed URL, for testing");
+        assertThat(engineering.indexOf("/ojobpub/v1/permalink/"))
+                .isLessThan(engineering.indexOf("acme-ag_" + EMPLOYER));
+        assertThat(html("/feeds/" + FEED_ALL)).contains("No permalink publishes this feed");
+    }
+
     /** Owners get the API tokens destination; the sidebar is where it is found. */
     @Test
     void theSidebarOffersApiTokensToAnOwner() throws Exception {

@@ -10,10 +10,6 @@
             <svg th:replace="~{fragments/icon :: i('pencil','icon')}"></svg>
             <span th:text="#{label.edit}">Edit</span>
         </a>
-        <a class="btn btn-primary" th:href="${feed.publicUrl}" target="_blank" rel="noopener">
-            <svg th:replace="~{fragments/icon :: i('external-link','icon')}"></svg>
-            <span th:text="#{label.open}">Open</span>
-        </a>
         <!-- Any member may delete a feed (spec 2.1); the modal says what stops
              working, and names the permalinks left publishing nothing (spec 7.12). -->
         <button class="btn btn-ghost-danger"
@@ -24,32 +20,40 @@
 
 <div layout:fragment="content">
 
+    <!-- The URL a website is configured with is a permalink's, not the feed's own:
+         it stays while the feed behind it is switched (spec 5.5, 7.12). Naming them here
+         also means editing or deleting the feed holds no surprise. -->
     <div class="card mb-3">
-        <div class="card-body">
-            <label class="form-label" th:text="#{feed.publicUrl}">Public URL</label>
-            <div class="input-group input-group-flat">
-                <input type="text" class="form-control font-monospace" readonly th:value="${feed.publicUrl}"
-                       th:aria-label="#{feed.publicUrl}"/>
-                <span class="input-group-text">
-                    <!-- Hidden until app.js reveals it; the URL itself is selectable without JS. -->
-                    <button type="button" class="btn btn-link link-secondary p-0 border-0"
-                            th:title="#{label.copy}" th:aria-label="#{label.copy}"
-                            th:attr="data-copied-label=#{label.copied}"
-                            data-action="copy" data-enhanced hidden>
-                        <svg th:replace="~{fragments/icon :: i('copy','icon')}"></svg>
-                    </button>
-                </span>
-            </div>
-            <small class="form-hint" th:text="#{feed.url.hint}">Anyone with this link can read the feed.</small>
-            <!-- What else serves this feed, so editing or deleting it holds no surprise (spec 7.12). -->
-            <div class="mt-3" th:unless="${permalinks.isEmpty()}">
-                <div class="form-label" th:text="#{permalink.pointingHere}">Permalinks publishing this feed</div>
-                <ul class="mb-0">
-                    <li th:each="p : ${permalinks}">
-                        <span th:text="${p.name}">Careers page</span>
-                        <span class="text-secondary font-monospace small ms-1" th:text="${p.publicUrl}">url</span>
-                    </li>
-                </ul>
+        <div class="card-header">
+            <h3 class="card-title" th:text="#{permalink.pointingHere}">Permalinks publishing this feed</h3>
+        </div>
+        <div class="card-body" th:if="${permalinks.isEmpty()}">
+            <p class="text-secondary mb-2" th:text="#{feed.noPermalink}">No permalink publishes this feed.</p>
+            <a class="btn btn-sm" th:href="@{/feeds/permalinks/create}">
+                <svg th:replace="~{fragments/icon :: i('plus','icon')}"></svg>
+                <span th:text="#{permalink.create}">New permalink</span>
+            </a>
+        </div>
+        <div class="card-body" th:unless="${permalinks.isEmpty()}">
+            <div th:each="p, it : ${permalinks}" th:classappend="${!it.last} ? 'mb-3'">
+                <label class="form-label" th:for="'permalink-' + ${p.id}" th:text="${p.name}">Careers page</label>
+                <div class="input-group input-group-flat">
+                    <input type="text" class="form-control font-monospace" readonly th:id="'permalink-' + ${p.id}"
+                           th:value="${p.publicUrl}"/>
+                    <span class="input-group-text">
+                        <!-- Hidden until app.js reveals it; the URL itself is selectable without JS. -->
+                        <button type="button" class="btn btn-link link-secondary p-0 border-0"
+                                th:title="#{label.copy}" th:aria-label="#{label.copy}"
+                                th:attr="data-copied-label=#{label.copied}"
+                                data-action="copy" data-enhanced hidden>
+                            <svg th:replace="~{fragments/icon :: i('copy','icon')}"></svg>
+                        </button>
+                    </span>
+                    <a class="btn" th:href="${p.publicUrl}" target="_blank" rel="noopener">
+                        <svg th:replace="~{fragments/icon :: i('external-link','icon')}"></svg>
+                        <span th:text="#{label.open}">Open</span>
+                    </a>
+                </div>
             </div>
         </div>
     </div>
@@ -80,6 +84,31 @@
         </div>
         <div class="card-body">
             <pre class="json-preview bg-surface-secondary p-3 rounded" th:text="${feed.jsonPreview}">{}</pre>
+        </div>
+        <!-- The feed's own URL (spec 5.1) is for testing; collapsed, and without JavaScript. -->
+        <div class="card-footer">
+            <details>
+                <summary class="text-secondary" th:text="#{feed.testUrl}">Feed URL, for testing</summary>
+                <div class="mt-2">
+                    <div class="input-group input-group-flat">
+                        <input type="text" class="form-control font-monospace" readonly th:value="${feed.publicUrl}"
+                               th:aria-label="#{feed.testUrl}"/>
+                        <span class="input-group-text">
+                            <button type="button" class="btn btn-link link-secondary p-0 border-0"
+                                    th:title="#{label.copy}" th:aria-label="#{label.copy}"
+                                    th:attr="data-copied-label=#{label.copied}"
+                                    data-action="copy" data-enhanced hidden>
+                                <svg th:replace="~{fragments/icon :: i('copy','icon')}"></svg>
+                            </button>
+                        </span>
+                        <a class="btn" th:href="${feed.publicUrl}" target="_blank" rel="noopener">
+                            <svg th:replace="~{fragments/icon :: i('external-link','icon')}"></svg>
+                            <span th:text="#{label.open}">Open</span>
+                        </a>
+                    </div>
+                    <small class="form-hint" th:text="#{feed.testUrl.hint}">For a website, use a permalink.</small>
+                </div>
+            </details>
         </div>
     </div>
 </div>

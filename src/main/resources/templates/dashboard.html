@@ -53,7 +53,6 @@
                 <tr>
                     <th th:text="#{label.name}">Name</th>
                     <th th:text="#{feed.publishedJobs}">Published</th>
-                    <th th:text="#{feed.publicUrl}">URL</th>
                 </tr>
                 </thead>
                 <tbody>
@@ -63,8 +62,61 @@
                         <span class="badge bg-green-lt" th:text="${f.publishedCount}">0</span>
                         <span class="text-secondary ms-1" th:text="#{feed.ofMembers(${f.memberCount})}">of 0</span>
                     </td>
-                    <td class="text-secondary text-truncate" style="max-width:24rem">
-                        <a th:href="${f.publicUrl}" th:text="${f.publicUrl}" target="_blank" rel="noopener">url</a>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- The URLs a website is configured with: a permalink's, not a feed's own (spec 7.10). -->
+    <div class="card mt-3">
+        <div class="card-header">
+            <h3 class="card-title" th:text="#{permalink.title}">Permalinks</h3>
+            <div class="card-actions">
+                <a class="btn btn-sm" th:href="@{/feeds/permalinks/create}">
+                    <svg th:replace="~{fragments/icon :: i('plus','icon')}"></svg>
+                    <span th:text="#{permalink.create}">New permalink</span>
+                </a>
+            </div>
+        </div>
+        <div class="card-body text-secondary" th:if="${dashboard.permalinks.isEmpty()}"
+             th:text="#{permalink.empty}">No permalinks yet.</div>
+        <div class="table-responsive" th:unless="${dashboard.permalinks.isEmpty()}">
+            <table class="table table-vcenter card-table">
+                <thead>
+                <tr>
+                    <th th:text="#{label.name}">Name</th>
+                    <th th:unless="${singleEmployer}" th:text="#{nav.employers}">Employer</th>
+                    <th th:text="#{permalink.feed}">Publishes</th>
+                    <th th:text="#{permalink.url}">URL</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="p : ${dashboard.permalinks}">
+                    <td class="fw-bold" th:text="${p.name}">Careers page</td>
+                    <td th:unless="${singleEmployer}" th:text="${p.employerName}">Acme</td>
+                    <td>
+                        <a th:if="${p.feedId != null}" th:href="@{'/feeds/' + ${p.feedId}}" th:text="${p.feedName}">Feed</a>
+                        <!-- In words, not only by absence (spec 7.9). -->
+                        <span class="text-secondary" th:if="${p.feedId == null}" th:text="#{permalink.feed.none}">No feed</span>
+                    </td>
+                    <td>
+                        <div class="input-group input-group-flat">
+                            <input type="text" class="form-control form-control-sm font-monospace" readonly
+                                   th:value="${p.publicUrl}" th:aria-label="#{permalink.url}"/>
+                            <span class="input-group-text">
+                                <button type="button" class="btn btn-link link-secondary p-0 border-0"
+                                        th:title="#{label.copy}" th:aria-label="#{label.copy}"
+                                        th:attr="data-copied-label=#{label.copied}"
+                                        data-action="copy" data-enhanced hidden>
+                                    <svg th:replace="~{fragments/icon :: i('copy','icon')}"></svg>
+                                </button>
+                            </span>
+                            <a class="btn btn-sm" th:href="${p.publicUrl}" target="_blank" rel="noopener">
+                                <svg th:replace="~{fragments/icon :: i('external-link','icon')}"></svg>
+                                <span th:text="#{label.open}">Open</span>
+                            </a>
+                        </div>
                     </td>
                 </tr>
                 </tbody>

@@ -7,12 +7,14 @@ import lombok.RequiredArgsConstructor;
 import org.letsemploy.ojobpub_publisher.employer.Employer;
 import org.letsemploy.ojobpub_publisher.feed.Feed;
 import org.letsemploy.ojobpub_publisher.feed.FeedService;
+import org.letsemploy.ojobpub_publisher.feed.PermalinkService;
 import org.letsemploy.ojobpub_publisher.job.Job;
 import org.letsemploy.ojobpub_publisher.job.JobService;
 import org.letsemploy.ojobpub_publisher.job.Publication;
 import org.letsemploy.ojobpub_publisher.web.view.DashboardView;
 import org.letsemploy.ojobpub_publisher.web.view.FeedRow;
 import org.letsemploy.ojobpub_publisher.web.view.PageMeta;
+import org.letsemploy.ojobpub_publisher.web.view.PermalinkRow;
 import org.letsemploy.ojobpub_publisher.web.Scope;
 import org.letsemploy.ojobpub_publisher.web.Views;
 import org.springframework.context.MessageSource;
@@ -29,6 +31,7 @@ public class IndexController {
     private final Scope scope;
     private final JobService jobService;
     private final FeedService feedService;
+    private final PermalinkService permalinkService;
     private final Views views;
     private final MessageSource messages;
 
@@ -38,7 +41,11 @@ public class IndexController {
         int[] counts = jobService.dashboardCounts(scope.employerIds());
 
         List<FeedRow> feedRows = new ArrayList<>();
+        List<PermalinkRow> permalinks = new ArrayList<>();
         for (Employer employer : scope.employers()) {
+            // The URLs a website uses; a feed's own URL is for testing (spec 7.10).
+            permalinkService.findByEmployer(employer.getId())
+                    .forEach(p -> permalinks.add(views.permalinkRow(p, List.of())));
             for (Feed feed : feedService.findByEmployer(employer.getId())) {
                 Feed loaded = feedService.findForPublishing(feed.getId()).orElse(feed);
                 int published = 0;
@@ -56,7 +63,8 @@ public class IndexController {
 
         model.addAttribute("page", PageMeta.of(message("nav.dashboard")));
         model.addAttribute("dashboard",
-                new DashboardView(counts[0], counts[1], counts[2], counts[3], feedRows));
+                new DashboardView(counts[0], counts[1], counts[2], counts[3], feedRows, permalinks));
+        model.addAttribute("singleEmployer", scope.hasSingleEmployer());
         return "dashboard";
     }
 

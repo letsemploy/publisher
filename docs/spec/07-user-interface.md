@@ -286,8 +286,12 @@ browsers already provide type-ahead on a native select, so no library is warrant
 ## 7.10 Dashboard
 
 The landing screen for the active employer. Cards show counts of **published**, **draft**, **expired**
-and **inactive** jobs, and a feed summary listing each feed with its published job count and public URL.
-Every figure links to the list already filtered to it.
+and **inactive** jobs, and a feed summary listing each feed with its published job count. Every figure
+links to the list already filtered to it.
+
+Below it, the employer's permalinks (§5.5): name, the feed each publishes — or *No feed*, in words — and
+its URL with a copy action and an *Open* link. These are the URLs a website is configured with, so the
+dashboard shows them and not the feeds' own URLs, which are for testing (§7.12).
 
 Any feed currently omitting a job at serving time (§5.3) appears as a prominent warning card naming the
 feed and the count, linking to the feed screen. A quiet dashboard means the feeds are healthy, and that
@@ -319,12 +323,17 @@ will disappear from.
 
 ## 7.12 Feeds
 
-**List** — every feed of the active employer: name, published job count, public URL with a copy action,
-and last publication change.
+**List** — every feed of the active employer: name, published job count and last publication change. The
+feed's own URL is offered only as a quiet *Test* link: it is for trying a feed out, while a website is
+configured with a permalink (§5.5, §7.23), whose URL stays when the feed behind it is switched.
 
 **Detail** — the operational centre of the product:
 
-- The canonical public URL (§5.1) as one copyable string with an *Open* link.
+- **The permalinks publishing this feed** lead the screen, each with its URL as one copyable string and
+  an *Open* link. With none, the screen says that a website should use a permalink and offers to create
+  one.
+- The canonical feed URL (§5.1), labelled as being for testing, collapsed beside the JSON preview —
+  copyable and with an *Open* link once expanded, but never the first URL a user is offered.
 - **Job selection** — two panels side by side: jobs in this feed, and the employer's remaining jobs,
   each with its own search and filters, add/remove as fragment swaps on the affected rows only. Only
   the same employer's jobs are offerable (§3.5). On narrow screens the panels stack into tabs.
@@ -342,7 +351,7 @@ safe because old links keep working (§5.1).
 
 **Delete** — modal confirmation stating that the public URL will stop working and that consumers will
 receive `404`. Jobs are not deleted. Permalinks publishing the feed (§5.5) are named, since they will
-publish no jobs afterwards; the detail screen lists them too.
+publish no jobs afterwards; the detail screen lists them first.
 
 ## 7.13 Employers
 

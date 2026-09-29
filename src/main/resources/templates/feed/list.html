@@ -40,13 +40,15 @@
                     </td>
                     <td class="text-secondary" th:text="${f.lastChanged}">date</td>
                     <td>
-                        <a class="btn btn-sm" th:href="${f.publicUrl}" target="_blank" rel="noopener">
-                            <svg th:replace="~{fragments/icon :: i('external-link','icon')}"></svg>
-                            <span th:text="#{label.open}">Open</span>
-                        </a>
                         <a class="btn btn-sm" th:href="@{'/feeds/' + ${f.id}}">
                             <svg th:replace="~{fragments/icon :: i('eye','icon')}"></svg>
                             <span th:text="#{label.details}">Details</span>
+                        </a>
+                        <!-- The feed's own URL is for testing; websites use a permalink (spec 7.12). -->
+                        <a class="btn btn-sm btn-ghost-secondary" th:href="${f.publicUrl}" target="_blank" rel="noopener"
+                           th:title="#{feed.test.title}">
+                            <svg th:replace="~{fragments/icon :: i('external-link','icon')}"></svg>
+                            <span th:text="#{feed.test}">Test</span>
                         </a>
                     </td>
                 </tr>
