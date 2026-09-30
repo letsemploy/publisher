@@ -179,6 +179,20 @@ class LocalAccountTest {
                 .andExpect(redirectedUrl("/login?error"));
     }
 
+    /** The address survives a failed attempt, once, and never travels in the URL (spec 7.7). */
+    @Test
+    void aFailedSignInKeepsTheAddressButNotThePassword() throws Exception {
+        String email = verifiedAccount("Ada");
+        MvcResult failed = mvc.perform(from(post("/login").param("email", email).param("password", "wrong one")))
+                .andExpect(redirectedUrl("/login?error")).andReturn();
+        MockHttpSession session = (MockHttpSession) failed.getRequest().getSession(false);
+
+        String page = mvc.perform(get("/login?error").session(session)).andReturn().getResponse().getContentAsString();
+        assertThat(page).contains("value=\"" + email + "\"").doesNotContain("wrong one");
+        assertThat(mvc.perform(get("/login").session(session)).andReturn().getResponse().getContentAsString())
+                .as("only once").doesNotContain(email);
+    }
+
     @Test
     void changingThePasswordEndsEveryOtherSessionButThisOne() throws Exception {
         String email = verifiedAccount("Ada");

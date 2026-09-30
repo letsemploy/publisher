@@ -18,6 +18,9 @@ public class LoginController {
 
     private final CurrentUserService currentUserService;
     private final LoginOptions loginOptions;
+    /** The address of the last failed sign-in, shown once more so it need not be typed again. */
+    static final String LAST_EMAIL = LoginController.class.getName() + ".lastEmail";
+
     private final boolean localAccounts;
     private final org.letsemploy.ojobpub_publisher.account.LoginAttempts attempts;
     private final org.letsemploy.ojobpub_publisher.account.CaptchaCheck captcha;
@@ -51,6 +54,12 @@ public class LoginController {
         model.addAttribute("verified", request.getParameterMap().containsKey("verified"));
         model.addAttribute("passwordReset", request.getParameterMap().containsKey("reset"));
         model.addAttribute("expired", request.getParameterMap().containsKey("expired"));
+        // Only what this visitor typed a moment ago, and only once (spec 7.7).
+        var session = request.getSession(false);
+        if (session != null) {
+            model.addAttribute("email", session.getAttribute(LAST_EMAIL));
+            session.removeAttribute(LAST_EMAIL);
+        }
         // After repeated failures from here, or when a sign-in was just refused for
         // want of one, the form carries the captcha (spec 2.12).
         boolean captchaMissing = request.getParameterMap().containsKey("captcha");

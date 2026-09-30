@@ -229,7 +229,16 @@ public class SecurityConfig {
                             .usernameParameter("email")
                             .authenticationDetailsSource(request ->
                                     new LoginDetails(request, captcha.tokenParameterName()))
-                            .failureHandler(failure)
+                            .failureHandler((request, response, exception) -> {
+                                // Typed once is enough: the page shows the address again
+                                // (LoginController), kept in the session rather than the URL,
+                                // where it would reach logs and referrers.
+                                String email = request.getParameter("email");
+                                if (email != null && !email.isBlank() && email.length() <= 255) {
+                                    request.getSession().setAttribute(LoginController.LAST_EMAIL, email.trim());
+                                }
+                                failure.onAuthenticationFailure(request, response, exception);
+                            })
                             .defaultSuccessUrl("/", true));
         }
 

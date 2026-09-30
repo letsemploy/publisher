@@ -73,13 +73,14 @@
                 <form th:if="${localAccounts and !loggedOut}" th:action="@{/login}" method="post" class="mb-3">
                     <div class="mb-3">
                         <label class="form-label" for="email" th:text="#{login.email}">Email</label>
+                        <!-- Kept after a failed attempt, and then the password has the focus. -->
                         <input class="form-control" id="email" name="email" type="email" required
-                               autocomplete="username"/>
+                               autocomplete="username" th:value="${email}" th:autofocus="${email == null}"/>
                     </div>
                     <div class="mb-2">
                         <label class="form-label" for="password" th:text="#{login.password}">Password</label>
                         <input class="form-control" id="password" name="password" type="password" required
-                               autocomplete="current-password"/>
+                               autocomplete="current-password" th:autofocus="${email != null}"/>
                     </div>
                     <div class="mb-3 text-end">
                         <a class="small" th:href="@{/password/forgot}" th:text="#{login.forgot}">Forgot your password?</a>
