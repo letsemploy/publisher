@@ -5,25 +5,6 @@
 <head><title th:text="#{nav.dashboard}">Dashboard</title></head>
 <body>
 <div layout:fragment="content">
-
-    <!-- A quiet dashboard must mean the feeds are healthy (spec 7.10) -->
-    <div class="alert alert-warning" role="alert" th:if="${!dashboard.unhealthyFeeds.isEmpty()}">
-        <div class="d-flex">
-            <svg th:replace="~{fragments/icon :: i('alert-triangle','icon alert-icon')}"></svg>
-            <div class="mx-3">
-                <h4 class="alert-title" th:text="#{dashboard.excluded.title}">Jobs are being omitted</h4>
-                <div class="text-secondary">
-                    <ul class="mb-0">
-                        <li th:each="f : ${dashboard.unhealthyFeeds}">
-                            <a th:href="@{'/feeds/' + ${f.id}}" th:text="${f.name}">feed</a>
-                            <span th:text="#{dashboard.excluded.count(${f.excludedCount})}">1 job omitted</span>
-                        </li>
-                    </ul>
-                </div>
-            </div>
-        </div>
-    </div>
-
     <div class="row row-cards">
         <div class="col-sm-6 col-lg-3" th:each="stat : ${ {
                 {'published', dashboard.published, 'green'},

@@ -12,9 +12,4 @@ public record DashboardView(
         List<PermalinkRow> permalinks,
         /** Clicks on the job links in the published documents (spec 5.6, 7.10). */
         ClicksView clicks) {
-
-    /** Feeds currently omitting a job at serving time warrant a warning card (spec 7.10). */
-    public List<FeedRow> getUnhealthyFeeds() {
-        return feeds.stream().filter(f -> f.excludedCount() > 0).toList();
-    }
 }

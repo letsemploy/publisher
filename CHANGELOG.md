@@ -8,6 +8,11 @@ Section numbers such as §5.6 refer to the specification in [`docs/SPEC.md`](doc
 
 ## [Unreleased]
 
+### Removed
+
+- The dashboard's warning about jobs omitted from published feeds; the status counts and the Feeds
+  screens already show them (§7.10).
+
 ## [0.6.0] - 2026-09-30
 
 ### Added

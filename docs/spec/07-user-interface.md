@@ -297,9 +297,9 @@ Below it, the employer's permalinks (§5.5): name, the feed each publishes — o
 its URL with a copy action and an *Open* link. These are the URLs a website is configured with, so the
 dashboard shows them and not the feeds' own URLs, which are for testing (§7.12).
 
-Any feed currently omitting a job at serving time (§5.3) appears as a prominent warning card naming the
-feed and the count, linking to the feed screen. A quiet dashboard means the feeds are healthy, and that
-must be true at a glance.
+The dashboard carries no separate warning for jobs a feed leaves out at serving time (§5.3): the status
+counts above already show how many are expired, drafts or inactive, and the Feeds list and each feed's
+screen name the omitted jobs and why (§7.12).
 
 A **clicks** card shows how the job links (§5.6) were followed over the last 30 days (configurable): the
 most clicked jobs, most first, each linking to its job and with its employer when the scope covers more
