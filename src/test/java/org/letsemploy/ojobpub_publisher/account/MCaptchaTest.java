@@ -49,7 +49,7 @@ class MCaptchaTest {
         String policy = mvc.perform(get("/register")).andReturn().getResponse().getHeader("Content-Security-Policy");
         assertThat(policy).contains("frame-src https://mcaptcha.example.org").contains("script-src 'self'")
                 .doesNotContain("script-src 'self' https");
-        String strict = mvc.perform(get("/login")).andReturn().getResponse().getHeader("Content-Security-Policy");
+        String strict = mvc.perform(get("/jobs")).andReturn().getResponse().getHeader("Content-Security-Policy");
         assertThat(strict).doesNotContain("frame-src");
     }
 }

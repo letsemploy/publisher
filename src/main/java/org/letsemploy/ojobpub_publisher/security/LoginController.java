@@ -19,12 +19,18 @@ public class LoginController {
     private final CurrentUserService currentUserService;
     private final LoginOptions loginOptions;
     private final boolean localAccounts;
+    private final org.letsemploy.ojobpub_publisher.account.LoginAttempts attempts;
+    private final org.letsemploy.ojobpub_publisher.account.CaptchaCheck captcha;
 
     public LoginController(CurrentUserService currentUserService, LoginOptions loginOptions,
-                           org.letsemploy.ojobpub_publisher.account.LocalAccountProperties localAccounts) {
+                           org.letsemploy.ojobpub_publisher.account.LocalAccountProperties localAccounts,
+                           org.letsemploy.ojobpub_publisher.account.LoginAttempts attempts,
+                           org.letsemploy.ojobpub_publisher.account.CaptchaCheck captcha) {
         this.currentUserService = currentUserService;
         this.loginOptions = loginOptions;
         this.localAccounts = localAccounts.enabled();
+        this.attempts = attempts;
+        this.captcha = captcha;
     }
 
     @GetMapping("/login")
@@ -45,6 +51,12 @@ public class LoginController {
         model.addAttribute("verified", request.getParameterMap().containsKey("verified"));
         model.addAttribute("passwordReset", request.getParameterMap().containsKey("reset"));
         model.addAttribute("expired", request.getParameterMap().containsKey("expired"));
+        // After repeated failures from here, or when a sign-in was just refused for
+        // want of one, the form carries the captcha (spec 2.12).
+        boolean captchaMissing = request.getParameterMap().containsKey("captcha");
+        model.addAttribute("captchaMissing", localAccounts && captchaMissing);
+        model.addAttribute("loginCaptcha", localAccounts && captcha.configured()
+                && (captchaMissing || attempts.captchaRequired(request.getRemoteAddr())));
         // One button per configured provider, sorted by name (spec 7.19).
         model.addAttribute("options", loginOptions.all());
         return "login";

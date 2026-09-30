@@ -105,13 +105,13 @@ class HCaptchaTest {
 
     @Test
     void thePolicyIsWidenedOnTheCaptchaPagesAlone() throws Exception {
-        for (String path : new String[]{"/register", "/register/resend", "/password/forgot"}) {
+        for (String path : new String[]{"/login", "/register", "/register/resend", "/password/forgot"}) {
             String policy = mvc.perform(get(path)).andReturn().getResponse().getHeader("Content-Security-Policy");
             assertThat(policy).as(path).contains("script-src 'self' https://hcaptcha.com https://*.hcaptcha.com")
                     .contains("frame-src https://hcaptcha.com").contains("frame-ancestors 'none'")
                     .doesNotContain("unsafe-inline").doesNotContain("unsafe-eval");
         }
-        String strict = mvc.perform(get("/login")).andReturn().getResponse().getHeader("Content-Security-Policy");
+        String strict = mvc.perform(get("/jobs")).andReturn().getResponse().getHeader("Content-Security-Policy");
         assertThat(strict).contains("script-src 'self'").doesNotContain("hcaptcha");
     }
 }

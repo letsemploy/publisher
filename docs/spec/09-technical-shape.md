@@ -152,8 +152,11 @@ endpoints by the id `google`, so a client id and secret are enough there. Every 
 not request `openid` stops the application at startup (§2.2). For local work the
 `keycloak` profile points at the Keycloak in the repository's compose file.
 
-**Local accounts** (§2.12) are `app.local-accounts.enabled` (off by default) and
-`app.local-accounts.min-password-length` (12). They need **mail**: the standard `spring.mail.*`
+**Local accounts** (§2.12) are `app.local-accounts.enabled` (off by default); the password policy,
+`app.local-accounts.password.min-length` (12), `.max-length` (128), `.required-classes` (0–4, default
+0) and `.min-strength` (zxcvbn score 0–4, default 3); and the sign-in limits,
+`app.local-accounts.captcha-after-failures` (3; 0 = always) and `.max-attempts` (10; 0 = never),
+within `.throttle-window` (15 minutes). A policy that cannot be met stops the application at startup. They need **mail**: the standard `spring.mail.*`
 settings of an SMTP server, `app.mail.from` as the sender, and `app.base-url` for the links. The
 **captcha** is `captcha.*`: `captcha.enabled`, `captcha.provider` (`hcaptcha` or `mcaptcha`) and that
 provider's site key and secret, plus the instance URL for mCaptcha. Local accounts without a captcha

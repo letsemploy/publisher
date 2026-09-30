@@ -8,12 +8,13 @@ import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
-import org.hibernate.validator.constraintvalidation.HibernateConstraintValidatorContext;
+import org.springframework.context.MessageSource;
+import org.springframework.context.i18n.LocaleContextHolder;
 
 /**
- * The password rule of spec 2.12: long enough, not too long, typed the same
- * twice, and not the email. No rules on character classes. The minimum is
- * configured, so the validator is a Spring bean reading it.
+ * A new password that satisfies the configured policy (spec 2.12) and was typed
+ * the same twice. The validator is a Spring bean, as Bean Validation creates
+ * validators through Spring here, so it can hold the policy.
  */
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)
@@ -32,43 +33,42 @@ import org.hibernate.validator.constraintvalidation.HibernateConstraintValidator
 
         String passwordRepeat();
 
-        /** The account's address, which the password must not be; null if not known here. */
+        /** The account's address, which the password must not be made of; null if not known here. */
         String email();
     }
 
-    int MAX_LENGTH = 128;
-
     class Validator implements ConstraintValidator<NewPassword, Form> {
 
-        private final int minLength;
+        private final PasswordPolicy policy;
+        private final MessageSource messages;
 
-        Validator(LocalAccountProperties properties) {
-            this.minLength = properties.minPasswordLength();
+        Validator(PasswordPolicy policy, MessageSource messages) {
+            this.policy = policy;
+            this.messages = messages;
         }
 
         @Override
         public boolean isValid(Form form, ConstraintValidatorContext context) {
             context.disableDefaultConstraintViolation();
-            String password = form.password() == null ? "" : form.password();
-            if (password.length() < minLength || password.length() > MAX_LENGTH) {
-                context.unwrap(HibernateConstraintValidatorContext.class)
-                        .addMessageParameter("min", minLength)
-                        .addMessageParameter("max", MAX_LENGTH)
-                        .buildConstraintViolationWithTemplate("{validation.password.length}")
+            var refusal = policy.refusal(form.password(), form.email());
+            if (refusal.isPresent()) {
+                // Resolved here rather than as a {template}: the arguments are the policy's.
+                // Escaped, so the validator reads it as text and not as a template.
+                String text = messages.getMessage(refusal.get(), LocaleContextHolder.getLocale());
+                context.buildConstraintViolationWithTemplate(escape(text))
                         .addPropertyNode("password").addConstraintViolation();
                 return false;
             }
-            if (form.email() != null && password.equalsIgnoreCase(form.email().trim())) {
-                context.buildConstraintViolationWithTemplate("{validation.password.isEmail}")
-                        .addPropertyNode("password").addConstraintViolation();
-                return false;
-            }
-            if (!password.equals(form.passwordRepeat())) {
+            if (!form.password().equals(form.passwordRepeat())) {
                 context.buildConstraintViolationWithTemplate("{validation.password.mismatch}")
                         .addPropertyNode("passwordRepeat").addConstraintViolation();
                 return false;
             }
             return true;
+        }
+
+        private static String escape(String text) {
+            return text.replace("\\", "\\\\").replace("{", "\\{").replace("}", "\\}").replace("$", "\\$");
         }
     }
 }

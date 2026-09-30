@@ -466,13 +466,24 @@ configured. It is **off unless configured** (§9.5), and it can be offered alone
   unknown address, wrong password, pending account or throttled alike.
 - **Links** in mail are single-use, carry a secret that is stored only as a hash, and expire —
   verification after 24 hours, a password reset after one hour. A new link voids the earlier ones.
-- **Passwords** are at least 12 characters (configurable), at most 128, and not the email itself.
-  There are no rules on character classes. They are stored with an adaptive hash, never reversibly.
+- **Passwords follow a configurable policy**: a minimum and maximum length (12 and 128), how many of
+  lower case, upper case, digits and symbols they must mix (none by default: composition rules push
+  people to `Password1!`), and a minimum **strength** — a zxcvbn estimate of how hard it is to guess,
+  which knows common passwords, words, keyboard walks and dates and is told the account's address
+  (score 3 of 4 by default). Never the email itself. The forms state the rules in force before one is
+  broken. They are stored with an adaptive hash, never reversibly.
 - **Changing or resetting a password ends every other session** of the account at its next request.
   The session that made the change continues.
 - **Attempts are throttled** — sign-in per address and per client, sign-up and the mail-sending forms
   per client — and those forms carry a captcha, because each one sends mail to an address a stranger
   typed. A throttled sign-in answers like a failed one.
+- **After repeated failed sign-ins, signing in takes a captcha too.** Once an address, or a client,
+  has failed a configurable number of times (3) within the window, a sign-in also needs a solved
+  captcha — checked before the password, so it says nothing about the password, and counted alike
+  for addresses with and without an account, so it says nothing about who is registered. Guessing
+  then costs a solved captcha per attempt while the owner can still sign in; the hard refusal after
+  more failures (10) remains the backstop where no captcha is configured. A success clears the
+  address's count.
 - **Recorded:** changing and resetting a password, in the person's own log (§3.12). The account is
   recorded as created at its first sign-in, as for a provider.
 - **Not yet:** changing the email of a local account, and linking one to a provider account (§12).

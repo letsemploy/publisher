@@ -10,8 +10,7 @@
                th:classappend="${fieldErrors?.get('password') != null} ? 'is-invalid'"
                th:attr="aria-invalid=${fieldErrors?.get('password') != null} ? 'true' : null"
                aria-describedby="password-hint"/>
-        <small class="form-hint" id="password-hint"
-               th:text="#{account.password.hint(${minPasswordLength})}">At least 12 characters.</small>
+        <small class="form-hint" id="password-hint" th:text="${#strings.listJoin(passwordHints, ' ')}">At least 12 characters.</small>
         <div class="invalid-feedback" th:if="${fieldErrors?.get('password') != null}"
              th:text="${fieldErrors.get('password')}"></div>
     </div>

@@ -84,6 +84,28 @@ public class CaptchaCheck {
         return "";
     }
 
+    public boolean configured() {
+        return verifier != null;
+    }
+
+    /** The form parameter the widget submits its token in, or null without a captcha. */
+    public String tokenParameterName() {
+        return verifier == null ? null : verifier.tokenParameterName();
+    }
+
+    /** Whether the token is a solved captcha; always true without a captcha configured. */
+    boolean solved(String token, String client) {
+        if (verifier == null) {
+            return true;
+        }
+        try {
+            verifier.verify(token, client);
+            return true;
+        } catch (CaptchaVerificationException e) {
+            return false;
+        }
+    }
+
     /** Refuses a form whose captcha was not solved, as a field error beside the widget. */
     public void verify(HttpServletRequest request) {
         if (verifier == null) {

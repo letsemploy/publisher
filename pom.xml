@@ -138,6 +138,12 @@
 			<artifactId>captcha-spring-boot-starter</artifactId>
 			<version>0.1.0</version>
 		</dependency>
+		<!-- Password strength for local accounts (spec 2.12): a zxcvbn estimate, not only length. -->
+		<dependency>
+			<groupId>com.nulab-inc</groupId>
+			<artifactId>zxcvbn</artifactId>
+			<version>1.9.0</version>
+		</dependency>
 		<!-- Verification and password-reset mail for local accounts (spec 2.12). -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>

@@ -317,11 +317,19 @@ email. `CurrentUserService.identityOf` turns the `LocalUser` principal into an `
   `CurrentUserService.endOfSession()` — read by `SuspendedAccountFilter` on every request, next to
   suspension — ends a session older than `password_changed_at` at `/login?expired`. The session that
   changed it is re-authenticated with a fresh `LocalUser` in `AccountController`.
-- **Throttles** (`Throttle`, in memory, per instance): failed sign-ins per address and per client;
-  the mail-sending forms per client. `app.local-accounts.max-attempts`, `max-mails`, `throttle-window`.
-- **Password rule** is `@NewPassword`, a class-level constraint whose validator is a Spring bean
-  reading `min-password-length` — Bean Validation creates validators through Spring, so they can take
-  constructor arguments.
+- **Throttles** (`Throttle`, in memory, per instance): failed sign-ins per address and per client
+  (`LoginAttempts`, a bean the sign-in page and the provider share); the mail-sending forms per
+  client. `app.local-accounts.max-attempts`, `max-mails`, `throttle-window`.
+- **Captcha after failures** (`captcha-after-failures`, only with a captcha configured): the provider
+  checks it **before the password** and throws `CaptchaRequiredException`, mapped to `/login?captcha`;
+  every other failure stays one `?error`. Counted per address *and* per client, so a distributed guess
+  at one account still meets it, and unknown addresses count alike, so it is no oracle. The token
+  reaches the provider through `LoginDetails`. `/login` is therefore one of the `CAPTCHA_PAGES`.
+- **Password policy** (`PasswordPolicy`, `app.local-accounts.password.*`): length, character classes,
+  and a minimum **zxcvbn** score (`com.nulab-inc:zxcvbn`), given the address as user input. The same
+  bean writes the hints on the forms, so they cannot drift from the rule. `@NewPassword` delegates to
+  it — its validator is a Spring bean, as Bean Validation creates validators through Spring here. A
+  policy that cannot be met (`min > max`, classes or strength out of 0–4) fails startup.
 - **Mail** (`mail/Mailer`) is published as an event and sent `AFTER_COMMIT`: a refused change mails
   nobody, and a failed delivery is logged without changing the page (which would break the no-oracle
   rule). Without `spring.mail.host` nothing is sent and a warning says so — never the body, which
@@ -702,6 +710,8 @@ TEST_DB=sqlite ./mvnw test                   # all, on SQLite; no server
 ./mvnw test -Dtest=LocalAccountTest          # email/password: sign-up, links, sessions, no oracle, throttle
 ./mvnw test -Dtest=LocalAccountsWithProvidersTest # the form beside a provider; LocalAccountsDisabledTest without
 ./mvnw test -Dtest=HCaptchaTest              # widget, refusal, CSP widened on captcha pages only; MCaptchaTest too
+./mvnw test -Dtest=LoginCaptchaTest          # captcha after failed sign-ins: per address, per client, no oracle
+./mvnw test -Dtest=PasswordPolicyTest        # the configurable password policy; no Spring, no database
 ./mvnw test -Dtest=LockedChainTest           # no provider, no dev: the back-office is closed
 ./mvnw test -Dtest=LoginProvidersTest        # several providers: one button each, sorted, branded
 ./mvnw test -Dtest=LoginOptionsTest          # provider check (OIDC + GitHub) and brand by host; no Spring

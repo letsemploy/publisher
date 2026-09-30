@@ -524,8 +524,9 @@ form or buttons, and the language choice.
   not complete and to try again, without the technical detail of why; a completed sign-out
   (`?logout`) says so; and a suspended account (`?suspended`, §2.11) is told it is suspended and to
   contact the administrator. With local accounts, also: a sign-up just completed (`?verified`), a
-  password just reset (`?reset`), and a session ended by a password change (`?expired`). Switching
-  language keeps the state.
+  password just reset (`?reset`), a session ended by a password change (`?expired`), and a sign-in
+  refused for want of a solved captcha after repeated failures (`?captcha`, §2.12), where the form
+  then carries it. Switching language keeps the state.
 - It is **standalone**: no sidebar, switcher or user menu, since a signed-out visitor has none of them.
 - A signed-in visitor asking for it is sent on to the dashboard. Under `dev` it is inert, like every
   login route (§2.3).

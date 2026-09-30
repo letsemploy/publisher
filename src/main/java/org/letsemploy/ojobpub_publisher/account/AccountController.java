@@ -46,23 +46,24 @@ public class AccountController {
     private final CurrentUserService currentUserService;
     private final MessageSource messages;
     private final Throttle mailsPerClient;
-    private final int minPasswordLength;
+    private final PasswordPolicy passwordPolicy;
 
     public AccountController(LocalAccountService service, CaptchaCheck captcha,
                              CurrentUserService currentUserService,
-                             MessageSource messages, LocalAccountProperties properties) {
+                             MessageSource messages, LocalAccountProperties properties,
+                             PasswordPolicy passwordPolicy) {
         this.service = service;
         this.captcha = captcha;
         this.currentUserService = currentUserService;
         this.messages = messages;
         this.mailsPerClient = new Throttle(properties.maxMails(), properties.throttleWindow(), Clock.systemUTC());
-        this.minPasswordLength = properties.minPasswordLength();
+        this.passwordPolicy = passwordPolicy;
     }
 
-    /** The minimum the password hint states, before the rule is broken (spec 7.24). */
-    @ModelAttribute("minPasswordLength")
-    int minPasswordLength() {
-        return minPasswordLength;
+    /** The password rules, stated before one is broken (spec 7.24). */
+    @ModelAttribute("passwordHints")
+    List<String> passwordHints() {
+        return passwordPolicy.hints().stream().map(hint -> messages.getMessage(hint, locale())).toList();
     }
 
     /** The language switch keeps every other parameter - a link's token above all. */

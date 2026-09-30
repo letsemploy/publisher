@@ -57,8 +57,13 @@ app:
   # sign-up and forgot-password forms mail an address a stranger typed.
   # local-accounts:
   #   enabled: true
-  #   min-password-length: 12
-  #   max-attempts: 10          # failed sign-ins per address, and x5 per client, per window
+  #   password:
+  #     min-length: 12
+  #     max-length: 128
+  #     required-classes: 0     # how many of lower/upper/digits/symbols to mix, 0-4
+  #     min-strength: 3         # zxcvbn score 0-4: 0 unchecked, 2 not guessable, 3 resists offline attack
+  #   captcha-after-failures: 3 # failed sign-ins per address or client before a captcha is needed; 0 = always
+  #   max-attempts: 10          # ... and before every attempt is refused (x5 per client); 0 = never
   #   max-mails: 10             # sign-up/resend/forgot requests per client, per window
   #   throttle-window: PT15M
 

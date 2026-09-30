@@ -1,9 +1,13 @@
 package org.letsemploy.ojobpub_publisher.security;
 
 import org.letsemploy.ojobpub_publisher.account.CaptchaCheck;
+import org.letsemploy.ojobpub_publisher.account.CaptchaRequiredException;
 import org.letsemploy.ojobpub_publisher.account.LocalAccountProperties;
 import org.letsemploy.ojobpub_publisher.account.LocalAccountRepo;
 import org.letsemploy.ojobpub_publisher.account.LocalAuthenticationProvider;
+import org.letsemploy.ojobpub_publisher.account.LoginAttempts;
+import org.letsemploy.ojobpub_publisher.account.LoginDetails;
+import org.springframework.security.web.authentication.ExceptionMappingAuthenticationFailureHandler;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
@@ -46,6 +50,8 @@ public class SecurityConfig {
 
     /** The forms carrying the captcha, and the only pages whose policy it widens (spec 7.2). */
     private static final RequestMatcher CAPTCHA_PAGES = new OrRequestMatcher(
+            // Sign-in shows it after repeated failures (spec 2.12).
+            PathPatternRequestMatcher.withDefaults().matcher("/login"),
             PathPatternRequestMatcher.withDefaults().matcher("/register"),
             PathPatternRequestMatcher.withDefaults().matcher("/register/resend"),
             PathPatternRequestMatcher.withDefaults().matcher("/password/forgot"));
@@ -144,11 +150,12 @@ public class SecurityConfig {
                                         LocalAccountProperties localAccounts,
                                         LocalAccountRepo accounts,
                                         PasswordEncoder passwordEncoder,
+                                        LoginAttempts attempts,
                                         CaptchaCheck captcha)
             throws Exception {
         ClientRegistrationRepository repository = registrations.getIfAvailable();
         LocalAuthenticationProvider local = localAccounts.enabled()
-                ? new LocalAuthenticationProvider(accounts, passwordEncoder, localAccounts)
+                ? new LocalAuthenticationProvider(accounts, passwordEncoder, attempts, captcha)
                 : null;
         return repository == null && local == null
                 ? locked(http)
@@ -209,13 +216,20 @@ public class SecurityConfig {
 
         if (local != null) {
             // Email and password on the same page (spec 2.12, 7.19). Every failure
-            // lands on the one ?error, whatever the reason.
+            // lands on the one ?error, whatever the reason - except a missing captcha,
+            // which is decided before the password is looked at.
+            ExceptionMappingAuthenticationFailureHandler failure = new ExceptionMappingAuthenticationFailureHandler();
+            failure.setDefaultFailureUrl("/login?error");
+            failure.setExceptionMappings(java.util.Map.of(
+                    CaptchaRequiredException.class.getName(), "/login?captcha"));
             http.authenticationProvider(local)
                     .formLogin(form -> form
                             .loginPage("/login")
                             .loginProcessingUrl("/login")
                             .usernameParameter("email")
-                            .failureUrl("/login?error")
+                            .authenticationDetailsSource(request ->
+                                    new LoginDetails(request, captcha.tokenParameterName()))
+                            .failureHandler(failure)
                             .defaultSuccessUrl("/", true));
         }
 

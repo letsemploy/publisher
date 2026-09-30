@@ -33,6 +33,17 @@ final class Throttle {
         return current != null && !current.over(clock.instant()) && current.count() >= limit;
     }
 
+    /** Events for the key in its current window. */
+    int count(String key) {
+        Window current = windows.get(key);
+        return current == null || current.over(clock.instant()) ? 0 : current.count();
+    }
+
+    /** Forgets the key, as after a successful sign-in. */
+    void clear(String key) {
+        windows.remove(key);
+    }
+
     void record(String key) {
         Instant now = clock.instant();
         // Drop windows that ended, so the map holds only the recently active.

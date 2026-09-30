@@ -1,8 +1,6 @@
 package org.letsemploy.ojobpub_publisher.account;
 
-import java.time.Clock;
 import java.time.Instant;
-import java.util.Locale;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.core.Authentication;
@@ -16,10 +14,12 @@ import org.springframework.security.web.authentication.WebAuthenticationDetails;
 /**
  * Signs a local account in with its email and password (spec 2.12).
  *
- * <p>Every failure is the same {@link BadCredentialsException}: an unknown
- * address, a wrong password, a pending account (it has no password yet) and a
- * throttled attempt. Spring checks a password against a dummy hash when the
- * address is unknown, so the time taken says nothing either.
+ * <p>In order, and each before the password is looked at: an address or client
+ * past its limit is refused; one past the captcha threshold must bring a solved
+ * captcha ({@link CaptchaRequiredException}). Then every failure is the same
+ * {@link BadCredentialsException} - an unknown address, a wrong password, a
+ * pending account (it has no password yet). Spring checks a password against a
+ * dummy hash when the address is unknown, so the time taken says nothing either.
  *
  * <p>Not a bean, like the security filters: a {@code UserDetailsService} or
  * provider bean would also be picked up for a global authentication manager
@@ -27,32 +27,37 @@ import org.springframework.security.web.authentication.WebAuthenticationDetails;
  */
 public final class LocalAuthenticationProvider extends DaoAuthenticationProvider {
 
-    private final Throttle perAddress;
-    private final Throttle perClient;
+    private final LoginAttempts attempts;
+    private final CaptchaCheck captcha;
 
     public LocalAuthenticationProvider(LocalAccountRepo accounts, PasswordEncoder passwordEncoder,
-                                       LocalAccountProperties properties) {
+                                       LoginAttempts attempts, CaptchaCheck captcha) {
         super(details(accounts));
         setPasswordEncoder(passwordEncoder);
-        this.perAddress = new Throttle(properties.maxAttempts(), properties.throttleWindow(), Clock.systemUTC());
-        // A client may try several addresses; allow it a few people's worth.
-        this.perClient = new Throttle(properties.maxAttempts() * 5, properties.throttleWindow(),
-                Clock.systemUTC());
+        this.attempts = attempts;
+        this.captcha = captcha;
     }
 
     @Override
     public Authentication authenticate(Authentication authentication) throws AuthenticationException {
-        String address = authentication.getName() == null ? "" : authentication.getName().trim().toLowerCase(Locale.ROOT);
+        String address = authentication.getName() == null ? "" : authentication.getName();
         String client = authentication.getDetails() instanceof WebAuthenticationDetails web
                 ? web.getRemoteAddress() : "unknown";
-        if (perAddress.exhausted(address) || perClient.exhausted(client)) {
+        if (attempts.refused(address, client)) {
             throw new BadCredentialsException("Throttled");
         }
+        if (captcha.configured() && attempts.captchaRequired(address, client)) {
+            String token = authentication.getDetails() instanceof LoginDetails login ? login.getCaptchaToken() : null;
+            if (!captcha.solved(token, client)) {
+                throw new CaptchaRequiredException();
+            }
+        }
         try {
-            return super.authenticate(authentication);
+            Authentication result = super.authenticate(authentication);
+            attempts.succeeded(address);
+            return result;
         } catch (AuthenticationException e) {
-            perAddress.record(address);
-            perClient.record(client);
+            attempts.failed(address, client);
             throw new BadCredentialsException("Sign-in failed");
         }
     }
