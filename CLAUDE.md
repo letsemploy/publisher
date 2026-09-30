@@ -641,6 +641,14 @@ actually referenced**, scanning both the templates (`fragments/icon :: i('name')
 (`new NavItem("name", …)` — the sidebar's icon names live there, not in a template). Miss the second
 source and the nav icons vanish.
 
+**Charts are Tabler's sparkline and tracking**, no chart library (§7.2, §7.10). `tabler.min.js` draws
+sparklines only on page load, so `app.js` draws those an htmx swap brings in (`drawSparklines` on
+`htmx:afterSwap`) — without it a boosted visit to the dashboard shows empty charts. Sizes are classes
+in `app.css` (`sparkline-wide`), never a `style` attribute (CSP). Icon names passed to
+`fragments/icon` must be **literal** in the template, or `make assets` leaves them out of the sprite;
+`fragments/trend` spells its three out for that reason. The dashboard's figures come from
+`DashboardJobs` (pure and clock-taking like `Publication`) and `JobClickService.statistics`.
+
 `static/js/app.js` is the application's own behaviour: one small plain-ES module, delegated listeners
 so it survives htmx swaps, covering modal dismissal, chip removal and copy-to-clipboard. hyperscript is
 gone, so the CSP carries **neither `unsafe-inline` nor `unsafe-eval`**.

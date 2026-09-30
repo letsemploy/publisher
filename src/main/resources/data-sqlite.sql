@@ -122,6 +122,32 @@ INSERT INTO job_clicks (job_id, day, country, employer_id, clicks) VALUES
   ('ab36067b-e00c-489c-bd61-5c3d4e5f6071', strftime('%Y-%m-%d 00:00:00.000', 'now', '-20 days'), 'CH', '003d6aec-021b-11f1-aefa-f649a5d91690', 3)
 ON CONFLICT DO NOTHING;
 
+-- More days, so the dashboard's line, strip and trends have a shape (spec 7.10):
+-- clicks on most days of the last 30, none on others, and some 40-45 days back
+-- for the period the trend compares with. Never today, as above.
+INSERT INTO job_clicks (job_id, day, country, employer_id, clicks) VALUES
+  ('8f14e45f-ceea-467a-9b4f-3a1b2c3d4e5f', strftime('%Y-%m-%d 00:00:00.000', 'now', '-2 days'), 'CH', '003d6aec-021b-11f1-aefa-f649a5d91690', 4),
+  ('8f14e45f-ceea-467a-9b4f-3a1b2c3d4e5f', strftime('%Y-%m-%d 00:00:00.000', 'now', '-3 days'), 'CH', '003d6aec-021b-11f1-aefa-f649a5d91690', 7),
+  ('8f14e45f-ceea-467a-9b4f-3a1b2c3d4e5f', strftime('%Y-%m-%d 00:00:00.000', 'now', '-5 days'), 'CH', '003d6aec-021b-11f1-aefa-f649a5d91690', 2),
+  ('8f14e45f-ceea-467a-9b4f-3a1b2c3d4e5f', strftime('%Y-%m-%d 00:00:00.000', 'now', '-8 days'), 'CH', '003d6aec-021b-11f1-aefa-f649a5d91690', 9),
+  ('8f14e45f-ceea-467a-9b4f-3a1b2c3d4e5f', strftime('%Y-%m-%d 00:00:00.000', 'now', '-8 days'), 'DE', '003d6aec-021b-11f1-aefa-f649a5d91690', 2),
+  ('8f14e45f-ceea-467a-9b4f-3a1b2c3d4e5f', strftime('%Y-%m-%d 00:00:00.000', 'now', '-9 days'), 'CH', '003d6aec-021b-11f1-aefa-f649a5d91690', 3),
+  ('8f14e45f-ceea-467a-9b4f-3a1b2c3d4e5f', strftime('%Y-%m-%d 00:00:00.000', 'now', '-12 days'), 'CH', '003d6aec-021b-11f1-aefa-f649a5d91690', 5),
+  ('8f14e45f-ceea-467a-9b4f-3a1b2c3d4e5f', strftime('%Y-%m-%d 00:00:00.000', 'now', '-15 days'), 'CH', '003d6aec-021b-11f1-aefa-f649a5d91690', 1),
+  ('8f14e45f-ceea-467a-9b4f-3a1b2c3d4e5f', strftime('%Y-%m-%d 00:00:00.000', 'now', '-18 days'), 'CH', '003d6aec-021b-11f1-aefa-f649a5d91690', 6),
+  ('8f14e45f-ceea-467a-9b4f-3a1b2c3d4e5f', strftime('%Y-%m-%d 00:00:00.000', 'now', '-22 days'), 'CH', '003d6aec-021b-11f1-aefa-f649a5d91690', 2),
+  ('8f14e45f-ceea-467a-9b4f-3a1b2c3d4e5f', strftime('%Y-%m-%d 00:00:00.000', 'now', '-26 days'), 'CH', '003d6aec-021b-11f1-aefa-f649a5d91690', 4),
+  ('8f14e45f-ceea-467a-9b4f-3a1b2c3d4e5f', strftime('%Y-%m-%d 00:00:00.000', 'now', '-29 days'), 'DE', '003d6aec-021b-11f1-aefa-f649a5d91690', 3),
+  ('9a25f56a-dffb-478b-ac50-4b2c3d4e5f60', strftime('%Y-%m-%d 00:00:00.000', 'now', '-4 days'), 'CH', '003d6aec-021b-11f1-aefa-f649a5d91690', 2),
+  ('9a25f56a-dffb-478b-ac50-4b2c3d4e5f60', strftime('%Y-%m-%d 00:00:00.000', 'now', '-6 days'), 'CH', '003d6aec-021b-11f1-aefa-f649a5d91690', 3),
+  ('9a25f56a-dffb-478b-ac50-4b2c3d4e5f60', strftime('%Y-%m-%d 00:00:00.000', 'now', '-10 days'), 'DE', '003d6aec-021b-11f1-aefa-f649a5d91690', 1),
+  ('9a25f56a-dffb-478b-ac50-4b2c3d4e5f60', strftime('%Y-%m-%d 00:00:00.000', 'now', '-13 days'), 'CH', '003d6aec-021b-11f1-aefa-f649a5d91690', 1),
+  ('9a25f56a-dffb-478b-ac50-4b2c3d4e5f60', strftime('%Y-%m-%d 00:00:00.000', 'now', '-16 days'), 'CH', '003d6aec-021b-11f1-aefa-f649a5d91690', 2),
+  ('8f14e45f-ceea-467a-9b4f-3a1b2c3d4e5f', strftime('%Y-%m-%d 00:00:00.000', 'now', '-40 days'), 'CH', '003d6aec-021b-11f1-aefa-f649a5d91690', 12),
+  ('8f14e45f-ceea-467a-9b4f-3a1b2c3d4e5f', strftime('%Y-%m-%d 00:00:00.000', 'now', '-45 days'), 'CH', '003d6aec-021b-11f1-aefa-f649a5d91690', 6),
+  ('9a25f56a-dffb-478b-ac50-4b2c3d4e5f60', strftime('%Y-%m-%d 00:00:00.000', 'now', '-41 days'), 'CH', '003d6aec-021b-11f1-aefa-f649a5d91690', 3)
+ON CONFLICT DO NOTHING;
+
 -- The development administrator (spec 2.3): a real record, because anything keyed
 -- on user identity is otherwise unreachable locally and in the tests.
 INSERT INTO users (id, created_at, last_modified_at, issuer, subject, email, display_name, role) VALUES

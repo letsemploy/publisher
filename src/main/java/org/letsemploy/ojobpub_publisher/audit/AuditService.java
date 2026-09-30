@@ -47,16 +47,29 @@ public class AuditService {
      */
     @Transactional(readOnly = true)
     public Page<AuditEvent> forEmployers(Collection<UUID> employerIds, Actor actor, int page) {
+        return forEmployers(employerIds, actor, pageable(page));
+    }
+
+    /**
+     * The latest events of the employers in scope, for the dashboard (spec 7.10):
+     * the same log and the same audience as {@link #forEmployers}, only fewer.
+     */
+    @Transactional(readOnly = true)
+    public List<AuditEvent> latest(Collection<UUID> employerIds, Actor actor, int count) {
+        return forEmployers(employerIds, actor, PageRequest.of(0, count)).getContent();
+    }
+
+    private Page<AuditEvent> forEmployers(Collection<UUID> employerIds, Actor actor, Pageable pageable) {
         refuseTokens(actor);
         List<UUID> administered = employerIds.stream()
                 .filter(id -> membershipService.canAdminister(actor, id)).toList();
         List<UUID> member = employerIds.stream()
                 .filter(id -> !administered.contains(id) && actor.getEmployerIds().contains(id)).toList();
         if (administered.isEmpty() && member.isEmpty()) {
-            return Page.empty(pageable(page));
+            return Page.empty(pageable);
         }
         return auditRepo.findForEmployers(orNone(administered), orNone(member), AuditAction.ownersOnly(),
-                pageable(page));
+                pageable);
     }
 
     /** Everything, for platform staff. */

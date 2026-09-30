@@ -8,6 +8,14 @@ Section numbers such as §5.6 refer to the specification in [`docs/SPEC.md`](doc
 
 ## [Unreleased]
 
+### Changed
+
+- A revised dashboard (§7.10): the published share and the new jobs of the last 30 days on the status
+  cards; the clicks of the last 30 days with their trend, a line of daily clicks and a tracking strip
+  with one square per day; a "needs attention" list of jobs about to close, jobs that cannot be
+  published and forgotten drafts; the most clicked jobs with a 14-day bar chart and trend each; and
+  the latest activity. The charts are Tabler's own sparkline and tracking components.
+
 ### Removed
 
 - The dashboard's warning about jobs omitted from published feeds; the status counts and the Feeds

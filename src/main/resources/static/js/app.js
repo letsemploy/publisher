@@ -137,10 +137,25 @@
         }
     });
 
+    /**
+     * Draw Tabler's sparklines (spec 7.10). tabler.min.js draws those present when
+     * the page loads; a boosted navigation swaps the body in afterwards, and its
+     * charts would stay empty. The figures are in the text beside them either way.
+     */
+    const drawSparklines = (root) => {
+        const sparkline = window.tabler?.Sparkline;
+        if (!sparkline) {
+            return;
+        }
+        root.querySelectorAll('[data-bs-toggle="sparkline"]')
+            .forEach((el) => sparkline.getOrCreateInstance(el));
+    };
+
     // htmx replaces regions wholesale; anything swapped in needs revealing too.
     document.body.addEventListener('htmx:afterSwap', (event) => {
         revealEnhancedControls(event.target);
         armConfirmNames(event.target);
+        drawSparklines(event.target);
     });
 
     revealEnhancedControls();

@@ -3,11 +3,13 @@ package org.letsemploy.ojobpub_publisher.common;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+import org.letsemploy.ojobpub_publisher.audit.AuditService;
 import org.letsemploy.ojobpub_publisher.click.JobClickService;
 import org.letsemploy.ojobpub_publisher.employer.Employer;
 import org.letsemploy.ojobpub_publisher.feed.Feed;
 import org.letsemploy.ojobpub_publisher.feed.FeedService;
 import org.letsemploy.ojobpub_publisher.feed.PermalinkService;
+import org.letsemploy.ojobpub_publisher.job.DashboardJobs;
 import org.letsemploy.ojobpub_publisher.job.Job;
 import org.letsemploy.ojobpub_publisher.job.JobService;
 import org.letsemploy.ojobpub_publisher.job.Publication;
@@ -27,11 +29,16 @@ import org.springframework.web.bind.annotation.GetMapping;
 @Controller
 public class IndexController {
 
+    /** Rows per "needs attention" group, and events of recent activity (spec 7.10). */
+    private static final int ATTENTION_ROWS = 5;
+    private static final int ACTIVITY_ROWS = 5;
+
     private final Scope scope;
     private final JobService jobService;
     private final FeedService feedService;
     private final PermalinkService permalinkService;
     private final JobClickService jobClickService;
+    private final AuditService auditService;
     private final Views views;
     private final MessageSource messages;
 
@@ -40,6 +47,7 @@ public class IndexController {
                            FeedService feedService,
                            PermalinkService permalinkService,
                            JobClickService jobClickService,
+                           AuditService auditService,
                            Views views,
                            MessageSource messages) {
         this.scope = scope;
@@ -47,6 +55,7 @@ public class IndexController {
         this.feedService = feedService;
         this.permalinkService = permalinkService;
         this.jobClickService = jobClickService;
+        this.auditService = auditService;
         this.views = views;
         this.messages = messages;
     }
@@ -54,7 +63,7 @@ public class IndexController {
     @GetMapping("/")
     public String index(Model model) {
         LocalDate today = LocalDate.now();
-        int[] counts = jobService.dashboardCounts(scope.employerIds());
+        DashboardJobs jobs = jobService.dashboard(scope.employerIds());
 
         List<FeedRow> feedRows = new ArrayList<>();
         List<PermalinkRow> permalinks = new ArrayList<>();
@@ -78,10 +87,16 @@ public class IndexController {
         }
 
         model.addAttribute("page", PageMeta.of(message("nav.dashboard")));
-        model.addAttribute("dashboard",
-                new DashboardView(counts[0], counts[1], counts[2], counts[3], feedRows, permalinks,
-                        // The employers in scope, like every figure above it (spec 7.10).
-                        views.clicks(jobClickService.statistics(scope.employerIds()))));
+        // Every figure covers the employers in scope, and the activity is the log
+        // the Activity screen would show this actor (spec 7.10, 7.21).
+        model.addAttribute("dashboard", new DashboardView(
+                jobs.published(), jobs.draft(), jobs.expired(), jobs.inactive(),
+                jobs.publishedShare(), jobs.newRecently(), DashboardJobs.RECENT_DAYS,
+                views.clicks(jobClickService.statistics(scope.employerIds())),
+                views.attention(jobs, ATTENTION_ROWS),
+                auditService.latest(scope.employerIds(), scope.user(), ACTIVITY_ROWS).stream()
+                        .map(views::activityRow).toList(),
+                feedRows, permalinks));
         model.addAttribute("singleEmployer", scope.hasSingleEmployer());
         return "dashboard";
     }

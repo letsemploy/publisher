@@ -30,4 +30,21 @@ public interface JobClickRepo extends JpaRepository<JobClick, JobClick.Key> {
             + " GROUP BY c.id.country ORDER BY SUM(c.clicks) DESC, c.id.country")
     List<Object[]> byCountry(@Param("employerIds") Collection<UUID> employerIds,
                              @Param("since") LocalDate since);
+
+    /** Day and clicks, for the days that have any; the caller fills the rest with zero. */
+    @Query("SELECT c.id.day, SUM(c.clicks) FROM JobClick c"
+            + " WHERE c.employerId IN :employerIds AND c.id.day >= :since GROUP BY c.id.day")
+    List<Object[]> dailyTotals(@Param("employerIds") Collection<UUID> employerIds,
+                               @Param("since") LocalDate since);
+
+    /** The clicks from {@code from} up to, not including, {@code until}: the period before the window. */
+    @Query("SELECT COALESCE(SUM(c.clicks), 0) FROM JobClick c"
+            + " WHERE c.employerId IN :employerIds AND c.id.day >= :from AND c.id.day < :until")
+    long totalBetween(@Param("employerIds") Collection<UUID> employerIds,
+                      @Param("from") LocalDate from, @Param("until") LocalDate until);
+
+    /** Job id, day and clicks for a page of jobs in one query, not one per row. */
+    @Query("SELECT c.id.jobId, c.id.day, SUM(c.clicks) FROM JobClick c"
+            + " WHERE c.id.jobId IN :jobIds AND c.id.day >= :since GROUP BY c.id.jobId, c.id.day")
+    List<Object[]> dailyByJob(@Param("jobIds") Collection<UUID> jobIds, @Param("since") LocalDate since);
 }

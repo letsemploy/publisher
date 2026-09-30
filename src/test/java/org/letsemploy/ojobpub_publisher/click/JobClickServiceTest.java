@@ -2,6 +2,8 @@ package org.letsemploy.ojobpub_publisher.click;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.time.LocalDate;
+import java.time.ZoneOffset;
 import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
@@ -36,6 +38,38 @@ class JobClickServiceTest {
                 .contains("DE", "AT", JobClick.UNKNOWN_COUNTRY).doesNotHaveDuplicates();
         assertThat(stats.total()).isEqualTo(stats.countries().stream()
                 .mapToLong(JobClickService.CountryClicks::clicks).sum());
+    }
+
+    /**
+     * Every day of the window, oldest first and zero where nothing was clicked, and
+     * the period before it for the trend (spec 7.10). Days are UTC, as counted.
+     */
+    @Test
+    void theWindowHasEveryDayAndThePeriodBefore() {
+        JobClickService.Statistics stats = service.statistics(List.of(ACME));
+        LocalDate today = LocalDate.now(ZoneOffset.UTC);
+
+        assertThat(stats.daily()).hasSize(30);
+        assertThat(stats.daily().getFirst().day()).isEqualTo(today.minusDays(29));
+        assertThat(stats.daily().getLast().day()).isEqualTo(today);
+        assertThat(stats.daily()).extracting(JobClickService.Day::clicks).contains(0L);
+        assertThat(stats.total()).isEqualTo(stats.countries().stream()
+                .mapToLong(JobClickService.CountryClicks::clicks).sum());
+        // The seed's clicks 40-45 days back.
+        assertThat(stats.previousTotal()).isGreaterThanOrEqualTo(21);
+
+        JobClickService.JobClicks top = stats.topJobs().getFirst();
+        assertThat(top.recent()).hasSize(JobClickService.TREND_DAYS);
+        assertThat(top.recentTotal()).isPositive().isLessThanOrEqualTo(top.clicks());
+        assertThat(top.previous()).isPositive();
+    }
+
+    /** With nothing in scope, the window is still every day, all zero. */
+    @Test
+    void noEmployersIsAnEmptyWindow() {
+        JobClickService.Statistics stats = service.statistics(List.of());
+        assertThat(stats.daily()).hasSize(30).allSatisfy(d -> assertThat(d.clicks()).isZero());
+        assertThat(stats.previousTotal()).isZero();
     }
 
     /** Only the employers asked about: the caller passes its scope (spec 2.4). */

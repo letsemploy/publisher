@@ -4,6 +4,7 @@ import java.time.LocalDate;
 import java.time.ZoneOffset;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -28,18 +29,37 @@ import org.springframework.transaction.support.TransactionTemplate;
 @Service
 public class JobClickService {
 
-    /** The clicks on one job over the window. */
-    public record JobClicks(Job job, long clicks) {
+    /** Days of a job's recent trend, and of the period it is compared with (spec 7.10). */
+    public static final int TREND_DAYS = 14;
+
+    /**
+     * The clicks on one job over the window, and its trend: one value per day for
+     * the last {@link #TREND_DAYS}, oldest first, and the total of the days before.
+     */
+    public record JobClicks(Job job, long clicks, List<Long> recent, long previous) {
+
+        public long recentTotal() {
+            return recent.stream().mapToLong(Long::longValue).sum();
+        }
     }
 
     /** The clicks from one country over the window; {@link JobClick#UNKNOWN_COUNTRY} for unknown. */
     public record CountryClicks(String country, long clicks) {
     }
 
-    public record Statistics(int days, List<JobClicks> topJobs, List<CountryClicks> countries) {
+    /** One day of the window, in UTC, with no clicks as zero. */
+    public record Day(LocalDate day, long clicks) {
+    }
+
+    /**
+     * @param daily         every day of the window, oldest first
+     * @param previousTotal the clicks of the same number of days before the window
+     */
+    public record Statistics(int days, List<Day> daily, long previousTotal,
+                             List<JobClicks> topJobs, List<CountryClicks> countries) {
 
         public long total() {
-            return countries.stream().mapToLong(CountryClicks::clicks).sum();
+            return daily.stream().mapToLong(Day::clicks).sum();
         }
     }
 
@@ -111,23 +131,49 @@ public class JobClickService {
      */
     @Transactional(readOnly = true)
     public Statistics statistics(Collection<UUID> employerIds) {
+        LocalDate today = LocalDate.now(ZoneOffset.UTC);
+        LocalDate since = today.minusDays(dashboardDays - 1L);
         if (employerIds.isEmpty()) {
-            return new Statistics(dashboardDays, List.of(), List.of());
+            return new Statistics(dashboardDays, days(since, today, Map.of()), 0, List.of(), List.of());
         }
-        LocalDate since = LocalDate.now(ZoneOffset.UTC).minusDays(dashboardDays - 1L);
+
+        Map<LocalDate, Long> perDay = clickRepo.dailyTotals(employerIds, since).stream()
+                .collect(Collectors.toMap(row -> (LocalDate) row[0], row -> ((Number) row[1]).longValue()));
+        long previous = clickRepo.totalBetween(employerIds, since.minusDays(dashboardDays), since);
 
         List<Object[]> top = clickRepo.topJobs(employerIds, since, PageRequest.of(0, topJobs));
-        // One query for every title, not one per row.
-        Map<UUID, Job> jobs = jobRepo.findWithEmployerByIdIn(top.stream().map(row -> (UUID) row[0]).toList())
-                .stream().collect(Collectors.toMap(Job::getId, Function.identity()));
+        List<UUID> topIds = top.stream().map(row -> (UUID) row[0]).toList();
+        // One query for every title and one for every trend, not one per row.
+        Map<UUID, Job> jobs = jobRepo.findWithEmployerByIdIn(topIds).stream()
+                .collect(Collectors.toMap(Job::getId, Function.identity()));
+        LocalDate trendSince = today.minusDays(TREND_DAYS - 1L);
+        Map<UUID, Map<LocalDate, Long>> trends = new HashMap<>();
+        if (!topIds.isEmpty()) {
+            for (Object[] row : clickRepo.dailyByJob(topIds, trendSince.minusDays(TREND_DAYS))) {
+                trends.computeIfAbsent((UUID) row[0], id -> new HashMap<>())
+                        .merge((LocalDate) row[1], ((Number) row[2]).longValue(), Long::sum);
+            }
+        }
         List<JobClicks> topJobs = top.stream()
                 .filter(row -> jobs.containsKey((UUID) row[0]))
-                .map(row -> new JobClicks(jobs.get((UUID) row[0]), ((Number) row[1]).longValue()))
+                .map(row -> {
+                    Map<LocalDate, Long> trend = trends.getOrDefault((UUID) row[0], Map.of());
+                    List<Long> recent = days(trendSince, today, trend).stream().map(Day::clicks).toList();
+                    long before = trend.entrySet().stream()
+                            .filter(e -> e.getKey().isBefore(trendSince))
+                            .mapToLong(Map.Entry::getValue).sum();
+                    return new JobClicks(jobs.get((UUID) row[0]), ((Number) row[1]).longValue(), recent, before);
+                })
                 .toList();
 
         List<CountryClicks> countries = clickRepo.byCountry(employerIds, since).stream()
                 .map(row -> new CountryClicks((String) row[0], ((Number) row[1]).longValue()))
                 .toList();
-        return new Statistics(dashboardDays, topJobs, countries);
+        return new Statistics(dashboardDays, days(since, today, perDay), previous, topJobs, countries);
+    }
+
+    /** Every day from {@code from} to {@code to}, both included, with the clicks known for it or zero. */
+    private static List<Day> days(LocalDate from, LocalDate to, Map<LocalDate, Long> clicks) {
+        return from.datesUntil(to.plusDays(1)).map(d -> new Day(d, clicks.getOrDefault(d, 0L))).toList();
     }
 }

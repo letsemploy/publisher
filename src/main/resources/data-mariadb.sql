@@ -113,6 +113,32 @@ INSERT INTO job_clicks (job_id, day, country, employer_id, clicks) VALUES
   ('ab36067b-e00c-489c-bd61-5c3d4e5f6071', UTC_DATE() - INTERVAL 20 DAY, 'CH', '003d6aec-021b-11f1-aefa-f649a5d91690', 3)
 ON DUPLICATE KEY UPDATE job_id = job_id;
 
+-- More days, so the dashboard's line, strip and trends have a shape (spec 7.10):
+-- clicks on most days of the last 30, none on others, and some 40-45 days back
+-- for the period the trend compares with. Never today, as above.
+INSERT INTO job_clicks (job_id, day, country, employer_id, clicks) VALUES
+  ('8f14e45f-ceea-467a-9b4f-3a1b2c3d4e5f', UTC_DATE() - INTERVAL 2 DAY, 'CH', '003d6aec-021b-11f1-aefa-f649a5d91690', 4),
+  ('8f14e45f-ceea-467a-9b4f-3a1b2c3d4e5f', UTC_DATE() - INTERVAL 3 DAY, 'CH', '003d6aec-021b-11f1-aefa-f649a5d91690', 7),
+  ('8f14e45f-ceea-467a-9b4f-3a1b2c3d4e5f', UTC_DATE() - INTERVAL 5 DAY, 'CH', '003d6aec-021b-11f1-aefa-f649a5d91690', 2),
+  ('8f14e45f-ceea-467a-9b4f-3a1b2c3d4e5f', UTC_DATE() - INTERVAL 8 DAY, 'CH', '003d6aec-021b-11f1-aefa-f649a5d91690', 9),
+  ('8f14e45f-ceea-467a-9b4f-3a1b2c3d4e5f', UTC_DATE() - INTERVAL 8 DAY, 'DE', '003d6aec-021b-11f1-aefa-f649a5d91690', 2),
+  ('8f14e45f-ceea-467a-9b4f-3a1b2c3d4e5f', UTC_DATE() - INTERVAL 9 DAY, 'CH', '003d6aec-021b-11f1-aefa-f649a5d91690', 3),
+  ('8f14e45f-ceea-467a-9b4f-3a1b2c3d4e5f', UTC_DATE() - INTERVAL 12 DAY, 'CH', '003d6aec-021b-11f1-aefa-f649a5d91690', 5),
+  ('8f14e45f-ceea-467a-9b4f-3a1b2c3d4e5f', UTC_DATE() - INTERVAL 15 DAY, 'CH', '003d6aec-021b-11f1-aefa-f649a5d91690', 1),
+  ('8f14e45f-ceea-467a-9b4f-3a1b2c3d4e5f', UTC_DATE() - INTERVAL 18 DAY, 'CH', '003d6aec-021b-11f1-aefa-f649a5d91690', 6),
+  ('8f14e45f-ceea-467a-9b4f-3a1b2c3d4e5f', UTC_DATE() - INTERVAL 22 DAY, 'CH', '003d6aec-021b-11f1-aefa-f649a5d91690', 2),
+  ('8f14e45f-ceea-467a-9b4f-3a1b2c3d4e5f', UTC_DATE() - INTERVAL 26 DAY, 'CH', '003d6aec-021b-11f1-aefa-f649a5d91690', 4),
+  ('8f14e45f-ceea-467a-9b4f-3a1b2c3d4e5f', UTC_DATE() - INTERVAL 29 DAY, 'DE', '003d6aec-021b-11f1-aefa-f649a5d91690', 3),
+  ('9a25f56a-dffb-478b-ac50-4b2c3d4e5f60', UTC_DATE() - INTERVAL 4 DAY, 'CH', '003d6aec-021b-11f1-aefa-f649a5d91690', 2),
+  ('9a25f56a-dffb-478b-ac50-4b2c3d4e5f60', UTC_DATE() - INTERVAL 6 DAY, 'CH', '003d6aec-021b-11f1-aefa-f649a5d91690', 3),
+  ('9a25f56a-dffb-478b-ac50-4b2c3d4e5f60', UTC_DATE() - INTERVAL 10 DAY, 'DE', '003d6aec-021b-11f1-aefa-f649a5d91690', 1),
+  ('9a25f56a-dffb-478b-ac50-4b2c3d4e5f60', UTC_DATE() - INTERVAL 13 DAY, 'CH', '003d6aec-021b-11f1-aefa-f649a5d91690', 1),
+  ('9a25f56a-dffb-478b-ac50-4b2c3d4e5f60', UTC_DATE() - INTERVAL 16 DAY, 'CH', '003d6aec-021b-11f1-aefa-f649a5d91690', 2),
+  ('8f14e45f-ceea-467a-9b4f-3a1b2c3d4e5f', UTC_DATE() - INTERVAL 40 DAY, 'CH', '003d6aec-021b-11f1-aefa-f649a5d91690', 12),
+  ('8f14e45f-ceea-467a-9b4f-3a1b2c3d4e5f', UTC_DATE() - INTERVAL 45 DAY, 'CH', '003d6aec-021b-11f1-aefa-f649a5d91690', 6),
+  ('9a25f56a-dffb-478b-ac50-4b2c3d4e5f60', UTC_DATE() - INTERVAL 41 DAY, 'CH', '003d6aec-021b-11f1-aefa-f649a5d91690', 3)
+ON DUPLICATE KEY UPDATE job_id = job_id;
+
 -- The development administrator (spec 2.3): a real record, because anything keyed
 -- on user identity is otherwise unreachable locally and in the tests.
 INSERT INTO users (id, created_at, last_modified_at, issuer, subject, email, display_name, role) VALUES

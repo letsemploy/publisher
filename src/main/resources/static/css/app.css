@@ -50,3 +50,25 @@
     text-align: end;
     font-variant-numeric: tabular-nums;
 }
+
+/* Dashboard (spec 7.10). No inline styles: the CSP forbids them (spec 9.4). */
+.kpi-bar {
+    height: 3px;
+}
+
+/* The clicks line spans its card; Tabler's sparkline reads its size from these. */
+.sparkline-wide {
+    --tblr-sparkline-width: 100%;
+    --tblr-sparkline-height: 3rem;
+    display: block;
+}
+
+/* A tracking strip's legend: one swatch per activity level, "none" as an empty square. */
+.legend-swatch {
+    display: inline-block;
+    width: .75rem;
+    height: .75rem;
+    border-radius: 2px;
+    vertical-align: -1px;
+    background: var(--tblr-border-color);
+}

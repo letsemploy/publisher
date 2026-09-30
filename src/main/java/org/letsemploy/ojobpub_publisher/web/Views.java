@@ -1,9 +1,11 @@
 package org.letsemploy.ojobpub_publisher.web;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -17,6 +19,7 @@ import org.letsemploy.ojobpub_publisher.click.JobClickService;
 import org.letsemploy.ojobpub_publisher.employer.Employer;
 import org.letsemploy.ojobpub_publisher.feed.Feed;
 import org.letsemploy.ojobpub_publisher.feed.Permalink;
+import org.letsemploy.ojobpub_publisher.job.DashboardJobs;
 import org.letsemploy.ojobpub_publisher.job.Job;
 import org.letsemploy.ojobpub_publisher.job.JobStatusEvent;
 import org.letsemploy.ojobpub_publisher.invitation.Invitation;
@@ -185,20 +188,98 @@ public class Views {
         return sb.toString();
     }
 
-    /** The dashboard's clicks card (spec 7.10), with country names in the viewer's language. */
+    /** The dashboard's clicks (spec 7.10), in the viewer's language. */
     public ClicksView clicks(JobClickService.Statistics statistics) {
         Locale locale = LocaleContextHolder.getLocale();
         long topJob = statistics.topJobs().stream().mapToLong(JobClickService.JobClicks::clicks).max().orElse(0);
         long topCountry = statistics.countries().stream().mapToLong(JobClickService.CountryClicks::clicks).max().orElse(0);
         List<ClicksView.Job> jobs = statistics.topJobs().stream()
                 .map(c -> new ClicksView.Job(c.job().getId().toString(), c.job().getTitle(),
-                        c.job().getEmployer().getName(), c.clicks(), share(c.clicks(), topJob)))
+                        c.job().getEmployer().getName(), c.clicks(), share(c.clicks(), topJob),
+                        sparkline(c.recent()), c.recentTotal(),
+                        trend(c.recentTotal(), c.previous(), JobClickService.TREND_DAYS, locale)))
                 .toList();
         List<ClicksView.Country> countries = statistics.countries().stream()
                 .map(c -> new ClicksView.Country(c.country(), countryName(c.country(), locale),
                         c.clicks(), share(c.clicks(), topCountry)))
                 .toList();
-        return new ClicksView(statistics.days(), statistics.total(), jobs, countries);
+
+        List<Long> perDay = statistics.daily().stream().map(JobClickService.Day::clicks).toList();
+        long busiest = perDay.stream().mapToLong(Long::longValue).max().orElse(0);
+        DateTimeFormatter day = DateTimeFormatter.ofPattern("d MMM", locale);
+        List<ClicksView.Block> blocks = statistics.daily().stream()
+                .map(d -> new ClicksView.Block(level(d.clicks(), busiest),
+                        messages.getMessage("dashboard.clicks.day", new Object[]{day.format(d.day()), d.clicks()}, locale)))
+                .toList();
+        long activeDays = perDay.stream().filter(c -> c > 0).count();
+        String summary = messages.getMessage("dashboard.clicks.strip",
+                new Object[]{statistics.days(), activeDays, busiest}, locale);
+
+        return new ClicksView(statistics.days(), JobClickService.TREND_DAYS, statistics.total(),
+                trend(statistics.total(), statistics.previousTotal(), statistics.days(), locale),
+                sparkline(perDay), blocks, summary, jobs, countries);
+    }
+
+    /** The values as Tabler's sparkline reads them: "3,0,5". */
+    private static String sparkline(List<Long> values) {
+        return values.stream().map(String::valueOf).collect(Collectors.joining(","));
+    }
+
+    /** A day's activity against the busiest day, as a tracking block's colour; none is no colour. */
+    private static String level(long clicks, long busiest) {
+        if (clicks == 0 || busiest == 0) {
+            return "";
+        }
+        double ratio = (double) clicks / busiest;
+        return ratio <= 1.0 / 3 ? "bg-azure-lt" : ratio <= 2.0 / 3 ? "bg-azure" : "bg-blue";
+    }
+
+    /** Now against the same number of days before, in words (spec 7.9). */
+    private ClicksView.Trend trend(long now, long before, int days, Locale locale) {
+        if (before == 0) {
+            return now == 0
+                    ? new ClicksView.Trend("flat", messages.getMessage("dashboard.trend.none", new Object[]{days}, locale))
+                    : new ClicksView.Trend("new", messages.getMessage("dashboard.trend.new", new Object[]{days}, locale));
+        }
+        long percent = Math.round((now - before) * 100.0 / before);
+        String direction = percent > 0 ? "up" : percent < 0 ? "down" : "flat";
+        return new ClicksView.Trend(direction, messages.getMessage("dashboard.trend." + direction,
+                new Object[]{Math.abs(percent), days}, locale));
+    }
+
+    /** The dashboard's "needs attention" card (spec 7.10). */
+    public AttentionView attention(DashboardJobs jobs, int shown) {
+        Locale locale = LocaleContextHolder.getLocale();
+        LocalDate today = LocalDate.now();
+        List<AttentionView.Row> closing = jobs.closingSoon().stream().limit(shown)
+                .map(c -> row(c.job(), closes(ChronoUnit.DAYS.between(today, c.lastDay()), locale)))
+                .toList();
+        List<AttentionView.Row> incomplete = jobs.incomplete().stream().limit(shown)
+                .map(j -> row(j, messages.getMessage("dashboard.attention.incomplete.note", null, locale)))
+                .toList();
+        Instant now = Instant.now();
+        List<AttentionView.Row> stale = jobs.staleDrafts().stream().limit(shown)
+                .map(j -> row(j, messages.getMessage("dashboard.attention.stale.note",
+                        new Object[]{Duration.between(j.getLastModifiedAt(), now).toDays()}, locale)))
+                .toList();
+        return new AttentionView(
+                new AttentionView.Group(closing, jobs.closingSoon().size() - closing.size(), "/jobs?status=published"),
+                new AttentionView.Group(incomplete, jobs.incomplete().size() - incomplete.size(), "/jobs?status=incomplete"),
+                new AttentionView.Group(stale, jobs.staleDrafts().size() - stale.size(), "/jobs?status=draft"));
+    }
+
+    private String closes(long days, Locale locale) {
+        if (days <= 0) {
+            return messages.getMessage("dashboard.attention.closing.today", null, locale);
+        }
+        if (days == 1) {
+            return messages.getMessage("dashboard.attention.closing.tomorrow", null, locale);
+        }
+        return messages.getMessage("dashboard.attention.closing.days", new Object[]{days}, locale);
+    }
+
+    private static AttentionView.Row row(Job job, String note) {
+        return new AttentionView.Row(job.getId().toString(), job.getTitle(), job.getEmployer().getName(), note);
     }
 
     private String countryName(String code, Locale locale) {

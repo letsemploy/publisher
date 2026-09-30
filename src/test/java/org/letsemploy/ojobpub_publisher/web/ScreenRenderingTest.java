@@ -303,24 +303,53 @@ class ScreenRenderingTest {
     }
 
     /**
-     * The dashboard's clicks card (spec 7.10): the most clicked jobs, linked, and
-     * the clicks by country, named in words - "Unknown" included (spec 7.9).
+     * The dashboard (spec 7.10): figures in text, with Tabler's sparkline and
+     * tracking as hints beside them, and no inline style for the CSP.
      */
     @Test
-    void theDashboardShowsTheMostClickedJobsAndTheirCountries() throws Exception {
+    void theDashboardShowsTrendsSparklinesAndATrackingStrip() throws Exception {
         String body = html("/");
-        String card = body.substring(body.indexOf("id=\"clicks\""));
-        assertThat(card)
+
+        // The published card's ring, with its share in words.
+        assertThat(body).contains("data-bs-type=\"circle\"").contains("% of all jobs")
+                .containsPattern("\\d+ new in the last 30 days");
+
+        String clicks = body.substring(body.indexOf("id=\"clicks\""), body.indexOf("id=\"attention\""));
+        assertThat(clicks)
                 .contains("Job link clicks")
                 .contains("Last 30 days")
+                .contains("data-bs-toggle=\"sparkline\"")
+                .containsPattern("on the previous 30 days|New: no clicks")
+                .contains("class=\"tracking tracking-squares");
+        assertThat(clicks.split("class=\"tracking-block").length - 1).as("one block per day").isEqualTo(30);
+        assertThat(clicks).containsPattern("Clicks on \\d+ of 30 days");
+
+        // The seed's incomplete job is named, with why.
+        String attention = body.substring(body.indexOf("id=\"attention\""));
+        assertThat(attention).contains("Needs attention").contains("Cannot be published")
+                .contains("href=\"/jobs/" + JOB_INCOMPLETE + "\"");
+
+        assertThat(body)
+                .contains("Most clicked jobs")
                 .contains("href=\"/jobs/" + JOB_PUBLISHED + "\"")
-                .contains("Switzerland")
-                .contains("Germany")
-                .contains("Unknown")
-                .contains("<progress");
-        assertThat(card.indexOf("Senior Backend Engineer"))
+                .contains("data-bs-type=\"bar\"")
+                .contains("Switzerland").contains("Germany").contains("Unknown")
+                .contains("id=\"recent-activity\"").contains("href=\"/activity\"");
+        assertThat(body.indexOf("Senior Backend Engineer", body.indexOf("Most clicked jobs")))
                 .as("the most clicked job first")
-                .isLessThan(card.indexOf("Praktikum Produktdesign"));
+                .isLessThan(body.indexOf("Praktikum Produktdesign", body.indexOf("Most clicked jobs")));
+
+        // The CSP forbids inline styles (spec 9.4); sizes are classes.
+        assertThat(body.substring(body.indexOf("id=\"main\""))).doesNotContain("style=");
+    }
+
+    @Test
+    void theDashboardSpeaksGerman() throws Exception {
+        assertThat(html("/?lang=de"))
+                .contains("Braucht Aufmerksamkeit")
+                .contains("Klicks auf Stellenlinks")
+                .containsPattern("Klicks an \\d+ von 30 Tagen")
+                .doesNotContain("??");
     }
 
     /** A feed's screen leads with the permalinks publishing it; its own URL is for testing (spec 7.12). */

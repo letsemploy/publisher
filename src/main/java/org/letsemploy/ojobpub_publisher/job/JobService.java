@@ -267,26 +267,14 @@ public class JobService {
         return jobRepo.countByEmployerIdAndStatus(employerId, status);
     }
 
-    /** Counts what each dashboard card shows, evaluating the date window (spec 7.10). */
-    public int[] dashboardCounts(List<UUID> employerIds) {
+    /** What the dashboard shows of the jobs in scope, evaluating the date window (spec 7.10). */
+    @Transactional(readOnly = true)
+    public DashboardJobs dashboard(List<UUID> employerIds) {
         List<Job> jobs = new ArrayList<>();
         for (UUID employerId : employerIds) {
             jobs.addAll(jobRepo.findByEmployerIdOrderByTitleAsc(employerId));
         }
-        LocalDate today = LocalDate.now();
-        int published = 0;
-        int draft = 0;
-        int expired = 0;
-        int inactive = 0;
-        for (Job job : jobs) {
-            switch (Publication.presentation(job, today)) {
-                case PUBLISHED -> published++;
-                case EXPIRED -> expired++;
-                case INCOMPLETE, DRAFT -> draft++;
-                case INACTIVE -> inactive++;
-            }
-        }
-        return new int[]{published, draft, expired, inactive};
+        return DashboardJobs.of(jobs, LocalDate.now(), java.time.Instant.now());
     }
 
     private static <E extends Enum<E>> E enumOf(Class<E> type, String value) {

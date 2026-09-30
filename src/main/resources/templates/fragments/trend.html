@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<!--
+  A trend in words, with an arrow and a colour as the hint: up is green, down red,
+  flat grey, and "new" - nothing before to compare with - green (spec 7.9, 7.10).
+  Usage: <span th:replace="~{fragments/trend :: trend(${clicks.trend})}"></span>
+
+  The icon names are literal on purpose: the sprite is built from the names the
+  templates spell out (make assets), and a computed name would be missing from it.
+-->
+<span th:fragment="trend(t)" class="d-inline-flex align-items-center lh-1 small text-nowrap"
+      th:classappend="${t.direction == 'down'} ? 'text-red' : (${t.direction == 'flat'} ? 'text-secondary' : 'text-green')">
+    <!-- Wrapped: th:replace runs before th:if on one element, so the test goes outside. -->
+    <th:block th:if="${t.direction == 'up' or t.direction == 'new'}"><svg th:replace="~{fragments/icon :: i('trending-up','icon me-1')}"></svg></th:block>
+    <th:block th:if="${t.direction == 'down'}"><svg th:replace="~{fragments/icon :: i('trending-down','icon me-1')}"></svg></th:block>
+    <th:block th:if="${t.direction == 'flat'}"><svg th:replace="~{fragments/icon :: i('minus','icon me-1')}"></svg></th:block>
+    <span th:text="${t.text}">+25% on the previous 30 days</span>
+</span>
+</body>
+</html>

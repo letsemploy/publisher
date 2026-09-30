@@ -1,58 +1,156 @@
 <!DOCTYPE html>
+<!--
+  The dashboard (spec 7.10). Charts are Tabler's own sparkline and tracking
+  components and are hints only: every figure they draw is printed beside them,
+  so without JavaScript nothing is lost but the shape. Sparklines are drawn by
+  tabler.min.js, and after an htmx swap by app.js (spec 7.2).
+-->
 <html xmlns:th="http://www.thymeleaf.org"
       xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
       layout:decorate="~{layout}">
 <head><title th:text="#{nav.dashboard}">Dashboard</title></head>
 <body>
 <div layout:fragment="content">
+    <!-- KPI row: what the jobs present as, each linking to the list filtered to it. -->
     <div class="row row-cards">
+        <div class="col-sm-6 col-lg-3">
+            <a class="card card-link h-100" th:href="@{/jobs(status='published')}">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div>
+                            <div class="subheader" th:text="#{status.published}">Published</div>
+                            <div class="h1 mb-0" th:text="${dashboard.published}">0</div>
+                        </div>
+                        <span class="sparkline sparkline-lg sparkline-square text-green ms-auto"
+                              data-bs-toggle="sparkline" data-bs-type="circle" data-bs-label="auto"
+                              data-bs-width="40" data-bs-height="40"
+                              th:attr="data-bs-values=${dashboard.publishedShare},aria-label=#{dashboard.kpi.share(${dashboard.publishedShare})}"></span>
+                    </div>
+                    <div class="text-secondary small mt-1"
+                         th:text="#{dashboard.kpi.new(${dashboard.newRecently}, ${dashboard.recentDays})}">2 new in the last 30 days</div>
+                </div>
+                <div class="card-progress kpi-bar bg-green"></div>
+            </a>
+        </div>
         <div class="col-sm-6 col-lg-3" th:each="stat : ${ {
-                {'published', dashboard.published, 'green'},
                 {'draft', dashboard.draft, 'secondary'},
                 {'expired', dashboard.expired, 'yellow'},
                 {'inactive', dashboard.inactive, 'dark'} } }">
-            <a class="card card-link" th:href="@{/jobs(status=${stat[0]})}">
+            <a class="card card-link h-100" th:href="@{/jobs(status=${stat[0]})}">
                 <div class="card-body">
-                    <div class="subheader" th:text="#{'status.' + ${stat[0]}}">Published</div>
+                    <div class="subheader" th:text="#{'status.' + ${stat[0]}}">Draft</div>
                     <div class="h1 mb-0" th:text="${stat[1]}">0</div>
                 </div>
-                <div class="card-progress" th:classappend="'bg-' + ${stat[2]}" style="height:3px"></div>
+                <div class="card-progress kpi-bar" th:classappend="'bg-' + ${stat[2]}"></div>
             </a>
         </div>
     </div>
 
-    <!-- Clicks on the job links in the published documents (spec 5.6, 7.10). -->
-    <div class="card mt-3" id="clicks">
-        <div class="card-header">
-            <h3 class="card-title" th:text="#{dashboard.clicks.title}">Job link clicks</h3>
-            <div class="card-actions text-secondary">
-                <span th:text="#{dashboard.clicks.window(${dashboard.clicks.days})}">Last 30 days</span>
-                <span th:unless="${dashboard.clicks.empty}"
-                      th:text="' · ' + #{dashboard.clicks.total(${dashboard.clicks.total})}"> · 12 clicks in total</span>
+    <div class="row row-cards mt-0">
+        <!-- Clicks on the job links (spec 5.6): the total, its trend, and the days as a line and a strip. -->
+        <div class="col-lg-8">
+            <div class="card h-100" id="clicks">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="subheader" th:text="#{dashboard.clicks.title}">Job link clicks</div>
+                        <div class="ms-auto text-secondary small"
+                             th:text="#{dashboard.clicks.window(${dashboard.clicks.days})}">Last 30 days</div>
+                    </div>
+                    <div class="d-flex align-items-baseline flex-wrap gap-2 mb-2">
+                        <div class="h1 mb-0" th:text="${dashboard.clicks.total}">0</div>
+                        <span th:replace="~{fragments/trend :: trend(${dashboard.clicks.trend})}"></span>
+                    </div>
+                    <span class="sparkline sparkline-wide text-primary" data-bs-toggle="sparkline"
+                          data-bs-fill="auto" data-bs-spot="last" data-bs-width="300" data-bs-height="48"
+                          th:attr="data-bs-values=${dashboard.clicks.sparkline},aria-label=#{dashboard.clicks.line(${dashboard.clicks.days})}"></span>
+                    <div class="tracking tracking-squares mt-3" role="img" th:aria-label="${dashboard.clicks.summary}">
+                        <div class="tracking-block" th:each="b : ${dashboard.clicks.blocks}"
+                             th:classappend="${b.level}" th:title="${b.title}"></div>
+                    </div>
+                    <!-- The colours in words, and the summary the strip reads out (spec 7.9). -->
+                    <div class="d-flex flex-wrap align-items-center gap-3 mt-2 small text-secondary">
+                        <span><span class="legend-swatch"></span> <span th:text="#{dashboard.clicks.level.none}">none</span></span>
+                        <span><span class="legend-swatch bg-azure-lt"></span> <span th:text="#{dashboard.clicks.level.low}">low</span></span>
+                        <span><span class="legend-swatch bg-azure"></span> <span th:text="#{dashboard.clicks.level.medium}">medium</span></span>
+                        <span><span class="legend-swatch bg-blue"></span> <span th:text="#{dashboard.clicks.level.high}">high</span></span>
+                        <span class="ms-auto" th:text="${dashboard.clicks.summary}">12 of 30 days with clicks</span>
+                    </div>
+                </div>
             </div>
         </div>
-        <div class="card-body text-secondary" th:if="${dashboard.clicks.empty}"
-             th:text="#{dashboard.clicks.empty}">No clicks yet.</div>
-        <div class="row g-0" th:unless="${dashboard.clicks.empty}">
-            <div class="col-lg-7">
-                <div class="table-responsive">
+
+        <!-- What someone should look at next (spec 7.10). -->
+        <div class="col-lg-4">
+            <div class="card h-100" id="attention">
+                <div class="card-header">
+                    <h3 class="card-title" th:text="#{dashboard.attention.title}">Needs attention</h3>
+                </div>
+                <div class="card-body text-secondary" th:if="${dashboard.attention.empty}">
+                    <svg th:replace="~{fragments/icon :: i('circle-check','icon text-green me-1')}"></svg>
+                    <span th:text="#{dashboard.attention.none}">Nothing needs attention.</span>
+                </div>
+                <div class="list-group list-group-flush" th:unless="${dashboard.attention.empty}">
+                    <th:block th:each="g : ${ {
+                            {'closing', dashboard.attention.closing},
+                            {'incomplete', dashboard.attention.incomplete},
+                            {'stale', dashboard.attention.stale} } }">
+                        <th:block th:unless="${g[1].empty}">
+                            <div class="list-group-header small" th:text="#{'dashboard.attention.' + ${g[0]}}">Closing soon</div>
+                            <a class="list-group-item list-group-item-action d-flex align-items-center"
+                               th:each="r : ${g[1].rows}" th:href="@{'/jobs/' + ${r.id}}">
+                                <!-- Literal names, so the sprite has them (make assets). -->
+                                <th:block th:if="${g[0] == 'closing'}"><svg th:replace="~{fragments/icon :: i('clock','icon me-2 text-yellow')}"></svg></th:block>
+                                <th:block th:if="${g[0] == 'incomplete'}"><svg th:replace="~{fragments/icon :: i('alert-triangle','icon me-2 text-red')}"></svg></th:block>
+                                <th:block th:if="${g[0] == 'stale'}"><svg th:replace="~{fragments/icon :: i('pencil','icon me-2 text-secondary')}"></svg></th:block>
+                                <span class="text-truncate">
+                                    <span th:text="${r.title}">Senior Backend Engineer</span>
+                                    <span class="text-secondary small d-block">
+                                        <span th:text="${r.note}">closes in 3 days</span><span
+                                            th:unless="${singleEmployer}" th:text="' · ' + ${r.employerName}"> · Acme</span>
+                                    </span>
+                                </span>
+                            </a>
+                            <a class="list-group-item list-group-item-action small text-secondary"
+                               th:if="${g[1].more > 0}" th:href="@{${g[1].listUrl}}"
+                               th:text="#{dashboard.attention.more(${g[1].more})}">and 2 more</a>
+                        </th:block>
+                    </th:block>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row row-cards mt-0">
+        <!-- The most clicked jobs, each with its last days as bars and its own trend. -->
+        <div class="col-lg-8">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h3 class="card-title" th:text="#{dashboard.clicks.topJobs}">Most clicked jobs</h3>
+                    <div class="card-actions text-secondary small"
+                         th:text="#{dashboard.clicks.window(${dashboard.clicks.days})}">Last 30 days</div>
+                </div>
+                <div class="card-body text-secondary" th:if="${dashboard.clicks.jobs.isEmpty()}"
+                     th:text="#{dashboard.clicks.empty}">No clicks yet.</div>
+                <div class="table-responsive" th:unless="${dashboard.clicks.jobs.isEmpty()}">
                     <table class="table table-vcenter card-table">
                         <thead>
                         <tr>
-                            <th th:text="#{dashboard.clicks.topJobs}">Most clicked jobs</th>
+                            <th th:text="#{label.title}">Title</th>
                             <th th:unless="${singleEmployer}" th:text="#{nav.employers}">Employer</th>
-                            <th class="w-33" th:text="#{dashboard.clicks.clicks}">Clicks</th>
+                            <th class="text-end" th:text="#{dashboard.clicks.clicks}">Clicks</th>
+                            <th th:text="#{dashboard.clicks.recent(${dashboard.clicks.trendDays})}">Last 14 days</th>
                         </tr>
                         </thead>
                         <tbody>
                         <tr th:each="j : ${dashboard.clicks.jobs}">
                             <td><a th:href="@{'/jobs/' + ${j.id}}" th:text="${j.title}">Senior Backend Engineer</a></td>
                             <td th:unless="${singleEmployer}" th:text="${j.employerName}">Acme AG</td>
+                            <td class="text-end fw-bold click-count" th:text="${j.clicks}">12</td>
                             <td>
                                 <div class="d-flex align-items-center gap-2">
-                                    <span class="fw-bold click-count" th:text="${j.clicks}">12</span>
-                                    <progress class="progress progress-sm flex-fill" max="100"
-                                              th:value="${j.share}" aria-hidden="true">100</progress>
+                                    <span class="sparkline text-primary" data-bs-toggle="sparkline" data-bs-type="bar"
+                                          th:attr="data-bs-values=${j.sparkline},aria-label=#{dashboard.clicks.jobLine(${j.recentTotal}, ${dashboard.clicks.trendDays})}"></span>
+                                    <span th:replace="~{fragments/trend :: trend(${j.trend})}"></span>
                                 </div>
                             </td>
                         </tr>
@@ -60,12 +158,20 @@
                     </table>
                 </div>
             </div>
-            <div class="col-lg-5">
-                <div class="table-responsive">
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h3 class="card-title" th:text="#{dashboard.clicks.countries}">By country</h3>
+                </div>
+                <div class="card-body text-secondary" th:if="${dashboard.clicks.countries.isEmpty()}"
+                     th:text="#{dashboard.clicks.empty}">No clicks yet.</div>
+                <div class="table-responsive" th:unless="${dashboard.clicks.countries.isEmpty()}">
                     <table class="table table-vcenter card-table">
                         <thead>
                         <tr>
-                            <th th:text="#{dashboard.clicks.countries}">By country</th>
+                            <th th:text="#{dashboard.clicks.country}">Country</th>
                             <th class="w-50" th:text="#{dashboard.clicks.clicks}">Clicks</th>
                         </tr>
                         </thead>
@@ -87,31 +193,62 @@
         </div>
     </div>
 
-    <div class="card mt-3">
-        <div class="card-header">
-            <h3 class="card-title" th:text="#{nav.feeds}">Feeds</h3>
+    <div class="row row-cards mt-0">
+        <!-- The latest of the log the Activity screen shows this viewer (spec 7.21). -->
+        <div class="col-lg-6">
+            <div class="card h-100" id="recent-activity">
+                <div class="card-header">
+                    <h3 class="card-title" th:text="#{dashboard.activity.title}">Recent activity</h3>
+                    <div class="card-actions">
+                        <a class="btn btn-sm" th:href="@{/activity}" th:text="#{dashboard.activity.all}">View all</a>
+                    </div>
+                </div>
+                <div class="card-body text-secondary" th:if="${dashboard.activity.isEmpty()}"
+                     th:text="#{activity.empty.title}">No activity yet</div>
+                <div class="list-group list-group-flush" th:unless="${dashboard.activity.isEmpty()}">
+                    <div class="list-group-item" th:each="e : ${dashboard.activity}">
+                        <div th:text="${e.text}">created the job "Engineer"</div>
+                        <div class="text-secondary small">
+                            <span th:text="${e.actor}">Mara Member</span>
+                            <!-- A token is said in words, never only by colour (spec 7.9). -->
+                            <span class="badge bg-azure-lt ms-1" th:if="${e.actorKind == 'token'}"
+                                  th:text="#{activity.actor.token}">API token</span>
+                            · <span th:text="${e.at}">2026-09-27 10:00</span><span
+                                th:unless="${singleEmployer or e.employer == null}" th:text="' · ' + ${e.employer}"> · Acme</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
-        <th:block th:if="${dashboard.feeds.isEmpty()}">
-            <div th:replace="~{fragments/empty :: state('rss','feed.empty.title','feed.empty.subtitle','/feeds/create','feed.create')}"></div>
-        </th:block>
-        <div class="table-responsive" th:unless="${dashboard.feeds.isEmpty()}">
-            <table class="table table-vcenter card-table">
-                <thead>
-                <tr>
-                    <th th:text="#{label.name}">Name</th>
-                    <th th:text="#{feed.publishedJobs}">Published</th>
-                </tr>
-                </thead>
-                <tbody>
-                <tr th:each="f : ${dashboard.feeds}">
-                    <td><a th:href="@{'/feeds/' + ${f.id}}" th:text="${f.name}">Feed</a></td>
-                    <td>
-                        <span class="badge bg-green-lt" th:text="${f.publishedCount}">0</span>
-                        <span class="text-secondary ms-1" th:text="#{feed.ofMembers(${f.memberCount})}">of 0</span>
-                    </td>
-                </tr>
-                </tbody>
-            </table>
+
+        <div class="col-lg-6">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h3 class="card-title" th:text="#{nav.feeds}">Feeds</h3>
+                </div>
+                <th:block th:if="${dashboard.feeds.isEmpty()}">
+                    <div th:replace="~{fragments/empty :: state('rss','feed.empty.title','feed.empty.subtitle','/feeds/create','feed.create')}"></div>
+                </th:block>
+                <div class="table-responsive" th:unless="${dashboard.feeds.isEmpty()}">
+                    <table class="table table-vcenter card-table">
+                        <thead>
+                        <tr>
+                            <th th:text="#{label.name}">Name</th>
+                            <th th:text="#{feed.publishedJobs}">Published</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr th:each="f : ${dashboard.feeds}">
+                            <td><a th:href="@{'/feeds/' + ${f.id}}" th:text="${f.name}">Feed</a></td>
+                            <td>
+                                <span class="badge bg-green-lt" th:text="${f.publishedCount}">0</span>
+                                <span class="text-secondary ms-1" th:text="#{feed.ofMembers(${f.memberCount})}">of 0</span>
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
         </div>
     </div>
 

@@ -35,7 +35,7 @@ What the browser may load:
 | Asset | Source | Purpose |
 |---|---|---|
 | **htmx** | npm | All partial page updates |
-| **Tabler's CSS and JS** | npm | The design system, and the components that cannot work without script: offcanvas sidebar, dropdowns, modals, tooltips |
+| **Tabler's CSS and JS** | npm | The design system, and the components that cannot work without script: offcanvas sidebar, dropdowns, modals, tooltips, and the sparklines of the dashboard (§7.10) |
 | **Tabler icons** | npm | A sprite trimmed to the icons actually used, not the full set |
 | **The application's own module** | written here | The small amount of behaviour that genuinely belongs in the browser |
 
@@ -45,7 +45,9 @@ Rules:
   written — no transpiler, no bundler, no framework. It is reviewed like any other source file: no
   `eval`, no building markup or code from strings, and nothing that duplicates state the server owns.
 - **A library needs a reason.** No SPA framework, no jQuery, no client-side validation library, no date
-  picker, no rich text editor, no charting library, no select/autocomplete library (§7.8 gives the
+  picker, no rich text editor, no charting library — Tabler's own sparkline and tracking components
+  are enough for the dashboard's trends (§7.10), and the application's module draws the sparklines an
+  htmx swap brings in — no select/autocomplete library (§7.8 gives the
   server-rendered alternative). Adding one is a decision to record, not a convenience.
 - **Dependencies come from npm**, pinned in `package.json` with a committed lockfile. Their `dist`
   files are copied into `/static` **and committed**, so a clean checkout builds with Maven alone and
@@ -289,24 +291,45 @@ browsers already provide type-ahead on a native select, so no library is warrant
 
 ## 7.10 Dashboard
 
-The landing screen for the active employer. Cards show counts of **published**, **draft**, **expired**
-and **inactive** jobs, and a feed summary listing each feed with its published job count. Every figure
-links to the list already filtered to it.
+The landing screen for the employers in scope: every figure on it covers the same employers. Top to
+bottom:
 
-Below it, the employer's permalinks (§5.5): name, the feed each publishes — or *No feed*, in words — and
-its URL with a copy action and an *Open* link. These are the URLs a website is configured with, so the
-dashboard shows them and not the feeds' own URLs, which are for testing (§7.12).
+- **Status cards:** counts of **published**, **draft** (drafts and incomplete jobs), **expired** and
+  **inactive** jobs, each linking to the list already filtered to it. The published card also shows
+  the published share of all jobs as a ring, and how many jobs were first published in the last 30
+  days.
+- **Job link clicks** (§5.6), over the last 30 days (configurable):
+  - the total, and its change against the 30 days before, as a percentage with an arrow;
+  - a line of the daily clicks;
+  - a **tracking strip** with one square per day, shaded by activity against the busiest day (none,
+    low, medium, high), each day's count in its tooltip, and a legend;
+  - with no clicks in the period before, the change reads *new*.
+- **Needs attention**, up to five jobs per group, each linking to the job, and "and N more" linking to
+  the filtered list:
+  - published jobs whose last day — the earlier of the apply-by and end dates (§4.4) — is within 14
+    days, soonest first;
+  - active jobs that cannot be published (§4.3);
+  - drafts nobody has changed for 30 days.
+  - With none of these, it says that nothing needs attention.
+- **Most clicked jobs** over the window, most first, each linking to its job and with its employer when
+  the scope covers more than one. Each row has a bar chart of its last 14 days, and a trend against the
+  14 days before.
+- **Clicks by country**, the country named in the viewer's language and *Unknown* in words, with a bar
+  against the largest.
+- **Recent activity:** the five latest events of the log the Activity screen shows this viewer (§7.21),
+  with the same audience rules, and a link to it.
+- **Feeds**, each with its published job count.
+- **Permalinks** (§5.5): name, the feed each publishes — or *No feed*, in words — and its URL with a
+  copy action and an *Open* link. These are the URLs a website is configured with, so the dashboard
+  shows them and not the feeds' own URLs, which are for testing (§7.12).
+
+**Charts are hints.** They are Tabler's own sparkline and tracking components (§7.2); every figure they
+draw is also printed as text beside them, and each has a label saying what it shows (§7.9). Without
+JavaScript only the shape is lost.
 
 The dashboard carries no separate warning for jobs a feed leaves out at serving time (§5.3): the status
-counts above already show how many are expired, drafts or inactive, and the Feeds list and each feed's
-screen name the omitted jobs and why (§7.12).
-
-A **clicks** card shows how the job links (§5.6) were followed over the last 30 days (configurable): the
-most clicked jobs, most first, each linking to its job and with its employer when the scope covers more
-than one; and the clicks by country, the country named in the viewer's language and *Unknown* in words.
-Each figure carries a bar against the largest in its table, a plain `<progress>` element with no chart
-library (§7.2). It covers the same employers as every other figure on the dashboard. A job that has
-since left the feed keeps its clicks. With none, the card says so rather than showing empty tables.
+counts already show how many are expired, drafts or inactive, and the Feeds list and each feed's screen
+name the omitted jobs and why (§7.12). A job that has since left the feed keeps its clicks.
 
 ## 7.11 Jobs
 
