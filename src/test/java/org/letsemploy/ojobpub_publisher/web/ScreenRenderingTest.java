@@ -340,6 +340,9 @@ class ScreenRenderingTest {
                 .as("the most clicked job first")
                 .isLessThan(body.indexOf("Praktikum Produktdesign", body.indexOf("Most clicked jobs")));
 
+        // The seeded admin works in admin mode here: no getting-started hints.
+        assertThat(body).doesNotContain("id=\"hint-");
+
         // The CSP forbids inline styles (spec 9.4); sizes are classes.
         assertThat(body.substring(body.indexOf("id=\"main\""))).doesNotContain("style=");
     }

@@ -13,6 +13,7 @@ import org.letsemploy.ojobpub_publisher.job.DashboardJobs;
 import org.letsemploy.ojobpub_publisher.job.Job;
 import org.letsemploy.ojobpub_publisher.job.JobService;
 import org.letsemploy.ojobpub_publisher.job.Publication;
+import org.letsemploy.ojobpub_publisher.security.Actor;
 import org.letsemploy.ojobpub_publisher.web.view.DashboardView;
 import org.letsemploy.ojobpub_publisher.web.view.FeedRow;
 import org.letsemploy.ojobpub_publisher.web.view.PageMeta;
@@ -86,6 +87,13 @@ public class IndexController {
             }
         }
 
+        // Getting started (spec 7.10): what a newcomer has yet to create. Not for
+        // admin mode, which is the staff's view, not a newcomer's.
+        Actor actor = scope.user();
+        boolean hasEmployer = scope.activeEmployer().isPresent();
+        boolean hintEmployer = !actor.isAdmin() && !hasEmployer;
+        boolean hintJob = !actor.isAdmin() && hasEmployer && jobs.total() == 0;
+
         model.addAttribute("page", PageMeta.of(message("nav.dashboard")));
         // Every figure covers the employers in scope, and the activity is the log
         // the Activity screen would show this actor (spec 7.10, 7.21).
@@ -96,7 +104,7 @@ public class IndexController {
                 views.attention(jobs, ATTENTION_ROWS),
                 auditService.latest(scope.employerIds(), scope.user(), ACTIVITY_ROWS).stream()
                         .map(views::activityRow).toList(),
-                feedRows, permalinks));
+                feedRows, permalinks, hintEmployer, hintJob));
         return "dashboard";
     }
 

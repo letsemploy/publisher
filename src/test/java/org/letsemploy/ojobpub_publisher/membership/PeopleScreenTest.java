@@ -152,4 +152,25 @@ class PeopleScreenTest {
                 .contains("No employer yet")
                 .doesNotContain("Mara Member");
     }
+
+    /**
+     * Getting started (spec 7.10): a user with no employer is told how to get one
+     * on the dashboard, and there is no job hint without an employer to be about.
+     */
+    @Test
+    void aUserWithNoEmployerIsShownHowToStartOnTheDashboard() throws Exception {
+        given(currentUserService.current()).willReturn(Actor.user(
+                UUID.randomUUID(), "Newcomer", "newcomer@example.com", false, Map.of()));
+        assertThat(people("/"))
+                .contains("id=\"hint-employer\"")
+                .contains("href=\"/employers/create\"")
+                .contains("href=\"/invitations\"")
+                .doesNotContain("id=\"hint-job\"");
+    }
+
+    /** An editor of an employer with jobs has nothing to start: no hints. */
+    @Test
+    void aMemberWithJobsSeesNoHints() throws Exception {
+        assertThat(people("/")).doesNotContain("id=\"hint-employer\"").doesNotContain("id=\"hint-job\"");
+    }
 }

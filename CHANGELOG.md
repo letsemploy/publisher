@@ -8,6 +8,11 @@ Section numbers such as §5.6 refer to the specification in [`docs/SPEC.md`](doc
 
 ## [Unreleased]
 
+### Added
+
+- Getting-started messages on the dashboard, outside admin mode: for a user with no employer yet
+  (create one, or see the invitations) and for an employer with no job yet (§7.10).
+
 ### Changed
 
 - One employer is always active: the first by name until another is chosen, and a choice that is no

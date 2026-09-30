@@ -321,6 +321,17 @@ bottom:
   copy action and an *Open* link. These are the URLs a website is configured with, so the dashboard
   shows them and not the feeds' own URLs, which are for testing (§7.12).
 
+**Getting started.** Outside admin mode (§2.10), the dashboard opens with an information message for
+each thing a newcomer has yet to create, with the way to do it:
+
+- **No employer yet** — for a user who belongs to none (§2.5): create one, or see the invitations
+  (§7.16).
+- **No job yet** — for an active employer without any job: create the first one.
+
+Each is shown on every visit while it applies and disappears once the gap is filled; there is nothing
+to dismiss and nothing stored. There is no location message: every employer has its headquarters
+(§3.1).
+
 **Charts are hints.** They are Tabler's own sparkline and tracking components (§7.2); every figure they
 draw is also printed as text beside them, and each has a label saying what it shows (§7.9). Without
 JavaScript only the shape is lost.

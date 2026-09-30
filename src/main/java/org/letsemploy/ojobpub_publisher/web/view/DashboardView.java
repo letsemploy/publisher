@@ -20,5 +20,9 @@ public record DashboardView(
         List<ActivityRow> activity,
         List<FeedRow> feeds,
         /** Permalinks with their URLs, the ones a website is configured with. */
-        List<PermalinkRow> permalinks) {
+        List<PermalinkRow> permalinks,
+        /** Getting started: the user belongs to no employer yet (not in admin mode). */
+        boolean hintEmployer,
+        /** Getting started: the active employer has no job yet (not in admin mode). */
+        boolean hintJob) {
 }

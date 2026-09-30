@@ -11,6 +11,35 @@
 <head><title th:text="#{nav.dashboard}">Dashboard</title></head>
 <body>
 <div layout:fragment="content">
+    <!--
+      Getting started (spec 7.10): what a newcomer has yet to create, each with the
+      way to do it. Shown while it applies, outside admin mode; nothing to dismiss.
+    -->
+    <div class="alert alert-info" role="status" th:if="${dashboard.hintEmployer}" id="hint-employer">
+        <svg th:replace="~{fragments/icon :: i('info-circle','icon alert-icon flex-shrink-0')}"></svg>
+        <div class="flex-fill">
+            <h4 class="alert-title" th:text="#{dashboard.hint.employer.title}">No employer yet</h4>
+            <div class="text-secondary" th:text="#{dashboard.hint.employer.text}">Create one, or accept an invitation.</div>
+            <div class="btn-list mt-2">
+                <a class="btn btn-primary btn-sm" th:href="@{/employers/create}"
+                   th:text="#{dashboard.hint.employer.action}">Create an employer</a>
+                <a class="btn btn-sm" th:href="@{/invitations}"
+                   th:text="#{dashboard.hint.employer.invitations}">See your invitations</a>
+            </div>
+        </div>
+    </div>
+    <div class="alert alert-info" role="status" th:if="${dashboard.hintJob}" id="hint-job">
+        <svg th:replace="~{fragments/icon :: i('info-circle','icon alert-icon flex-shrink-0')}"></svg>
+        <div class="flex-fill">
+            <h4 class="alert-title" th:text="#{dashboard.hint.job.title}">No job yet</h4>
+            <div class="text-secondary" th:text="#{dashboard.hint.job.text}">Create the first job.</div>
+            <div class="btn-list mt-2">
+                <a class="btn btn-primary btn-sm" th:href="@{/jobs/create}"
+                   th:text="#{dashboard.hint.job.action}">Create a job</a>
+            </div>
+        </div>
+    </div>
+
     <!-- KPI row: what the jobs present as, each linking to the list filtered to it. -->
     <div class="row row-cards">
         <div class="col-sm-6 col-lg-3">
