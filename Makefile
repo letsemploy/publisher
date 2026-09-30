@@ -19,7 +19,7 @@ git-release:
 	@test -n "$(v)" || { echo "usage: make git-release v=x.y.z" >&2; exit 1; }
 	scripts/release-changelog.sh $(v)
 	git add CHANGELOG.md
-	git commit -m '"Release $(v)"'
-	git tag -a -m '"Release $(v)"' v$(v)
+	git commit -m "Release $(v)"
+	git tag -a -m "Release $(v)" v$(v)
 	git push origin main
 	git push origin v$(v)
