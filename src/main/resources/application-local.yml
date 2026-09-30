@@ -29,6 +29,10 @@ spring:
   sql:
     init:
       mode: always
+  # Mailpit from docker-compose.yml; its inbox is http://localhost:8025.
+  mail:
+    host: localhost
+    port: ${MAILPIT_SMTP_PORT:1025}
   # Introspection and GraphiQL are development conveniences only (spec 11.6).
   graphql:
     schema:

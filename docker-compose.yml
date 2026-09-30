@@ -41,3 +41,13 @@ services:
       - ./keycloak:/opt/keycloak/data/import:ro
     ports:
       - '${KEYCLOAK_PORT:-8083}:8080'
+
+  # Catches every mail the application sends (spec 2.12), so sign-up and
+  # password-reset links can be followed locally: http://localhost:8025.
+  # SMTP on 1025, which application-local.yml points spring.mail at.
+  mailpit:
+    image: docker.io/axllent/mailpit
+    restart: always
+    ports:
+      - '${MAILPIT_SMTP_PORT:-1025}:1025'
+      - '${MAILPIT_UI_PORT:-8025}:8025'
