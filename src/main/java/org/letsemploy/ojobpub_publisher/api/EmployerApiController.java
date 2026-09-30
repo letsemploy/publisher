@@ -4,7 +4,6 @@ import static org.letsemploy.ojobpub_publisher.api.JobApiController.uuid;
 
 import java.util.Map;
 import java.util.UUID;
-import lombok.RequiredArgsConstructor;
 import org.letsemploy.ojobpub_publisher.api.ApiTypes.*;
 import org.letsemploy.ojobpub_publisher.common.exception.ValidationFailure;
 import org.letsemploy.ojobpub_publisher.employer.Employer;
@@ -27,13 +26,22 @@ import org.springframework.transaction.annotation.Transactional;
  * acts for a person on the back-office screens.
  */
 @Controller
-@RequiredArgsConstructor
 public class EmployerApiController {
 
     private final EmployerService employerService;
     private final ApiMapper mapper;
     private final ApiActor api;
     private final ApiErrors errors;
+
+    public EmployerApiController(EmployerService employerService,
+                                 ApiMapper mapper,
+                                 ApiActor api,
+                                 ApiErrors errors) {
+        this.employerService = employerService;
+        this.mapper = mapper;
+        this.api = api;
+        this.errors = errors;
+    }
 
     /**
      * Readable by any token: knowing the name of the employer you were issued

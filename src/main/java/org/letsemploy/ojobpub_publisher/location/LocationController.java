@@ -3,7 +3,6 @@ package org.letsemploy.ojobpub_publisher.location;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import lombok.RequiredArgsConstructor;
 import org.letsemploy.ojobpub_publisher.common.exception.ValidationFailure;
 import org.letsemploy.ojobpub_publisher.employer.Employer;
 import org.letsemploy.ojobpub_publisher.web.Scope;
@@ -24,13 +23,22 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
  */
 @Controller
 @RequestMapping("/locations")
-@RequiredArgsConstructor
 public class LocationController {
 
     private final LocationService locationService;
     private final Scope scope;
     private final Views views;
     private final MessageSource messages;
+
+    public LocationController(LocationService locationService,
+                              Scope scope,
+                              Views views,
+                              MessageSource messages) {
+        this.locationService = locationService;
+        this.scope = scope;
+        this.views = views;
+        this.messages = messages;
+    }
 
     @GetMapping
     public String list(Model model) {

@@ -6,11 +6,9 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import lombok.RequiredArgsConstructor;
 import org.letsemploy.ojobpub_publisher.audit.AuditAction;
 import org.letsemploy.ojobpub_publisher.audit.AuditEvent;
 import org.letsemploy.ojobpub_publisher.audit.AuditLog;
-import lombok.extern.slf4j.Slf4j;
 import org.letsemploy.ojobpub_publisher.common.ResourceLimits;
 import org.letsemploy.ojobpub_publisher.common.exception.NotFoundException;
 import org.letsemploy.ojobpub_publisher.common.exception.ValidationFailure;
@@ -19,6 +17,8 @@ import org.letsemploy.ojobpub_publisher.location.LocationService;
 import org.letsemploy.ojobpub_publisher.security.Actor;
 import org.letsemploy.ojobpub_publisher.tag.Tag;
 import org.letsemploy.ojobpub_publisher.tag.TagService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
@@ -26,9 +26,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
-@RequiredArgsConstructor
-@Slf4j
 public class JobService {
+
+    private static final Logger log = LoggerFactory.getLogger(JobService.class);
 
     private final JobRepo jobRepo;
     private final JobStatusEventRepo eventRepo;
@@ -36,6 +36,20 @@ public class JobService {
     private final LocationService locationService;
     private final ResourceLimits limits;
     private final AuditLog auditLog;
+
+    public JobService(JobRepo jobRepo,
+                      JobStatusEventRepo eventRepo,
+                      TagService tagService,
+                      LocationService locationService,
+                      ResourceLimits limits,
+                      AuditLog auditLog) {
+        this.jobRepo = jobRepo;
+        this.eventRepo = eventRepo;
+        this.tagService = tagService;
+        this.locationService = locationService;
+        this.limits = limits;
+        this.auditLog = auditLog;
+    }
 
     /**
      * @param presentation what the job presents as (spec 7.6), not the stored
@@ -229,7 +243,7 @@ public class JobService {
             List<Publication.Requirement> blockers = Publication.activationBlockers(job);
             if (!blockers.isEmpty()) {
                 var errors = new java.util.LinkedHashMap<String, String>();
-                blockers.forEach(b -> errors.put(b.getLabelKey(), "Required before activation."));
+                blockers.forEach(b -> errors.put(b.labelKey(), "Required before activation."));
                 throw new ValidationFailure(errors);
             }
             // Stamped once, on first activation, and never moved afterwards (spec 4.2).

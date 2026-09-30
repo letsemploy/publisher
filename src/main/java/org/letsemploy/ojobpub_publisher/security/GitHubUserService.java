@@ -3,7 +3,8 @@ package org.letsemploy.ojobpub_publisher.security;
 import java.net.URI;
 import java.util.List;
 import java.util.Map;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
@@ -33,8 +34,9 @@ import org.springframework.web.client.RestTemplate;
  *
  * <p>Not a bean: the OIDC chain constructs it, as it does its filters.
  */
-@Slf4j
 public class GitHubUserService implements OAuth2UserService<OAuth2UserRequest, OAuth2User> {
+
+    private static final Logger log = LoggerFactory.getLogger(GitHubUserService.class);
 
     private final DefaultOAuth2UserService profiles = new DefaultOAuth2UserService();
     private RestOperations rest = new RestTemplate();

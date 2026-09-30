@@ -4,7 +4,8 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.stereotype.Component;
@@ -25,8 +26,9 @@ import org.springframework.stereotype.Component;
  */
 @Component
 @EnableConfigurationProperties(AdminPolicy.AdminProperties.class)
-@Slf4j
 public class AdminPolicy {
+
+    private static final Logger log = LoggerFactory.getLogger(AdminPolicy.class);
 
     /**
      * {@code app.admin.people} and {@code app.admin.groups}. A person names exactly

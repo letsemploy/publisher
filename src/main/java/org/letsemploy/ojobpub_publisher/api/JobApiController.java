@@ -4,7 +4,6 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import lombok.RequiredArgsConstructor;
 import org.letsemploy.ojobpub_publisher.api.ApiTypes.*;
 import org.letsemploy.ojobpub_publisher.common.exception.NotFoundException;
 import org.letsemploy.ojobpub_publisher.common.exception.ValidationFailure;
@@ -30,7 +29,6 @@ import org.springframework.transaction.annotation.Transactional;
  * one the screen cannot activate either.
  */
 @Controller
-@RequiredArgsConstructor
 public class JobApiController {
 
     /** The same cap the back-office applies, for the same reason (spec 8.3). */
@@ -41,6 +39,18 @@ public class JobApiController {
     private final ApiMapper mapper;
     private final ApiActor api;
     private final ApiErrors errors;
+
+    public JobApiController(JobService jobService,
+                            EmployerService employerService,
+                            ApiMapper mapper,
+                            ApiActor api,
+                            ApiErrors errors) {
+        this.jobService = jobService;
+        this.employerService = employerService;
+        this.mapper = mapper;
+        this.api = api;
+        this.errors = errors;
+    }
 
     // ---------------------------------------------------------------- queries
 

@@ -2,10 +2,10 @@ package org.letsemploy.ojobpub_publisher.web;
 
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.UUID;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.letsemploy.ojobpub_publisher.common.exception.NotFoundException;
 import org.letsemploy.ojobpub_publisher.web.view.PageMeta;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.ControllerAdvice;
@@ -17,11 +17,15 @@ import org.springframework.web.bind.annotation.ResponseStatus;
  * to the log. Stack traces never reach the browser (spec 8.2).
  */
 @ControllerAdvice(basePackages = "org.letsemploy.ojobpub_publisher")
-@Slf4j
-@RequiredArgsConstructor
 public class GlobalErrorHandler {
 
+    private static final Logger log = LoggerFactory.getLogger(GlobalErrorHandler.class);
+
     private final UiContextFactory uiContextFactory;
+
+    public GlobalErrorHandler(UiContextFactory uiContextFactory) {
+        this.uiContextFactory = uiContextFactory;
+    }
 
     @ExceptionHandler(NotFoundException.class)
     @ResponseStatus(HttpStatus.NOT_FOUND)

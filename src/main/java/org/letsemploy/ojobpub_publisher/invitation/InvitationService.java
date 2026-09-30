@@ -3,8 +3,6 @@ package org.letsemploy.ojobpub_publisher.invitation;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.letsemploy.ojobpub_publisher.audit.AuditAction;
 import org.letsemploy.ojobpub_publisher.audit.AuditEvent;
 import org.letsemploy.ojobpub_publisher.audit.AuditLog;
@@ -19,6 +17,8 @@ import org.letsemploy.ojobpub_publisher.security.Actor;
 import org.letsemploy.ojobpub_publisher.security.UserEntity;
 import org.letsemploy.ojobpub_publisher.token.ServiceTokenRepo;
 import org.letsemploy.ojobpub_publisher.security.UserRepo;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -27,9 +27,9 @@ import org.springframework.transaction.annotation.Transactional;
  * matching the rest of the application.
  */
 @Service
-@RequiredArgsConstructor
-@Slf4j
 public class InvitationService {
+
+    private static final Logger log = LoggerFactory.getLogger(InvitationService.class);
 
     /**
      * What an invite attempt did. {@link #SENT} is deliberately indistinguishable
@@ -47,6 +47,22 @@ public class InvitationService {
     private final MembershipService membershipService;
     private final ResourceLimits limits;
     private final AuditLog auditLog;
+
+    public InvitationService(InvitationRepo invitationRepo,
+                             ServiceTokenRepo serviceTokenRepo,
+                             UserRepo userRepo,
+                             EmployerRepo employerRepo,
+                             MembershipService membershipService,
+                             ResourceLimits limits,
+                             AuditLog auditLog) {
+        this.invitationRepo = invitationRepo;
+        this.serviceTokenRepo = serviceTokenRepo;
+        this.userRepo = userRepo;
+        this.employerRepo = employerRepo;
+        this.membershipService = membershipService;
+        this.limits = limits;
+        this.auditLog = auditLog;
+    }
 
     // ------------------------------------------------------------- the invitee
 

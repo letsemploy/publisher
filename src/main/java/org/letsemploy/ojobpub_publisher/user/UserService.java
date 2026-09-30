@@ -9,8 +9,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.letsemploy.ojobpub_publisher.audit.AuditAction;
 import org.letsemploy.ojobpub_publisher.audit.AuditEvent;
 import org.letsemploy.ojobpub_publisher.audit.AuditLog;
@@ -25,6 +23,8 @@ import org.letsemploy.ojobpub_publisher.web.Views;
 import org.letsemploy.ojobpub_publisher.web.view.PageView;
 import org.letsemploy.ojobpub_publisher.web.view.SuspensionView;
 import org.letsemploy.ojobpub_publisher.web.view.UserRow;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
@@ -38,9 +38,9 @@ import org.springframework.transaction.annotation.Transactional;
  * non-admin gets 404 (spec 2.4).
  */
 @Service
-@RequiredArgsConstructor
-@Slf4j
 public class UserService {
+
+    private static final Logger log = LoggerFactory.getLogger(UserService.class);
 
     static final int PAGE_SIZE = 20;
     /** The audit log's detail column holds 255; a reason is a sentence, not a report. */
@@ -49,6 +49,12 @@ public class UserService {
     private final UserRepo userRepo;
     private final MembershipService membershipService;
     private final AuditLog auditLog;
+
+    public UserService(UserRepo userRepo, MembershipService membershipService, AuditLog auditLog) {
+        this.userRepo = userRepo;
+        this.membershipService = membershipService;
+        this.auditLog = auditLog;
+    }
 
     @Transactional(readOnly = true)
     public PageView<UserRow> page(String q, boolean suspendedOnly, int page, Actor actor) {

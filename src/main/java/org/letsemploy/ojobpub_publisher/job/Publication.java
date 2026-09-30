@@ -8,7 +8,6 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import lombok.Value;
 import org.springframework.data.jpa.domain.Specification;
 
 /**
@@ -23,11 +22,7 @@ public final class Publication {
     }
 
     /** One requirement, its message key and the form anchor that fixes it. */
-    @Value
-    public static class Requirement {
-        String labelKey;
-        boolean satisfied;
-        String fixAnchor;
+    public record Requirement(String labelKey, boolean satisfied, String fixAnchor) {
     }
 
     /** Requirements 1-5: checked when activating, so bad data never reaches a feed. */

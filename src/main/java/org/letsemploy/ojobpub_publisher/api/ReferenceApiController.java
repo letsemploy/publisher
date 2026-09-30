@@ -2,7 +2,6 @@ package org.letsemploy.ojobpub_publisher.api;
 
 import java.util.List;
 import java.util.UUID;
-import lombok.RequiredArgsConstructor;
 import org.letsemploy.ojobpub_publisher.api.ApiTypes.LocationDto;
 import org.letsemploy.ojobpub_publisher.api.ApiTypes.TagDto;
 import org.letsemploy.ojobpub_publisher.location.LocationService;
@@ -22,13 +21,22 @@ import org.springframework.transaction.annotation.Transactional;
  * for that reason: they exist to fill a posting in.
  */
 @Controller
-@RequiredArgsConstructor
 public class ReferenceApiController {
 
     private final LocationService locationService;
     private final TagService tagService;
     private final ApiMapper mapper;
     private final ApiActor api;
+
+    public ReferenceApiController(LocationService locationService,
+                                  TagService tagService,
+                                  ApiMapper mapper,
+                                  ApiActor api) {
+        this.locationService = locationService;
+        this.tagService = tagService;
+        this.mapper = mapper;
+        this.api = api;
+    }
 
     @QueryMapping
     @Transactional(readOnly = true)

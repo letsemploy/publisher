@@ -5,8 +5,8 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.logout.SecurityContextLogoutHandler;
 import org.springframework.web.filter.OncePerRequestFilter;
@@ -24,13 +24,17 @@ import org.springframework.web.filter.OncePerRequestFilter;
  * <p>Not a bean, like {@link ServiceTokenAuthFilter}: Boot would register a
  * {@code Filter} bean against every request. The OIDC chain constructs it.
  */
-@RequiredArgsConstructor
-@Slf4j
 class SuspendedAccountFilter extends OncePerRequestFilter {
+
+    private static final Logger log = LoggerFactory.getLogger(SuspendedAccountFilter.class);
 
     static final String TARGET = "/login?suspended";
 
     private final CurrentUserService currentUserService;
+
+    SuspendedAccountFilter(CurrentUserService currentUserService) {
+        this.currentUserService = currentUserService;
+    }
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response,

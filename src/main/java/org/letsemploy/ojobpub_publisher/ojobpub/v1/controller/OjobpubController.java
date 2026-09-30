@@ -5,8 +5,6 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.letsemploy.ojobpub_publisher.feed.Feed;
 import org.letsemploy.ojobpub_publisher.feed.FeedService;
 import org.letsemploy.ojobpub_publisher.feed.Permalink;
@@ -30,8 +28,6 @@ import org.springframework.web.bind.annotation.RestController;
  * decorative, so a stale slug still resolves and redirects to the canonical URL.
  */
 @RestController
-@RequiredArgsConstructor
-@Slf4j
 public class OjobpubController {
 
     /**
@@ -49,6 +45,11 @@ public class OjobpubController {
 
     private final FeedService feedService;
     private final PermalinkService permalinkService;
+
+    public OjobpubController(FeedService feedService, PermalinkService permalinkService) {
+        this.feedService = feedService;
+        this.permalinkService = permalinkService;
+    }
 
     @GetMapping(value = "/ojobpub/v1/{employerSegment}/{feedSegment}/ojobpub.json",
             produces = MediaType.APPLICATION_JSON_VALUE)
@@ -76,7 +77,7 @@ public class OjobpubController {
         if (!canonicalEmployer.equals(employerSegment) || !canonicalFeed.equals(feedSegment)) {
             return movedTo("/ojobpub/v1/" + canonicalEmployer + "/" + canonicalFeed + "/ojobpub.json");
         }
-        return ok(feedService.publish(feed).getDocument());
+        return ok(feedService.publish(feed).document());
     }
 
     /**
@@ -106,7 +107,7 @@ public class OjobpubController {
     private static ResponseEntity<?> ok(OjobpubDto document) {
         return ResponseEntity.ok()
                 .cacheControl(CacheControl.maxAge(Duration.ofMinutes(5)).cachePublic())
-                .lastModified(document.getLastUpdated())
+                .lastModified(document.lastUpdated())
                 .body(document);
     }
 

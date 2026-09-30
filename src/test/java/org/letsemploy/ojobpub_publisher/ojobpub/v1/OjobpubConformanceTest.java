@@ -114,7 +114,7 @@ class OjobpubConformanceTest {
     }
 
     private void assertConforms(Feed feed) {
-        var document = service.generate(feed, LocalDate.of(2026, 9, 21)).getDocument();
+        var document = service.generate(feed, LocalDate.of(2026, 9, 21)).document();
         assertThat(validator.validate(document)).as("schema violations").isEmpty();
     }
 
@@ -168,8 +168,8 @@ class OjobpubConformanceTest {
     @Test
     void noFeedConforms() {
         var document = service.generateEmpty(employer(), java.time.Instant.parse("2026-09-21T10:00:00Z"))
-                .getDocument();
-        assertThat(document.getJobs()).isEmpty();
+                .document();
+        assertThat(document.jobs()).isEmpty();
         assertThat(validator.validate(document)).as("schema violations").isEmpty();
     }
 
@@ -177,8 +177,8 @@ class OjobpubConformanceTest {
     void workTypeUsesTheHyphenatedFormTheSchemaRequires() {
         Employer employer = employer();
         var document = service.generate(feed(employer, maximalJob(employer)),
-                LocalDate.of(2026, 9, 21)).getDocument();
-        assertThat(document.getJobs().get(0).getWorkType()).isEqualTo("on-site");
+                LocalDate.of(2026, 9, 21)).document();
+        assertThat(document.jobs().get(0).workType()).isEqualTo("on-site");
     }
 
     /** A LocalDateTime would emit no offset and fail the date-time format. */
@@ -186,7 +186,7 @@ class OjobpubConformanceTest {
     void lastUpdatedIsRfc3339WithOffset() throws Exception {
         Employer employer = employer();
         var document = service.generate(feed(employer, minimalJob(employer)),
-                LocalDate.of(2026, 9, 21)).getDocument();
+                LocalDate.of(2026, 9, 21)).document();
         assertThat(mapper.writeValueAsString(document))
                 .containsPattern("\"lastUpdated\"\\s*:\\s*\"\\d{4}-\\d{2}-\\d{2}T[\\d:.]+Z\"");
     }
@@ -195,12 +195,12 @@ class OjobpubConformanceTest {
     void codesAreNormalisedToTheCaseTheSchemaDocuments() {
         Employer employer = employer();
         var document = service.generate(feed(employer, maximalJob(employer)),
-                LocalDate.of(2026, 9, 21)).getDocument();
-        var job = document.getJobs().get(0);
-        assertThat(document.getEmployer().getLocation().getCountry()).isEqualTo("CH");
-        assertThat(job.getLocations()).allSatisfy(l -> assertThat(l.getCountry()).isEqualTo("CH"));
-        assertThat(job.getSalary().getCurrency()).isEqualTo("CHF");
-        assertThat(job.getLanguage()).isEqualTo("en");
+                LocalDate.of(2026, 9, 21)).document();
+        var job = document.jobs().get(0);
+        assertThat(document.employer().location().country()).isEqualTo("CH");
+        assertThat(job.locations()).allSatisfy(l -> assertThat(l.country()).isEqualTo("CH"));
+        assertThat(job.salary().currency()).isEqualTo("CHF");
+        assertThat(job.language()).isEqualTo("en");
     }
 
     /** Tags are part of the contract and the most useful signal in the document. */
@@ -208,8 +208,8 @@ class OjobpubConformanceTest {
     void tagsArePublished() {
         Employer employer = employer();
         var document = service.generate(feed(employer, maximalJob(employer)),
-                LocalDate.of(2026, 9, 21)).getDocument();
-        assertThat(document.getJobs().get(0).getTags())
+                LocalDate.of(2026, 9, 21)).document();
+        assertThat(document.jobs().get(0).tags())
                 .containsExactly("java", "kubernetes", "spring");
     }
 
@@ -224,9 +224,9 @@ class OjobpubConformanceTest {
         Feed feed = feed(employer, job);
         assertConforms(feed);
         var salary = service.generate(feed, LocalDate.of(2026, 9, 21))
-                .getDocument().getJobs().get(0).getSalary();
-        assertThat(salary.getMin()).isEqualByComparingTo("90000");
-        assertThat(salary.getMax()).isNull();
+                .document().jobs().get(0).salary();
+        assertThat(salary.min()).isEqualByComparingTo("90000");
+        assertThat(salary.max()).isNull();
     }
 
     /** Six-figure salaries must not lose accuracy (spec 6.7). */
@@ -238,7 +238,7 @@ class OjobpubConformanceTest {
         job.setSalaryCurrency("CHF");
         job.setSalaryInterval(SalaryInterval.YEARLY);
         assertThat(mapper.writeValueAsString(
-                service.generate(feed(employer, job), LocalDate.of(2026, 9, 21)).getDocument()))
+                service.generate(feed(employer, job), LocalDate.of(2026, 9, 21)).document()))
                 .contains("123456.78");
     }
 
@@ -254,9 +254,9 @@ class OjobpubConformanceTest {
         draft.setStatus(JobStatus.DRAFT);
 
         var result = service.generate(feed(employer, expired, draft), LocalDate.of(2026, 9, 21));
-        assertThat(result.getDocument().getJobs()).isEmpty();
-        assertThat(result.getExclusions()).extracting(OjobpubService.Exclusion::getReasonKey)
+        assertThat(result.document().jobs()).isEmpty();
+        assertThat(result.exclusions()).extracting(OjobpubService.Exclusion::reasonKey)
                 .containsExactlyInAnyOrder("feed.reason.expired", "feed.reason.draft");
-        assertThat(validator.validate(result.getDocument())).isEmpty();
+        assertThat(validator.validate(result.document())).isEmpty();
     }
 }

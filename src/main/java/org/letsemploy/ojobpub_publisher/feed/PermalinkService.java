@@ -5,7 +5,6 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
-import lombok.RequiredArgsConstructor;
 import org.letsemploy.ojobpub_publisher.audit.AuditAction;
 import org.letsemploy.ojobpub_publisher.audit.AuditEvent;
 import org.letsemploy.ojobpub_publisher.audit.AuditLog;
@@ -25,7 +24,6 @@ import org.springframework.transaction.annotation.Transactional;
  * and the management API alike.
  */
 @Service
-@RequiredArgsConstructor
 public class PermalinkService {
 
     private final PermalinkRepo permalinkRepo;
@@ -33,6 +31,18 @@ public class PermalinkService {
     private final ResourceLimits limits;
     private final OjobpubService ojobpubService;
     private final AuditLog auditLog;
+
+    public PermalinkService(PermalinkRepo permalinkRepo,
+                            FeedRepo feedRepo,
+                            ResourceLimits limits,
+                            OjobpubService ojobpubService,
+                            AuditLog auditLog) {
+        this.permalinkRepo = permalinkRepo;
+        this.feedRepo = feedRepo;
+        this.limits = limits;
+        this.ojobpubService = ojobpubService;
+        this.auditLog = auditLog;
+    }
 
     @Transactional(readOnly = true)
     public List<Permalink> findByEmployer(UUID employerId) {
@@ -72,11 +82,11 @@ public class PermalinkService {
     public OjobpubDto publish(Permalink permalink) {
         Instant since = permalink.getLastModifiedAt();
         if (permalink.getFeed() == null) {
-            return ojobpubService.generateEmpty(permalink.getEmployer(), since).getDocument();
+            return ojobpubService.generateEmpty(permalink.getEmployer(), since).document();
         }
-        OjobpubDto document = ojobpubService.generate(permalink.getFeed(), LocalDate.now()).getDocument();
-        if (since != null && since.isAfter(document.getLastUpdated())) {
-            document.setLastUpdated(since);
+        OjobpubDto document = ojobpubService.generate(permalink.getFeed(), LocalDate.now()).document();
+        if (since != null && since.isAfter(document.lastUpdated())) {
+            return document.withLastUpdated(since);
         }
         return document;
     }

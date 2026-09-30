@@ -5,7 +5,8 @@ import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Optional;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.config.BeanFactoryPostProcessor;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.context.EnvironmentAware;
@@ -25,8 +26,9 @@ import org.springframework.stereotype.Component;
  */
 @Component
 @Profile("sqlite")
-@Slf4j
 public class SqliteConfig implements BeanFactoryPostProcessor, EnvironmentAware {
+
+    private static final Logger log = LoggerFactory.getLogger(SqliteConfig.class);
 
     private static final String PREFIX = "jdbc:sqlite:";
 

@@ -4,7 +4,6 @@ import static org.letsemploy.ojobpub_publisher.api.JobApiController.uuid;
 
 import java.util.List;
 import java.util.UUID;
-import lombok.RequiredArgsConstructor;
 import org.letsemploy.ojobpub_publisher.api.ApiTypes.*;
 import org.letsemploy.ojobpub_publisher.common.exception.ValidationFailure;
 import org.letsemploy.ojobpub_publisher.invitation.InvitationService;
@@ -27,7 +26,6 @@ import org.springframework.transaction.annotation.Transactional;
  * the only write site for memberships, and only the invitee can do it (spec 2.6).
  */
 @Controller
-@RequiredArgsConstructor
 public class PeopleApiController {
 
     private final MembershipService membershipService;
@@ -35,6 +33,18 @@ public class PeopleApiController {
     private final ApiMapper mapper;
     private final ApiActor api;
     private final ApiErrors errors;
+
+    public PeopleApiController(MembershipService membershipService,
+                               InvitationService invitationService,
+                               ApiMapper mapper,
+                               ApiActor api,
+                               ApiErrors errors) {
+        this.membershipService = membershipService;
+        this.invitationService = invitationService;
+        this.mapper = mapper;
+        this.api = api;
+        this.errors = errors;
+    }
 
     @QueryMapping
     @Transactional(readOnly = true)

@@ -3,7 +3,6 @@ package org.letsemploy.ojobpub_publisher.web;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
-import lombok.RequiredArgsConstructor;
 import org.letsemploy.ojobpub_publisher.common.exception.NotFoundException;
 import org.letsemploy.ojobpub_publisher.employer.Employer;
 import org.letsemploy.ojobpub_publisher.employer.EmployerService;
@@ -16,12 +15,19 @@ import org.springframework.stereotype.Component;
  * is chosen, otherwise every employer the user may see (spec 2.5).
  */
 @Component
-@RequiredArgsConstructor
 public class Scope {
 
     private final CurrentUserService currentUserService;
     private final EmployerService employerService;
     private final EmployerContext employerContext;
+
+    public Scope(CurrentUserService currentUserService,
+                 EmployerService employerService,
+                 EmployerContext employerContext) {
+        this.currentUserService = currentUserService;
+        this.employerService = employerService;
+        this.employerContext = employerContext;
+    }
 
     public Actor user() {
         return currentUserService.current();

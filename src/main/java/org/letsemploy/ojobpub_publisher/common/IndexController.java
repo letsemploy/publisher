@@ -3,7 +3,6 @@ package org.letsemploy.ojobpub_publisher.common;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
-import lombok.RequiredArgsConstructor;
 import org.letsemploy.ojobpub_publisher.employer.Employer;
 import org.letsemploy.ojobpub_publisher.feed.Feed;
 import org.letsemploy.ojobpub_publisher.feed.FeedService;
@@ -25,7 +24,6 @@ import org.springframework.web.bind.annotation.GetMapping;
 
 /** The dashboard (spec 7.10). */
 @Controller
-@RequiredArgsConstructor
 public class IndexController {
 
     private final Scope scope;
@@ -34,6 +32,20 @@ public class IndexController {
     private final PermalinkService permalinkService;
     private final Views views;
     private final MessageSource messages;
+
+    public IndexController(Scope scope,
+                           JobService jobService,
+                           FeedService feedService,
+                           PermalinkService permalinkService,
+                           Views views,
+                           MessageSource messages) {
+        this.scope = scope;
+        this.jobService = jobService;
+        this.feedService = feedService;
+        this.permalinkService = permalinkService;
+        this.views = views;
+        this.messages = messages;
+    }
 
     @GetMapping("/")
     public String index(Model model) {

@@ -2,10 +2,8 @@ package org.letsemploy.ojobpub_publisher.common.exception;
 
 import java.util.List;
 import java.util.Map;
-import lombok.Getter;
 
 /** Field-level validation failures, carried back to the form (spec 8.2). */
-@Getter
 public class ValidationFailure extends RuntimeException {
 
     private final Map<String, String> fieldErrors;
@@ -17,6 +15,10 @@ public class ValidationFailure extends RuntimeException {
 
     public ValidationFailure(String field, String message) {
         this(Map.of(field, message));
+    }
+
+    public Map<String, String> getFieldErrors() {
+        return fieldErrors;
     }
 
     public List<String> fields() {

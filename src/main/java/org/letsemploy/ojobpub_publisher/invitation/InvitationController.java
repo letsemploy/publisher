@@ -2,7 +2,6 @@ package org.letsemploy.ojobpub_publisher.invitation;
 
 import java.util.List;
 import java.util.UUID;
-import lombok.RequiredArgsConstructor;
 import org.letsemploy.ojobpub_publisher.common.exception.ValidationFailure;
 import org.letsemploy.ojobpub_publisher.employer.Employer;
 import org.letsemploy.ojobpub_publisher.web.EmployerContext;
@@ -26,7 +25,6 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
  */
 @Controller
 @RequestMapping("/invitations")
-@RequiredArgsConstructor
 public class InvitationController {
 
     private final InvitationService invitationService;
@@ -34,6 +32,18 @@ public class InvitationController {
     private final Scope scope;
     private final Views views;
     private final MessageSource messages;
+
+    public InvitationController(InvitationService invitationService,
+                                EmployerContext employerContext,
+                                Scope scope,
+                                Views views,
+                                MessageSource messages) {
+        this.invitationService = invitationService;
+        this.employerContext = employerContext;
+        this.scope = scope;
+        this.views = views;
+        this.messages = messages;
+    }
 
     @GetMapping
     public String list(Model model) {

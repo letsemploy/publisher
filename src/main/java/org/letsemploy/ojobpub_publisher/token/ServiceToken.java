@@ -5,7 +5,6 @@ import java.time.Instant;
 import java.util.LinkedHashSet;
 import java.util.Set;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.letsemploy.ojobpub_publisher.common.Base;
 import org.letsemploy.ojobpub_publisher.employer.Employer;
@@ -16,7 +15,6 @@ import org.letsemploy.ojobpub_publisher.security.UserEntity;
 @Table(name = "service_tokens")
 @Getter
 @Setter
-@NoArgsConstructor
 public class ServiceToken extends Base {
 
     @ManyToOne(fetch = FetchType.EAGER, optional = false)

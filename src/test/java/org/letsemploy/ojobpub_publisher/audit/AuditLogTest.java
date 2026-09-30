@@ -156,7 +156,7 @@ class AuditLogTest {
                 .limit(2).map(views::activityRow).toList();
         assertThat(rows).hasSize(2);
         assertThat(rows.get(0)).isEqualTo(rows.get(1));
-        assertThat(rows.get(0).getText()).doesNotContain("Rita").doesNotContain("@");
+        assertThat(rows.get(0).text()).doesNotContain("Rita").doesNotContain("@");
         // Only the invitee's own log learns it was about them.
         assertThat(actions(auditService.forPerson(someone.getId(),
                 Actor.user(someone.getId(), "Rita Registered", someone.getEmail(), false, Map.of()), 0)

@@ -6,7 +6,6 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import lombok.RequiredArgsConstructor;
 import org.letsemploy.ojobpub_publisher.api.ApiTypes.*;
 import org.letsemploy.ojobpub_publisher.common.exception.ValidationFailure;
 import org.letsemploy.ojobpub_publisher.employer.EmployerService;
@@ -22,7 +21,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 /** Feeds and their membership over the management API (spec 11.2). */
 @Controller
-@RequiredArgsConstructor
 public class FeedApiController {
 
     private final FeedService feedService;
@@ -30,6 +28,18 @@ public class FeedApiController {
     private final ApiMapper mapper;
     private final ApiActor api;
     private final ApiErrors errors;
+
+    public FeedApiController(FeedService feedService,
+                             EmployerService employerService,
+                             ApiMapper mapper,
+                             ApiActor api,
+                             ApiErrors errors) {
+        this.feedService = feedService;
+        this.employerService = employerService;
+        this.mapper = mapper;
+        this.api = api;
+        this.errors = errors;
+    }
 
     @QueryMapping
     @Transactional(readOnly = true)

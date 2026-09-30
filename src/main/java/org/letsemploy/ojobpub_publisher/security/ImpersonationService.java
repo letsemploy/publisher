@@ -1,13 +1,13 @@
 package org.letsemploy.ojobpub_publisher.security;
 
 import java.util.UUID;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.letsemploy.ojobpub_publisher.audit.AuditAction;
 import org.letsemploy.ojobpub_publisher.audit.AuditEvent;
 import org.letsemploy.ojobpub_publisher.audit.AuditLog;
 import org.letsemploy.ojobpub_publisher.common.exception.NotFoundException;
 import org.letsemploy.ojobpub_publisher.web.EmployerContext;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,14 +20,24 @@ import org.springframework.transaction.annotation.Transactional;
  * every change while it lasts.
  */
 @Service
-@RequiredArgsConstructor
-@Slf4j
 public class ImpersonationService {
+
+    private static final Logger log = LoggerFactory.getLogger(ImpersonationService.class);
 
     private final CurrentUserService currentUserService;
     private final UserRepo userRepo;
     private final EmployerContext employerContext;
     private final AuditLog auditLog;
+
+    public ImpersonationService(CurrentUserService currentUserService,
+                                UserRepo userRepo,
+                                EmployerContext employerContext,
+                                AuditLog auditLog) {
+        this.currentUserService = currentUserService;
+        this.userRepo = userRepo;
+        this.employerContext = employerContext;
+        this.auditLog = auditLog;
+    }
 
     @Transactional
     public UserEntity start(UUID targetId) {

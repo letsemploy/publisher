@@ -1,7 +1,6 @@
 package org.letsemploy.ojobpub_publisher.user;
 
 import java.util.UUID;
-import lombok.RequiredArgsConstructor;
 import org.letsemploy.ojobpub_publisher.common.exception.ValidationFailure;
 import org.letsemploy.ojobpub_publisher.web.Scope;
 import org.letsemploy.ojobpub_publisher.web.view.PageMeta;
@@ -20,12 +19,17 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
  * (spec 2.11): admin only, enforced in {@link UserService}.
  */
 @Controller
-@RequiredArgsConstructor
 public class UsersController {
 
     private final UserService userService;
     private final Scope scope;
     private final MessageSource messages;
+
+    public UsersController(UserService userService, Scope scope, MessageSource messages) {
+        this.userService = userService;
+        this.scope = scope;
+        this.messages = messages;
+    }
 
     @GetMapping("/users")
     public String list(Model model, @RequestParam(required = false) String q,

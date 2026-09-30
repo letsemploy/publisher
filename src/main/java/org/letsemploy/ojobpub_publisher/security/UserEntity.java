@@ -3,7 +3,6 @@ package org.letsemploy.ojobpub_publisher.security;
 import jakarta.persistence.*;
 import java.time.Instant;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.letsemploy.ojobpub_publisher.common.Base;
 
@@ -15,7 +14,6 @@ import org.letsemploy.ojobpub_publisher.common.Base;
 @Table(name = "users")
 @Getter
 @Setter
-@NoArgsConstructor
 public class UserEntity extends Base {
 
     @Column(nullable = false)

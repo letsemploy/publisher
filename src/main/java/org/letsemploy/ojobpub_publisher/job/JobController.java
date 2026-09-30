@@ -8,8 +8,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.letsemploy.ojobpub_publisher.common.exception.ValidationFailure;
 import org.letsemploy.ojobpub_publisher.employer.Employer;
 import org.letsemploy.ojobpub_publisher.employer.EmployerService;
@@ -34,8 +32,6 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 @Controller
 @RequestMapping("/jobs")
-@RequiredArgsConstructor
-@Slf4j
 public class JobController {
 
     /** Pagination is capped regardless of what the request asks for (spec 8.3). */
@@ -51,6 +47,24 @@ public class JobController {
     private final Scope scope;
     private final Views views;
     private final MessageSource messages;
+
+    public JobController(JobService jobService,
+                         FeedService feedService,
+                         TagService tagService,
+                         LocationService locationService,
+                         EmployerService employerService,
+                         Scope scope,
+                         Views views,
+                         MessageSource messages) {
+        this.jobService = jobService;
+        this.feedService = feedService;
+        this.tagService = tagService;
+        this.locationService = locationService;
+        this.employerService = employerService;
+        this.scope = scope;
+        this.views = views;
+        this.messages = messages;
+    }
 
     // ------------------------------------------------------------------ list
 

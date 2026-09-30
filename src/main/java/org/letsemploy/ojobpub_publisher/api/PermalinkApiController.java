@@ -6,7 +6,6 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import lombok.RequiredArgsConstructor;
 import org.letsemploy.ojobpub_publisher.api.ApiTypes.*;
 import org.letsemploy.ojobpub_publisher.common.exception.ValidationFailure;
 import org.letsemploy.ojobpub_publisher.employer.EmployerService;
@@ -26,7 +25,6 @@ import org.springframework.transaction.annotation.Transactional;
  * not transactional, as for every mutation here (see {@link ApiMapper}).
  */
 @Controller
-@RequiredArgsConstructor
 public class PermalinkApiController {
 
     private final PermalinkService permalinkService;
@@ -34,6 +32,18 @@ public class PermalinkApiController {
     private final ApiMapper mapper;
     private final ApiActor api;
     private final ApiErrors errors;
+
+    public PermalinkApiController(PermalinkService permalinkService,
+                                  EmployerService employerService,
+                                  ApiMapper mapper,
+                                  ApiActor api,
+                                  ApiErrors errors) {
+        this.permalinkService = permalinkService;
+        this.employerService = employerService;
+        this.mapper = mapper;
+        this.api = api;
+        this.errors = errors;
+    }
 
     @QueryMapping
     @Transactional(readOnly = true)

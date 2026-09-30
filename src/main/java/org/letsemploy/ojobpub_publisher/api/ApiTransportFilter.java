@@ -5,7 +5,6 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import lombok.RequiredArgsConstructor;
 import org.letsemploy.ojobpub_publisher.security.Actor;
 import org.letsemploy.ojobpub_publisher.security.ServiceTokenAuthFilter;
 import org.springframework.web.filter.OncePerRequestFilter;
@@ -21,13 +20,17 @@ import org.springframework.web.filter.OncePerRequestFilter;
  * request, which would apply the API's rules to the whole back-office. It is
  * constructed by the security chain that wants it and nothing else.
  */
-@RequiredArgsConstructor
 public class ApiTransportFilter extends OncePerRequestFilter {
 
     private final ApiRateLimiter rateLimiter;
 
     /** 256 KB is far more than any documented query, and far less than a denial of service. */
     private final long maxRequestBytes;
+
+    public ApiTransportFilter(ApiRateLimiter rateLimiter, long maxRequestBytes) {
+        this.rateLimiter = rateLimiter;
+        this.maxRequestBytes = maxRequestBytes;
+    }
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response,

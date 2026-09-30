@@ -74,7 +74,7 @@ class ServiceTokenExpiryTest {
 
     @Test
     void aNewTokenIsGivenAnExpiry() {
-        assertThat(mint("fresh").getToken().getExpiresAt())
+        assertThat(mint("fresh").token().getExpiresAt())
                 .isNotNull()
                 .isAfter(Instant.now().plus(300, ChronoUnit.DAYS));
     }
@@ -82,9 +82,9 @@ class ServiceTokenExpiryTest {
     @Test
     void anExpiredTokenDoesNotAuthenticate() {
         var created = mint("lapsing");
-        assertThat(tokens.authenticate(created.getSecret())).isPresent();
-        expire(created.getToken().getId());
-        assertThat(tokens.authenticate(created.getSecret())).isEmpty();
+        assertThat(tokens.authenticate(created.secret())).isPresent();
+        expire(created.token().getId());
+        assertThat(tokens.authenticate(created.secret())).isEmpty();
     }
 
     /**
@@ -96,9 +96,9 @@ class ServiceTokenExpiryTest {
     @Test
     void aRefusedCallIsNotRecordedAsUse() {
         var created = mint("refused");
-        expire(created.getToken().getId());
-        tokens.authenticate(created.getSecret());
-        assertThat(tokenRepo.findById(created.getToken().getId()).orElseThrow().getLastUsedAt())
+        expire(created.token().getId());
+        tokens.authenticate(created.secret());
+        assertThat(tokenRepo.findById(created.token().getId()).orElseThrow().getLastUsedAt())
                 .isNull();
     }
 
@@ -106,16 +106,16 @@ class ServiceTokenExpiryTest {
     @Test
     void renewingBringsItBackWithTheSameSecret() {
         var created = mint("renewable");
-        String secretHashBefore = created.getToken().getSecretHash();
-        expire(created.getToken().getId());
-        assertThat(tokens.authenticate(created.getSecret())).isEmpty();
+        String secretHashBefore = created.token().getSecretHash();
+        expire(created.token().getId());
+        assertThat(tokens.authenticate(created.secret())).isEmpty();
 
-        tokens.renew(created.getToken().getId(), admin);
+        tokens.renew(created.token().getId(), admin);
 
-        assertThat(tokens.authenticate(created.getSecret()))
+        assertThat(tokens.authenticate(created.secret()))
                 .as("the original secret still authenticates")
                 .isPresent();
-        assertThat(tokenRepo.findById(created.getToken().getId()).orElseThrow().getSecretHash())
+        assertThat(tokenRepo.findById(created.token().getId()).orElseThrow().getSecretHash())
                 .as("renewal does not re-mint anything")
                 .isEqualTo(secretHashBefore);
     }
@@ -127,7 +127,7 @@ class ServiceTokenExpiryTest {
     @Test
     void renewalExtendsFromNowNotFromTheOldDate() {
         var created = mint("stale");
-        ServiceToken token = tokenRepo.findById(created.getToken().getId()).orElseThrow();
+        ServiceToken token = tokenRepo.findById(created.token().getId()).orElseThrow();
         token.setExpiresAt(Instant.now().minus(240, ChronoUnit.DAYS));
         tokenRepo.save(token);
 
@@ -140,11 +140,11 @@ class ServiceTokenExpiryTest {
     @Test
     void aRevokedTokenCannotBeRenewed() {
         var created = mint("dead");
-        tokens.revoke(created.getToken().getId(), admin);
-        assertThatThrownBy(() -> tokens.renew(created.getToken().getId(), admin))
+        tokens.revoke(created.token().getId(), admin);
+        assertThatThrownBy(() -> tokens.renew(created.token().getId(), admin))
                 .isInstanceOf(ValidationFailure.class)
                 .hasMessageContaining("token");
-        assertThat(tokens.authenticate(created.getSecret())).isEmpty();
+        assertThat(tokens.authenticate(created.secret())).isEmpty();
     }
 
     /**
@@ -154,9 +154,9 @@ class ServiceTokenExpiryTest {
     @Test
     void aTokenCannotRenewItself() {
         var created = mint("self");
-        Actor itself = Actor.serviceToken(created.getToken().getId(), "self",
+        Actor itself = Actor.serviceToken(created.token().getId(), "self",
                 acme, MembershipRole.OWNER, Set.of(TokenScope.JOBS_READ));
-        assertThatThrownBy(() -> tokens.renew(created.getToken().getId(), itself))
+        assertThatThrownBy(() -> tokens.renew(created.token().getId(), itself))
                 .isInstanceOf(NotFoundException.class);
     }
 
@@ -165,7 +165,7 @@ class ServiceTokenExpiryTest {
     void anEditorCannotRenew() {
         var created = mint("guarded");
         Actor editor = asUser(userRepo.findUniqueByEmail("member@example.com").orElseThrow());
-        assertThatThrownBy(() -> tokens.renew(created.getToken().getId(), editor))
+        assertThatThrownBy(() -> tokens.renew(created.token().getId(), editor))
                 .isInstanceOf(NotFoundException.class);
     }
 
@@ -173,9 +173,9 @@ class ServiceTokenExpiryTest {
     @Test
     void aHealthyTokenMayBeRenewedEarly() {
         var created = mint("early");
-        Instant before = created.getToken().getExpiresAt();
-        tokens.renew(created.getToken().getId(), admin);
-        assertThat(tokenRepo.findById(created.getToken().getId()).orElseThrow().getExpiresAt())
+        Instant before = created.token().getExpiresAt();
+        tokens.renew(created.token().getId(), admin);
+        assertThat(tokenRepo.findById(created.token().getId()).orElseThrow().getExpiresAt())
                 .isAfterOrEqualTo(before);
     }
 }

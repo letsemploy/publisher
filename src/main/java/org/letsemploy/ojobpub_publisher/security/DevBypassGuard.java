@@ -2,8 +2,8 @@ package org.letsemploy.ojobpub_publisher.security;
 
 import jakarta.annotation.PostConstruct;
 import java.util.List;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
 import org.springframework.core.env.Environment;
@@ -16,11 +16,15 @@ import org.springframework.core.env.Environment;
  */
 @Configuration
 @Profile("dev")
-@RequiredArgsConstructor
-@Slf4j
 public class DevBypassGuard {
 
+    private static final Logger log = LoggerFactory.getLogger(DevBypassGuard.class);
+
     private final Environment environment;
+
+    public DevBypassGuard(Environment environment) {
+        this.environment = environment;
+    }
 
     @PostConstruct
     void refuseToRunUnauthenticatedInProduction() {

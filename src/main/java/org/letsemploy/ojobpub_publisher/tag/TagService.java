@@ -3,7 +3,6 @@ package org.letsemploy.ojobpub_publisher.tag;
 import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
-import lombok.RequiredArgsConstructor;
 import org.letsemploy.ojobpub_publisher.audit.AuditAction;
 import org.letsemploy.ojobpub_publisher.audit.AuditEvent;
 import org.letsemploy.ojobpub_publisher.audit.AuditLog;
@@ -20,11 +19,15 @@ import org.springframework.transaction.annotation.Transactional;
  * Renaming or deleting one therefore touches only that employer's jobs.
  */
 @Service
-@RequiredArgsConstructor
 public class TagService {
 
     private final TagRepo tagRepo;
     private final AuditLog auditLog;
+
+    public TagService(TagRepo tagRepo, AuditLog auditLog) {
+        this.tagRepo = tagRepo;
+        this.auditLog = auditLog;
+    }
 
     /** The list screen and the job form's picker: the first 20 matching, by name. */
     public List<Tag> search(Collection<UUID> employerIds, String query) {

@@ -5,7 +5,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
-import lombok.RequiredArgsConstructor;
 import org.letsemploy.ojobpub_publisher.common.exception.NotFoundException;
 import org.letsemploy.ojobpub_publisher.common.exception.ValidationFailure;
 import org.letsemploy.ojobpub_publisher.employer.Employer;
@@ -33,7 +32,6 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
  * employer path.
  */
 @Controller
-@RequiredArgsConstructor
 public class ServiceTokenController {
 
     private final ServiceTokenService tokenService;
@@ -42,6 +40,20 @@ public class ServiceTokenController {
     private final Scope scope;
     private final Views views;
     private final MessageSource messages;
+
+    public ServiceTokenController(ServiceTokenService tokenService,
+                                  EmployerService employerService,
+                                  MembershipService membershipService,
+                                  Scope scope,
+                                  Views views,
+                                  MessageSource messages) {
+        this.tokenService = tokenService;
+        this.employerService = employerService;
+        this.membershipService = membershipService;
+        this.scope = scope;
+        this.views = views;
+        this.messages = messages;
+    }
 
     /** The sidebar destination; with no employer chosen there is nothing to show. */
     @GetMapping("/tokens")
@@ -98,8 +110,8 @@ public class ServiceTokenController {
             ServiceTokenService.CreatedToken created = tokenService.create(
                     employerId, name, MembershipRole.valueOf(role.toUpperCase()),
                     parseScopes(scopes), scope.user());
-            flash.addFlashAttribute("createdSecret", created.getSecret());
-            flash.addFlashAttribute("createdName", created.getToken().getName());
+            flash.addFlashAttribute("createdSecret", created.secret());
+            flash.addFlashAttribute("createdName", created.token().getName());
             return redirectToTokens(employerId);
         } catch (ValidationFailure e) {
             populate(employerId, model, e.getFieldErrors(), name);
@@ -128,14 +140,14 @@ public class ServiceTokenController {
         TokenRow token = tokenService.forEmployer(employerId, scope.user()).stream()
                 .map(t -> views.tokenRow(t, java.time.Instant.now(),
                         tokenService.getExpiryWarningDays()))
-                .filter(t -> t.getId().equals(tokenId.toString()))
+                .filter(t -> t.id().equals(tokenId.toString()))
                 .findFirst()
                 .orElseThrow(() -> new NotFoundException("Token not found: " + tokenId));
         model.addAttribute("token", token);
         model.addAttribute("employerId", employerId.toString());
         // Names the token and says what stops working, rather than asking "are you sure?".
         model.addAttribute("message", messages.getMessage("token.revoke.body",
-                new Object[]{token.getName(), token.getPrefix()},
+                new Object[]{token.name(), token.prefix()},
                 LocaleContextHolder.getLocale()));
         return "token/revoke";
     }

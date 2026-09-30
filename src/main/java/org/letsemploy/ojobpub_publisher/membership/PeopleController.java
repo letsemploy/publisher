@@ -4,7 +4,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
-import lombok.RequiredArgsConstructor;
 import org.letsemploy.ojobpub_publisher.common.exception.NotFoundException;
 import org.letsemploy.ojobpub_publisher.common.exception.ValidationFailure;
 import org.letsemploy.ojobpub_publisher.employer.Employer;
@@ -33,7 +32,6 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
  * presentation, never the check (spec 2.4).
  */
 @Controller
-@RequiredArgsConstructor
 public class PeopleController {
 
     private final EmployerService employerService;
@@ -42,6 +40,20 @@ public class PeopleController {
     private final Scope scope;
     private final Views views;
     private final MessageSource messages;
+
+    public PeopleController(EmployerService employerService,
+                            InvitationService invitationService,
+                            MembershipService membershipService,
+                            Scope scope,
+                            Views views,
+                            MessageSource messages) {
+        this.employerService = employerService;
+        this.invitationService = invitationService;
+        this.membershipService = membershipService;
+        this.scope = scope;
+        this.views = views;
+        this.messages = messages;
+    }
 
     /**
      * The sidebar destination. With "All employers" chosen, or no memberships at
@@ -125,13 +137,13 @@ public class PeopleController {
         membershipService.requireOwner(scope.user(), employerId);
         Employer employer = employerService.findVisible(employerId, scope.user());
         MemberRow member = memberRows(employerId).stream()
-                .filter(m -> m.getId().equals(userId.toString()))
+                .filter(m -> m.id().equals(userId.toString()))
                 .findFirst()
                 .orElseThrow(() -> new NotFoundException("Member not found: " + userId));
         model.addAttribute("member", member);
         model.addAttribute("employerId", employerId.toString());
         model.addAttribute("message", messages.getMessage("employer.people.remove.body",
-                new Object[]{member.getDisplayName(), employer.getName()},
+                new Object[]{member.displayName(), employer.getName()},
                 LocaleContextHolder.getLocale()));
         return "membership/member_remove";
     }

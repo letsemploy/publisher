@@ -98,7 +98,7 @@ class ManagementApiTest {
 
     private String tokenWith(TokenScope... scopes) {
         return tokens.create(UUID.fromString(EMPLOYER), "test-" + UUID.randomUUID(),
-                MembershipRole.OWNER, Set.of(scopes), devAdmin()).getSecret();
+                MembershipRole.OWNER, Set.of(scopes), devAdmin()).secret();
     }
 
     private JsonNode query(String secret, String document) throws Exception {
@@ -218,7 +218,7 @@ class ManagementApiTest {
 
         // The same query issued by a token of the other employer finds nothing.
         String foreign = tokens.create(other.getId(), "foreign", MembershipRole.OWNER,
-                Set.of(TokenScope.JOBS_READ), devAdmin()).getSecret();
+                Set.of(TokenScope.JOBS_READ), devAdmin()).secret();
         assertThat(firstErrorCode(query(foreign, "{ job(id: \"" + JOB_INCOMPLETE + "\") { id } }")))
                 .isEqualTo("NOT_FOUND");
     }
@@ -237,7 +237,7 @@ class ManagementApiTest {
         var other = employers.save(null, "Other Co " + UUID.randomUUID(), null, null, null,
                 Headquarters.newLocation("Othertown", "DE"), devAdmin());
         String foreign = tokens.create(other.getId(), "foreign", MembershipRole.OWNER,
-                Set.of(TokenScope.JOBS_WRITE), devAdmin()).getSecret();
+                Set.of(TokenScope.JOBS_WRITE), devAdmin()).secret();
 
         JsonNode locations = query(foreign, "{ locations { id city } }").path("data").path("locations");
         assertThat(locations.findValuesAsText("city")).containsExactly("Othertown");

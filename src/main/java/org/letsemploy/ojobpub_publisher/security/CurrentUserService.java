@@ -5,13 +5,13 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.letsemploy.ojobpub_publisher.audit.AuditAction;
 import org.letsemploy.ojobpub_publisher.audit.AuditEvent;
 import org.letsemploy.ojobpub_publisher.audit.AuditLog;
 import org.letsemploy.ojobpub_publisher.membership.MembershipRole;
 import org.letsemploy.ojobpub_publisher.membership.MembershipService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.env.Environment;
 import org.springframework.security.core.Authentication;
@@ -26,9 +26,9 @@ import org.springframework.transaction.annotation.Transactional;
  * every one after (spec 2.2).
  */
 @Service
-@RequiredArgsConstructor
-@Slf4j
 public class CurrentUserService {
+
+    private static final Logger log = LoggerFactory.getLogger(CurrentUserService.class);
 
     /** The seeded development administrator (spec 2.3). */
     public static final String DEV_ISSUER = "dev";
@@ -40,6 +40,22 @@ public class CurrentUserService {
     private final Environment environment;
     private final AuditLog auditLog;
 
+    public CurrentUserService(UserRepo userRepo,
+                              MembershipService membershipService,
+                              AdminPolicy adminPolicy,
+                              Environment environment,
+                              AuditLog auditLog,
+                              @Value("${app.oidc.require-verified-email:true}") boolean requireVerifiedEmail,
+                              @Value("${app.admin.start-in-admin-mode:false}") boolean startInAdminMode) {
+        this.userRepo = userRepo;
+        this.membershipService = membershipService;
+        this.adminPolicy = adminPolicy;
+        this.environment = environment;
+        this.auditLog = auditLog;
+        this.requireVerifiedEmail = requireVerifiedEmail;
+        this.startInAdminMode = startInAdminMode;
+    }
+
     /**
      * Keep an email only when the provider says it is verified (spec 2.2). An
      * invitation goes to whichever account holds the address (spec 2.6), so an
@@ -47,16 +63,14 @@ public class CurrentUserService {
      * collect another person's invitations. Off only for a provider that never
      * sends {@code email_verified} at all.
      */
-    @Value("${app.oidc.require-verified-email:true}")
-    private boolean requireVerifiedEmail;
+    private final boolean requireVerifiedEmail;
 
     /**
      * Whether an admin's session starts in admin mode (spec 2.10). Off by default:
      * an admin works as an ordinary member until they switch up. The test profile
      * turns it on, so tests written before admin mode still act with full reach.
      */
-    @Value("${app.admin.start-in-admin-mode:false}")
-    private boolean startInAdminMode;
+    private final boolean startInAdminMode;
 
     public boolean isDevMode() {
         return List.of(environment.getActiveProfiles()).contains("dev");

@@ -65,7 +65,7 @@ class ApiQuotaTest {
         String secret = tokens.create(UUID.fromString(EMPLOYER), "quota-" + UUID.randomUUID(),
                 MembershipRole.OWNER, Set.of(TokenScope.JOBS_WRITE),
                 Actor.user(UUID.fromString(DEV_ADMIN), "dev@localhost", "dev@localhost", true,
-                        Map.of(UUID.fromString(EMPLOYER), MembershipRole.OWNER))).getSecret();
+                        Map.of(UUID.fromString(EMPLOYER), MembershipRole.OWNER))).secret();
 
         String document = "mutation { createJob(input: { title: \"Over the cap\", "
                 + "url: \"https://www.acme.example/jobs/over\", language: \"en\", "

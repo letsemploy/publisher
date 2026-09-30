@@ -3,7 +3,6 @@ package org.letsemploy.ojobpub_publisher.api;
 import java.time.LocalDate;
 import java.util.Comparator;
 import java.util.List;
-import lombok.RequiredArgsConstructor;
 import org.letsemploy.ojobpub_publisher.api.ApiTypes.*;
 import org.letsemploy.ojobpub_publisher.employer.Employer;
 import org.letsemploy.ojobpub_publisher.feed.Feed;
@@ -34,7 +33,6 @@ import java.util.UUID;
  * published that the feed omits.
  */
 @Component
-@RequiredArgsConstructor
 public class ApiMapper {
 
     private final Views views;
@@ -43,6 +41,20 @@ public class ApiMapper {
     private final PermalinkService permalinkService;
     private final EmployerService employerService;
     private final MembershipService membershipService;
+
+    public ApiMapper(Views views,
+                     JobService jobService,
+                     FeedService feedService,
+                     PermalinkService permalinkService,
+                     EmployerService employerService,
+                     MembershipService membershipService) {
+        this.views = views;
+        this.jobService = jobService;
+        this.feedService = feedService;
+        this.permalinkService = permalinkService;
+        this.employerService = employerService;
+        this.membershipService = membershipService;
+    }
 
     // --- read and map -------------------------------------------------------
     //

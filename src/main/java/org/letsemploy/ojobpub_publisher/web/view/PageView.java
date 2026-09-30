@@ -2,20 +2,13 @@ package org.letsemploy.ojobpub_publisher.web.view;
 
 import java.util.ArrayList;
 import java.util.List;
-import lombok.Value;
 
 /**
  * A slice of a list plus the links needed to page it. The URI builder keeps
  * every list state bookmarkable, which spec 7.4 requires of any control that
  * changes what the user is looking at.
  */
-@Value
-public class PageView<T> {
-    List<T> content;
-    int number;
-    int size;
-    long totalElements;
-    String baseUri;
+public record PageView<T>(List<T> content, int number, int size, long totalElements, String baseUri) {
 
     public int getTotalPages() {
         return size == 0 ? 0 : (int) Math.ceil((double) totalElements / size);

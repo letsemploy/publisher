@@ -2,7 +2,6 @@ package org.letsemploy.ojobpub_publisher.common;
 
 import jakarta.persistence.*;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.hibernate.annotations.UuidGenerator;
 import org.springframework.data.annotation.CreatedDate;
@@ -14,7 +13,6 @@ import java.util.UUID;
 @MappedSuperclass
 @Getter
 @Setter
-@NoArgsConstructor
 public abstract class Base {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)

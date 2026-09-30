@@ -4,7 +4,6 @@ import com.neovisionaries.i18n.CountryCode;
 import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
-import lombok.RequiredArgsConstructor;
 import org.letsemploy.ojobpub_publisher.audit.AuditAction;
 import org.letsemploy.ojobpub_publisher.audit.AuditEvent;
 import org.letsemploy.ojobpub_publisher.audit.AuditLog;
@@ -21,11 +20,15 @@ import org.springframework.transaction.annotation.Transactional;
  * employer's location is answered as if it did not exist (spec 2.4).
  */
 @Service
-@RequiredArgsConstructor
 public class LocationService {
 
     private final LocationRepo locationRepo;
     private final AuditLog auditLog;
+
+    public LocationService(LocationRepo locationRepo, AuditLog auditLog) {
+        this.locationRepo = locationRepo;
+        this.auditLog = auditLog;
+    }
 
     /** The list screen: every location of the employers in scope. */
     public List<Location> visibleTo(Collection<UUID> employerIds) {

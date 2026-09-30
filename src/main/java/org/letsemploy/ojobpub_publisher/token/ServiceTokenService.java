@@ -7,9 +7,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
-import lombok.RequiredArgsConstructor;
-import lombok.Value;
-import lombok.extern.slf4j.Slf4j;
 import org.letsemploy.ojobpub_publisher.audit.AuditAction;
 import org.letsemploy.ojobpub_publisher.audit.AuditEvent;
 import org.letsemploy.ojobpub_publisher.audit.AuditLog;
@@ -25,15 +22,17 @@ import org.letsemploy.ojobpub_publisher.membership.MembershipService;
 import org.letsemploy.ojobpub_publisher.security.Actor;
 import org.letsemploy.ojobpub_publisher.security.UserEntity;
 import org.letsemploy.ojobpub_publisher.security.UserRepo;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 /** Service tokens (spec 2.8). Only an owner of the employer may manage them. */
 @Service
-@RequiredArgsConstructor
-@Slf4j
 public class ServiceTokenService {
+
+    private static final Logger log = LoggerFactory.getLogger(ServiceTokenService.class);
 
     private static final String PREFIX = "ojp_";
     private static final int PREFIX_RANDOM = 8;
@@ -50,12 +49,34 @@ public class ServiceTokenService {
     private final ResourceLimits limits;
     private final AuditLog auditLog;
 
-    /** 0 switches expiry off entirely, as 0 disables a quota (spec 2.8, 8.4). */
-    @org.springframework.beans.factory.annotation.Value("${app.tokens.lifetime-months:12}")
-    private int lifetimeMonths;
+    public ServiceTokenService(ServiceTokenRepo tokenRepo,
+                               MembershipRepo membershipRepo,
+                               MembershipService membershipService,
+                               EmployerRepo employerRepo,
+                               UserRepo userRepo,
+                               PasswordEncoder passwordEncoder,
+                               ResourceLimits limits,
+                               AuditLog auditLog,
+                               @org.springframework.beans.factory.annotation.Value("${app.tokens.lifetime-months:12}")
+                               int lifetimeMonths,
+                               @org.springframework.beans.factory.annotation.Value("${app.tokens.expiry-warning-days:30}")
+                               int expiryWarningDays) {
+        this.tokenRepo = tokenRepo;
+        this.membershipRepo = membershipRepo;
+        this.membershipService = membershipService;
+        this.employerRepo = employerRepo;
+        this.userRepo = userRepo;
+        this.passwordEncoder = passwordEncoder;
+        this.limits = limits;
+        this.auditLog = auditLog;
+        this.lifetimeMonths = lifetimeMonths;
+        this.expiryWarningDays = expiryWarningDays;
+    }
 
-    @org.springframework.beans.factory.annotation.Value("${app.tokens.expiry-warning-days:30}")
-    private int expiryWarningDays;
+    /** 0 switches expiry off entirely, as 0 disables a quota (spec 2.8, 8.4). */
+    private final int lifetimeMonths;
+
+    private final int expiryWarningDays;
 
     /** Tokens that would stop working with their employer; revoked ones already have. */
     public long countActive(UUID employerId) {
@@ -67,10 +88,7 @@ public class ServiceTokenService {
     }
 
     /** A created token and its secret, which is returned exactly once (spec 2.8). */
-    @Value
-    public static class CreatedToken {
-        ServiceToken token;
-        String secret;
+    public record CreatedToken(ServiceToken token, String secret) {
     }
 
     public List<ServiceToken> forEmployer(UUID employerId, Actor actor) {

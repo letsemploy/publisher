@@ -4,7 +4,6 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
-import lombok.RequiredArgsConstructor;
 import org.letsemploy.ojobpub_publisher.audit.AuditAction;
 import org.letsemploy.ojobpub_publisher.audit.AuditEvent;
 import org.letsemploy.ojobpub_publisher.audit.AuditLog;
@@ -21,7 +20,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
-@RequiredArgsConstructor
 public class FeedService {
 
     private final FeedRepo feedRepo;
@@ -30,6 +28,20 @@ public class FeedService {
     private final OjobpubService ojobpubService;
     private final AuditLog auditLog;
     private final PermalinkService permalinkService;
+
+    public FeedService(FeedRepo feedRepo,
+                       JobService jobService,
+                       ResourceLimits limits,
+                       OjobpubService ojobpubService,
+                       AuditLog auditLog,
+                       PermalinkService permalinkService) {
+        this.feedRepo = feedRepo;
+        this.jobService = jobService;
+        this.limits = limits;
+        this.ojobpubService = ojobpubService;
+        this.auditLog = auditLog;
+        this.permalinkService = permalinkService;
+    }
 
     public List<Feed> findByEmployer(UUID employerId) {
         return feedRepo.findByEmployerIdOrderByNameAsc(employerId);

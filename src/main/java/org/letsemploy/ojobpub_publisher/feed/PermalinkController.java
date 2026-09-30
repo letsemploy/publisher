@@ -4,7 +4,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import lombok.RequiredArgsConstructor;
 import org.letsemploy.ojobpub_publisher.common.exception.ValidationFailure;
 import org.letsemploy.ojobpub_publisher.employer.Employer;
 import org.letsemploy.ojobpub_publisher.web.Scope;
@@ -32,7 +31,6 @@ import org.springframework.web.util.HtmlUtils;
  */
 @Controller
 @RequestMapping("/feeds/permalinks")
-@RequiredArgsConstructor
 public class PermalinkController {
 
     private final PermalinkService permalinkService;
@@ -40,6 +38,18 @@ public class PermalinkController {
     private final Scope scope;
     private final Views views;
     private final MessageSource messages;
+
+    public PermalinkController(PermalinkService permalinkService,
+                               FeedService feedService,
+                               Scope scope,
+                               Views views,
+                               MessageSource messages) {
+        this.permalinkService = permalinkService;
+        this.feedService = feedService;
+        this.scope = scope;
+        this.views = views;
+        this.messages = messages;
+    }
 
     @GetMapping("/create")
     public String createForm(Model model) {
@@ -107,7 +117,7 @@ public class PermalinkController {
     }
 
     private String form(Model model, Employer employer, PermalinkFormView form, Map<String, String> fieldErrors) {
-        String title = message(form.getId() == null ? "permalink.create" : "permalink.edit");
+        String title = message(form.id() == null ? "permalink.create" : "permalink.edit");
         model.addAttribute("page", new PageMeta(title, null,
                 List.of(new Crumb(message("nav.feeds"), "/feeds"), new Crumb(title, null))));
         model.addAttribute("form", form);

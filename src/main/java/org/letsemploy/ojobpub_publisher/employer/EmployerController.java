@@ -4,7 +4,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import lombok.RequiredArgsConstructor;
 import org.letsemploy.ojobpub_publisher.common.exception.NotFoundException;
 import org.letsemploy.ojobpub_publisher.common.exception.ValidationFailure;
 import org.letsemploy.ojobpub_publisher.feed.FeedService;
@@ -29,7 +28,6 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 @Controller
 @RequestMapping("/employers")
-@RequiredArgsConstructor
 public class EmployerController {
 
     private final EmployerService employerService;
@@ -42,6 +40,28 @@ public class EmployerController {
     private final ServiceTokenService serviceTokenService;
     private final Views views;
     private final MessageSource messages;
+
+    public EmployerController(EmployerService employerService,
+                              LocationService locationService,
+                              FeedService feedService,
+                              MembershipService membershipService,
+                              JobService jobService,
+                              Scope scope,
+                              EmployerContext employerContext,
+                              ServiceTokenService serviceTokenService,
+                              Views views,
+                              MessageSource messages) {
+        this.employerService = employerService;
+        this.locationService = locationService;
+        this.feedService = feedService;
+        this.membershipService = membershipService;
+        this.jobService = jobService;
+        this.scope = scope;
+        this.employerContext = employerContext;
+        this.serviceTokenService = serviceTokenService;
+        this.views = views;
+        this.messages = messages;
+    }
 
     @GetMapping
     public String list(Model model, @RequestParam(required = false) String q,
@@ -178,8 +198,8 @@ public class EmployerController {
         // Only this employer's own locations: the headquarters is one of them
         // (spec 3.1). A new employer has none yet, and enters its first below.
         Map<String, String> locations = new LinkedHashMap<>();
-        if (form.getId() != null) {
-            for (Location location : locationService.ofEmployer(UUID.fromString(form.getId()))) {
+        if (form.id() != null) {
+            for (Location location : locationService.ofEmployer(UUID.fromString(form.id()))) {
                 locations.put(location.getId().toString(), location.getLabel());
             }
         }

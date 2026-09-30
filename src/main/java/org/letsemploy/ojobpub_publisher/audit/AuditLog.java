@@ -1,6 +1,5 @@
 package org.letsemploy.ojobpub_publisher.audit;
 
-import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -15,10 +14,13 @@ import org.springframework.transaction.annotation.Transactional;
  * reaching here - is never recorded as something that happened.
  */
 @Component
-@RequiredArgsConstructor
 public class AuditLog {
 
     private final AuditRepo auditRepo;
+
+    public AuditLog(AuditRepo auditRepo) {
+        this.auditRepo = auditRepo;
+    }
 
     @Transactional(propagation = Propagation.MANDATORY)
     public void record(AuditEvent event) {

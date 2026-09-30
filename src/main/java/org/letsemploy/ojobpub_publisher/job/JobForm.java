@@ -5,11 +5,13 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
-import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 import org.springframework.format.annotation.DateTimeFormat;
 
 /** Binds the job form (spec 7.11). Web-layer only; never the published contract. */
-@Data
+@Getter
+@Setter
 public class JobForm {
 
     private UUID id;

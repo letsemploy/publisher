@@ -2,7 +2,6 @@ package org.letsemploy.ojobpub_publisher.feed;
 
 import jakarta.persistence.*;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.letsemploy.ojobpub_publisher.common.Base;
 import org.letsemploy.ojobpub_publisher.employer.Employer;
@@ -18,7 +17,6 @@ import org.letsemploy.ojobpub_publisher.employer.Employer;
 @Table(name = "permalinks")
 @Getter
 @Setter
-@NoArgsConstructor
 public class Permalink extends Base {
 
     @ManyToOne(fetch = FetchType.EAGER, optional = false)

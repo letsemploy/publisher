@@ -7,7 +7,6 @@ import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
-import lombok.RequiredArgsConstructor;
 import org.letsemploy.ojobpub_publisher.token.ServiceTokenService;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -25,12 +24,15 @@ import org.springframework.web.filter.OncePerRequestFilter;
  * which would demand a bearer token on the back-office too. The management
  * chain constructs it.
  */
-@RequiredArgsConstructor
 public class ServiceTokenAuthFilter extends OncePerRequestFilter {
 
     public static final String ACTOR_ATTRIBUTE = "ojobpub.actor";
 
     private final ServiceTokenService serviceTokenService;
+
+    public ServiceTokenAuthFilter(ServiceTokenService serviceTokenService) {
+        this.serviceTokenService = serviceTokenService;
+    }
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response,

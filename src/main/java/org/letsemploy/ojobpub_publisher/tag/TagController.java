@@ -3,7 +3,6 @@ package org.letsemploy.ojobpub_publisher.tag;
 import io.github.wimdeblauwe.htmx.spring.boot.mvc.HxRequest;
 import java.util.List;
 import java.util.Map;
-import lombok.RequiredArgsConstructor;
 import org.letsemploy.ojobpub_publisher.common.exception.ValidationFailure;
 import org.letsemploy.ojobpub_publisher.web.view.*;
 import org.letsemploy.ojobpub_publisher.web.Scope;
@@ -22,13 +21,19 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
  */
 @Controller
 @RequestMapping("/tags")
-@RequiredArgsConstructor
 public class TagController {
 
     private final TagService tagService;
     private final Scope scope;
     private final Views views;
     private final MessageSource messages;
+
+    public TagController(TagService tagService, Scope scope, Views views, MessageSource messages) {
+        this.tagService = tagService;
+        this.scope = scope;
+        this.views = views;
+        this.messages = messages;
+    }
 
     @GetMapping
     public String list(Model model, @RequestParam(required = false) String q) {

@@ -3,7 +3,6 @@ package org.letsemploy.ojobpub_publisher.web;
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.List;
 import java.util.UUID;
-import lombok.RequiredArgsConstructor;
 import org.letsemploy.ojobpub_publisher.employer.Employer;
 import org.letsemploy.ojobpub_publisher.employer.EmployerService;
 import org.letsemploy.ojobpub_publisher.invitation.InvitationService;
@@ -28,7 +27,6 @@ import org.springframework.stereotype.Component;
  * have supplied {@code ui} would fail to render — turning every 404 into a 500.
  */
 @Component
-@RequiredArgsConstructor
 public class UiContextFactory {
 
     private final CurrentUserService currentUserService;
@@ -38,9 +36,24 @@ public class UiContextFactory {
     /** Present when the build wrote META-INF/build-info.properties. */
     private final ObjectProvider<BuildProperties> buildProperties;
 
-    @Value("${app.project-url}")
-    private String projectUrl;
     private final MembershipService membershipService;
+    private final String projectUrl;
+
+    public UiContextFactory(CurrentUserService currentUserService,
+                            EmployerService employerService,
+                            EmployerContext employerContext,
+                            InvitationService invitationService,
+                            ObjectProvider<BuildProperties> buildProperties,
+                            MembershipService membershipService,
+                            @Value("${app.project-url}") String projectUrl) {
+        this.currentUserService = currentUserService;
+        this.employerService = employerService;
+        this.employerContext = employerContext;
+        this.invitationService = invitationService;
+        this.buildProperties = buildProperties;
+        this.membershipService = membershipService;
+        this.projectUrl = projectUrl;
+    }
 
     public UiContext build(HttpServletRequest request) {
         Actor user = currentUserService.current();
@@ -71,7 +84,7 @@ public class UiContextFactory {
         // holding the access (spec 7.17), and with no employer selected there is
         // neither a subject to show nor a role to check.
         if (active != null
-                && membershipService.canAdminister(user, UUID.fromString(active.getId()))) {
+                && membershipService.canAdminister(user, UUID.fromString(active.id()))) {
             nav.add(4, new NavItem("key", "nav.tokens", "/tokens", path.startsWith("/tokens")));
         }
         // Platform staff only (spec 7.20). While viewing as someone the actor is that

@@ -4,7 +4,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
-import lombok.Value;
 import org.letsemploy.ojobpub_publisher.membership.MembershipRole;
 import org.letsemploy.ojobpub_publisher.token.TokenScope;
 
@@ -15,21 +14,31 @@ import org.letsemploy.ojobpub_publisher.token.TokenScope;
  * questions of both - may you see this employer, are you an owner of it - and a
  * second principal type would mean every service answering them twice.
  */
-@Value
-public class Actor {
+public final class Actor {
 
     /** The user's id, or the token's. Null only for the anonymous fallback. */
-    UUID id;
-    String displayName;
-    String email;
+    private final UUID id;
+    private final String displayName;
+    private final String email;
     /** The platform role (spec 2.1). A token is never an admin. */
-    boolean admin;
+    private final boolean admin;
     /** Per-employer standing (spec 2.1). A token has exactly one entry. */
-    Map<UUID, MembershipRole> memberships;
+    private final Map<UUID, MembershipRole> memberships;
     /** Empty for a person: scopes narrow a token only (spec 2.8). */
-    Set<TokenScope> scopes;
+    private final Set<TokenScope> scopes;
     /** True when this is a service token rather than a person. */
-    boolean token;
+    private final boolean token;
+
+    private Actor(UUID id, String displayName, String email, boolean admin,
+                  Map<UUID, MembershipRole> memberships, Set<TokenScope> scopes, boolean token) {
+        this.id = id;
+        this.displayName = displayName;
+        this.email = email;
+        this.admin = admin;
+        this.memberships = memberships;
+        this.scopes = scopes;
+        this.token = token;
+    }
 
     public static Actor user(UUID id, String displayName, String email, boolean admin,
                              Map<UUID, MembershipRole> memberships) {
@@ -43,6 +52,34 @@ public class Actor {
 
     public static Actor anonymous() {
         return new Actor(null, "anonymous", null, false, Map.of(), Set.of(), false);
+    }
+
+    public UUID getId() {
+        return id;
+    }
+
+    public String getDisplayName() {
+        return displayName;
+    }
+
+    public String getEmail() {
+        return email;
+    }
+
+    public boolean isAdmin() {
+        return admin;
+    }
+
+    public Map<UUID, MembershipRole> getMemberships() {
+        return memberships;
+    }
+
+    public Set<TokenScope> getScopes() {
+        return scopes;
+    }
+
+    public boolean isToken() {
+        return token;
     }
 
     public List<UUID> getEmployerIds() {

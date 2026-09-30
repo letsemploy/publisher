@@ -3,7 +3,6 @@ package org.letsemploy.ojobpub_publisher.audit;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
-import lombok.RequiredArgsConstructor;
 import org.letsemploy.ojobpub_publisher.common.exception.NotFoundException;
 import org.letsemploy.ojobpub_publisher.employer.Employer;
 import org.letsemploy.ojobpub_publisher.security.Actor;
@@ -29,7 +28,6 @@ import org.springframework.web.bind.annotation.RequestParam;
  * {@link AuditService}; this only picks which log the screen is about.
  */
 @Controller
-@RequiredArgsConstructor
 public class ActivityController {
 
     private final AuditService auditService;
@@ -37,6 +35,18 @@ public class ActivityController {
     private final Views views;
     private final UserRepo userRepo;
     private final MessageSource messages;
+
+    public ActivityController(AuditService auditService,
+                              Scope scope,
+                              Views views,
+                              UserRepo userRepo,
+                              MessageSource messages) {
+        this.auditService = auditService;
+        this.scope = scope;
+        this.views = views;
+        this.userRepo = userRepo;
+        this.messages = messages;
+    }
 
     /** The employers in scope (spec 2.5), as the actor may read their logs. */
     @GetMapping("/activity")

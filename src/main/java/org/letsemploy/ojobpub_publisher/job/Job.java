@@ -6,7 +6,6 @@ import java.time.LocalDate;
 import java.util.HashSet;
 import java.util.Set;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.letsemploy.ojobpub_publisher.common.Base;
 import org.letsemploy.ojobpub_publisher.employer.Employer;
@@ -17,7 +16,6 @@ import org.letsemploy.ojobpub_publisher.tag.Tag;
 @Table(name = "jobs")
 @Getter
 @Setter
-@NoArgsConstructor
 public class Job extends Base {
 
     /** Set at creation and immutable thereafter (spec 3.3). */

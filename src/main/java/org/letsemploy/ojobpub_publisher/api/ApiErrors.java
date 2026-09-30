@@ -1,7 +1,6 @@
 package org.letsemploy.ojobpub_publisher.api;
 
 import java.util.List;
-import lombok.RequiredArgsConstructor;
 import org.letsemploy.ojobpub_publisher.common.exception.ValidationFailure;
 import org.springframework.context.MessageSource;
 import org.springframework.context.i18n.LocaleContextHolder;
@@ -22,10 +21,13 @@ import org.springframework.stereotype.Component;
  * than an argument of {@code JobInput}.
  */
 @Component
-@RequiredArgsConstructor
 public class ApiErrors {
 
     private final MessageSource messages;
+
+    public ApiErrors(MessageSource messages) {
+        this.messages = messages;
+    }
 
     public List<UserError> from(ValidationFailure failure) {
         return failure.getFieldErrors().entrySet().stream()

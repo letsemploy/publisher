@@ -2,7 +2,6 @@ package org.letsemploy.ojobpub_publisher.employer;
 
 import jakarta.persistence.*;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.letsemploy.ojobpub_publisher.common.Base;
 import org.letsemploy.ojobpub_publisher.location.Location;
@@ -11,7 +10,6 @@ import org.letsemploy.ojobpub_publisher.location.Location;
 @Table(name = "employers")
 @Getter
 @Setter
-@NoArgsConstructor
 public class Employer extends Base {
 
     @Column(nullable = false)

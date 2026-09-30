@@ -3,7 +3,6 @@ package org.letsemploy.ojobpub_publisher.audit;
 import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
-import lombok.RequiredArgsConstructor;
 import org.letsemploy.ojobpub_publisher.common.exception.NotFoundException;
 import org.letsemploy.ojobpub_publisher.membership.MembershipService;
 import org.letsemploy.ojobpub_publisher.security.Actor;
@@ -29,13 +28,17 @@ import org.springframework.transaction.annotation.Transactional;
  * not exist (spec 2.4). A service token reads nothing here.
  */
 @Service
-@RequiredArgsConstructor
 public class AuditService {
 
     static final int PAGE_SIZE = 50;
 
     private final AuditRepo auditRepo;
     private final MembershipService membershipService;
+
+    public AuditService(AuditRepo auditRepo, MembershipService membershipService) {
+        this.auditRepo = auditRepo;
+        this.membershipService = membershipService;
+    }
 
     /**
      * The logs of these employers, as the actor may read them. An employer the

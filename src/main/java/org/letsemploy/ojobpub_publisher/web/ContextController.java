@@ -2,7 +2,6 @@ package org.letsemploy.ojobpub_publisher.web;
 
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.UUID;
-import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -12,10 +11,13 @@ import org.springframework.web.bind.annotation.RequestParam;
  * posts followed by a redirect, so they work with JavaScript disabled.
  */
 @Controller
-@RequiredArgsConstructor
 public class ContextController {
 
     private final EmployerContext employerContext;
+
+    public ContextController(EmployerContext employerContext) {
+        this.employerContext = employerContext;
+    }
 
     @PostMapping("/context/employer")
     public String switchEmployer(@RequestParam(required = false) String employerId) {

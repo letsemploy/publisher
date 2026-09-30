@@ -3,7 +3,6 @@ package org.letsemploy.ojobpub_publisher.security;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.util.Set;
-import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.servlet.FlashMap;
@@ -26,7 +25,6 @@ import org.springframework.web.servlet.support.RequestContextUtils;
  * token-authenticated, with no session to hold an impersonation.
  */
 @Configuration
-@RequiredArgsConstructor
 public class ImpersonationGuard implements HandlerInterceptor, WebMvcConfigurer {
 
     static final String STOP = "/impersonation/stop";
@@ -34,6 +32,10 @@ public class ImpersonationGuard implements HandlerInterceptor, WebMvcConfigurer 
     private static final Set<String> SAFE_METHODS = Set.of("GET", "HEAD", "OPTIONS");
 
     private final CurrentUserService currentUserService;
+
+    public ImpersonationGuard(CurrentUserService currentUserService) {
+        this.currentUserService = currentUserService;
+    }
 
     @Override
     public void addInterceptors(InterceptorRegistry registry) {

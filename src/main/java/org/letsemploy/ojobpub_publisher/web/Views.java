@@ -10,7 +10,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
-import lombok.RequiredArgsConstructor;
 import org.letsemploy.ojobpub_publisher.audit.AuditEvent;
 import org.letsemploy.ojobpub_publisher.employer.Employer;
 import org.letsemploy.ojobpub_publisher.feed.Feed;
@@ -36,22 +35,24 @@ import org.springframework.stereotype.Component;
  * a screen and the published document cannot disagree about a job's status.
  */
 @Component
-@RequiredArgsConstructor
 public class Views {
 
     private static final DateTimeFormatter TIMESTAMP =
             DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm").withZone(ZoneId.systemDefault());
 
     private final MessageSource messages;
+    /** Feed URLs must be absolute and correct behind a reverse proxy (spec 9.5). */
+    private final String baseUrl;
+
+    public Views(MessageSource messages, @Value("${app.base-url:http://localhost:8080}") String baseUrl) {
+        this.messages = messages;
+        this.baseUrl = baseUrl;
+    }
 
     /** An instant as every screen shows one. */
     public static String timestamp(Instant instant) {
         return TIMESTAMP.format(instant);
     }
-
-    /** Feed URLs must be absolute and correct behind a reverse proxy (spec 9.5). */
-    @Value("${app.base-url:http://localhost:8080}")
-    private String baseUrl;
 
     public String feedUrl(Feed feed) {
         return baseUrl + "/ojobpub/v1/" + feed.getEmployer().getUrlSegment()
@@ -98,7 +99,7 @@ public class Views {
     public JobDetailView jobDetail(Job job, List<FeedMembership> feeds,
                                    List<JobStatusEvent> history, LocalDate today) {
         List<ReadinessCheck> readiness = Publication.requirements(job).stream()
-                .map(r -> new ReadinessCheck(r.getLabelKey(), r.isSatisfied(), r.getFixAnchor()))
+                .map(r -> new ReadinessCheck(r.labelKey(), r.satisfied(), r.fixAnchor()))
                 .toList();
         return new JobDetailView(
                 job.getId().toString(), job.getTitle(), job.getDescription(), job.getUrl(),

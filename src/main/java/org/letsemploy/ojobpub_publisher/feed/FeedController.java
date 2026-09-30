@@ -7,8 +7,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.letsemploy.ojobpub_publisher.common.exception.ValidationFailure;
 import org.letsemploy.ojobpub_publisher.employer.Employer;
 import org.letsemploy.ojobpub_publisher.job.Job;
@@ -19,6 +17,8 @@ import org.letsemploy.ojobpub_publisher.ojobpub.v1.service.OjobpubValidator;
 import org.letsemploy.ojobpub_publisher.web.view.*;
 import org.letsemploy.ojobpub_publisher.web.Scope;
 import org.letsemploy.ojobpub_publisher.web.Views;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.context.MessageSource;
 import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.stereotype.Controller;
@@ -29,9 +29,9 @@ import org.springframework.web.util.HtmlUtils;
 
 @Controller
 @RequestMapping("/feeds")
-@RequiredArgsConstructor
-@Slf4j
 public class FeedController {
+
+    private static final Logger log = LoggerFactory.getLogger(FeedController.class);
 
     private final FeedService feedService;
     private final JobService jobService;
@@ -41,6 +41,24 @@ public class FeedController {
     private final MessageSource messages;
     private final ObjectMapper objectMapper;
     private final PermalinkService permalinkService;
+
+    public FeedController(FeedService feedService,
+                          JobService jobService,
+                          OjobpubValidator validator,
+                          Scope scope,
+                          Views views,
+                          MessageSource messages,
+                          ObjectMapper objectMapper,
+                          PermalinkService permalinkService) {
+        this.feedService = feedService;
+        this.jobService = jobService;
+        this.validator = validator;
+        this.scope = scope;
+        this.views = views;
+        this.messages = messages;
+        this.objectMapper = objectMapper;
+        this.permalinkService = permalinkService;
+    }
 
     @GetMapping
     public String list(Model model) {
@@ -90,13 +108,13 @@ public class FeedController {
         List<JobRow> candidates = feedService.candidates(feed, query).stream()
                 .map(j -> views.jobRow(j, jobService.countFeeds(j.getId()), today))
                 .toList();
-        List<FeedExclusion> exclusions = result.getExclusions().stream()
-                .map(x -> new FeedExclusion(x.getJobId(), x.getJobTitle(), x.getReasonKey()))
+        List<FeedExclusion> exclusions = result.exclusions().stream()
+                .map(x -> new FeedExclusion(x.jobId(), x.jobTitle(), x.reasonKey()))
                 .toList();
 
         return new FeedDetailView(feed.getId().toString(), feed.getName(), feed.getSlug(),
                 feed.getDescription(), views.feedUrl(feed), members, candidates, exclusions,
-                prettyPrint(result.getDocument()), validator.isValid(result.getDocument()));
+                prettyPrint(result.document()), validator.isValid(result.document()));
     }
 
     /** The preview shows exactly what the public URL serves (spec 7.12). */

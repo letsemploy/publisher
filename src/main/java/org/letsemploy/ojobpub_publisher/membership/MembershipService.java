@@ -7,8 +7,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.letsemploy.ojobpub_publisher.audit.AuditAction;
 import org.letsemploy.ojobpub_publisher.audit.AuditEvent;
 import org.letsemploy.ojobpub_publisher.audit.AuditLog;
@@ -18,6 +16,8 @@ import org.letsemploy.ojobpub_publisher.common.exception.ValidationFailure;
 import org.letsemploy.ojobpub_publisher.employer.Employer;
 import org.letsemploy.ojobpub_publisher.security.Actor;
 import org.letsemploy.ojobpub_publisher.security.UserEntity;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -29,13 +29,19 @@ import org.springframework.transaction.annotation.Transactional;
  * one place to be broken and one place to be checked.
  */
 @Service
-@RequiredArgsConstructor
-@Slf4j
 public class MembershipService {
+
+    private static final Logger log = LoggerFactory.getLogger(MembershipService.class);
 
     private final MembershipRepo membershipRepo;
     private final ResourceLimits limits;
     private final AuditLog auditLog;
+
+    public MembershipService(MembershipRepo membershipRepo, ResourceLimits limits, AuditLog auditLog) {
+        this.membershipRepo = membershipRepo;
+        this.limits = limits;
+        this.auditLog = auditLog;
+    }
 
     /**
      * People only; a token's membership is managed on its own screen (spec 7.17).

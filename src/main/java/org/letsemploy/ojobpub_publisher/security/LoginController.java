@@ -1,7 +1,6 @@
 package org.letsemploy.ojobpub_publisher.security;
 
 import jakarta.servlet.http.HttpServletRequest;
-import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -15,11 +14,15 @@ import org.springframework.web.bind.annotation.GetMapping;
  * in button that cannot work would be worse than the refusal.
  */
 @Controller
-@RequiredArgsConstructor
 public class LoginController {
 
     private final CurrentUserService currentUserService;
     private final LoginOptions loginOptions;
+
+    public LoginController(CurrentUserService currentUserService, LoginOptions loginOptions) {
+        this.currentUserService = currentUserService;
+        this.loginOptions = loginOptions;
+    }
 
     @GetMapping("/login")
     public String login(HttpServletRequest request, Model model) {

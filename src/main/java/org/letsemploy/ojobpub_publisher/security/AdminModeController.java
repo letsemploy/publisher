@@ -1,6 +1,5 @@
 package org.letsemploy.ojobpub_publisher.security;
 
-import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
@@ -10,10 +9,13 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
  * rather than back: the page the admin was on may not exist in the other mode.
  */
 @Controller
-@RequiredArgsConstructor
 public class AdminModeController {
 
     private final AdminModeService adminModeService;
+
+    public AdminModeController(AdminModeService adminModeService) {
+        this.adminModeService = adminModeService;
+    }
 
     @PostMapping("/admin-mode/enter")
     public String enter(RedirectAttributes flash) {

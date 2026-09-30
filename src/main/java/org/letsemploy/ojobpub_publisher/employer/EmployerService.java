@@ -3,8 +3,6 @@ package org.letsemploy.ojobpub_publisher.employer;
 import com.neovisionaries.i18n.CountryCode;
 import java.util.List;
 import java.util.UUID;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.letsemploy.ojobpub_publisher.audit.AuditAction;
 import org.letsemploy.ojobpub_publisher.audit.AuditEvent;
 import org.letsemploy.ojobpub_publisher.audit.AuditLog;
@@ -17,15 +15,17 @@ import org.letsemploy.ojobpub_publisher.membership.MembershipService;
 import org.letsemploy.ojobpub_publisher.security.UserEntity;
 import org.letsemploy.ojobpub_publisher.security.UserRepo;
 import org.letsemploy.ojobpub_publisher.security.Actor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
-@Slf4j
-@RequiredArgsConstructor
 public class EmployerService {
+
+    private static final Logger log = LoggerFactory.getLogger(EmployerService.class);
 
     private final EmployerRepo employerRepo;
     private final LocationService locationService;
@@ -33,6 +33,20 @@ public class EmployerService {
     private final ResourceLimits limits;
     private final UserRepo userRepo;
     private final AuditLog auditLog;
+
+    public EmployerService(EmployerRepo employerRepo,
+                           LocationService locationService,
+                           MembershipService membershipService,
+                           ResourceLimits limits,
+                           UserRepo userRepo,
+                           AuditLog auditLog) {
+        this.employerRepo = employerRepo;
+        this.locationService = locationService;
+        this.membershipService = membershipService;
+        this.limits = limits;
+        this.userRepo = userRepo;
+        this.auditLog = auditLog;
+    }
 
     /** Editors see only their employers; an admin sees all (spec 2.1). */
     public List<Employer> visibleTo(Actor user) {

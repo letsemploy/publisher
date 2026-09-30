@@ -58,7 +58,7 @@ class ApiLimitsTest {
                 true, Map.of(UUID.fromString(EMPLOYER), MembershipRole.OWNER));
         return tokens.create(UUID.fromString(EMPLOYER), "limits-" + UUID.randomUUID(),
                 MembershipRole.OWNER, Set.of(TokenScope.JOBS_READ, TokenScope.FEEDS_READ),
-                devAdmin).getSecret();
+                devAdmin).secret();
     }
 
     private org.springframework.mock.web.MockHttpServletResponse send(String secret, String document)

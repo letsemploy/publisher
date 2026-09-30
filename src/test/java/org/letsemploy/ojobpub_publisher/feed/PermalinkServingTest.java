@@ -90,7 +90,7 @@ class PermalinkServingTest {
         // The same jobs and employer; only the date may be the permalink's own.
         assertThat(objectMapper.readTree(result.getResponse().getContentAsString()).get("jobs"))
                 .isEqualTo(objectMapper.readTree(feed).get("jobs"));
-        assertThat(document(result).getJobs()).hasSize(1);
+        assertThat(document(result).jobs()).hasSize(1);
         mvc.perform(get(url(CAREERS)).header("Origin", "https://example.org"))
                 .andExpect(header().string("Access-Control-Allow-Origin", "*"))
                 .andExpect(header().string("Cache-Control", "max-age=300, public"));
@@ -106,8 +106,8 @@ class PermalinkServingTest {
     void withNoFeedItPublishesTheEmployerWithNoJobs() throws Exception {
         MvcResult result = fetch(PARTNER);
         OjobpubDto document = document(result);
-        assertThat(document.getJobs()).isEmpty();
-        assertThat(document.getEmployer().getName()).isEqualTo("Acme AG");
+        assertThat(document.jobs()).isEmpty();
+        assertThat(document.employer().name()).isEqualTo("Acme AG");
         assertThat(validator.validate(document)).as("schema violations").isEmpty();
     }
 
@@ -115,11 +115,11 @@ class PermalinkServingTest {
     void switchingChangesWhatTheSameUrlServes() throws Exception {
         permalinkService.retarget(CAREERS, FEED_ALL, owner);
         commitLikeARequest();
-        assertThat(document(fetch(CAREERS)).getJobs()).hasSizeGreaterThan(1);
+        assertThat(document(fetch(CAREERS)).jobs()).hasSizeGreaterThan(1);
 
         permalinkService.retarget(CAREERS, null, owner);
         commitLikeARequest();
-        assertThat(document(fetch(CAREERS)).getJobs()).isEmpty();
+        assertThat(document(fetch(CAREERS)).jobs()).isEmpty();
     }
 
     @Test
@@ -127,7 +127,7 @@ class PermalinkServingTest {
         feedService.delete(FEED_ENGINEERING, owner);
         commitLikeARequest();
 
-        assertThat(document(fetch(CAREERS)).getJobs()).isEmpty();
+        assertThat(document(fetch(CAREERS)).jobs()).isEmpty();
         assertThat(permalinkService.findVisible(CAREERS, owner).getFeed()).isNull();
     }
 
@@ -154,7 +154,7 @@ class PermalinkServingTest {
         Instant moved = ZonedDateTime.parse(after.getResponse().getHeader("Last-Modified"),
                 DateTimeFormatter.RFC_1123_DATE_TIME).toInstant();
         assertThat(moved).isAfter(stamped);
-        assertThat(document(after).getLastUpdated()).isAfterOrEqualTo(moved);
+        assertThat(document(after).lastUpdated()).isAfterOrEqualTo(moved);
     }
 
     @Test
