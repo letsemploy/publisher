@@ -93,10 +93,10 @@ changes.
 - Three filter chains: the public feed and health endpoints (stateless, anonymous, CSRF disabled,
   `GET` only); the management API (stateless, bearer token, CSRF disabled, `POST` only — §11.2); and
   the back-office (session-based, authenticated, CSRF enabled).
-- Which back-office chain applies is decided once, at startup: OIDC login when a provider is
-  configured, the development bypass under `dev` (§2.3), and otherwise a **closed** chain — the
-  application starts and serves its feeds, but nobody can sign in. With no way to authenticate anyone,
-  failing closed is the only safe default.
+- Which back-office chain applies is decided once, at startup: sign-in when a provider is configured,
+  local accounts are enabled (§2.12), or both; the development bypass under `dev` (§2.3); and
+  otherwise a **closed** chain — the application starts and serves its feeds, but nobody can sign in.
+  With no way to authenticate anyone, failing closed is the only safe default.
 - The API chain **must not** fall back to the back-office chain. A GraphQL request with no token is a
   401, never a redirect to an identity provider: an integration receiving a login page instead of JSON
   fails in a way that is tedious to diagnose.
@@ -151,6 +151,13 @@ endpoints by the id `google`, so a client id and secret are enough there. Every 
 (`scope: read:user,user:email`), which Spring's defaults leave out. Any other registration that does
 not request `openid` stops the application at startup (§2.2). For local work the
 `keycloak` profile points at the Keycloak in the repository's compose file.
+
+**Local accounts** (§2.12) are `app.local-accounts.enabled` (off by default) and
+`app.local-accounts.min-password-length` (12). They need **mail**: the standard `spring.mail.*`
+settings of an SMTP server, `app.mail.from` as the sender, and `app.base-url` for the links. The
+**captcha** is `captcha.*`: `captcha.enabled`, `captcha.provider` (`hcaptcha` or `mcaptcha`) and that
+provider's site key and secret, plus the instance URL for mCaptcha. Local accounts without a captcha
+start with a warning rather than refusing to, so development needs no captcha service.
 
 The database is MariaDB unless the `sqlite` profile is active (§9.3), in which case the file is
 `app.sqlite.path` (`APP_SQLITE_PATH`), default `data/ojobpub.db`, and its directory is created on start.

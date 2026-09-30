@@ -48,13 +48,16 @@ below depends on there being a *human* answerable, it says so.
 
 ## 2.2 Authentication
 
-- Authentication **must** use OAuth 2.0 / OpenID Connect through Spring Security, authorization-code
-  flow with PKCE. The application is an OIDC *relying party*; it must not store passwords. PKCE is
-  used although the application is a confidential client holding a secret: the secret authenticates
-  the client, PKCE binds the code to the browser that started the flow, and only the second protects
-  a code intercepted in transit.
-- A user is identified by the stable pair **(issuer, subject)** from the ID token — never by email
-  alone, which is mutable and may be reassigned.
+- Authentication uses OAuth 2.0 / OpenID Connect through Spring Security, authorization-code flow with
+  PKCE, and — **where the installation enables it** — **local accounts** with an email and a password
+  (§2.12). The application is an OIDC *relying party* for the first; for the second it stores a
+  password hash and nothing from which the password can be recovered. PKCE is used although the
+  application is a confidential client holding a secret: the secret authenticates the client, PKCE
+  binds the code to the browser that started the flow, and only the second protects a code
+  intercepted in transit.
+- A user is identified by the stable pair **(issuer, subject)** — from the ID token, or for a local
+  account the issuer `local` and the account's own immutable id — never by email alone, which is
+  mutable and may be reassigned.
 - **OpenID Connect providers, plus GitHub.** Several may be configured side by side (§7.19). An OpenID
   Connect provider identifies a person by the issuer and subject of its ID token. A provider that only
   offers OAuth 2.0 has neither, and no verified email to invite them at; such a registration
@@ -70,7 +73,7 @@ below depends on there being a *human* answerable, it says so.
     to start.
   - GitHub Enterprise Server is not supported.
 - **One account per identity, never joined by email.** The same person signing in through two
-  providers has two accounts. Joining them by a shared address would let whoever controls that
+  providers — or through a provider and a local account — has two accounts. Joining them by a shared address would let whoever controls that
   address at one provider take over the account made through the other (§12).
 - On first successful login the application **must** provision a local user record from the ID token
   claims (issuer, subject, email, preferred display name). This record holds the application's own
@@ -121,6 +124,8 @@ below depends on there being a *human* answerable, it says so.
   travel with the sign-in.
 - Sessions are server-side. Logout must clear the local session and should trigger OIDC RP-initiated
   logout where the provider supports it.
+- **Admin rules name a local account** by the issuer `local` and its verified email, like any other
+  provider.
 
 ## 2.3 Development mode
 
@@ -133,7 +138,8 @@ develop or run the application locally.
   Anything keyed on user identity — invitations first among them — is otherwise unreachable in
   development and untestable, because the tests run under this same bypass. The seed data therefore
   contains the development administrator, and the bypass resolves to it.
-- The login and logout routes are inert in this mode; there is no redirect to an identity provider.
+- The login and logout routes are inert in this mode; there is no redirect to an identity provider,
+  and the local account screens (§7.24) are not offered.
 - The UI **must** display a persistent, unmistakable banner stating that authentication is disabled.
 - This bypass **must** be bound to the `dev` profile only, must never be reachable through a
   configuration property alone, and the application **must refuse to start** if the bypass is active
@@ -182,8 +188,9 @@ Access to an employer is granted by invitation and taken up by consent.
   on the content, not on who else gets in.
 - An invitation **carries the membership role** the invitee will receive, `OWNER` or `EDITOR`. Inviting
   someone straight to owner is ordinary — a founder handing over, a colleague taking the workspace on.
-- The invitee **must already be registered**. There is no sign-up-by-invitation and no account
-  creation flow; an unregistered colleague must sign in once before they can be invited.
+- The invitee **must already be registered**. There is no sign-up-by-invitation; an unregistered
+  colleague must sign in once — or sign up, where local accounts are enabled (§2.12) — before they
+  can be invited.
 - An invitation is addressed by **exact email address**, matched case-insensitively against existing
   users. Email is not the user's identity (§2.2) — it is only how a human addresses the invitation. The
   invitation itself is bound to the resolved **user**, so a later email change does not orphan it.
@@ -219,9 +226,9 @@ see — and a silent no-op there would look like a bug.
 
 **Notification**
 
-No email is sent — the application has no mail infrastructure. The invitee sees pending invitations
-when they next sign in (§7.3 surfaces the count in the sidebar). Delivery is recorded as an open
-question (§12).
+No email is sent. The application sends mail only for local accounts (§2.12); the invitee sees pending
+invitations when they next sign in (§7.3 surfaces the count in the sidebar). Delivery is recorded as an
+open question (§12).
 
 ## 2.7 Ownership and role changes
 
@@ -436,3 +443,33 @@ of suspending a membership (§2.7), which only ever reaches one employer.
 - **It is one account, not one person.** Suspension is keyed on (issuer, subject). The same person
   signing in through another provider gets another account (§2.2).
 
+## 2.12 Local accounts
+
+An installation may let people **sign up with an email and a password** instead of an identity
+provider: for a small organisation with none, or for someone who has no account at any of those
+configured. It is **off unless configured** (§9.5), and it can be offered alone or beside providers.
+
+- **An account of its own.** A local account is a `users` record like any other (§3.7), with the
+  issuer `local` and, as subject, an id that never changes — not the email. It is never joined to a
+  provider account with the same address (§2.2), and everything else — roles, memberships, admin
+  rules, suspension (§2.11), viewing as (§2.9) — applies to it unchanged.
+- **Sign-up** takes an email, a name and a password, and a captcha. The account exists only once its
+  address is **verified** by following a link sent to it; until then it cannot sign in, holds no
+  `users` record, and cannot be invited. Only a verified email is kept (§2.2).
+- **The screens are no oracle** (§2.6). Sign-up, resending the link and forgotten password answer the
+  same whether the address is unknown, pending or taken. A sign-up with an address that already
+  belongs to a local account creates nothing and mails the holder instead. A sign-in failure says
+  only that it failed; an unverified account is told to confirm its address, since only someone
+  holding the password gets that far.
+- **Links** in mail are single-use, carry a secret that is stored only as a hash, and expire —
+  verification after 24 hours, a password reset after one hour. A new link voids the earlier ones.
+- **Passwords** are at least 12 characters (configurable), at most 128, and not the email itself.
+  There are no rules on character classes. They are stored with an adaptive hash, never reversibly.
+- **Changing or resetting a password ends every other session** of the account at its next request.
+  The session that made the change continues.
+- **Attempts are throttled** — sign-in per address and per client, sign-up and the mail-sending forms
+  per client — and those forms carry a captcha, because each one sends mail to an address a stranger
+  typed. A throttled sign-in answers like a failed one.
+- **Recorded:** changing and resetting a password, in the person's own log (§3.12). The account is
+  recorded as created at its first sign-in, as for a provider.
+- **Not yet:** changing the email of a local account, and linking one to a provider account (§12).

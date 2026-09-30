@@ -54,6 +54,10 @@ Rules:
 - Assets are **self-hosted**, never loaded from a CDN. This keeps the application working offline and
   in restricted networks, removes a third-party availability and privacy dependency, and allows the
   strict `Content-Security-Policy` of §9.4.
+  - **One exception: a hosted captcha.** hCaptcha's script cannot be self-hosted, so where it is the
+    configured captcha (§2.12) it is loaded from hCaptcha, on the pages that carry the captcha only,
+    and the policy is widened for hCaptcha on those pages alone. mCaptcha's script is vendored like
+    any other dependency; only its widget frame comes from the configured instance.
 - **No inline script and no `eval`.** The CSP is `script-src 'self'` with neither `unsafe-inline` nor
   `unsafe-eval` (§9.4). This is why the application's behaviour lives in a module file rather than in
   attributes evaluated at runtime, and it is what makes the strict policy achievable rather than
@@ -495,8 +499,11 @@ memberships, at §7.16 and creating an employer, exactly as the other employer-s
 ## 7.19 Sign-in
 
 Where a signed-out visitor starts, where a failed sign-in lands, and where signing out ends. A single
-centred card — the logo, "Sign in to oJobPub Publisher", one line saying the visitor will be taken to
-their organisation's sign-in page and brought back, a **Sign in** button, and the language choice.
+centred card — the logo, "Sign in to oJobPub Publisher", one line saying how to sign in, the sign-in
+form or buttons, and the language choice.
+
+- **With local accounts enabled (§2.12)**, an email and password form comes first, with links to sign
+  up and to reset a forgotten password. Any provider buttons follow below it.
 
 - **One button per configured identity provider.** Adding one is configuration alone. Each button
   says "Continue with …", naming the provider by its configured display name, or by the brand when
@@ -508,21 +515,22 @@ their organisation's sign-in page and brought back, a **Sign in** button, and th
   - With several, all look alike, so none is presented as the one to pick. A single provider keeps
     one primary "Sign in" button, as before.
 
-- **No credentials are entered here.** The application must not handle passwords (§2.2); the button
-  hands over to the identity provider, whose own page asks for them. A username and password form on
-  this page would be one.
+- **Provider credentials are never entered here.** A provider button hands over to the identity
+  provider, whose own page asks for them. Only a local account's password is entered on this page.
 - **It is shown before the provider**, not skipped. One click is the price of a first visit that says
   what this is and where the visitor is about to be sent, and of a sign-out that ends somewhere rather
   than bouncing straight back into the provider.
-- **Three states**, each in words and not only in colour (§7.9): a failed sign-in (`?error`) says it did
+- **Its states**, each in words and not only in colour (§7.9): a failed sign-in (`?error`) says it did
   not complete and to try again, without the technical detail of why; a completed sign-out
   (`?logout`) says so; and a suspended account (`?suspended`, §2.11) is told it is suspended and to
-  contact the administrator. Switching language keeps the state.
+  contact the administrator. With local accounts, also: an address just confirmed (`?verified`), a
+  password just reset (`?reset`), an account not yet confirmed (`?unverified`, with a way to resend the
+  link), and a session ended by a password change (`?expired`). Switching language keeps the state.
 - It is **standalone**: no sidebar, switcher or user menu, since a signed-out visitor has none of them.
 - A signed-in visitor asking for it is sent on to the dashboard. Under `dev` it is inert, like every
   login route (§2.3).
-- With **no identity provider configured** the page is refused like the rest of the back-office
-  (§9.4). A Sign in button that cannot work would be worse than the refusal.
+- With **no identity provider configured and local accounts off** the page is refused like the rest
+  of the back-office (§9.4). A Sign in button that cannot work would be worse than the refusal.
 
 ## 7.20 Users
 
@@ -584,3 +592,21 @@ a way of publishing them.
   permalink exists.
 - **Delete** — modal confirmation stating that the URL will stop working and consumers will receive
   `404`, and pointing to *No feed* for anyone who meant to stop publishing but keep the URL.
+
+## 7.24 Account screens
+
+The screens of a local account (§2.12), standalone like sign-in (§7.19) and offered only when local
+accounts are enabled; otherwise they do not exist.
+
+- **Sign up** — email, name, password twice, and the captcha. Afterwards one page, whatever happened:
+  "check your email".
+- **Confirm** — the link from the mail. A valid one leads to sign-in, saying the address is confirmed;
+  a used or expired one says so and offers to send a new one.
+- **Resend the link** and **Forgot password** — an email and the captcha; afterwards one page,
+  whatever happened.
+- **Reset password** — reached from the mail: the new password twice. Afterwards sign-in, saying the
+  password changed.
+- **Change password** — for a signed-in local account, from the user menu: the current password and
+  the new one twice. Accounts from a provider are not offered it; their password is the provider's.
+- Every form says its password rule before it is broken, and keeps what was typed except passwords
+  when it refuses.

@@ -159,14 +159,15 @@ Generation and normalization:
 ## 3.7 User
 
 A person who signs in to the back-office. The record is provisioned on first login (§2.2) and holds the
-application's own authorization data; the identity provider owns everything else about them.
+application's own authorization data; the identity provider — or, for a local account, the account
+itself (§2.12) — owns everything else about them.
 
 | Field | Type | Required | Rules |
 |---|---|---|---|
 | `id` | UUID | yes | generated; the application's own handle for the person |
-| `issuer` | string | **yes** | the OIDC issuer; with `subject`, uniquely identifies the user |
-| `subject` | string | **yes** | the OIDC subject claim; **immutable** |
-| `email` | string | no | from the ID token. Mutable, and **never** an identity — only how a human addresses an invitation |
+| `issuer` | string | **yes** | the OIDC issuer, or `local` for a local account; with `subject`, uniquely identifies the user |
+| `subject` | string | **yes** | the OIDC subject claim, or the local account's id; **immutable** |
+| `email` | string | no | from the ID token, or the local account's verified address. Mutable, and **never** an identity — only how a human addresses an invitation |
 | `displayName` | string | no | for display; falls back to email, then subject |
 | `role` | enum | **yes** | the **platform** role (§2.1): `USER` (default) or `ADMIN` |
 | `suspendedAt` | instant | no | set while an admin has suspended the account (§2.11); null means active |

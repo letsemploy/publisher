@@ -21,9 +21,8 @@
    be marked private and require a rotatable token is deferred; the UUID in the path makes a link
    impractical to guess, but it is not a secret and may appear in referrer headers and proxy logs.
 7. **Invitation delivery.** No email is sent; an invitee learns of an invitation only by signing in
-   (§2.6). If invitations should reach people who are not already in the habit of logging in, a mail
-   transport and its templates, bounce handling and opt-outs need specification — and it would be the
-   first thing here to require a delivery channel at all.
+   (§2.6). Mail now exists for local accounts (§2.12), so the transport is there; what would still
+   need specification is which invitations are mailed, bounce handling and opt-outs.
 8. **Leaving an employer.** A member can be removed by an owner (§2.6) but cannot currently remove
    themselves, and an owner cannot hand over and walk away in one action. Whether "leave" and "transfer
    ownership" should exist as first-class actions is deferred; today the sequence is promote, then ask
@@ -66,3 +65,8 @@
    safe is linking **by consent from inside a signed-in session**: signing in to the second provider
    while already signed in through the first. Whether that is worth building depends on how often
    installations actually offer more than one provider.
+16. **Changing a local account's email.** A local account keeps the address it signed up with
+   (§2.12). Changing it safely means confirming the new address before it replaces the old one, and
+   telling the old one; until that is specified there is no such screen.
+17. **Linking a local account to a provider account.** The consent-based linking of item 15 would
+   cover local accounts too; until then they stay separate accounts, as §2.2 requires.
