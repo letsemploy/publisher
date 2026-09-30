@@ -726,8 +726,9 @@ enforced it.) Controllers pass message *keys* as flash attributes and templates 
 - `-parameters` compilation is expected (Spring Data and MVC parameter binding rely on it).
 - **`CHANGELOG.md`** follows Keep a Changelog 1.1.0. A change someone running the publisher, or
   reading its feed or API, would notice adds a line under `## [Unreleased]` in the same commit;
-  dependency bumps, CI and refactors do not. A release renames that heading to
-  `## [x.y.z] - YYYY-MM-DD` and adds its compare link. v0.4.0 was never tagged, so its links use the
+  dependency bumps, CI and refactors do not. `make git-release v=x.y.z` runs
+  `scripts/release-changelog.sh`, which dates `[Unreleased]` as that version, moves the compare
+  links on, and refuses an empty `[Unreleased]` or a version already listed. v0.4.0 was never tagged, so its links use the
   release commit `0ff137f`.
 
 ## Tests
