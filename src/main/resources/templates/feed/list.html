@@ -79,7 +79,6 @@
                 <thead>
                 <tr>
                     <th th:text="#{label.name}">Name</th>
-                    <th th:unless="${singleEmployer}" th:text="#{nav.employers}">Employer</th>
                     <th th:text="#{permalink.feed}">Publishes</th>
                     <th th:text="#{permalink.url}">URL</th>
                     <th class="w-1"></th>
@@ -91,7 +90,6 @@
                         <span class="fw-bold" th:text="${p.name}">Careers page</span>
                         <div class="text-secondary small" th:if="${p.description != null}" th:text="${p.description}">desc</div>
                     </td>
-                    <td th:unless="${singleEmployer}" th:text="${p.employerName}">Acme</td>
                     <td>
                         <form class="d-flex gap-2" th:action="@{'/feeds/permalinks/' + ${p.id} + '/target'}" method="post">
                             <label class="visually-hidden" th:for="'feed-' + ${p.id}" th:text="#{permalink.feed}">Publishes</label>

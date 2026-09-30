@@ -166,11 +166,12 @@ class ScreenRenderingTest {
         String html = html("/jobs");
         int sidebarEnd = html.indexOf("</aside>");
         int userMenu = html.indexOf("/logout");
-        int employerSwitcher = html.indexOf("/context/employer");
         assertThat(sidebarEnd).as("sidebar present").isPositive();
         assertThat(userMenu).as("user menu after the sidebar").isGreaterThan(sidebarEnd);
-        assertThat(employerSwitcher).as("employer switcher after the sidebar").isGreaterThan(sidebarEnd);
         assertThat(html).contains("/context/theme");
+        // The seed has one employer, so there is nothing to switch to (spec 2.5);
+        // ActiveEmployerTest renders the switcher with two.
+        assertThat(html).doesNotContain("/context/employer");
         // The sidebar still carries the destinations and the invitation badge.
         String sidebar = html.substring(0, sidebarEnd);
         assertThat(sidebar).contains("nav-link-title").contains("/invitations");

@@ -33,7 +33,7 @@ public record ClicksView(int days, int trendDays, long total, Trend trend, Strin
      * @param share     clicks against the table's largest, 0-100, for the bar
      * @param sparkline the job's clicks per day over the trend days
      */
-    public record Job(String id, String title, String employerName, long clicks, int share,
+    public record Job(String id, String title, long clicks, int share,
                       String sparkline, long recentTotal, Trend trend) {
     }
 

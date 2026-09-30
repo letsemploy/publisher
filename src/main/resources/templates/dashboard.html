@@ -105,8 +105,7 @@
                                 <span class="text-truncate">
                                     <span th:text="${r.title}">Senior Backend Engineer</span>
                                     <span class="text-secondary small d-block">
-                                        <span th:text="${r.note}">closes in 3 days</span><span
-                                            th:unless="${singleEmployer}" th:text="' · ' + ${r.employerName}"> · Acme</span>
+                                        <span th:text="${r.note}">closes in 3 days</span>
                                     </span>
                                 </span>
                             </a>
@@ -136,7 +135,6 @@
                         <thead>
                         <tr>
                             <th th:text="#{label.title}">Title</th>
-                            <th th:unless="${singleEmployer}" th:text="#{nav.employers}">Employer</th>
                             <th class="text-end" th:text="#{dashboard.clicks.clicks}">Clicks</th>
                             <th th:text="#{dashboard.clicks.recent(${dashboard.clicks.trendDays})}">Last 14 days</th>
                         </tr>
@@ -144,7 +142,6 @@
                         <tbody>
                         <tr th:each="j : ${dashboard.clicks.jobs}">
                             <td><a th:href="@{'/jobs/' + ${j.id}}" th:text="${j.title}">Senior Backend Engineer</a></td>
-                            <td th:unless="${singleEmployer}" th:text="${j.employerName}">Acme AG</td>
                             <td class="text-end fw-bold click-count" th:text="${j.clicks}">12</td>
                             <td>
                                 <div class="d-flex align-items-center gap-2">
@@ -213,8 +210,7 @@
                             <!-- A token is said in words, never only by colour (spec 7.9). -->
                             <span class="badge bg-azure-lt ms-1" th:if="${e.actorKind == 'token'}"
                                   th:text="#{activity.actor.token}">API token</span>
-                            · <span th:text="${e.at}">2026-09-27 10:00</span><span
-                                th:unless="${singleEmployer or e.employer == null}" th:text="' · ' + ${e.employer}"> · Acme</span>
+                            · <span th:text="${e.at}">2026-09-27 10:00</span>
                         </div>
                     </div>
                 </div>
@@ -270,7 +266,6 @@
                 <thead>
                 <tr>
                     <th th:text="#{label.name}">Name</th>
-                    <th th:unless="${singleEmployer}" th:text="#{nav.employers}">Employer</th>
                     <th th:text="#{permalink.feed}">Publishes</th>
                     <th th:text="#{permalink.url}">URL</th>
                 </tr>
@@ -278,7 +273,6 @@
                 <tbody>
                 <tr th:each="p : ${dashboard.permalinks}">
                     <td class="fw-bold" th:text="${p.name}">Careers page</td>
-                    <td th:unless="${singleEmployer}" th:text="${p.employerName}">Acme</td>
                     <td>
                         <a th:if="${p.feedId != null}" th:href="@{'/feeds/' + ${p.feedId}}" th:text="${p.feedName}">Feed</a>
                         <!-- In words, not only by absence (spec 7.9). -->

@@ -11,8 +11,8 @@ import org.letsemploy.ojobpub_publisher.security.CurrentUserService;
 import org.springframework.stereotype.Component;
 
 /**
- * Resolves which employers the current screen covers: the active employer if one
- * is chosen, otherwise every employer the user may see (spec 2.5).
+ * Resolves the employer the current screen covers: always exactly one, the
+ * active employer (spec 2.5), and none only for a user who belongs to none.
  */
 @Component
 public class Scope {
@@ -33,48 +33,25 @@ public class Scope {
         return currentUserService.current();
     }
 
+    /**
+     * The active employer: the one chosen while the user may still see it, else
+     * the first they may see, by name (spec 2.5). Empty with no employers at all.
+     */
+    public Optional<Employer> activeEmployer() {
+        return employerContext.resolve(employerService.visibleTo(user()));
+    }
+
+    /** The active employer as a list, for the queries that take several: one, or none. */
     public List<Employer> employers() {
-        Actor user = user();
-        List<Employer> visible = employerService.visibleTo(user);
-        UUID active = employerContext.getActiveEmployerId();
-        if (active == null) {
-            return visible;
-        }
-        return visible.stream().filter(e -> e.getId().equals(active)).toList();
+        return activeEmployer().stream().toList();
     }
 
     public List<UUID> employerIds() {
         return employers().stream().map(Employer::getId).toList();
     }
 
-    /**
-     * The one employer the current screen is about, if there is one (spec 2.5).
-     *
-     * <p>Distinct from {@link #requireActiveEmployer()}, which picks a default to
-     * create against. A screen that names a subject - People (spec 7.18) - must
-     * not quietly pick the first of several: with "All employers" chosen, or with
-     * no memberships at all, the honest answer is that there is no subject.
-     */
-    public Optional<Employer> activeEmployer() {
-        UUID chosen = employerContext.getActiveEmployerId();
-        List<Employer> visible = employerService.visibleTo(user());
-        if (chosen != null) {
-            return visible.stream().filter(e -> e.getId().equals(chosen)).findFirst();
-        }
-        // One employer is unambiguously the one being worked on, chosen or not.
-        return visible.size() == 1 ? Optional.of(visible.get(0)) : Optional.empty();
-    }
-
-    /** The employer a newly created job or feed belongs to. */
+    /** The employer a new record belongs to; 404 for a user who belongs to none. */
     public Employer requireActiveEmployer() {
-        List<Employer> employers = employers();
-        if (employers.isEmpty()) {
-            throw new NotFoundException("No employer selected.");
-        }
-        return employers.get(0);
-    }
-
-    public boolean hasSingleEmployer() {
-        return employers().size() == 1;
+        return activeEmployer().orElseThrow(() -> new NotFoundException("No employer selected."));
     }
 }

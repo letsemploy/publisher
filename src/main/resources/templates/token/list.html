@@ -6,9 +6,9 @@
 <body>
 <div layout:fragment="content">
 
-    <!-- No employer chosen, so there is no register to show (spec 7.17). -->
+    <!-- No employer at all, so there is no register to show (spec 7.17). -->
     <th:block th:if="${tokens == null}">
-        <div th:replace="~{fragments/empty :: state('key','token.noEmployer.title','token.noEmployer.subtitle','/employers','nav.employers')}"></div>
+        <div th:replace="~{fragments/empty :: state('key','token.noEmployer.title','token.noEmployer.subtitle','/employers/create','employer.create')}"></div>
     </th:block>
 
     <!--

@@ -80,7 +80,7 @@ public class Views {
         feeds.forEach(f -> options.put(f.getId().toString(), f.getName()));
         Feed feed = permalink.getFeed();
         return new PermalinkRow(permalink.getId().toString(), permalink.getName(),
-                permalink.getDescription(), permalink.getEmployer().getName(),
+                permalink.getDescription(),
                 feed == null ? null : feed.getId().toString(), feed == null ? null : feed.getName(),
                 permalinkUrl(permalink), options);
     }
@@ -195,7 +195,7 @@ public class Views {
         long topCountry = statistics.countries().stream().mapToLong(JobClickService.CountryClicks::clicks).max().orElse(0);
         List<ClicksView.Job> jobs = statistics.topJobs().stream()
                 .map(c -> new ClicksView.Job(c.job().getId().toString(), c.job().getTitle(),
-                        c.job().getEmployer().getName(), c.clicks(), share(c.clicks(), topJob),
+                        c.clicks(), share(c.clicks(), topJob),
                         sparkline(c.recent()), c.recentTotal(),
                         trend(c.recentTotal(), c.previous(), JobClickService.TREND_DAYS, locale)))
                 .toList();
@@ -279,7 +279,7 @@ public class Views {
     }
 
     private static AttentionView.Row row(Job job, String note) {
-        return new AttentionView.Row(job.getId().toString(), job.getTitle(), job.getEmployer().getName(), note);
+        return new AttentionView.Row(job.getId().toString(), job.getTitle(), note);
     }
 
     private String countryName(String code, Locale locale) {
@@ -308,13 +308,11 @@ public class Views {
 
     public LocationRow locationRow(Location location, long usages) {
         return new LocationRow(location.getId().toString(), location.getCity(),
-                location.getCountryCode(), location.getCountry().getName(), (int) usages,
-                location.getEmployer().getName());
+                location.getCountryCode(), location.getCountry().getName(), (int) usages);
     }
 
     public TagRow tagRow(Tag tag, long jobCount) {
-        return new TagRow(String.valueOf(tag.getId()), tag.getName(), (int) jobCount,
-                tag.getEmployer().getName());
+        return new TagRow(String.valueOf(tag.getId()), tag.getName(), (int) jobCount);
     }
 
     public InvitationRow invitationRow(Invitation invitation) {

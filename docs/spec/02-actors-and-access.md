@@ -164,16 +164,22 @@ same applies to an action their **membership role** does not permit (§2.1).
 
 ## 2.5 Employer context
 
-A user with access to more than one employer works in the context of **one active employer** at a time,
-chosen with a switcher at the top of the sidebar (§7.3). The active employer scopes all list screens and
-pre-fills the employer on every create form.
+Everyone with at least one employer works in the context of **exactly one active employer** at a time,
+chosen with a switcher in the top bar (§7.3). The active employer scopes every screen and is the
+employer of every record created. There is no "all employers" view; the one view across employers is
+an admin's *All activity* (§7.21), and the Employers list (§7.13) names them all.
 
 - The active employer is a **convenience, not a security boundary**. Authorization is always derived
   from membership, never from the stored context.
 - It **must** be stored server-side in the session, not in a client-controlled cookie.
-- If the user is a member of exactly one employer, that employer is selected automatically and the
-  switcher is hidden.
-- An admin's switcher also offers an "all employers" option, which is the default for admins.
+- **Until the user chooses, the first employer they may see, by name, is active.** The same holds
+  after anything that resets the choice — entering or leaving admin mode (§2.10), starting or ending
+  viewing as a user (§2.9), deleting the active employer.
+- **A choice the user can no longer see falls back to the first** — after leaving an employer, being
+  removed or suspended, or the employer being deleted elsewhere — rather than leaving every screen
+  empty.
+- With a single employer the switcher is hidden. Only a user with no employers at all has no active
+  employer, and the employer-scoped screens then say how to get one.
 - **Creating an employer makes it the active one.** Whoever creates it is about to fill it with
   locations, jobs and feeds, and would otherwise have to find it in the switcher first. Staying on the
   previous employer would also silently attach new rows to the wrong one. Editing an employer
@@ -396,8 +402,7 @@ working as a member of their own employers, and seeing every employer and every 
 and, at worst, a change made to the wrong employer by someone who did not mean to act as staff.
 
 - **The user view by default.** Every session starts with admin mode off. An admin then sees exactly
-  what a user with the same memberships sees: their own employers, no *All employers*, no Users
-  screen, no All activity.
+  what a user with the same memberships sees: their own employers, no Users screen, no All activity.
 - **Switched deliberately.** The user menu offers *Switch to admin mode* and *Leave admin mode*
   (§7.3), each a form post. While it is on, a badge in the top bar says so, in words.
 - **Until switched off or the session ends.** Logging out ends it. Nothing expires in between.

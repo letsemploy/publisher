@@ -5,9 +5,7 @@ public record LocationRow(
         String city,
         String country,
         String countryName,
-        int usageCount,
-        /** Shown only when the list covers more than one employer (spec 7.14). */
-        String employerName) {
+        int usageCount) {
 
     public boolean isDeletable() {
         return usageCount == 0;

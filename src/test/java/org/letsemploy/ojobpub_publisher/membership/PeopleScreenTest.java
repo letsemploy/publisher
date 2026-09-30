@@ -145,11 +145,11 @@ class PeopleScreenTest {
      * one (spec 7.18).
      */
     @Test
-    void aUserWithNoEmployerIsToldToChooseOne() throws Exception {
+    void aUserWithNoEmployerIsToldHowToGetOne() throws Exception {
         given(currentUserService.current()).willReturn(Actor.user(
                 UUID.randomUUID(), "Newcomer", "newcomer@example.com", false, Map.of()));
         assertThat(people("/people"))
-                .contains("No employer selected")
+                .contains("No employer yet")
                 .doesNotContain("Mara Member");
     }
 }

@@ -97,7 +97,6 @@ public class IndexController {
                 auditService.latest(scope.employerIds(), scope.user(), ACTIVITY_ROWS).stream()
                         .map(views::activityRow).toList(),
                 feedRows, permalinks));
-        model.addAttribute("singleEmployer", scope.hasSingleEmployer());
         return "dashboard";
     }
 

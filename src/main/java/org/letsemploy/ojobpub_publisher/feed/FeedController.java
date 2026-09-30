@@ -80,7 +80,6 @@ public class FeedController {
         model.addAttribute("page", PageMeta.of(message("nav.feeds")));
         model.addAttribute("feeds", rows);
         model.addAttribute("permalinks", permalinks);
-        model.addAttribute("singleEmployer", scope.hasSingleEmployer());
         return "feed/list";
     }
 

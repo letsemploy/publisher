@@ -294,9 +294,8 @@ class AuditLogTest {
 
     /**
      * An event about a person belongs to no employer: the Activity screen, which
-     * covers employers, never shows it, and platform staff read it under "All
-     * activity" - a route of its own, because a single-employer installation never
-     * offers "All employers" (spec 2.5).
+     * covers the active employer, never shows it, and platform staff read it under
+     * "All activity", the one view across employers (spec 2.5, 7.21).
      */
     @Test
     void eventsAboutPeopleAreOnlyInAllActivity() throws Exception {

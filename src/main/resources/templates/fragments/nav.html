@@ -88,27 +88,20 @@
                 <span class="badge bg-red-lt" th:text="#{adminMode.badge}">Admin mode</span>
             </div>
 
-            <!-- Employer switcher: hidden when the user has exactly one employer (spec 2.5) -->
-            <div class="nav-item dropdown me-3" th:if="${ui.employers.size() > 1 or ui.admin}">
+            <!-- Employer switcher: one employer is always active; hidden with nothing to switch to (spec 2.5) -->
+            <div class="nav-item dropdown me-3" th:if="${ui.employers.size() > 1 and ui.activeEmployer != null}">
                 <a href="#" class="nav-link d-flex align-items-center text-reset dropdown-toggle"
                    data-bs-toggle="dropdown" aria-expanded="false" th:title="#{employer.switch}">
                     <svg th:replace="~{fragments/icon :: i('building','icon me-2')}"></svg>
                     <span class="text-truncate d-none d-md-inline" style="max-width:12rem"
-                          th:text="${ui.activeEmployer != null} ? ${ui.activeEmployer.label} : #{employer.all}">Acme</span>
+                          th:text="${ui.activeEmployer.label}">Acme</span>
                 </a>
                 <div class="dropdown-menu dropdown-menu-end">
                     <form th:action="@{/context/employer}" method="post" th:each="e : ${ui.employers}">
                         <input type="hidden" name="employerId" th:value="${e.id}"/>
                         <button type="submit" class="dropdown-item"
-                                th:classappend="${ui.activeEmployer != null and ui.activeEmployer.id == e.id} ? 'active'"
+                                th:classappend="${ui.activeEmployer.id == e.id} ? 'active'"
                                 th:text="${e.label}">Acme</button>
-                    </form>
-                    <div class="dropdown-divider" th:if="${ui.admin}"></div>
-                    <form th:action="@{/context/employer}" method="post" th:if="${ui.admin}">
-                        <input type="hidden" name="employerId" value=""/>
-                        <button type="submit" class="dropdown-item"
-                                th:classappend="${ui.activeEmployer == null} ? 'active'"
-                                th:text="#{employer.all}">All employers</button>
                     </form>
                 </div>
             </div>

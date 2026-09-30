@@ -7,7 +7,6 @@ public record PermalinkRow(
         String id,
         String name,
         String description,
-        String employerName,
         /** The feed it publishes, or null for none. */
         String feedId,
         String feedName,

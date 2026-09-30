@@ -56,9 +56,8 @@ public class PeopleController {
     }
 
     /**
-     * The sidebar destination. With "All employers" chosen, or no memberships at
-     * all, there is no subject to name, so the screen says so rather than picking
-     * one (spec 7.18).
+     * The sidebar destination: the active employer's people. With no memberships
+     * at all there is no subject to name, and the screen says so (spec 7.18).
      */
     @GetMapping("/people")
     public String activeEmployerPeople(Model model) {

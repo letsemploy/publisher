@@ -47,8 +47,6 @@ public class LocationController {
                 .toList();
         model.addAttribute("page", PageMeta.of(message("nav.locations")));
         model.addAttribute("locations", rows);
-        // Several employers' locations side by side need saying whose each is.
-        model.addAttribute("showEmployer", !scope.hasSingleEmployer());
         return "location/list";
     }
 

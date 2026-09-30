@@ -79,10 +79,9 @@ public class UiContextFactory {
                 // person's own log is in the user menu instead.
                 new NavItem("history", "nav.activity", "/activity", path.equals("/activity"))));
 
-        // The one destination whose visibility depends on the role, and the one
-        // that needs an employer to be about: holding the token list is close to
-        // holding the access (spec 7.17), and with no employer selected there is
-        // neither a subject to show nor a role to check.
+        // The one destination whose visibility depends on the role: holding the
+        // token list is close to holding the access (spec 7.17). An employer is
+        // active whenever the user has one; with none there is no role to check.
         if (active != null
                 && membershipService.canAdminister(user, UUID.fromString(active.id()))) {
             nav.add(4, new NavItem("key", "nav.tokens", "/tokens", path.startsWith("/tokens")));
@@ -115,19 +114,9 @@ public class UiContextFactory {
      * With exactly one employer the switcher is hidden and that employer is
      * selected automatically (spec 2.5).
      */
+    /** The same employer the screens cover (spec 2.5), so the top bar cannot name another. */
     private Ref activeEmployer(List<Employer> employers) {
-        UUID activeId = employerContext.getActiveEmployerId();
-        if (activeId == null && employers.size() == 1) {
-            activeId = employers.get(0).getId();
-            employerContext.setActiveEmployerId(activeId);
-        }
-        if (activeId == null) {
-            return null;
-        }
-        UUID target = activeId;
-        return employers.stream()
-                .filter(e -> e.getId().equals(target))
-                .findFirst()
+        return employerContext.resolve(employers)
                 .map(e -> new Ref(e.getId().toString(), e.getName()))
                 .orElse(null);
     }

@@ -429,11 +429,15 @@ form, pending invitations, role and removal controls) are **absent for an editor
 controls are missing; a control that is simply gone reads as a broken page. None of that is the check:
 reading takes membership via `EmployerService.findVisible`, every write takes `requireOwner`.
 
-`Scope` has **two** employer resolvers and they answer different questions.
-`requireActiveEmployer()` picks a default to *create against* and falls back to the first visible
-employer. `activeEmployer()` returns `Optional` and is for a screen that *names a subject*: with "All
-employers" chosen, or no memberships, the honest answer is none, and People renders an empty state
-rather than silently picking one. Do not swap them.
+**One employer is always active** (§2.5); there is no "All employers". The session's
+`EmployerContext.activeEmployerId` is only a *choice* (null = none yet), and `EmployerContext.resolve`
+turns it into the active employer: the choice while still visible, else the first visible by name,
+written back so a stale choice heals itself. `Scope.activeEmployer()` and the top bar
+(`UiContextFactory`) both go through it, so they cannot disagree. `employers()`/`employerIds()` are
+that one employer as a list; `requireActiveEmployer()` 404s only for a user with no employers, which
+is also the only case People and API tokens render their empty state. Clearing the choice (admin mode,
+viewing as, deleting the active employer) therefore means "back to the first", and lists never show an
+employer column — only `/activity/all` does.
 
 ### Management API (`api/`, `token/`)
 
@@ -512,10 +516,9 @@ the employer's log and the member's — so the two logs cannot disagree.
 - `signIn` records only `ACCOUNT_CREATED` and `ADMIN_GRANTED`/`ADMIN_REVOKED`, with the application as
   actor (`AuditEvent.of(action, null)`). It runs on every request; sign-ins themselves are the
   identity provider's to log.
-- **Admins read everything at `/activity/all`, not through the switcher.** With exactly one employer,
-  `UiContextFactory` writes it into the session before any handler runs (§2.5), so "All employers" never
-  happens on a single-employer installation. Branching `/activity` on the choice left the events
-  about people unreachable there, and the multi-employer test database never showed it.
+- **Admins read everything at `/activity/all`**, the one view across employers (§2.5): events about
+  people, which belong to no employer, and deleted employers' logs. `/activity` is the active
+  employer's log and names no employer per row.
 - `job_status_events` still exists and feeds the job's history panel. A status change writes both.
   Folding it into this log is a later step.
 
@@ -569,8 +572,7 @@ sets the headquarters, all in one transaction. The input is a `Headquarters` val
 id, or a new city and country, which wins. A new employer can only give the latter. The seed files
 follow the same order: employer, then locations, then the headquarters `UPDATE`.
 
-The job-form pickers search `?employer=` the job's employer, and check membership. Lists show an employer
-column when the scope covers more than one employer (`Scope.hasSingleEmployer()`).
+The job-form pickers search `?employer=` the job's employer, and check membership.
 
 `V7` divided the once-global rows. The oldest user keeps each row and its id, every other user gets a
 copy, and unused rows went to the oldest employer. **SQLite's V7 is non-transactional**, set by

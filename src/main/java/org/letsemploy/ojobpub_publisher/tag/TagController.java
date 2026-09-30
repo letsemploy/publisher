@@ -55,8 +55,6 @@ public class TagController {
                 .toList();
         model.addAttribute("tags", rows);
         model.addAttribute("query", q);
-        // Several employers' tags side by side need saying whose each is.
-        model.addAttribute("showEmployer", !scope.hasSingleEmployer());
     }
 
     @GetMapping("/create")

@@ -8,6 +8,17 @@ Section numbers such as §5.6 refer to the specification in [`docs/SPEC.md`](doc
 
 ## [Unreleased]
 
+### Changed
+
+- One employer is always active: the first by name until another is chosen, and a choice that is no
+  longer available falls back to the first. The switcher is shown only with more than one employer
+  (§2.5).
+
+### Removed
+
+- The *All employers* choice and the employer columns it needed. Admins keep the overview in *All
+  activity* and the Employers list (§2.5, §7.21).
+
 ## [0.7.0] - 2026-09-30
 
 ### Changed

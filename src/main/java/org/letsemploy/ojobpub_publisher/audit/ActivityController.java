@@ -48,7 +48,7 @@ public class ActivityController {
         this.messages = messages;
     }
 
-    /** The employers in scope (spec 2.5), as the actor may read their logs. */
+    /** The active employer's log (spec 2.5), as the actor may read it. */
     @GetMapping("/activity")
     public String employers(@RequestParam(defaultValue = "0") int page, Model model) {
         Actor actor = scope.user();
@@ -56,15 +56,15 @@ public class ActivityController {
         model.addAttribute("page", PageMeta.of(message("nav.activity"),
                 active.map(Employer::getName).orElse(null)));
         model.addAttribute("offerEverything", actor.isAdmin());
+        // One employer's log names no employer on each row; All activity does.
         return render(model, auditService.forEmployers(scope.employerIds(), actor, page), "/activity",
-                active.isEmpty());
+                false);
     }
 
     /**
      * Everything, for platform staff: events about people, which belong to no
-     * employer, and the logs of employers since deleted. A route of its own rather
-     * than the switcher's "All employers", which a single-employer installation
-     * never offers (spec 2.5).
+     * employer, and the logs of employers since deleted. Every other screen covers
+     * the one active employer (spec 2.5); this is the one view across them all.
      */
     @GetMapping("/activity/all")
     public String everything(@RequestParam(defaultValue = "0") int page, Model model) {

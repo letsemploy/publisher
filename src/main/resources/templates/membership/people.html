@@ -7,9 +7,9 @@
 <div layout:fragment="content">
 
     <!--
-      No active employer, so the screen has no subject to name (spec 7.18). The
-      switcher lives in the top bar; a user with no memberships is pointed at
-      the two things they can actually do.
+      No employer at all, so the screen has no subject to name (spec 7.18): one
+      is always active otherwise (spec 2.5). The user is pointed at the two
+      things they can actually do.
     -->
     <th:block th:if="${people == null}">
         <div th:replace="~{fragments/empty :: state('users','people.noEmployer.title','people.noEmployer.subtitle','/employers/create','employer.create')}"></div>

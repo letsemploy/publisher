@@ -21,7 +21,6 @@
                 <tr>
                     <th th:text="#{label.city}">City</th>
                     <th th:text="#{label.country}">Country</th>
-                    <th th:if="${showEmployer}" th:text="#{label.employer}">Employer</th>
                     <th th:text="#{location.usedBy}">Used by</th>
                     <th class="w-1"></th>
                 </tr>
@@ -33,7 +32,6 @@
                         <span th:text="${l.countryName}">Switzerland</span>
                         <code class="ms-1" th:text="${l.country}">CH</code>
                     </td>
-                    <td class="text-secondary" th:if="${showEmployer}" th:text="${l.employerName}">Acme AG</td>
                     <td>
                         <span class="text-secondary" th:if="${l.usageCount > 0}"
                               th:text="#{location.usageCount(${l.usageCount})}">used</span>

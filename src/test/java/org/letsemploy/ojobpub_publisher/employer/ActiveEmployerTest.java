@@ -20,9 +20,8 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * Creating an employer makes it the active one (spec 2.5): what comes next -
- * its locations, jobs and feeds - belongs to it, not to whichever employer was
- * active before.
+ * One employer is always active (spec 2.5): the first by name until the user
+ * chooses, and the one just created or joined after that. There is no "all".
  */
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -96,5 +95,70 @@ class ActiveEmployerTest {
                 .andExpect(status().is3xxRedirection());
 
         assertThat(activeEmployer(session)).isEqualTo(workingOn);
+    }
+
+    /** An employer that sorts before every other, so it is the first by name. */
+    private String createFirst(MockHttpSession session) throws Exception {
+        String location = mvc.perform(post("/employers/create").session(session)
+                        .param("name", "0 First AG").param("hqCity", "Bern").param("hqCountry", "CH"))
+                .andExpect(status().is3xxRedirection())
+                .andReturn().getResponse().getRedirectedUrl();
+        return location.substring(location.lastIndexOf('/') + 1);
+    }
+
+    @Test
+    void withNothingChosenTheFirstByNameIsActive() throws Exception {
+        String first = createFirst(new MockHttpSession());
+
+        MockHttpSession fresh = new MockHttpSession();
+        String dashboard = mvc.perform(get("/").session(fresh)).andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString();
+
+        assertThat(activeEmployer(fresh)).as("resolved, and kept as the choice").isEqualTo(UUID.fromString(first));
+        assertThat(mvc.perform(get("/locations/create").session(fresh))
+                .andReturn().getResponse().getContentAsString()).contains("0 First AG");
+        // The switcher, in the top bar (spec 7.3), offers the employers and nothing else.
+        assertThat(dashboard.indexOf("action=\"/context/employer\""))
+                .as("switcher after the sidebar").isGreaterThan(dashboard.indexOf("</aside>"));
+        assertThat(dashboard)
+                .containsPattern("dropdown-item active\"[^>]*>0 First AG<")
+                .doesNotContain("All employers")
+                .doesNotContain("name=\"employerId\" value=\"\"");
+    }
+
+    @Test
+    void choosingAnotherSwitchesToIt() throws Exception {
+        createFirst(new MockHttpSession());
+        MockHttpSession session = new MockHttpSession();
+        mvc.perform(post("/context/employer").session(session).param("employerId", ACME));
+
+        assertThat(activeEmployer(session)).isEqualTo(UUID.fromString(ACME));
+        // The switcher marks it; every other employer is only a choice in the menu.
+        assertThat(mvc.perform(get("/").session(session))
+                .andReturn().getResponse().getContentAsString())
+                .containsPattern("dropdown-item active\"[^>]*>Acme AG<")
+                .doesNotContainPattern("dropdown-item active\"[^>]*>0 First AG<");
+    }
+
+    /** A choice the user can no longer see - left, removed, deleted - falls back to the first. */
+    @Test
+    void aChoiceNoLongerVisibleFallsBackToTheFirst() throws Exception {
+        String first = createFirst(new MockHttpSession());
+        MockHttpSession session = new MockHttpSession();
+        mvc.perform(post("/context/employer").session(session).param("employerId", UUID.randomUUID().toString()));
+
+        mvc.perform(get("/").session(session)).andExpect(status().isOk());
+
+        assertThat(activeEmployer(session)).isEqualTo(UUID.fromString(first));
+    }
+
+    /** There is no "none" to choose: a blank choice leaves the active employer as it was. */
+    @Test
+    void aBlankChoiceChangesNothing() throws Exception {
+        MockHttpSession session = new MockHttpSession();
+        mvc.perform(post("/context/employer").session(session).param("employerId", ACME));
+        mvc.perform(post("/context/employer").session(session).param("employerId", ""));
+
+        assertThat(activeEmployer(session)).isEqualTo(UUID.fromString(ACME));
     }
 }

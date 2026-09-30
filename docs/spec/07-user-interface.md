@@ -111,18 +111,16 @@ left out when printing.
   answer. It is visible to every member, and what it offers depends on the membership role.
 - **API tokens** (§7.17) covers the active employer too, and is one of the **two entries whose
   visibility depends on the role** — the other is Users (§7.20), for admins: owners and admins only, because holding the list is close to holding the
-  access. It is **absent** when no employer is active, rather than showing an empty state as People
-  does — People is visible to every member, so an empty state is honest, whereas with no employer
-  selected there is no ownership question to answer. An admin who chooses *All employers* therefore
-  does not see it, and reaches a specific employer's tokens from the employer record.
+  access. It is **absent** for a user with no employer at all, rather than showing an empty state as
+  People does — with no employer there is no ownership question to answer.
 - **Invitations** (§7.16) carries a count badge when any are pending. It stays visible when there are
   none: a user with no employer memberships has nothing else to do, and an entry that disappears when
   empty cannot be found by someone who wants to check whether an invitation ever arrived.
 
 **Top bar** — everything about *context* rather than destination, right-aligned:
 
-- The **employer switcher** (§2.5), a dropdown showing the active employer's name. Hidden when the
-  user has exactly one employer. For admins it also offers *All employers*. Switching posts to the
+- The **employer switcher** (§2.5), a dropdown showing the active employer's name and offering the
+  others. Hidden when the user has exactly one employer. There is no "all employers" choice. Switching posts to the
   server, which stores the choice in the session and redirects to the dashboard (§7.10). Not back to
   the current screen: that may show a record of the employer just left, which the new scope does not
   cover.
@@ -291,7 +289,7 @@ browsers already provide type-ahead on a native select, so no library is warrant
 
 ## 7.10 Dashboard
 
-The landing screen for the employers in scope: every figure on it covers the same employers. Top to
+The landing screen for the active employer (§2.5): every figure on it covers that employer. Top to
 bottom:
 
 - **Status cards:** counts of **published**, **draft** (drafts and incomplete jobs), **expired** and
@@ -312,7 +310,7 @@ bottom:
   - drafts nobody has changed for 30 days.
   - With none of these, it says that nothing needs attention.
 - **Most clicked jobs** over the window, most first, each linking to its job and with its employer when
-  the scope covers more than one. Each row has a bar chart of its last 14 days, and a trend against the
+  Each row has a bar chart of its last 14 days, and a trend against the
   14 days before.
 - **Clicks by country**, the country named in the viewer's language and *Unknown* in words, with a bar
   against the largest.
@@ -404,24 +402,22 @@ number of jobs, feeds, members and API tokens, and its locations, tags and invit
 public feed URLs will answer "not found" from then on. The employer's **name must be typed back**. The
 server checks it; the page only keeps the button disabled until it matches, and without JavaScript the
 button works and a wrong name is refused. Afterwards, if it was the active employer, the active employer
-falls back to the default (§2.5).
+falls back to the first remaining (§2.5).
 **API tokens** (owners only) — §7.17.
 
 **People** — §7.18. Reachable from here for any employer, and from the sidebar for the active one.
 
 ## 7.14 Locations
 
-The locations of the employers in scope (§2.5), with list, create, edit and delete, per §7.6 and §7.7.
-A new one belongs to the active employer. When the list covers more than one employer, as it does under
-"All employers", each row names its employer. The country field is the native select described in
+The locations of the active employer (§2.5), with list, create, edit and delete, per §7.6 and §7.7.
+A new one belongs to the active employer. The country field is the native select described in
 §7.8. A location still referenced by its employer or a job cannot be deleted, and the UI names what
 references it rather than only refusing. Another employer's location is not found (§2.4).
 
 ## 7.15 Tags
 
-The tags of the employers in scope (§2.5), with the number of jobs carrying each, searchable, sorted by
-name. A new one belongs to the active employer, and each row names its employer when the list covers
-more than one. Another employer's tag is not found (§2.4). Create and rename
+The tags of the active employer (§2.5), with the number of jobs carrying each, searchable, sorted by
+name. A new one belongs to the active employer. Another employer's tag is not found (§2.4). Create and rename
 apply the §3.4 normalization and surface the 28-character and uniqueness rules as field errors. Delete
 confirms through a modal stating how many jobs will lose the tag.
 
@@ -521,9 +517,9 @@ people are listed directly above the form.
 employer, and every write takes the owner role; both are enforced in the service, so hiding a control
 is presentation and never the check. A non-member asking for an employer's people gets `404`.
 
-**No active employer** — for a user who has chosen *All employers* (§2.5), or has none at all, the
-screen cannot name a subject. It says so and points at the employer switcher, or, for a user with no
-memberships, at §7.16 and creating an employer, exactly as the other employer-scoped screens do.
+**No employer** — for a user who belongs to none, the screen cannot name a subject (an employer is
+always active otherwise, §2.5). It says so and points at §7.16 and creating an employer, exactly as the
+other employer-scoped screens do.
 
 
 ## 7.19 Sign-in
@@ -586,19 +582,17 @@ offer neither, for the reason they cannot be viewed as.
 
 ## 7.21 Activity
 
-The audit log (§3.12) of the **employers in scope** (§2.5), newest first, in pages of 50 (§8.3). It is
+The audit log (§3.12) of the **active employer** (§2.5), newest first, in pages of 50 (§8.3). It is
 a sidebar destination for everyone. Each row says when, who, and what — "created the job
 “Backend Engineer”" — naming things as they were called at the time. A token is marked as a token and
-the application's own acts as the application's, in words, not only by colour (§7.9). With several
-employers in scope, a column says which one each row belongs to.
+the application's own acts as the application's, in words, not only by colour (§7.9).
 
 - A **member** reads the employer's log, without the owners-only events (§3.12).
 - An **owner** reads all of it.
-- An **admin** reads the log of the employers in scope, like anyone, and is offered **All activity**:
+- An **admin** reads the active employer's log, like anyone, and is offered **All activity**:
   everything, including events about people, which belong to no employer, and the logs of employers
-  since deleted. It is a destination of its own rather than the switcher's *All employers*, because an
-  installation with a single employer never offers that choice (§2.5). Anyone else asking for it is
-  told it does not exist (§2.4).
+  since deleted, with a column naming each row's employer. It is the one view across employers
+  (§2.5). Anyone else asking for it is told it does not exist (§2.4).
 - With nothing in scope, the screen shows an empty state.
 
 ## 7.22 My activity
@@ -614,7 +608,7 @@ Part of the Feeds screen (§7.12), below the feeds, rather than a destination of
 a way of publishing them.
 
 - **A list** of the employer's permalinks: name and description, the feed it publishes, and its URL
-  with a copy action and an *Open* link. With several employers in scope, a column names each one's.
+  with a copy action and an *Open* link.
 - **The switch is on the list.** Each row carries a select of the employer's feeds plus *No feed*, and
   a *Switch* button, as a plain form: the one thing done here often, and under time pressure, needs no
   second screen and no JavaScript. No feed is also said in words (§7.9). The confirmation says a switch

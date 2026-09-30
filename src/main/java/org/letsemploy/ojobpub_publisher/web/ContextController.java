@@ -21,8 +21,11 @@ public class ContextController {
 
     @PostMapping("/context/employer")
     public String switchEmployer(@RequestParam(required = false) String employerId) {
-        employerContext.setActiveEmployerId(
-                employerId == null || employerId.isBlank() ? null : UUID.fromString(employerId));
+        // A choice, not a grant: one the user may not see resolves to their first
+        // employer (spec 2.5). There is no "none", so a blank choice changes nothing.
+        if (employerId != null && !employerId.isBlank()) {
+            employerContext.setActiveEmployerId(UUID.fromString(employerId));
+        }
         // To the dashboard, not back: the screen the user was on may show a record
         // of the employer they just left, which the new scope no longer covers.
         return "redirect:/";

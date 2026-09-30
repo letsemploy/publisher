@@ -19,8 +19,8 @@ public record AttentionView(Group closing, Group incomplete, Group stale) {
         }
     }
 
-    /** A job, its employer, and why it is here in words ("closes in 3 days"). */
-    public record Row(String id, String title, String employerName, String note) {
+    /** A job, and why it is here in words ("closes in 3 days"). */
+    public record Row(String id, String title, String note) {
     }
 
     public boolean isEmpty() {
