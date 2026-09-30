@@ -95,9 +95,11 @@ public class JobApiController {
     }
 
     private JobPayload save(UUID id, Map<String, Object> input, Employer employer, Actor actor) {
-        JobForm form = JobInputs.toForm(input);
-        form.setId(id);
         try {
+            // Inside the try: a malformed date or tag id is refused here, and is
+            // the caller's mistake, not a fault (spec 11.4).
+            JobForm form = JobInputs.toForm(input);
+            form.setId(id);
             // Never activated as a side effect of a write: that is its own act below.
             Job saved = jobService.save(form, employer, false, actor);
             return JobPayload.ok(mapper.readJob(saved.getId(), actor));

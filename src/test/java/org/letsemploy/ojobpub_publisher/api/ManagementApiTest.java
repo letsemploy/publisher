@@ -253,6 +253,26 @@ class ManagementApiTest {
         assertThat(refused.path("userErrors").findValuesAsText("field")).containsExactly("locationIds");
     }
 
+    /** A malformed date or tag id is the caller's mistake: data in userErrors, not a fault (spec 11.4). */
+    @Test
+    void aMalformedDateOrTagIdIsAUserErrorNotAFault() throws Exception {
+        String secret = tokenWith(TokenScope.JOBS_WRITE);
+        String job = "title: \"Malformed\", url: \"https://example.com/jobs/9\", language: \"en\", "
+                + "jobType: PERMANENT";
+
+        JsonNode badDate = query(secret, "mutation { createJob(input: { " + job
+                + ", startDate: \"next week\" }) { job { id } userErrors { field code } } }");
+        assertThat(badDate.path("errors").isMissingNode()).isTrue();
+        assertThat(badDate.path("data").path("createJob").path("userErrors").findValuesAsText("field"))
+                .containsExactly("startDate");
+
+        JsonNode badTag = query(secret, "mutation { createJob(input: { " + job
+                + ", tagIds: [\"java\"] }) { job { id } userErrors { field code } } }");
+        assertThat(badTag.path("errors").isMissingNode()).isTrue();
+        assertThat(badTag.path("data").path("createJob").path("userErrors").findValuesAsText("field"))
+                .containsExactly("tagIds");
+    }
+
     @Test
     void aJobCanBeWrittenFromIdsTheApiItselfHandsOut() throws Exception {
         String secret = tokenWith(TokenScope.JOBS_WRITE);
