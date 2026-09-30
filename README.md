@@ -11,26 +11,32 @@ job boards and aggregators can read without an API key.
 
 ## Features
 
-- **Postings** with locations, tags, salary and an application window. A job appears in a feed only
-  while it is active, complete and inside its dates.
-- **Feeds**: you choose which jobs each feed publishes. Every employer starts with one and can add
-  more, for example one per job board. The feed screen shows whether it validates against the
-  schema. Each feed has a stable public URL:
-  `https://<your-host>/ojobpub/v1/<employer>_<id>/<feed>_<id>/ojobpub.json`
-- **People**: invite colleagues as owners or editors. Owners change roles, suspend and remove
-  members; every change lands in an activity log.
-- **Management API**: GraphQL at `/graphql`, authenticated with service tokens an owner creates, for
-  integrations with other systems.
-- **Sign-in** through one or more OpenID Connect providers, such as Google, GitLab, Microsoft or your
-  own Keycloak, and through GitHub, with a button for each. The application stores no passwords.
-- **MariaDB or SQLite**, and a container image that runs in 512 MB.
-- English and German.
+- **Jobs** with locations, tags, salary and an application window. A job appears in a feed only
+  while it is active, complete and inside its dates, and the job screen says what is missing.
+- **Feeds**: you choose which jobs each feed publishes, for example one per job board. Each feed
+  shows whether it validates against the schema.
+- **Permalinks**: one stable URL to put on your website, whose feed you can switch later without
+  touching the website.
+- **Click counting**: job links in the feed go through the publisher, which counts clicks per job,
+  day and country, and answers "no longer available" once a job is gone. No visitor address is
+  stored. Can be switched off.
+- **Dashboard** with published jobs, clicks and their trend, the most clicked jobs, and a list of
+  jobs that need attention.
+- **People**: invite colleagues as owners or editors; owners change roles, suspend and remove
+  members. Every change lands in an activity log.
+- **Management API**: GraphQL at `/graphql`, with service tokens an owner creates and renews.
+- **Sign-in** through one or more OpenID Connect providers (Google, Microsoft, GitLab, Keycloak, …)
+  and GitHub, and optionally with email and password, including sign-up, password reset by mail and
+  a captcha.
+- **Admins** named in the configuration, who switch into admin mode when needed and can view the
+  application as another user, read-only.
+- **MariaDB or SQLite**, a container image that runs in 512 MB, English and German.
 
 ## Run it
 
 The image is published at `ghcr.io/letsemploy/publisher` for `amd64` and `arm64`, tagged per release
-(`0.3.0`, `0.3`) as `main` for dev release and as `latest` for the latest released version. The smallest installation uses SQLite, a single
-file on a volume, so there is no database server to run:
+(`0.8.0`, `0.8`), `latest` for the newest release and `main` for the development build. The smallest
+installation uses SQLite, a single file on a volume, so there is no database server to run:
 
 ```bash
 docker run -d --name ojobpub -p 8080:8080 -v ojobpub-data:/data \
@@ -52,8 +58,8 @@ docker run -d --name ojobpub -p 8080:8080 -v ojobpub-data:/data \
   `https://<your-host>/login?logout`.
   - It should send `email` and `email_verified`, because invitations go to verified addresses only.
     For a provider that never sends `email_verified`, set `APP_OIDC_REQUIRE_VERIFIED_EMAIL=false`.
-  - Without a provider configured, the application still starts and serves its feeds, but nobody can
-    sign in.
+  - Without a provider or local accounts configured, the application still starts and serves its
+    feeds, but nobody can sign in.
 - **SQLite is for a single instance.** To run several, or to use a database server you already have,
   use MariaDB: leave out the two SQLite variables and set `SPRING_DATASOURCE_URL`
   (`jdbc:mariadb://host:3306/ojobpub`), `SPRING_DATASOURCE_USERNAME` and
@@ -61,6 +67,8 @@ docker run -d --name ojobpub -p 8080:8080 -v ojobpub-data:/data \
   start.
 - **Memory.** The image runs in a 512 MB container at about 400 MB resident. Its JVM options are set
   in `JAVA_TOOL_OPTIONS`, and setting your own replaces them.
+- **Click countries** come from a proxy header such as Cloudflare's `CF-IPCountry`, or from a
+  mounted GeoIP database; see the prod example below.
 - **Health.** `/actuator/health` answers up or down, without details, on the application's port.
 
 ### Configuration files
@@ -77,11 +85,14 @@ demo data, which production should not have.
   [`docs/examples/application-providers.yml`](docs/examples/application-providers.yml) instead.
 - **Kubernetes:** [`docs/examples/kubernetes.yaml`](docs/examples/kubernetes.yaml) runs it with the
   prod file in a ConfigMap, secrets in a Secret, health probes and an ingress, on MariaDB or SQLite.
+- **Email and password:** the prod file's `local-accounts`, `mail` and `captcha` sections, commented
+  out, turn them on.
 
 ### First steps
 
-Anyone who signs in can create an employer, and becomes its owner. An owner invites colleagues by
-email; a colleague must have signed in once before they can be invited. Platform admins are named in
+Anyone who signs in can create an employer, and becomes its owner; the dashboard shows the next
+step. An owner invites colleagues by email; a colleague must have signed in once before they can be
+invited. Platform admins are named in
 the configuration, by identity-provider group or by verified email.
 
 ## Development
