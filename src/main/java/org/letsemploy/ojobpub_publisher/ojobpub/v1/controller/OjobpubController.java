@@ -1,5 +1,6 @@
 package org.letsemploy.ojobpub_publisher.ojobpub.v1.controller;
 
+import jakarta.servlet.http.HttpServletRequest;
 import java.time.Duration;
 import java.util.Optional;
 import java.util.UUID;
@@ -10,11 +11,14 @@ import org.letsemploy.ojobpub_publisher.feed.FeedService;
 import org.letsemploy.ojobpub_publisher.feed.Permalink;
 import org.letsemploy.ojobpub_publisher.feed.PermalinkService;
 import org.letsemploy.ojobpub_publisher.ojobpub.v1.dto.OjobpubDto;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.CacheControl;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RestController;
@@ -29,6 +33,8 @@ import org.springframework.web.bind.annotation.RestController;
  */
 @RestController
 public class OjobpubController {
+
+    private static final Logger log = LoggerFactory.getLogger(OjobpubController.class);
 
     /**
      * Slug and UUID are separated by an underscore - the one character that can
@@ -114,6 +120,23 @@ public class OjobpubController {
     /** URLs repair themselves: an old link keeps working and is nudged onward. */
     private static ResponseEntity<?> movedTo(String canonical) {
         return ResponseEntity.status(HttpStatus.MOVED_PERMANENTLY).header("Location", canonical).build();
+    }
+
+    /**
+     * A failure while serving: JSON like every other answer here, and handled here
+     * rather than by the back-office error page, which builds the shell and would
+     * open a session (spec 5.1, 8.2). The detail goes to the log only.
+     */
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<?> failed(Exception e, HttpServletRequest request) {
+        String correlationId = UUID.randomUUID().toString().substring(0, 8);
+        log.error("Unexpected error [{}] serving {}", correlationId, request.getRequestURI(), e);
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .contentType(MediaType.APPLICATION_JSON)
+                .cacheControl(CacheControl.noStore())
+                .body(java.util.Map.of("error", "internal_error",
+                        "message", "The feed could not be served.",
+                        "reference", correlationId));
     }
 
     /** Feed callers are machines, so errors are JSON and never an HTML page (spec 8.2). */

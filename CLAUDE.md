@@ -681,6 +681,12 @@ apply `@ModelAttribute` contributions to `@ExceptionHandler` methods, so an erro
 advice would fail to render and turn every 404 into a 500.
 `ScreenRenderingTest.notFoundRendersTheErrorPage` guards it.
 
+**The shell is for pages only.** `UiContextAdvice` returns no `ui` for a `@ResponseBody` handler,
+because building it resolves the user and opens a session, and the public feed must open none (§5.1).
+For the same reason `OjobpubController` has its own `@ExceptionHandler` answering JSON, ahead of
+`GlobalErrorHandler`'s HTML page. `FeedStatelessTest` asserts no answer of the feed opens a session;
+it once did on every fetch.
+
 Each controller supplies its own `page` (`PageMeta`); one that forgets it will not render. A new
 sidebar destination is added in `UiContextFactory` — there are eleven: Dashboard, Jobs, Feeds, People,
 API tokens, Employers, Locations, Tags, Invitations, Activity, Users. Its icon name lives in the `NavItem`, so a new one
@@ -762,6 +768,7 @@ TEST_DB=sqlite ./mvnw test                   # all, on SQLite; no server
 ./mvnw test -Dtest=ServiceTokenExpiryTest    # expiry, renewal and what renewal must not touch
 ./mvnw test -Dtest=JobLinkTest               # /go/{id}: redirect, 410, what counts, country, no session
 ./mvnw test -Dtest=JobClickServiceTest       # the dashboard's click figures, scoped to the employers asked
+./mvnw test -Dtest=FeedStatelessTest         # no feed answer opens a session; a failure is JSON
 make assets                                  # refresh vendored front-end deps (needs Node)
 ```
 
