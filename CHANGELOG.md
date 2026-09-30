@@ -8,6 +8,8 @@ Section numbers such as §5.6 refer to the specification in [`docs/SPEC.md`](doc
 
 ## [Unreleased]
 
+## [0.7.0] - 2026-09-30
+
 ### Changed
 
 - A revised dashboard (§7.10): the published share and the new jobs of the last 30 days on the status
@@ -124,7 +126,8 @@ Section numbers such as §5.6 refer to the specification in [`docs/SPEC.md`](doc
 - MariaDB, or SQLite for a single instance.
 - English and German.
 
-[Unreleased]: https://github.com/letsemploy/publisher/compare/v0.6.0...HEAD
+[Unreleased]: https://github.com/letsemploy/publisher/compare/v0.7.0...HEAD
+[0.7.0]: https://github.com/letsemploy/publisher/compare/v0.6.0...v0.7.0
 [0.6.0]: https://github.com/letsemploy/publisher/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/letsemploy/publisher/compare/0ff137f...v0.5.0
 [0.4.0]: https://github.com/letsemploy/publisher/compare/v0.3.0...0ff137f
