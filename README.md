@@ -1,4 +1,4 @@
-# oJobPub Publisher
+# <img src="src/main/resources/static/images/logo.svg" width="40" height="40" alt="" align="top"> oJobPub Publisher
 
 [![Build](https://github.com/letsemploy/publisher/actions/workflows/build.yml/badge.svg)](https://github.com/letsemploy/publisher/actions/workflows/build.yml)
 [![Container image](https://github.com/letsemploy/publisher/actions/workflows/container.yml/badge.svg)](https://github.com/letsemploy/publisher/actions/workflows/container.yml)

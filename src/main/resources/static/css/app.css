@@ -72,3 +72,10 @@
     vertical-align: -1px;
     background: var(--tblr-border-color);
 }
+
+/* The product mark beside the name in the sidebar (fragments/logo). */
+.brand-mark {
+    width: 1.75rem;
+    height: 1.75rem;
+    flex-shrink: 0;
+}

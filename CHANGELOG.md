@@ -8,6 +8,10 @@ Section numbers such as §5.6 refer to the specification in [`docs/SPEC.md`](doc
 
 ## [Unreleased]
 
+### Added
+
+- A logo, shown in the sidebar and on the sign-in page, and a favicon.
+
 ## [0.8.0] - 2026-09-30
 
 ### Added

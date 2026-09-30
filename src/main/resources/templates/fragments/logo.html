@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<!-- The product mark: feed braces. The braces follow the text colour, so the mark reads in both
+     themes; the file static/images/logo.svg is the same mark on a tile, for the favicon.
+     Usage: <svg th:replace="~{fragments/logo :: mark('brand-mark')}"></svg> -->
+<svg th:fragment="mark(cls)" th:class="${cls}" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"
+     fill="none" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+    <path stroke="currentColor" stroke-width="3"
+          d="M11 5C8 5 8 7 8 9v4c0 2-1 3-3 3 2 0 3 1 3 3v4c0 2 0 4 3 4M21 5c3 0 3 2 3 4v4c0 2 1 3 3 3-2 0-3 1-3 3v4c0 2 0 4-3 4"/>
+    <path stroke="#f47b20" stroke-width="2.5" d="M12.5 16.5a4 4 0 0 1 4 4M12.5 13a7.5 7.5 0 0 1 7.5 7.5"/>
+    <circle cx="12.5" cy="20.5" r="1.7" fill="#f47b20"/>
+</svg>
+</body>
+</html>

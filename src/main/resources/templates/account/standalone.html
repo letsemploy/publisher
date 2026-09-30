@@ -13,6 +13,7 @@
     <meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
     <title layout:title-pattern="$CONTENT_TITLE · $LAYOUT_TITLE" th:text="#{app.name}">oJobPub Publisher</title>
+    <link rel="icon" type="image/svg+xml" th:href="@{/images/logo.svg}"/>
     <link rel="stylesheet" th:href="@{/vendor/tabler.min.css}"/>
     <link rel="stylesheet" th:href="@{/vendor/tabler-themes.min.css}"/>
     <script th:src="@{/js/theme.js}"></script>
@@ -23,9 +24,7 @@
 <div class="page page-center">
     <main class="container container-tight py-4" id="main">
         <div class="text-center mb-4">
-            <span class="d-inline-block bg-white rounded-3 p-2 shadow-sm">
-                <img th:src="@{/images/logo.png}" src="/images/logo.png" width="56" height="56" alt=""/>
-            </span>
+            <img th:src="@{/images/logo.svg}" src="/images/logo.svg" width="64" height="64" alt=""/>
             <div class="h2 mt-2 mb-0" th:text="#{app.name}">oJobPub Publisher</div>
         </div>
 

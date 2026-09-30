@@ -46,6 +46,7 @@
 
         <div class="navbar-brand navbar-brand-autodark">
             <a th:href="@{/}" class="d-flex align-items-center text-reset text-decoration-none">
+                <svg th:replace="~{fragments/logo :: mark('brand-mark me-2')}"></svg>
                 <span th:text="#{app.name}">oJobPub Publisher</span>
             </a>
         </div>
