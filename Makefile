@@ -21,5 +21,5 @@ git-release:
 	git add CHANGELOG.md
 	git commit -m '"Release $(v)"'
 	git tag -a -m '"Release $(v)"' v$(v)
-	git push github main
-	git push github v$(v)
+	git push origin main
+	git push origin v$(v)
