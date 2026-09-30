@@ -663,6 +663,7 @@ TEST_DB=sqlite ./mvnw test                   # all, on SQLite; no server
 ./mvnw test -Dtest=ResourceLimitsTest        # the quota convention; no Spring, no database
 ./mvnw test -Dtest=QuotaEnforcementTest      # the seven quotas against the seed data
 ./mvnw test -Dtest=MessageBundleTest         # the two bundles, at parity
+./mvnw test -Dtest=InputValidatorTest        # Bean Validation: field keys, localized messages; no database
 ./mvnw test -Dtest=TokenLifecycleTest        # the expiry boundaries; no Spring, no database
 ./mvnw test -Dtest=PermalinkServingTest      # the permalink URL: switched, empty, dated forward, 404/301
 ./mvnw test -Dtest=PermalinkServiceTest      # own feeds only, members only, what the log records

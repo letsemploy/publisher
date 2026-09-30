@@ -13,6 +13,7 @@ import org.letsemploy.ojobpub_publisher.audit.AuditLog;
 import org.letsemploy.ojobpub_publisher.common.ResourceLimits;
 import org.letsemploy.ojobpub_publisher.common.exception.NotFoundException;
 import org.letsemploy.ojobpub_publisher.common.exception.ValidationFailure;
+import org.letsemploy.ojobpub_publisher.common.validation.InputValidator;
 import org.letsemploy.ojobpub_publisher.employer.Employer;
 import org.letsemploy.ojobpub_publisher.employer.EmployerRepo;
 import org.letsemploy.ojobpub_publisher.membership.Membership;
@@ -48,6 +49,7 @@ public class ServiceTokenService {
     private final PasswordEncoder passwordEncoder;
     private final ResourceLimits limits;
     private final AuditLog auditLog;
+    private final InputValidator inputs;
 
     public ServiceTokenService(ServiceTokenRepo tokenRepo,
                                MembershipRepo membershipRepo,
@@ -57,6 +59,7 @@ public class ServiceTokenService {
                                PasswordEncoder passwordEncoder,
                                ResourceLimits limits,
                                AuditLog auditLog,
+                               InputValidator inputs,
                                @org.springframework.beans.factory.annotation.Value("${app.tokens.lifetime-months:12}")
                                int lifetimeMonths,
                                @org.springframework.beans.factory.annotation.Value("${app.tokens.expiry-warning-days:30}")
@@ -69,6 +72,7 @@ public class ServiceTokenService {
         this.passwordEncoder = passwordEncoder;
         this.limits = limits;
         this.auditLog = auditLog;
+        this.inputs = inputs;
         this.lifetimeMonths = lifetimeMonths;
         this.expiryWarningDays = expiryWarningDays;
     }
@@ -109,12 +113,7 @@ public class ServiceTokenService {
             // A credential must not mint another credential.
             throw new NotFoundException("Not found.");
         }
-        if (name == null || name.isBlank()) {
-            throw new ValidationFailure("name", "A name is required.");
-        }
-        if (scopes == null || scopes.isEmpty()) {
-            throw new ValidationFailure("scopes", "Choose at least one scope.");
-        }
+        inputs.check(new TokenInput(name, scopes));
         // Revoked tokens keep their row for the audit trail (spec 3.10), so only
         // live ones count - revoking is the way back under the quota.
         limits.requireRoomForTokens(

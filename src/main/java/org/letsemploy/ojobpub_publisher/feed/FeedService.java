@@ -11,6 +11,8 @@ import org.letsemploy.ojobpub_publisher.common.ResourceLimits;
 import org.letsemploy.ojobpub_publisher.common.Slugs;
 import org.letsemploy.ojobpub_publisher.common.exception.NotFoundException;
 import org.letsemploy.ojobpub_publisher.common.exception.ValidationFailure;
+import org.letsemploy.ojobpub_publisher.common.validation.InputValidator;
+import org.letsemploy.ojobpub_publisher.common.validation.NameInput;
 import org.letsemploy.ojobpub_publisher.employer.Employer;
 import org.letsemploy.ojobpub_publisher.job.Job;
 import org.letsemploy.ojobpub_publisher.job.JobService;
@@ -28,19 +30,22 @@ public class FeedService {
     private final OjobpubService ojobpubService;
     private final AuditLog auditLog;
     private final PermalinkService permalinkService;
+    private final InputValidator inputs;
 
     public FeedService(FeedRepo feedRepo,
                        JobService jobService,
                        ResourceLimits limits,
                        OjobpubService ojobpubService,
                        AuditLog auditLog,
-                       PermalinkService permalinkService) {
+                       PermalinkService permalinkService,
+                       InputValidator inputs) {
         this.feedRepo = feedRepo;
         this.jobService = jobService;
         this.limits = limits;
         this.ojobpubService = ojobpubService;
         this.auditLog = auditLog;
         this.permalinkService = permalinkService;
+        this.inputs = inputs;
     }
 
     public List<Feed> findByEmployer(UUID employerId) {
@@ -68,9 +73,7 @@ public class FeedService {
     @Transactional
     public Feed save(UUID id, Employer employer, String name, String slug, String description,
                      Actor actor) {
-        if (name == null || name.isBlank()) {
-            throw new ValidationFailure("name", "A name is required.");
-        }
+        inputs.check(new NameInput(name));
         Feed feed;
         if (id == null) {
             // Before the name check: an employer at its cap should not be told

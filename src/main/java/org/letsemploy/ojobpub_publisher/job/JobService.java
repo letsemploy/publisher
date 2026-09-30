@@ -12,6 +12,7 @@ import org.letsemploy.ojobpub_publisher.audit.AuditLog;
 import org.letsemploy.ojobpub_publisher.common.ResourceLimits;
 import org.letsemploy.ojobpub_publisher.common.exception.NotFoundException;
 import org.letsemploy.ojobpub_publisher.common.exception.ValidationFailure;
+import org.letsemploy.ojobpub_publisher.common.validation.InputValidator;
 import org.letsemploy.ojobpub_publisher.employer.Employer;
 import org.letsemploy.ojobpub_publisher.location.LocationService;
 import org.letsemploy.ojobpub_publisher.security.Actor;
@@ -19,6 +20,8 @@ import org.letsemploy.ojobpub_publisher.tag.Tag;
 import org.letsemploy.ojobpub_publisher.tag.TagService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.MessageSource;
+import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
@@ -36,19 +39,25 @@ public class JobService {
     private final LocationService locationService;
     private final ResourceLimits limits;
     private final AuditLog auditLog;
+    private final InputValidator inputs;
+    private final MessageSource messages;
 
     public JobService(JobRepo jobRepo,
                       JobStatusEventRepo eventRepo,
                       TagService tagService,
                       LocationService locationService,
                       ResourceLimits limits,
-                      AuditLog auditLog) {
+                      AuditLog auditLog,
+                      InputValidator inputs,
+                      MessageSource messages) {
         this.jobRepo = jobRepo;
         this.eventRepo = eventRepo;
         this.tagService = tagService;
         this.locationService = locationService;
         this.limits = limits;
         this.auditLog = auditLog;
+        this.inputs = inputs;
+        this.messages = messages;
     }
 
     /**
@@ -131,8 +140,9 @@ public class JobService {
                     .orElseThrow(() -> new NotFoundException("Job not found: " + form.getId()));
         }
 
+        form.trim();
         apply(form, job);
-        validate(job);
+        validate(form, job);
         Job saved = jobRepo.save(job);
         auditLog.record(AuditEvent.of(form.getId() == null ? AuditAction.JOB_CREATED : AuditAction.JOB_UPDATED,
                 actor).in(employer).target(saved.getId(), saved.getTitle()));
@@ -177,48 +187,17 @@ public class JobService {
         }
     }
 
-    private void validate(Job job) {
-        var errors = new java.util.LinkedHashMap<String, String>();
-        if (isBlank(job.getTitle())) {
-            errors.put("title", "A title is required.");
-        }
-        if (isBlank(job.getUrl())) {
-            errors.put("url", "A URL is required.");
-        } else if (!job.getUrl().startsWith("http://") && !job.getUrl().startsWith("https://")) {
-            errors.put("url", "Must be an absolute http(s) URL.");
-        }
-        if (isBlank(job.getLanguageCode()) || job.getLanguageCode().length() != 2) {
-            errors.put("language", "A two-letter ISO 639-1 language code is required.");
-        }
-        if (job.getJobType() == null) {
-            errors.put("jobType", "A job type is required.");
-        }
-        if (job.getDescription() != null && job.getDescription().length() > 1000) {
-            errors.put("description", "At most 1000 characters; the published schema caps it there.");
-        }
-        // A bare amount is not interpretable by a consumer (spec 3.3).
-        if (job.hasSalaryAmount()) {
-            if (isBlank(job.getSalaryCurrency())) {
-                errors.put("salaryCurrency", "Required once an amount is given.");
-            }
-            if (job.getSalaryInterval() == null) {
-                errors.put("salaryInterval", "Required once an amount is given.");
-            }
-        }
-        if (job.getSalaryMin() != null && job.getSalaryMax() != null
-                && job.getSalaryMin().compareTo(job.getSalaryMax()) > 0) {
-            errors.put("salaryMax", "The maximum must not be below the minimum.");
-        }
-        if (job.getWorkLoadPercentMin() != null && job.getWorkLoadPercentMax() != null
-                && job.getWorkLoadPercentMin() > job.getWorkLoadPercentMax()) {
-            errors.put("workLoadPercentMax", "The maximum must not be below the minimum.");
-        }
-        if (job.getStartDate() != null && job.getEndDate() != null
-                && job.getEndDate().isBefore(job.getStartDate())) {
-            errors.put("endDate", "The end date must not precede the start date.");
-        }
+    /**
+     * The form's shape (spec 9.6), after {@link #apply}: another employer's
+     * location or tag is refused there first, as the API's field names expect.
+     * The tag count stays here, because it counts what survived de-duplication
+     * and the ownership check.
+     */
+    private void validate(JobForm form, Job job) {
+        Map<String, String> errors = inputs.violations(form);
         if (job.getTags().size() > Tag.MAX_PER_JOB) {
-            errors.put("tags", "At most " + Tag.MAX_PER_JOB + " tags.");
+            errors.put("tags", messages.getMessage("validation.tags.tooMany",
+                    new Object[]{Tag.MAX_PER_JOB}, LocaleContextHolder.getLocale()));
         }
         if (!errors.isEmpty()) {
             throw new ValidationFailure(errors);
@@ -311,7 +290,4 @@ public class JobService {
         return s == null || s.isBlank() ? null : s.trim();
     }
 
-    private static boolean isBlank(String s) {
-        return s == null || s.isBlank();
-    }
 }

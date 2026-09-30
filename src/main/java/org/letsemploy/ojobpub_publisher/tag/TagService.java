@@ -8,6 +8,7 @@ import org.letsemploy.ojobpub_publisher.audit.AuditEvent;
 import org.letsemploy.ojobpub_publisher.audit.AuditLog;
 import org.letsemploy.ojobpub_publisher.common.exception.NotFoundException;
 import org.letsemploy.ojobpub_publisher.common.exception.ValidationFailure;
+import org.letsemploy.ojobpub_publisher.common.validation.InputValidator;
 import org.letsemploy.ojobpub_publisher.employer.Employer;
 import org.letsemploy.ojobpub_publisher.security.Actor;
 import org.springframework.stereotype.Service;
@@ -23,10 +24,12 @@ public class TagService {
 
     private final TagRepo tagRepo;
     private final AuditLog auditLog;
+    private final InputValidator inputs;
 
-    public TagService(TagRepo tagRepo, AuditLog auditLog) {
+    public TagService(TagRepo tagRepo, AuditLog auditLog, InputValidator inputs) {
         this.tagRepo = tagRepo;
         this.auditLog = auditLog;
+        this.inputs = inputs;
     }
 
     /** The list screen and the job form's picker: the first 20 matching, by name. */
@@ -110,13 +113,7 @@ public class TagService {
 
     private Tag store(Tag tag, String rawName) {
         String name = Tag.normalize(rawName);
-        if (name == null || name.isBlank()) {
-            throw new ValidationFailure("name", "A name is required.");
-        }
-        if (name.length() > Tag.MAX_LENGTH) {
-            throw new ValidationFailure("name",
-                    "At most " + Tag.MAX_LENGTH + " characters; the published schema caps tags there.");
-        }
+        inputs.check(new TagInput(name));
         tagRepo.findFirstByEmployerIdAndNameIgnoreCase(tag.getEmployer().getId(), name)
                 .filter(other -> !other.getId().equals(tag.getId()))
                 .ifPresent(other -> {

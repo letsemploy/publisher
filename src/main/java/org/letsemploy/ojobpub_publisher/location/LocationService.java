@@ -9,6 +9,7 @@ import org.letsemploy.ojobpub_publisher.audit.AuditEvent;
 import org.letsemploy.ojobpub_publisher.audit.AuditLog;
 import org.letsemploy.ojobpub_publisher.common.exception.NotFoundException;
 import org.letsemploy.ojobpub_publisher.common.exception.ValidationFailure;
+import org.letsemploy.ojobpub_publisher.common.validation.InputValidator;
 import org.letsemploy.ojobpub_publisher.employer.Employer;
 import org.letsemploy.ojobpub_publisher.security.Actor;
 import org.springframework.stereotype.Service;
@@ -24,10 +25,12 @@ public class LocationService {
 
     private final LocationRepo locationRepo;
     private final AuditLog auditLog;
+    private final InputValidator inputs;
 
-    public LocationService(LocationRepo locationRepo, AuditLog auditLog) {
+    public LocationService(LocationRepo locationRepo, AuditLog auditLog, InputValidator inputs) {
         this.locationRepo = locationRepo;
         this.auditLog = auditLog;
+        this.inputs = inputs;
     }
 
     /** The list screen: every location of the employers in scope. */
@@ -102,8 +105,9 @@ public class LocationService {
      */
     @Transactional
     public Location findOrCreate(Employer employer, String city, String countryCode, Actor actor) {
-        CountryCode country = country(countryCode);
-        String trimmed = city(city);
+        inputs.check(new LocationInput(city, countryCode));
+        CountryCode country = CountryCode.getByCodeIgnoreCase(countryCode);
+        String trimmed = city.trim();
         return locationRepo.findFirstByEmployerIdAndCityIgnoreCaseAndCountry(employer.getId(), trimmed, country)
                 .orElseGet(() -> create(employer, trimmed, countryCode, actor));
     }
@@ -121,8 +125,9 @@ public class LocationService {
     }
 
     private Location store(Location location, String city, String countryCode) {
-        String trimmed = city(city);
-        CountryCode country = country(countryCode);
+        inputs.check(new LocationInput(city, countryCode));
+        String trimmed = city.trim();
+        CountryCode country = CountryCode.getByCodeIgnoreCase(countryCode);
         // Unique within the employer (spec 3.2): said on the form, not left to the
         // database to refuse with an error nobody can read.
         locationRepo.findFirstByEmployerIdAndCityIgnoreCaseAndCountry(
@@ -134,20 +139,5 @@ public class LocationService {
         location.setCity(trimmed);
         location.setCountry(country);
         return locationRepo.save(location);
-    }
-
-    private static String city(String city) {
-        if (city == null || city.isBlank()) {
-            throw new ValidationFailure("city", "A city is required.");
-        }
-        return city.trim();
-    }
-
-    private static CountryCode country(String countryCode) {
-        CountryCode country = CountryCode.getByCodeIgnoreCase(countryCode);
-        if (country == null || country == CountryCode.UNDEFINED) {
-            throw new ValidationFailure("country", "Select a country.");
-        }
-        return country;
     }
 }

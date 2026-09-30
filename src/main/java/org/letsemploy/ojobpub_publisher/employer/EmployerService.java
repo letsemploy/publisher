@@ -10,6 +10,8 @@ import org.letsemploy.ojobpub_publisher.common.Slugs;
 import org.letsemploy.ojobpub_publisher.common.ResourceLimits;
 import org.letsemploy.ojobpub_publisher.common.exception.NotFoundException;
 import org.letsemploy.ojobpub_publisher.common.exception.ValidationFailure;
+import org.letsemploy.ojobpub_publisher.common.validation.InputValidator;
+import org.letsemploy.ojobpub_publisher.common.validation.NameInput;
 import org.letsemploy.ojobpub_publisher.location.LocationService;
 import org.letsemploy.ojobpub_publisher.membership.MembershipService;
 import org.letsemploy.ojobpub_publisher.security.UserEntity;
@@ -33,19 +35,22 @@ public class EmployerService {
     private final ResourceLimits limits;
     private final UserRepo userRepo;
     private final AuditLog auditLog;
+    private final InputValidator inputs;
 
     public EmployerService(EmployerRepo employerRepo,
                            LocationService locationService,
                            MembershipService membershipService,
                            ResourceLimits limits,
                            UserRepo userRepo,
-                           AuditLog auditLog) {
+                           AuditLog auditLog,
+                           InputValidator inputs) {
         this.employerRepo = employerRepo;
         this.locationService = locationService;
         this.membershipService = membershipService;
         this.limits = limits;
         this.userRepo = userRepo;
         this.auditLog = auditLog;
+        this.inputs = inputs;
     }
 
     /** Editors see only their employers; an admin sees all (spec 2.1). */
@@ -95,9 +100,7 @@ public class EmployerService {
     @Transactional
     public Employer save(UUID id, String name, String slug, String url, String industry,
                          Headquarters headquarters, Actor actor) {
-        if (name == null || name.isBlank()) {
-            throw new ValidationFailure("name", "A name is required.");
-        }
+        inputs.check(new NameInput(name));
         if (headquarters == null || headquarters.isEmpty()) {
             throw new ValidationFailure("headquarters",
                     "A headquarters location is required; the published document must carry it.");

@@ -8,7 +8,7 @@ import org.letsemploy.ojobpub_publisher.audit.AuditEvent;
 import org.letsemploy.ojobpub_publisher.audit.AuditLog;
 import org.letsemploy.ojobpub_publisher.common.ResourceLimits;
 import org.letsemploy.ojobpub_publisher.common.exception.NotFoundException;
-import org.letsemploy.ojobpub_publisher.common.exception.ValidationFailure;
+import org.letsemploy.ojobpub_publisher.common.validation.InputValidator;
 import org.letsemploy.ojobpub_publisher.employer.Employer;
 import org.letsemploy.ojobpub_publisher.employer.EmployerRepo;
 import org.letsemploy.ojobpub_publisher.membership.MembershipRole;
@@ -47,6 +47,7 @@ public class InvitationService {
     private final MembershipService membershipService;
     private final ResourceLimits limits;
     private final AuditLog auditLog;
+    private final InputValidator inputs;
 
     public InvitationService(InvitationRepo invitationRepo,
                              ServiceTokenRepo serviceTokenRepo,
@@ -54,7 +55,8 @@ public class InvitationService {
                              EmployerRepo employerRepo,
                              MembershipService membershipService,
                              ResourceLimits limits,
-                             AuditLog auditLog) {
+                             AuditLog auditLog,
+                             InputValidator inputs) {
         this.invitationRepo = invitationRepo;
         this.serviceTokenRepo = serviceTokenRepo;
         this.userRepo = userRepo;
@@ -62,6 +64,7 @@ public class InvitationService {
         this.membershipService = membershipService;
         this.limits = limits;
         this.auditLog = auditLog;
+        this.inputs = inputs;
     }
 
     // ------------------------------------------------------------- the invitee
@@ -143,9 +146,7 @@ public class InvitationService {
         membershipService.requireOwner(actor, employerId);
         Employer employer = employerRepo.findById(employerId)
                 .orElseThrow(() -> new NotFoundException("Employer not found: " + employerId));
-        if (email == null || email.isBlank() || !email.contains("@")) {
-            throw new ValidationFailure("email", "Enter the email address of a registered user.");
-        }
+        inputs.check(new InvitationInput(email));
 
         // Both quotas are checked BEFORE the address is looked up, and that
         // ordering is the rule, not an accident. Checked afterwards, an employer

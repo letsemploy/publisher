@@ -10,12 +10,16 @@ import org.junit.jupiter.api.Test;
 import org.letsemploy.ojobpub_publisher.TestProfiles;
 import org.letsemploy.ojobpub_publisher.audit.AuditLog;
 import org.letsemploy.ojobpub_publisher.common.exception.ValidationFailure;
+import org.letsemploy.ojobpub_publisher.common.validation.InputValidator;
 import org.letsemploy.ojobpub_publisher.employer.Employer;
 import org.letsemploy.ojobpub_publisher.employer.EmployerRepo;
 import org.letsemploy.ojobpub_publisher.security.Actor;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.ImportAutoConfiguration;
+import org.springframework.boot.autoconfigure.context.MessageSourceAutoConfiguration;
 import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
 import org.springframework.boot.jdbc.test.autoconfigure.AutoConfigureTestDatabase;
+import org.springframework.boot.validation.autoconfigure.ValidationAutoConfiguration;
 import org.springframework.context.annotation.Import;
 import org.springframework.test.context.ActiveProfiles;
 
@@ -23,7 +27,9 @@ import org.springframework.test.context.ActiveProfiles;
 @DataJpaTest
 @ActiveProfiles(resolver = TestProfiles.WithoutDev.class)
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
-@Import({TagService.class, AuditLog.class})
+// The slice has no validator or message source; the service checks its input with both (spec 9.6).
+@ImportAutoConfiguration({ValidationAutoConfiguration.class, MessageSourceAutoConfiguration.class})
+@Import({TagService.class, AuditLog.class, InputValidator.class})
 class TagServiceTest {
 
     /** Acme, from the seed. */

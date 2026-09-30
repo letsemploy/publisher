@@ -11,6 +11,8 @@ import org.letsemploy.ojobpub_publisher.audit.AuditLog;
 import org.letsemploy.ojobpub_publisher.common.ResourceLimits;
 import org.letsemploy.ojobpub_publisher.common.exception.NotFoundException;
 import org.letsemploy.ojobpub_publisher.common.exception.ValidationFailure;
+import org.letsemploy.ojobpub_publisher.common.validation.InputValidator;
+import org.letsemploy.ojobpub_publisher.common.validation.NameInput;
 import org.letsemploy.ojobpub_publisher.employer.Employer;
 import org.letsemploy.ojobpub_publisher.ojobpub.v1.dto.OjobpubDto;
 import org.letsemploy.ojobpub_publisher.ojobpub.v1.service.OjobpubService;
@@ -31,17 +33,20 @@ public class PermalinkService {
     private final ResourceLimits limits;
     private final OjobpubService ojobpubService;
     private final AuditLog auditLog;
+    private final InputValidator inputs;
 
     public PermalinkService(PermalinkRepo permalinkRepo,
                             FeedRepo feedRepo,
                             ResourceLimits limits,
                             OjobpubService ojobpubService,
-                            AuditLog auditLog) {
+                            AuditLog auditLog,
+                            InputValidator inputs) {
         this.permalinkRepo = permalinkRepo;
         this.feedRepo = feedRepo;
         this.limits = limits;
         this.ojobpubService = ojobpubService;
         this.auditLog = auditLog;
+        this.inputs = inputs;
     }
 
     @Transactional(readOnly = true)
@@ -94,9 +99,7 @@ public class PermalinkService {
     @Transactional
     public Permalink save(UUID id, Employer employer, String name, String description, UUID feedId,
                           Actor actor) {
-        if (name == null || name.isBlank()) {
-            throw new ValidationFailure("name", "A name is required.");
-        }
+        inputs.check(new NameInput(name));
         Permalink permalink;
         if (id == null) {
             // Before the name check, as for feeds (spec 8.4).

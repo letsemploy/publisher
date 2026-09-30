@@ -14,6 +14,7 @@ import org.letsemploy.ojobpub_publisher.audit.AuditEvent;
 import org.letsemploy.ojobpub_publisher.audit.AuditLog;
 import org.letsemploy.ojobpub_publisher.common.exception.NotFoundException;
 import org.letsemploy.ojobpub_publisher.common.exception.ValidationFailure;
+import org.letsemploy.ojobpub_publisher.common.validation.InputValidator;
 import org.letsemploy.ojobpub_publisher.employer.Employer;
 import org.letsemploy.ojobpub_publisher.membership.MembershipService;
 import org.letsemploy.ojobpub_publisher.security.Actor;
@@ -49,11 +50,14 @@ public class UserService {
     private final UserRepo userRepo;
     private final MembershipService membershipService;
     private final AuditLog auditLog;
+    private final InputValidator inputs;
 
-    public UserService(UserRepo userRepo, MembershipService membershipService, AuditLog auditLog) {
+    public UserService(UserRepo userRepo, MembershipService membershipService, AuditLog auditLog,
+                       InputValidator inputs) {
         this.userRepo = userRepo;
         this.membershipService = membershipService;
         this.auditLog = auditLog;
+        this.inputs = inputs;
     }
 
     @Transactional(readOnly = true)
@@ -115,9 +119,7 @@ public class UserService {
         }
         refuseIfProtected(target, actor);
         String why = reason == null || reason.isBlank() ? null : reason.strip();
-        if (why != null && why.length() > MAX_REASON) {
-            throw new ValidationFailure("reason", "At most " + MAX_REASON + " characters.");
-        }
+        inputs.check(new SuspensionInput(why));
         target.setSuspendedAt(Instant.now());
         userRepo.save(target);
         auditLog.record(AuditEvent.of(AuditAction.ACCOUNT_SUSPENDED, actor).about(target)
