@@ -43,3 +43,10 @@
 .captcha-frame {
     height: 5.5rem;
 }
+
+/* Dashboard clicks (spec 7.10): figures line up, and the bar beside each is a plain <progress>, no chart library. */
+.click-count {
+    min-width: 4ch;
+    text-align: end;
+    font-variant-numeric: tabular-nums;
+}

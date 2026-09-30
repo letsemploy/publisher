@@ -3,6 +3,7 @@ package org.letsemploy.ojobpub_publisher.common;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+import org.letsemploy.ojobpub_publisher.click.JobClickService;
 import org.letsemploy.ojobpub_publisher.employer.Employer;
 import org.letsemploy.ojobpub_publisher.feed.Feed;
 import org.letsemploy.ojobpub_publisher.feed.FeedService;
@@ -30,6 +31,7 @@ public class IndexController {
     private final JobService jobService;
     private final FeedService feedService;
     private final PermalinkService permalinkService;
+    private final JobClickService jobClickService;
     private final Views views;
     private final MessageSource messages;
 
@@ -37,12 +39,14 @@ public class IndexController {
                            JobService jobService,
                            FeedService feedService,
                            PermalinkService permalinkService,
+                           JobClickService jobClickService,
                            Views views,
                            MessageSource messages) {
         this.scope = scope;
         this.jobService = jobService;
         this.feedService = feedService;
         this.permalinkService = permalinkService;
+        this.jobClickService = jobClickService;
         this.views = views;
         this.messages = messages;
     }
@@ -75,7 +79,9 @@ public class IndexController {
 
         model.addAttribute("page", PageMeta.of(message("nav.dashboard")));
         model.addAttribute("dashboard",
-                new DashboardView(counts[0], counts[1], counts[2], counts[3], feedRows, permalinks));
+                new DashboardView(counts[0], counts[1], counts[2], counts[3], feedRows, permalinks,
+                        // The employers in scope, like every figure above it (spec 7.10).
+                        views.clicks(jobClickService.statistics(scope.employerIds()))));
         model.addAttribute("singleEmployer", scope.hasSingleEmployer());
         return "dashboard";
     }

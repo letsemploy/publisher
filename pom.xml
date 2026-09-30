@@ -96,6 +96,12 @@
 			<version>1.29</version>
 		</dependency>
 		<dependency>
+			<!-- The country of a job-link click, from a database the deployment mounts (spec 5.6). -->
+			<groupId>com.maxmind.geoip2</groupId>
+			<artifactId>geoip2</artifactId>
+			<version>5.2.0</version>
+		</dependency>
+		<dependency>
 			<groupId>nz.net.ultraq.thymeleaf</groupId>
 			<artifactId>thymeleaf-layout-dialect</artifactId>
 			<version>4.0.1</version>

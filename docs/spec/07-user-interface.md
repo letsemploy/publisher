@@ -301,6 +301,13 @@ Any feed currently omitting a job at serving time (§5.3) appears as a prominent
 feed and the count, linking to the feed screen. A quiet dashboard means the feeds are healthy, and that
 must be true at a glance.
 
+A **clicks** card shows how the job links (§5.6) were followed over the last 30 days (configurable): the
+most clicked jobs, most first, each linking to its job and with its employer when the scope covers more
+than one; and the clicks by country, the country named in the viewer's language and *Unknown* in words.
+Each figure carries a bar against the largest in its table, a plain `<progress>` element with no chart
+library (§7.2). It covers the same employers as every other figure on the dashboard. A job that has
+since left the feed keeps its clicks. With none, the card says so rather than showing empty tables.
+
 ## 7.11 Jobs
 
 **List** — the primary working screen, per §7.6. Searchable by title and reference id; filterable by

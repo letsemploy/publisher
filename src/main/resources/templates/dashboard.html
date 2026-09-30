@@ -40,6 +40,72 @@
         </div>
     </div>
 
+    <!-- Clicks on the job links in the published documents (spec 5.6, 7.10). -->
+    <div class="card mt-3" id="clicks">
+        <div class="card-header">
+            <h3 class="card-title" th:text="#{dashboard.clicks.title}">Job link clicks</h3>
+            <div class="card-actions text-secondary">
+                <span th:text="#{dashboard.clicks.window(${dashboard.clicks.days})}">Last 30 days</span>
+                <span th:unless="${dashboard.clicks.empty}"
+                      th:text="' · ' + #{dashboard.clicks.total(${dashboard.clicks.total})}"> · 12 clicks in total</span>
+            </div>
+        </div>
+        <div class="card-body text-secondary" th:if="${dashboard.clicks.empty}"
+             th:text="#{dashboard.clicks.empty}">No clicks yet.</div>
+        <div class="row g-0" th:unless="${dashboard.clicks.empty}">
+            <div class="col-lg-7">
+                <div class="table-responsive">
+                    <table class="table table-vcenter card-table">
+                        <thead>
+                        <tr>
+                            <th th:text="#{dashboard.clicks.topJobs}">Most clicked jobs</th>
+                            <th th:unless="${singleEmployer}" th:text="#{nav.employers}">Employer</th>
+                            <th class="w-33" th:text="#{dashboard.clicks.clicks}">Clicks</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr th:each="j : ${dashboard.clicks.jobs}">
+                            <td><a th:href="@{'/jobs/' + ${j.id}}" th:text="${j.title}">Senior Backend Engineer</a></td>
+                            <td th:unless="${singleEmployer}" th:text="${j.employerName}">Acme AG</td>
+                            <td>
+                                <div class="d-flex align-items-center gap-2">
+                                    <span class="fw-bold click-count" th:text="${j.clicks}">12</span>
+                                    <progress class="progress progress-sm flex-fill" max="100"
+                                              th:value="${j.share}" aria-hidden="true">100</progress>
+                                </div>
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="col-lg-5">
+                <div class="table-responsive">
+                    <table class="table table-vcenter card-table">
+                        <thead>
+                        <tr>
+                            <th th:text="#{dashboard.clicks.countries}">By country</th>
+                            <th class="w-50" th:text="#{dashboard.clicks.clicks}">Clicks</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr th:each="c : ${dashboard.clicks.countries}">
+                            <td th:text="${c.name}">Switzerland</td>
+                            <td>
+                                <div class="d-flex align-items-center gap-2">
+                                    <span class="fw-bold click-count" th:text="${c.clicks}">7</span>
+                                    <progress class="progress progress-sm flex-fill" max="100"
+                                              th:value="${c.share}" aria-hidden="true">100</progress>
+                                </div>
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div class="card mt-3">
         <div class="card-header">
             <h3 class="card-title" th:text="#{nav.feeds}">Feeds</h3>

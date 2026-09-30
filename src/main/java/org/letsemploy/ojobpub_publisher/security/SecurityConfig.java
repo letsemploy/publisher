@@ -62,7 +62,7 @@ public class SecurityConfig {
     };
 
     private static final String[] PUBLIC = {
-            "/ojobpub/**", "/actuator/health/**", "/actuator/info",
+            "/ojobpub/**", "/go/**", "/actuator/health/**", "/actuator/info",
             "/css/**", "/js/**", "/vendor/**", "/images/**", "/favicon.ico", "/error"
     };
 
@@ -98,11 +98,16 @@ public class SecurityConfig {
         return http.build();
     }
 
-    /** Order 1: the published feed. Machines call this; it must never see a login page. */
+    /**
+     * Order 1: the published feed, and the job links in it (spec 5.6). Machines call
+     * the one and anyone follows the other; neither may ever see a login page.
+     */
     @Bean
     @org.springframework.core.annotation.Order(1)
     SecurityFilterChain publicFeedChain(HttpSecurity http) throws Exception {
-        http.securityMatcher(PathPatternRequestMatcher.withDefaults().matcher("/ojobpub/**"))
+        http.securityMatcher(new OrRequestMatcher(
+                        PathPatternRequestMatcher.withDefaults().matcher("/ojobpub/**"),
+                        PathPatternRequestMatcher.withDefaults().matcher("/go/**")))
                 .authorizeHttpRequests(a -> a.anyRequest().permitAll())
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(s -> s.sessionCreationPolicy(

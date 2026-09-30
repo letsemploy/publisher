@@ -48,7 +48,7 @@ match a lowercase value. Emitting the same field in different cases in different
 | JSON key | Required | Source | Format |
 |---|---|---|---|
 | `title` | **yes** | `Job.title` | ≤255 |
-| `url` | **yes** | `Job.url` | absolute URI |
+| `url` | **yes** | the job's link, `{base URL}/go/{Job.id}` (§5.6); `Job.url` when job links are off | absolute URI |
 | `language` | **yes** | `Job.languageCode` | ISO 639-1, **lowercase**, exactly 2 characters |
 | `publishedAt` | **yes** | `Job.publishedAt` | `yyyy-MM-dd` |
 | `jobType` | **yes** | `Job.jobType` | §6.5 |
@@ -173,7 +173,7 @@ amount to a 32-bit float is not acceptable — six-figure salaries lose accuracy
       "startDate": "2026-11-01",
       "applyBefore": "2026-10-15",
       "language": "en",
-      "url": "https://www.acme.example/jobs/ACME-2026-014",
+      "url": "https://jobs.acme.example/go/8f14e45f-ceea-467a-9b4f-3a1b2c3d4e5f",
       "tags": ["java", "kubernetes", "spring"]
     },
     {
@@ -183,7 +183,7 @@ amount to a 32-bit float is not acceptable — six-figure salaries lose accuracy
       "locations": [{ "city": "Bern", "country": "CH" }],
       "publishedAt": "2026-09-18",
       "language": "de",
-      "url": "https://www.acme.example/jobs/ACME-2026-021"
+      "url": "https://jobs.acme.example/go/9a25f56a-dffb-478b-ac50-4b2c3d4e5f60"
     }
   ]
 }

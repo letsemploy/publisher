@@ -36,6 +36,10 @@ public interface JobRepo extends JpaRepository<Job, UUID>, JpaSpecificationExecu
     @EntityGraph(attributePaths = {"employer", "locations", "tags"})
     List<Job> findByEmployerIdOrderByTitleAsc(UUID employerId);
 
+    /** Rows named by id, with their employer, for a list of figures (spec 7.10). */
+    @EntityGraph(attributePaths = {"employer"})
+    List<Job> findWithEmployerByIdIn(Collection<UUID> ids);
+
     @Query("SELECT COUNT(f) FROM Feed f JOIN f.jobs j WHERE j.id = :jobId")
     long countFeeds(@Param("jobId") UUID jobId);
 

@@ -90,8 +90,8 @@ changes.
 
 ## 9.4 Security configuration
 
-- Three filter chains: the public feed and health endpoints (stateless, anonymous, CSRF disabled,
-  `GET` only); the management API (stateless, bearer token, CSRF disabled, `POST` only — §11.2); and
+- Three filter chains: the public feed, the job links (§5.6) and health endpoints (stateless,
+  anonymous, CSRF disabled, `GET` only); the management API (stateless, bearer token, CSRF disabled, `POST` only — §11.2); and
   the back-office (session-based, authenticated, CSRF enabled).
 - Which back-office chain applies is decided once, at startup: sign-in when a provider is configured,
   local accounts are enabled (§2.12), or both; the development bypass under `dev` (§2.3); and
@@ -164,6 +164,15 @@ start with a warning rather than refusing to, so development needs no captcha se
 
 The database is MariaDB unless the `sqlite` profile is active (§9.3), in which case the file is
 `app.sqlite.path` (`APP_SQLITE_PATH`), default `data/ojobpub.db`, and its directory is created on start.
+
+**Job links** (§5.6) are `app.clicks.enabled` (on by default; off publishes `Job.url` itself). The
+click's country is `app.clicks.country-header`, the header a proxy or CDN sets (empty by default), and
+`app.clicks.geoip-database`, the path to a GeoIP country database in MaxMind's `.mmdb` format — GeoLite2
+or DB-IP Lite — which the deployment supplies and refreshes; a configured path that cannot be read stops
+the application at startup. Behind a reverse proxy the database needs the client's address, so
+`server.forward-headers-strategy` must be set, and both sources are only as trustworthy as the proxy is
+the only way in. `app.clicks.ignore-user-agents` lists the user-agent substrings that are machines, and
+`app.clicks.dashboard-days` (30) and `app.clicks.top-jobs` (10) shape the dashboard card.
 
 ## 9.6 Code conventions
 

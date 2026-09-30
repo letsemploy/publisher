@@ -51,6 +51,20 @@ app:
   # built from it, so it must be right behind a reverse proxy (spec 9.5).
   base-url: ${APP_BASE_URL}
 
+  # Job links (spec 5.6). A published job's URL is <base-url>/go/<id>: it counts
+  # the click and redirects, and stops leading anywhere once the job leaves the
+  # feed. enabled: false publishes the job's own page and counts nothing.
+  # The click's country comes from a header the proxy or CDN sets, else from a
+  # mounted GeoIP country database, else it is unknown. The client address the
+  # database needs is the proxy's unless server.forward-headers-strategy (below)
+  # is set, and like the header it is only trustworthy when the application is
+  # reachable through the proxy alone. No address is ever stored (spec 10).
+  # clicks:
+  #   enabled: true
+  #   country-header: CF-IPCountry                              # Cloudflare; or the proxy's own
+  #   geoip-database: /data/geoip/GeoLite2-Country.mmdb         # or DB-IP Lite; a missing file fails startup
+  #   dashboard-days: 30
+
   # Email-and-password accounts (spec 2.12), beside or instead of the identity
   # providers below. Off unless enabled. They need mail (spring.mail below) for the
   # sign-up and reset links, and should have a captcha (captcha.* below): the

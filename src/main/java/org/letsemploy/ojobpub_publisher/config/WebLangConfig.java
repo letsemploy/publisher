@@ -28,6 +28,7 @@ public class WebLangConfig implements WebMvcConfigurer {
 
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
-        registry.addInterceptor(localeChangeInterceptor());
+        // ?lang stores the choice in the session; the public URLs have none (spec 5.1, 5.6).
+        registry.addInterceptor(localeChangeInterceptor()).excludePathPatterns("/ojobpub/**", "/go/**");
     }
 }

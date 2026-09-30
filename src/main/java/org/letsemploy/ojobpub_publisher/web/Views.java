@@ -7,10 +7,13 @@ import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import org.letsemploy.ojobpub_publisher.audit.AuditEvent;
+import org.letsemploy.ojobpub_publisher.click.JobClick;
+import org.letsemploy.ojobpub_publisher.click.JobClickService;
 import org.letsemploy.ojobpub_publisher.employer.Employer;
 import org.letsemploy.ojobpub_publisher.feed.Feed;
 import org.letsemploy.ojobpub_publisher.feed.Permalink;
@@ -180,6 +183,33 @@ public class Views {
             sb.append(' ').append(job.getSalaryInterval().name().toLowerCase());
         }
         return sb.toString();
+    }
+
+    /** The dashboard's clicks card (spec 7.10), with country names in the viewer's language. */
+    public ClicksView clicks(JobClickService.Statistics statistics) {
+        Locale locale = LocaleContextHolder.getLocale();
+        long topJob = statistics.topJobs().stream().mapToLong(JobClickService.JobClicks::clicks).max().orElse(0);
+        long topCountry = statistics.countries().stream().mapToLong(JobClickService.CountryClicks::clicks).max().orElse(0);
+        List<ClicksView.Job> jobs = statistics.topJobs().stream()
+                .map(c -> new ClicksView.Job(c.job().getId().toString(), c.job().getTitle(),
+                        c.job().getEmployer().getName(), c.clicks(), share(c.clicks(), topJob)))
+                .toList();
+        List<ClicksView.Country> countries = statistics.countries().stream()
+                .map(c -> new ClicksView.Country(c.country(), countryName(c.country(), locale),
+                        c.clicks(), share(c.clicks(), topCountry)))
+                .toList();
+        return new ClicksView(statistics.days(), statistics.total(), jobs, countries);
+    }
+
+    private String countryName(String code, Locale locale) {
+        if (JobClick.UNKNOWN_COUNTRY.equals(code)) {
+            return messages.getMessage("dashboard.clicks.unknownCountry", null, locale);
+        }
+        return Locale.of("", code).getDisplayCountry(locale);
+    }
+
+    private static int share(long value, long max) {
+        return max == 0 ? 0 : (int) Math.round(value * 100.0 / max);
     }
 
     public FeedRow feedRow(Feed feed, int publishedCount, int excludedCount) {

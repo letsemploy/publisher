@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 import org.letsemploy.ojobpub_publisher.audit.AuditAction;
 import org.letsemploy.ojobpub_publisher.audit.AuditEvent;
@@ -85,6 +86,15 @@ public class JobService {
             filters.add(Publication.presenting(presentation, LocalDate.now()));
         }
         return jobRepo.findAll(Specification.allOf(filters), pageable);
+    }
+
+    /**
+     * A job for its public link (spec 5.6), whoever follows it: anonymous like the
+     * feed, with what {@link Publication#isPublishable} and the link's page read.
+     */
+    @Transactional(readOnly = true)
+    public Optional<Job> findForLinking(UUID id) {
+        return jobRepo.findWithDetailById(id);
     }
 
     public Job findVisible(UUID id, Actor user) {

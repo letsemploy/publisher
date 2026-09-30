@@ -34,7 +34,7 @@ class OjobpubConformanceTest {
 
     private static OjobpubValidator validator;
     private static ObjectMapper mapper;
-    private final OjobpubService service = new OjobpubService();
+    private final OjobpubService service = new OjobpubService("https://jobs.acme.example/", true);
 
     @BeforeAll
     static void setUp() throws Exception {
@@ -211,6 +211,31 @@ class OjobpubConformanceTest {
                 LocalDate.of(2026, 9, 21)).document();
         assertThat(document.jobs().get(0).tags())
                 .containsExactly("java", "kubernetes", "spring");
+    }
+
+    /**
+     * A job's URL is its link through the publisher, absolute, so a click is counted
+     * and closes with the job (spec 5.6) - and it still passes `format: uri`.
+     */
+    @Test
+    void theJobUrlIsItsLinkThroughThePublisher() {
+        Employer employer = employer();
+        Job job = maximalJob(employer);
+        Feed feed = feed(employer, job);
+        assertConforms(feed);
+        assertThat(service.generate(feed, LocalDate.of(2026, 9, 21)).document().jobs().get(0).url())
+                .isEqualTo("https://jobs.acme.example/go/" + job.getId());
+    }
+
+    /** With click counting off, the employer's own page is published unchanged. */
+    @Test
+    void withoutJobLinksTheEmployersUrlIsPublished() {
+        OjobpubService direct = new OjobpubService("https://jobs.acme.example", false);
+        Employer employer = employer();
+        Feed feed = feed(employer, maximalJob(employer));
+        var document = direct.generate(feed, LocalDate.of(2026, 9, 21)).document();
+        assertThat(document.jobs().get(0).url()).isEqualTo("https://www.acme.example/jobs/ACME-2026-014");
+        assertThat(validator.validate(document)).as("schema violations").isEmpty();
     }
 
     /** A salary with only one amount must not blow up or fabricate the other. */

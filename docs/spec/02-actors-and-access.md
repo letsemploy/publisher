@@ -150,6 +150,7 @@ develop or run the application locally.
 | Surface | Access |
 |---|---|
 | Published feed documents (`GET /ojobpub/v1/{employerSlug}_{employerId}/{feedSlug}_{feedId}/ojobpub.json`) | **Public.** No authentication, no session, no cookies required. |
+| Job links (`GET /go/{jobId}`, §5.6) | **Public.** Like the feed: no authentication, no session, no cookies. |
 | `/actuator/health`, `/actuator/info` | Public |
 | All other actuator endpoints | Admin only |
 | Static assets, login routes, error pages | Public |

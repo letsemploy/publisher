@@ -108,6 +108,20 @@ INSERT INTO permalinks (id, created_at, last_modified_at, employer_id, name, des
    'Partner board', NULL, NULL)
 ON CONFLICT DO NOTHING;
 
+-- Job-link clicks (spec 3.14), so the dashboard's clicks card has figures: the two
+-- published jobs yesterday, from two countries and one unknown, and the expired
+-- job while it was still published. Dated relative to today (UTC), so they stay
+-- inside the dashboard's window, and never today, so a test counting today's
+-- clicks starts from none.
+INSERT INTO job_clicks (job_id, day, country, employer_id, clicks) VALUES
+  ('8f14e45f-ceea-467a-9b4f-3a1b2c3d4e5f', strftime('%Y-%m-%d 00:00:00.000', 'now', '-1 day'), 'CH', '003d6aec-021b-11f1-aefa-f649a5d91690', 14),
+  ('8f14e45f-ceea-467a-9b4f-3a1b2c3d4e5f', strftime('%Y-%m-%d 00:00:00.000', 'now', '-1 day'), 'DE', '003d6aec-021b-11f1-aefa-f649a5d91690', 5),
+  ('8f14e45f-ceea-467a-9b4f-3a1b2c3d4e5f', strftime('%Y-%m-%d 00:00:00.000', 'now', '-1 day'), 'ZZ', '003d6aec-021b-11f1-aefa-f649a5d91690', 2),
+  ('9a25f56a-dffb-478b-ac50-4b2c3d4e5f60', strftime('%Y-%m-%d 00:00:00.000', 'now', '-1 day'), 'CH', '003d6aec-021b-11f1-aefa-f649a5d91690', 6),
+  ('9a25f56a-dffb-478b-ac50-4b2c3d4e5f60', strftime('%Y-%m-%d 00:00:00.000', 'now', '-1 day'), 'AT', '003d6aec-021b-11f1-aefa-f649a5d91690', 1),
+  ('ab36067b-e00c-489c-bd61-5c3d4e5f6071', strftime('%Y-%m-%d 00:00:00.000', 'now', '-20 days'), 'CH', '003d6aec-021b-11f1-aefa-f649a5d91690', 3)
+ON CONFLICT DO NOTHING;
+
 -- The development administrator (spec 2.3): a real record, because anything keyed
 -- on user identity is otherwise unreachable locally and in the tests.
 INSERT INTO users (id, created_at, last_modified_at, issuer, subject, email, display_name, role) VALUES

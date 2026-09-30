@@ -47,6 +47,7 @@ the text such as §2.6 means the same thing: find the chapter below, then the se
   - [3.11 Actor](spec/03-domain-model.md#311-actor)
   - [3.12 AuditEvent](spec/03-domain-model.md#312-auditevent)
   - [3.13 Permalink](spec/03-domain-model.md#313-permalink)
+  - [3.14 JobClick](spec/03-domain-model.md#314-jobclick)
 - **[4. Job lifecycle](spec/04-job-lifecycle.md)**
   - [4.1 States](spec/04-job-lifecycle.md#41-states)
   - [4.2 `publishedAt`](spec/04-job-lifecycle.md#42-publishedat)
@@ -58,6 +59,7 @@ the text such as §2.6 means the same thing: find the chapter below, then the se
   - [5.3 Defensive serving](spec/05-feed-publishing.md#53-defensive-serving)
   - [5.4 Caching and freshness](spec/05-feed-publishing.md#54-caching-and-freshness)
   - [5.5 Permalinks](spec/05-feed-publishing.md#55-permalinks)
+  - [5.6 Job links](spec/05-feed-publishing.md#56-job-links)
 - **[6. The ojobpub document contract](spec/06-document-contract.md)**
   - [6.1 Root object](spec/06-document-contract.md#61-root-object)
   - [6.2 `employer`](spec/06-document-contract.md#62-employer)

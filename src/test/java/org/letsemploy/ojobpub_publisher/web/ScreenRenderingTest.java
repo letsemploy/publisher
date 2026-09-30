@@ -302,6 +302,27 @@ class ScreenRenderingTest {
                 .doesNotContain("acme-ag_" + EMPLOYER);
     }
 
+    /**
+     * The dashboard's clicks card (spec 7.10): the most clicked jobs, linked, and
+     * the clicks by country, named in words - "Unknown" included (spec 7.9).
+     */
+    @Test
+    void theDashboardShowsTheMostClickedJobsAndTheirCountries() throws Exception {
+        String body = html("/");
+        String card = body.substring(body.indexOf("id=\"clicks\""));
+        assertThat(card)
+                .contains("Job link clicks")
+                .contains("Last 30 days")
+                .contains("href=\"/jobs/" + JOB_PUBLISHED + "\"")
+                .contains("Switzerland")
+                .contains("Germany")
+                .contains("Unknown")
+                .contains("<progress");
+        assertThat(card.indexOf("Senior Backend Engineer"))
+                .as("the most clicked job first")
+                .isLessThan(card.indexOf("Praktikum Produktdesign"));
+    }
+
     /** A feed's screen leads with the permalinks publishing it; its own URL is for testing (spec 7.12). */
     @Test
     void theFeedScreenLeadsWithItsPermalinks() throws Exception {

@@ -109,7 +109,7 @@ measure is worth:
 ### Package by feature
 
 `employer`, `job`, `location`, `tag`, `feed`, `invitation`, `membership`, `token`, `user`, `audit`,
-`account` (local accounts) — each
+`account` (local accounts), `click` (job links and their counters) — each
 owns its entity, repository, service, form objects and controllers. Plus `common` (shared base types, slugs,
 exceptions), `config` (beans), `mail` (outbound mail), `security` (actors, roles, filter chains), `web` (shell context, view
 models, error handling), `ojobpub/v1` (the published contract) and `api` (the GraphQL management API).
@@ -176,6 +176,32 @@ website configures once while the feed behind it is switched.
   Hibernate throws.
 - Managed on the Feeds list (`PermalinkController`, `/feeds/permalinks/...`), with the switch as a
   plain form per row; in the API under the feed scopes.
+
+### Job links and clicks (`click/`, §5.6, §3.14)
+
+A published job's `url` is `{app.base-url}/go/{jobId}`, not `Job.url` (`OjobpubService`, unless
+`app.clicks.enabled=false`). `GET /go/{id}` redirects a published job (`Publication.isPublishable`) with
+`302` and counts the click; any other job answers `410` with `templates/click/gone.html`; unknown is `404`.
+
+- **`JobLinkHandler` is a functional endpoint, not a `@Controller`, and must stay one.**
+  `UiContextAdvice` is a `@ModelAttribute` on every controller in the package: it resolves a user and
+  touches the session-scoped `EmployerContext`, so a controller here would open a session on a public
+  URL. The page is rendered with the template engine directly, in the `Accept-Language` locale, and
+  `WebLangConfig` excludes `/go/**` and `/ojobpub/**` from the `?lang` interceptor for the same reason.
+- **Counters, not visits:** `job_clicks` is keyed (job, UTC day, country), `ZZ` for unknown. **Never
+  store or log the address or user agent** (§10). The upsert is JPQL `UPDATE … +1`, else insert, and
+  on `DataIntegrityViolationException` (a concurrent first click) update again — no native SQL. It runs
+  in its own transaction (`TransactionTemplate`, `REQUIRES_NEW`) because a failed statement poisons the
+  transaction it runs in, and **a failed count is logged and never stops the redirect**.
+- **Country** (`ClickCountry`): `app.clicks.country-header`, then the `.mmdb` at
+  `app.clicks.geoip-database` (a configured path that can't be read fails startup), else `ZZ`. Only
+  officially assigned codes count. Tests use MaxMind's test database, `src/test/resources/geoip/`
+  (Apache-2.0/MIT), where `81.2.69.160` is `GB`.
+- `HEAD`, no user agent and `app.clicks.ignore-user-agents` (link unfurlers, crawlers, `curl`) are not
+  counted — so trying a link with plain `curl` counts nothing; pass `-A`.
+- The functional `GET` route does **not** answer `HEAD` by itself; the route declares both.
+- The dashboard reads `JobClickService.statistics(scope.employerIds())`; the seed dates its counters
+  *yesterday*, so a test counting today's clicks starts from zero.
 
 ### Authentication and roles
 
@@ -734,6 +760,8 @@ TEST_DB=sqlite ./mvnw test                   # all, on SQLite; no server
 ./mvnw test -Dtest=PermalinkServingTest      # the permalink URL: switched, empty, dated forward, 404/301
 ./mvnw test -Dtest=PermalinkServiceTest      # own feeds only, members only, what the log records
 ./mvnw test -Dtest=ServiceTokenExpiryTest    # expiry, renewal and what renewal must not touch
+./mvnw test -Dtest=JobLinkTest               # /go/{id}: redirect, 410, what counts, country, no session
+./mvnw test -Dtest=JobClickServiceTest       # the dashboard's click figures, scoped to the employers asked
 make assets                                  # refresh vendored front-end deps (needs Node)
 ```
 

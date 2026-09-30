@@ -118,3 +118,45 @@ selection, with one switch.
 - **A switch reaches consumers within the cache lifetime** (`max-age`, five minutes by default). The
   back-office says so when it confirms one.
 - Deleting a permalink ends its URL: `404`, like a deleted feed.
+
+## 5.6 Job links
+
+```
+GET /go/{jobId}
+```
+
+A published job's `url` (§6.4) is not the employer's page but a link through this application,
+`{base URL}/go/{jobId}`. Following it counts the click and redirects to the job's own URL. That gives the
+employer two things a feed alone cannot:
+
+- **Control.** Once the job is no longer published (§4.3, §4.4) — expired, deactivated, incomplete — its
+  link leads nowhere, even from a copy of the feed a job board cached or indexed long ago.
+- **A measure.** How often each job is clicked, and from which countries, shown on the dashboard (§7.10).
+
+The link answers:
+
+- **Published job:** `302` to `Job.url`, which the job form requires to be an absolute `http` or `https` URL. A stored URL
+  that is not a web address answers as not published, and is logged.
+- **Any other job:** `410 Gone` with a small page saying the employer no longer advertises the position,
+  linking to the employer's website when one is set. The click is not counted.
+- **Unknown or malformed id:** `404`, with the same page naming no employer. An upper-case UUID answers
+  `301` to the lower-case form, which is the one that counts.
+- **Headers:** `Cache-Control: no-store`, so every click reaches the counter, and `X-Robots-Tag: noindex`.
+
+Like the feed (§5.1) the link is anonymous and stateless: no session, no cookie. The page's language is
+the one the browser asks for (`Accept-Language`), English or German, since there is no session to hold a
+choice.
+
+**What is counted.** A `GET` from a user agent that is not on the configured list of machines (link
+previews, crawlers, command-line clients). A `HEAD` or a request with no user agent counts nothing. A
+counter (§3.14) is incremented per job, day (UTC) and country. The count is kept in its own transaction,
+and a failure to count is logged and never keeps the visitor from the job.
+
+**The country** comes from, in order: a header set by the proxy or CDN in front (for example
+`CF-IPCountry`), if configured; a GeoIP country database the deployment mounts, if configured; else
+*unknown*. Only officially assigned ISO codes count; anything else, such as Cloudflare's `XX` or `T1`, is
+unknown. Both sources are trustworthy only if the application is reachable through the proxy alone
+(§9.5).
+
+**Switching it off** (§9.5) publishes `Job.url` itself, counts nothing, and leaves the links that were
+handed out working.

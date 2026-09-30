@@ -313,3 +313,22 @@ A stable public URL that publishes one of its employer's feeds, or none (§5.5).
 - **Deleting the feed clears it**, and deleting the employer deletes its permalinks.
 - Created, edited, switched and deleted by the employer's members, owners and editors alike, like
   feeds (§2.1), and counted against their own quota (§8.4).
+
+## 3.14 JobClick
+
+A counter of clicks on one job's link (§5.6), per day and per country. Never a visit.
+
+| Field | Type | Required | Rules |
+|---|---|---|---|
+| `job` | Job | **yes** | part of the key; deleted with the job |
+| `day` | date | **yes** | part of the key; the day in **UTC** |
+| `country` | string | **yes** | part of the key; ISO 3166-1 alpha-2, upper case, **`ZZ` for unknown** |
+| `employer` | Employer | **yes** | the job's employer, which never changes (§3.3); deleted with it |
+| `clicks` | integer | **yes** | ≥ 1 |
+
+- **No address, no user agent, no time of day, no visitor.** The address is used to look up the country
+  and then dropped (§10). Unique visitors therefore cannot be counted, and that is the trade.
+- **Bounded without pruning.** At most one row per job, day and country, so the table needs no scheduled
+  clean-up (§12).
+- `ZZ` rather than an empty value, because an empty key part would let two concurrent first clicks write
+  two rows.

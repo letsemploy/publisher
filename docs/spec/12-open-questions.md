@@ -15,8 +15,9 @@
    the application ships none. If
    notifications ("three postings expire next week") are wanted, a scheduled job and its delivery
    channel need specification.
-5. **Analytics.** Whether feed consumption is measured per consumer, and whether employers see it, is
-   unspecified.
+5. **Analytics.** *Partly settled:* clicks on the job links are counted per job, day and country and
+   shown to the employer's members on the dashboard (§5.6, §7.10). Whether feed *fetches* are measured
+   per consumer is still unspecified.
 6. **Feed visibility.** Every feed URL is public to anyone holding the link (§5.1). Whether a feed may
    be marked private and require a rotatable token is deferred; the UUID in the path makes a link
    impractical to guess, but it is not a secret and may appear in referrer headers and proxy logs.

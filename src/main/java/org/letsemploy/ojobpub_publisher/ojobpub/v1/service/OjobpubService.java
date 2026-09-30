@@ -14,6 +14,7 @@ import org.letsemploy.ojobpub_publisher.ojobpub.v1.dto.*;
 import org.letsemploy.ojobpub_publisher.tag.Tag;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 /** Builds the published document from a feed (spec 6), or from none (spec 5.5). The single mapping point. */
@@ -27,6 +28,21 @@ public class OjobpubService {
     }
 
     public record Exclusion(String jobId, String jobTitle, String reasonKey) {
+    }
+
+    private final String baseUrl;
+    private final boolean jobLinks;
+
+    /**
+     * @param baseUrl  the application's public address, so a job link is absolute (spec 9.5)
+     * @param jobLinks whether a job's URL is its link through this application,
+     *                 which counts clicks and closes with the job (spec 5.6), or
+     *                 the employer's own page
+     */
+    public OjobpubService(@Value("${app.base-url}") String baseUrl,
+                          @Value("${app.clicks.enabled:true}") boolean jobLinks) {
+        this.baseUrl = baseUrl.endsWith("/") ? baseUrl.substring(0, baseUrl.length() - 1) : baseUrl;
+        this.jobLinks = jobLinks;
     }
 
     public Result generate(Feed feed, LocalDate today) {
@@ -135,7 +151,7 @@ public class OjobpubService {
                 job.getEndDate(),
                 job.getApplyBefore(),
                 job.getLanguageCode().toLowerCase(),
-                job.getUrl(),
+                jobLinks ? baseUrl + "/go/" + job.getId() : job.getUrl(),
                 tags);
     }
 
