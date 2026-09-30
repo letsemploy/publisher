@@ -101,7 +101,8 @@ public class UiContextFactory {
                 version(), projectUrl,
                 viewing == null ? null : user.getDisplayName(),
                 viewing == null ? null : viewing.getEmail(),
-                currentUserService.canSwitchAdminMode());
+                currentUserService.canSwitchAdminMode(),
+                currentUserService.isLocalAccount());
     }
 
     /** The build's version; "development" when run from classes with no build info. */

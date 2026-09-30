@@ -453,14 +453,17 @@ configured. It is **off unless configured** (§9.5), and it can be offered alone
   issuer `local` and, as subject, an id that never changes — not the email. It is never joined to a
   provider account with the same address (§2.2), and everything else — roles, memberships, admin
   rules, suspension (§2.11), viewing as (§2.9) — applies to it unchanged.
-- **Sign-up** takes an email, a name and a password, and a captcha. The account exists only once its
-  address is **verified** by following a link sent to it; until then it cannot sign in, holds no
-  `users` record, and cannot be invited. Only a verified email is kept (§2.2).
+- **Sign-up** takes an email, a name and a captcha — **no password**. The password is chosen on the
+  page the link mailed to the address opens, which also verifies the address. Taking it at sign-up
+  would let anyone register someone else's address with a password of their own, live the day its
+  owner follows the link; chosen from the link, it is set by whoever holds the mailbox. Until then
+  the account has no password, so it cannot sign in, holds no `users` record, and cannot be invited.
+  Only a verified email is kept (§2.2).
 - **The screens are no oracle** (§2.6). Sign-up, resending the link and forgotten password answer the
   same whether the address is unknown, pending or taken. A sign-up with an address that already
-  belongs to a local account creates nothing and mails the holder instead. A sign-in failure says
-  only that it failed; an unverified account is told to confirm its address, since only someone
-  holding the password gets that far.
+  belongs to a local account creates nothing and mails the holder instead; a forgotten password
+  for a pending one sends its sign-up link again. A sign-in failure says only that it failed —
+  unknown address, wrong password, pending account or throttled alike.
 - **Links** in mail are single-use, carry a secret that is stored only as a hash, and expire —
   verification after 24 hours, a password reset after one hour. A new link voids the earlier ones.
 - **Passwords** are at least 12 characters (configurable), at most 128, and not the email itself.

@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<!-- Resend the sign-up link, or ask for a reset link: an address alone (spec 7.24). -->
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{account/standalone}">
+<head><title th:text="${reset} ? #{account.forgot.title} : #{account.resend.title}">Forgot your password</title></head>
+<body>
+<div layout:fragment="card">
+    <h1 class="h2 text-center mb-3" th:text="${reset} ? #{account.forgot.title} : #{account.resend.title}">Forgot your password</h1>
+    <p class="text-secondary" th:text="${reset} ? #{account.forgot.lead} : #{account.resend.lead}">Enter your address.</p>
+    <div th:replace="~{fragments/form :: errorSummary(${errors})}"></div>
+    <form th:action="${reset} ? @{/password/forgot} : @{/register/resend}" method="post" novalidate>
+        <div th:replace="~{fragments/form :: input('email', 'login.email', ${form.email}, 'email', true, null, ${fieldErrors?.get('email')}, 255)}"></div>
+        <th:block th:replace="~{fragments/captcha :: widget}"></th:block>
+        <button type="submit" class="btn btn-primary w-100" th:text="#{account.address.submit}">Send the link</button>
+    </form>
+</div>
+</body>
+</html>

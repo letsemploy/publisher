@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<!-- A new password, twice, with its rule said before it is broken (spec 7.24). -->
+<th:block th:fragment="newPassword">
+    <div class="mb-3">
+        <label class="form-label required" for="password" th:text="#{account.password}">Password</label>
+        <input class="form-control" id="password" name="password" type="password" required
+               autocomplete="new-password" th:maxlength="128"
+               th:classappend="${fieldErrors?.get('password') != null} ? 'is-invalid'"
+               th:attr="aria-invalid=${fieldErrors?.get('password') != null} ? 'true' : null"
+               aria-describedby="password-hint"/>
+        <small class="form-hint" id="password-hint"
+               th:text="#{account.password.hint(${minPasswordLength})}">At least 12 characters.</small>
+        <div class="invalid-feedback" th:if="${fieldErrors?.get('password') != null}"
+             th:text="${fieldErrors.get('password')}"></div>
+    </div>
+    <div class="mb-3">
+        <label class="form-label required" for="passwordRepeat" th:text="#{account.passwordRepeat}">Password again</label>
+        <input class="form-control" id="passwordRepeat" name="passwordRepeat" type="password" required
+               autocomplete="new-password" th:maxlength="128"
+               th:classappend="${fieldErrors?.get('passwordRepeat') != null} ? 'is-invalid'"
+               th:attr="aria-invalid=${fieldErrors?.get('passwordRepeat') != null} ? 'true' : null"/>
+        <div class="invalid-feedback" th:if="${fieldErrors?.get('passwordRepeat') != null}"
+             th:text="${fieldErrors.get('passwordRepeat')}"></div>
+    </div>
+</th:block>
+</body>
+</html>

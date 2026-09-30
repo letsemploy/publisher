@@ -43,11 +43,12 @@ services:
       - '${KEYCLOAK_PORT:-8083}:8080'
 
   # Catches every mail the application sends (spec 2.12), so sign-up and
-  # password-reset links can be followed locally: http://localhost:8025.
-  # SMTP on 1025, which application-local.yml points spring.mail at.
+  # password-reset links can be followed locally: http://localhost:8026.
+  # SMTP on 1026, which application-local.yml points spring.mail at. Not the
+  # standard 1025/8025, for the same reason the database is not on 3306.
   mailpit:
     image: docker.io/axllent/mailpit
     restart: always
     ports:
-      - '${MAILPIT_SMTP_PORT:-1025}:1025'
-      - '${MAILPIT_UI_PORT:-8025}:8025'
+      - '${MAILPIT_SMTP_PORT:-1026}:1025'
+      - '${MAILPIT_UI_PORT:-8026}:8025'

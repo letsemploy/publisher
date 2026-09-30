@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<!--
+  The shell of the account screens (spec 7.24): standalone like sign-in (spec
+  7.19), because a signed-out visitor has no sidebar, switcher or user menu.
+  Pages decorate it and fill the card. No inline script or style (spec 9.4).
+-->
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      th:lang="${#locale.language}"
+      th:attr="data-bs-theme=${ui.theme}"
+      data-bs-theme-base="gray">
+<head>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+    <title layout:title-pattern="$CONTENT_TITLE · $LAYOUT_TITLE" th:text="#{app.name}">oJobPub Publisher</title>
+    <link rel="stylesheet" th:href="@{/vendor/tabler.min.css}"/>
+    <link rel="stylesheet" th:href="@{/vendor/tabler-themes.min.css}"/>
+    <script th:src="@{/js/theme.js}"></script>
+    <link rel="stylesheet" th:href="@{/css/app.css}"/>
+    <th:block layout:fragment="head"></th:block>
+</head>
+<body class="d-flex flex-column">
+<div class="page page-center">
+    <main class="container container-tight py-4" id="main">
+        <div class="text-center mb-4">
+            <span class="d-inline-block bg-white rounded-3 p-2 shadow-sm">
+                <img th:src="@{/images/logo.png}" src="/images/logo.png" width="56" height="56" alt=""/>
+            </span>
+            <div class="h2 mt-2 mb-0" th:text="#{app.name}">oJobPub Publisher</div>
+        </div>
+
+        <div class="card card-md">
+            <div class="card-body" layout:fragment="card">Content</div>
+        </div>
+
+        <div class="text-center text-secondary mt-3">
+            <a th:href="@{/login}" th:text="#{account.backToLogin}">Back to sign-in</a>
+        </div>
+
+        <!-- Every parameter but the language is kept, so a link's token survives a switch. -->
+        <nav class="text-center text-secondary mt-2" th:attr="aria-label=#{label.language}">
+            <th:block th:each="l, it : ${ui.languages}">
+                <a class="text-secondary"
+                   th:href="${languageLinks[l]}"
+                   th:attrappend="aria-current=${l == #locale.language} ? 'true' : null"
+                   th:classappend="${l == #locale.language} ? 'fw-bold'"
+                   th:text="#{'lang.' + ${l}}">English</a>
+                <span th:unless="${it.last}" aria-hidden="true"> · </span>
+            </th:block>
+        </nav>
+    </main>
+</div>
+</body>
+</html>

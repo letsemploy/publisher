@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<!-- Sign up (spec 7.24): an address and a name. The password is chosen from the mailed link. -->
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{account/standalone}">
+<head><title th:text="#{account.register.title}">Sign up</title></head>
+<body>
+<div layout:fragment="card">
+    <h1 class="h2 text-center mb-3" th:text="#{account.register.title}">Sign up</h1>
+    <p class="text-secondary" th:text="#{account.register.lead}">Enter your email address and name.</p>
+    <div th:replace="~{fragments/form :: errorSummary(${errors})}"></div>
+    <form th:action="@{/register}" method="post" novalidate>
+        <div th:replace="~{fragments/form :: input('email', 'login.email', ${form.email}, 'email', true, null, ${fieldErrors?.get('email')}, 255)}"></div>
+        <div th:replace="~{fragments/form :: input('name', 'account.name', ${form.name}, 'text', true, null, ${fieldErrors?.get('name')}, 255)}"></div>
+        <th:block th:replace="~{fragments/captcha :: widget}"></th:block>
+        <button type="submit" class="btn btn-primary w-100" th:text="#{account.register.submit}">Send the link</button>
+    </form>
+    <p class="text-center text-secondary mt-3 mb-0">
+        <span th:text="#{account.register.haveAccount}">Already have an account?</span>
+        <a th:href="@{/login}" th:text="#{login.signIn}">Sign in</a>
+    </p>
+</div>
+</body>
+</html>

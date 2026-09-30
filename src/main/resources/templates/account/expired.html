@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<!-- A used, expired or unknown link (spec 7.24): said so, with a way to a new one. -->
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{account/standalone}">
+<head><title th:text="#{account.expired.title}">This link can no longer be used</title></head>
+<body>
+<div layout:fragment="card">
+    <h1 class="h2 text-center mb-3" th:text="#{account.expired.title}">This link can no longer be used</h1>
+    <p th:text="#{account.expired.body}">It has already been used, or it has expired.</p>
+    <a class="btn btn-primary w-100" th:href="${reset} ? @{/password/forgot} : @{/register/resend}"
+       th:text="${reset} ? #{account.expired.forgot} : #{account.expired.resend}">Send a new link</a>
+</div>
+</body>
+</html>

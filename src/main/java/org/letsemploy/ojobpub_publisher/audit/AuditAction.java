@@ -66,6 +66,9 @@ public enum AuditAction {
     ADMIN_REVOKED(Audience.PERSONAL),
     ACCOUNT_SUSPENDED(Audience.PERSONAL),
     ACCOUNT_REINSTATED(Audience.PERSONAL),
+    // A local account's own password (spec 2.12).
+    PASSWORD_CHANGED(Audience.PERSONAL),
+    PASSWORD_RESET(Audience.PERSONAL),
     ADMIN_MODE_ENTERED(Audience.PERSONAL),
     ADMIN_MODE_LEFT(Audience.PERSONAL),
     VIEW_AS_STARTED(Audience.PERSONAL),

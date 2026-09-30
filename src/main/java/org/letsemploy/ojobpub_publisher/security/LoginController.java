@@ -18,10 +18,13 @@ public class LoginController {
 
     private final CurrentUserService currentUserService;
     private final LoginOptions loginOptions;
+    private final boolean localAccounts;
 
-    public LoginController(CurrentUserService currentUserService, LoginOptions loginOptions) {
+    public LoginController(CurrentUserService currentUserService, LoginOptions loginOptions,
+                           org.letsemploy.ojobpub_publisher.account.LocalAccountProperties localAccounts) {
         this.currentUserService = currentUserService;
         this.loginOptions = loginOptions;
+        this.localAccounts = localAccounts.enabled();
     }
 
     @GetMapping("/login")
@@ -37,6 +40,11 @@ public class LoginController {
         // Only ever shown to the person just signed out for it (spec 2.11), so it
         // tells nobody else anything.
         model.addAttribute("suspended", request.getParameterMap().containsKey("suspended"));
+        // Local accounts (spec 2.12): the form, and what the account screens came back with.
+        model.addAttribute("localAccounts", localAccounts);
+        model.addAttribute("verified", request.getParameterMap().containsKey("verified"));
+        model.addAttribute("passwordReset", request.getParameterMap().containsKey("reset"));
+        model.addAttribute("expired", request.getParameterMap().containsKey("expired"));
         // One button per configured provider, sorted by name (spec 7.19).
         model.addAttribute("options", loginOptions.all());
         return "login";

@@ -523,9 +523,9 @@ form or buttons, and the language choice.
 - **Its states**, each in words and not only in colour (§7.9): a failed sign-in (`?error`) says it did
   not complete and to try again, without the technical detail of why; a completed sign-out
   (`?logout`) says so; and a suspended account (`?suspended`, §2.11) is told it is suspended and to
-  contact the administrator. With local accounts, also: an address just confirmed (`?verified`), a
-  password just reset (`?reset`), an account not yet confirmed (`?unverified`, with a way to resend the
-  link), and a session ended by a password change (`?expired`). Switching language keeps the state.
+  contact the administrator. With local accounts, also: a sign-up just completed (`?verified`), a
+  password just reset (`?reset`), and a session ended by a password change (`?expired`). Switching
+  language keeps the state.
 - It is **standalone**: no sidebar, switcher or user menu, since a signed-out visitor has none of them.
 - A signed-in visitor asking for it is sent on to the dashboard. Under `dev` it is inert, like every
   login route (§2.3).
@@ -598,10 +598,10 @@ a way of publishing them.
 The screens of a local account (§2.12), standalone like sign-in (§7.19) and offered only when local
 accounts are enabled; otherwise they do not exist.
 
-- **Sign up** — email, name, password twice, and the captcha. Afterwards one page, whatever happened:
-  "check your email".
-- **Confirm** — the link from the mail. A valid one leads to sign-in, saying the address is confirmed;
-  a used or expired one says so and offers to send a new one.
+- **Sign up** — email, name and the captcha. Afterwards one page, whatever happened: "check your
+  email".
+- **Complete the sign-up** — the link from the mail: the password twice. Afterwards sign-in, saying
+  the address is confirmed. A used or expired link says so and offers to send a new one.
 - **Resend the link** and **Forgot password** — an email and the captcha; afterwards one page,
   whatever happened.
 - **Reset password** — reached from the mail: the new password twice. Afterwards sign-in, saying the

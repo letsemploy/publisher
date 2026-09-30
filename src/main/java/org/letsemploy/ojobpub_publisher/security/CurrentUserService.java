@@ -5,6 +5,9 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
+import org.letsemploy.ojobpub_publisher.account.LocalAccount;
+import org.letsemploy.ojobpub_publisher.account.LocalAccountRepo;
+import org.letsemploy.ojobpub_publisher.account.LocalUser;
 import org.letsemploy.ojobpub_publisher.audit.AuditAction;
 import org.letsemploy.ojobpub_publisher.audit.AuditEvent;
 import org.letsemploy.ojobpub_publisher.audit.AuditLog;
@@ -39,12 +42,14 @@ public class CurrentUserService {
     private final AdminPolicy adminPolicy;
     private final Environment environment;
     private final AuditLog auditLog;
+    private final LocalAccountRepo localAccounts;
 
     public CurrentUserService(UserRepo userRepo,
                               MembershipService membershipService,
                               AdminPolicy adminPolicy,
                               Environment environment,
                               AuditLog auditLog,
+                              LocalAccountRepo localAccounts,
                               @Value("${app.oidc.require-verified-email:true}") boolean requireVerifiedEmail,
                               @Value("${app.admin.start-in-admin-mode:false}") boolean startInAdminMode) {
         this.userRepo = userRepo;
@@ -52,6 +57,7 @@ public class CurrentUserService {
         this.adminPolicy = adminPolicy;
         this.environment = environment;
         this.auditLog = auditLog;
+        this.localAccounts = localAccounts;
         this.requireVerifiedEmail = requireVerifiedEmail;
         this.startInAdminMode = startInAdminMode;
     }
@@ -121,6 +127,36 @@ public class CurrentUserService {
         Identity identity = auth == null ? null : identityOf(auth.getPrincipal());
         return identity != null && userRepo.findByIssuerAndSubject(identity.issuer(), identity.subject())
                 .map(UserEntity::isSuspended).orElse(false);
+    }
+
+    /**
+     * Where a session that must end now is sent, or empty while it may go on -
+     * read by {@link SuspendedAccountFilter}. A suspended account (spec 2.11), and
+     * a local account whose password changed after this session signed in (spec
+     * 2.12): every other session of it ends at its next request.
+     */
+    @Transactional(readOnly = true)
+    public Optional<String> endOfSession() {
+        if (isSuspended()) {
+            return Optional.of(SuspendedAccountFilter.SUSPENDED);
+        }
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth != null && auth.getPrincipal() instanceof LocalUser local) {
+            boolean superseded = localAccounts.findById(local.getId())
+                    .map(account -> account.getPasswordChangedAt() == null
+                            || account.getPasswordChangedAt().isAfter(local.getSignedInAt()))
+                    .orElse(true);
+            if (superseded) {
+                return Optional.of(SuspendedAccountFilter.EXPIRED);
+            }
+        }
+        return Optional.empty();
+    }
+
+    /** Signed in with a local account, as themselves: the one person who has a password here (spec 7.24). */
+    public boolean isLocalAccount() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        return auth != null && auth.getPrincipal() instanceof LocalUser && !isImpersonating();
     }
 
     /**
@@ -215,6 +251,12 @@ public class CurrentUserService {
             return new Identity(String.valueOf(oidc.getIssuer()), oidc.getSubject(),
                     displayName(oidc), trustedEmail(oidc),
                     Boolean.TRUE.equals(oidc.getEmailVerified()), oidc.getAttributes());
+        }
+        // A local account: its address was confirmed before it could have a
+        // password, so it is verified by construction (spec 2.12).
+        if (principal instanceof LocalUser local) {
+            return new Identity(LocalAccount.ISSUER, local.getId().toString(), local.getDisplayName(),
+                    local.getEmail(), true, Map.of());
         }
         // GitHub: OAuth 2.0 without OpenID Connect, identified by GitHubUserService.
         if (principal instanceof GitHubUser github) {

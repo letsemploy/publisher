@@ -15,6 +15,15 @@ spring:
     driver-class-name: org.mariadb.jdbc.Driver
     username: root
     password: root
+    # Spring caches one context per distinct test configuration, each with its own
+    # pool, and Hikari keeps a full pool open by default. Past a few dozen contexts
+    # that is more than MariaDB's max_connections (151), and a context fails to
+    # start with "Too many connections" - in whichever class happens to be next.
+    # Tests run one at a time, so a small pool that shrinks when idle is plenty.
+    hikari:
+      maximum-pool-size: 4
+      minimum-idle: 0
+      idle-timeout: 10000
   flyway:
     enabled: true
     baselineOnMigrate: true

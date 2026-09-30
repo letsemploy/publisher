@@ -20,7 +20,8 @@ after it, because code cites them; a new section also needs its line in the inde
 
 Two databases (§9.3): **MariaDB**, the default, and **SQLite** for a single-instance installation — see
 **Two databases** under Architecture. With MariaDB, a server is needed to run *and* to test. `podman-compose up -d` (or `docker compose up -d`) brings up
-`docker-compose.yml`: the `db` service on **3307** (root/root), adminer on **8082**, and **Keycloak on
+`docker-compose.yml`: the `db` service on **3307** (root/root), adminer on **8082**, **Mailpit** on
+**8026** (its inbox; SMTP on 1026 — off the standard ports, like the database), and **Keycloak on
 8083** (admin/admin), which imports `keycloak/ojobpub-realm.json` — realm `ojobpub`, users alice/alice
 and bob/bob, and mallory/mallory whose email is unverified. alice is in the group `ojobpub-admin`, which
 the `keycloak` profile maps to platform admin. The realm is imported only into a fresh
@@ -40,6 +41,7 @@ The container is `ojobpub-publisher_db_1`; the compose *service* is `db`, so it 
 ./mvnw spring-boot:run -Dspring-boot.run.profiles=dev   # http://localhost:8080
 ./mvnw spring-boot:run -Dspring-boot.run.profiles=dev,sqlite  # same, on data/ojobpub_dev.db, no server
 ./mvnw spring-boot:run -Dspring-boot.run.profiles=keycloak    # real OIDC login; Keycloak must be up first
+./mvnw spring-boot:run -Dspring-boot.run.profiles=accounts    # email/password sign-up; mail in Mailpit
 ./mvnw package                                          # build jar (runs tests)
 ./mvnw test                                             # all tests, on MariaDB
 TEST_DB=sqlite ./mvnw clean test                        # all tests, on SQLite (target/publisher_test.db)
@@ -48,10 +50,11 @@ TEST_DB=sqlite ./mvnw clean test                        # all tests, on SQLite (
 ./mvnw versions:display-dependency-updates              # or: make check-mvn-updates
 ```
 
-Locally, run either `dev` or `keycloak`; plain startup has no datasource. Both are **profile groups**
+Locally, run `dev`, `keycloak` or `accounts`; plain startup has no datasource. All are **profile groups**
 (`application.properties`) that bring in `local` — `application-local.yml`, the developer's MariaDB
 (database `ojobpub_publisher_dev`), the seed and GraphiQL. `dev` adds the authentication bypass (§2.3);
-`keycloak` adds real OIDC login against the compose Keycloak (`application-keycloak.yml`). There is no
+`keycloak` adds real OIDC login against the compose Keycloak (`application-keycloak.yml`); `accounts`
+turns local accounts on (`application-accounts.yml`), with mail going to Mailpit. There is no
 `application-dev.yml`: the bypass is `@Profile("dev")` beans, so it cannot leak into `keycloak`, and
 the two differ in exactly that. A deployment sets `SPRING_DATASOURCE_*` for MariaDB or runs with
 `SPRING_PROFILES_ACTIVE=sqlite` and `APP_SQLITE_PATH` on a volume, plus the five `SPRING_SECURITY_OAUTH2_*`
@@ -105,9 +108,10 @@ measure is worth:
 
 ### Package by feature
 
-`employer`, `job`, `location`, `tag`, `feed`, `invitation`, `membership`, `token`, `user`, `audit` — each
+`employer`, `job`, `location`, `tag`, `feed`, `invitation`, `membership`, `token`, `user`, `audit`,
+`account` (local accounts) — each
 owns its entity, repository, service, form objects and controllers. Plus `common` (shared base types, slugs,
-exceptions), `config` (beans), `security` (actors, roles, filter chains), `web` (shell context, view
+exceptions), `config` (beans), `mail` (outbound mail), `security` (actors, roles, filter chains), `web` (shell context, view
 models, error handling), `ojobpub/v1` (the published contract) and `api` (the GraphQL management API).
 
 Controllers are thin: they resolve the actor, call a service, and put view models on the model.
@@ -182,8 +186,9 @@ on purpose — the dev bypass must never reach `/graphql`, so the API is token-a
 `DevBypassGuard` refuses to start if `dev` is combined with `prod`.
 
 **The back-office chain decides at bean creation, not with `@ConditionalOnBean`.** `backOfficeChain`
-takes an `ObjectProvider<ClientRegistrationRepository>`: OIDC login if a repository exists, a
-**fail-closed** chain if not (the app starts and feeds stay served, but nobody gets in). It used to be
+takes an `ObjectProvider<ClientRegistrationRepository>`: OIDC login if a repository exists, form
+login if local accounts are enabled, **both** on one page if both, and a **fail-closed** chain if
+neither (the app starts and feeds stay served, but nobody gets in). It used to be
 two beans behind `@ConditionalOnBean`/`@ConditionalOnMissingBean`, and those conditions run while
 `SecurityConfig` is parsed — *before* auto-configuration registers the repository built from
 `spring.security.oauth2.client.*`. So the closed chain won with a provider configured and nobody could
@@ -245,7 +250,8 @@ auto-configured bean. `OidcLoginTest` and `LockedChainTest` guard both direction
   Memberships stay, and a sole owner is named on the confirmation, not protected. The dev bypass never
   checks it. `OidcLoginTest` covers the sign-in half, `AccountSuspensionTest` the admin half.
 - **Logout** uses `OidcClientInitiatedLogoutSuccessHandler`: it ends the provider's session when the
-  provider advertises an end-session endpoint, and is a local logout otherwise.
+  provider advertises an end-session endpoint, and is a local logout otherwise. With local accounts
+  only, a plain handler ends at `/login?logout`.
 - **Several providers, one button each** (`security/LoginOptions`, §7.19). The buttons are read from
   the registration repository, so a provider is configuration only. They are **sorted by label**,
   because Boot binds registrations into a `HashMap` and the configured order is gone before we see
@@ -286,6 +292,41 @@ a database CHECK that exactly one is set.
 
 The dev bypass resolves to a **real seeded user** (`dev`/`dev@localhost`), not a synthetic principal,
 because invitations and memberships are keyed on a user id.
+
+### Local accounts (`account/`, `mail/`, §2.12)
+
+Email and password, **off unless `app.local-accounts.enabled`**. A local account is the `users` row
+with issuer **`local`** (`LocalAccount.ISSUER`) and, as subject, the `local_accounts` id — never the
+email. `CurrentUserService.identityOf` turns the `LocalUser` principal into an `Identity` and the one
+`signIn` does the rest, so roles, admin rules, suspension and viewing-as all apply unchanged.
+
+- **Sign-up takes no password.** It is chosen on the page the mailed link opens (`/register/complete`),
+  which also verifies the address. Taken at sign-up, anyone could register someone else's address
+  with their own password and have it go live when the owner clicks. So a pending account has
+  `password_hash` null, no `users` row, and cannot sign in — there is no "unverified" login state.
+- **No oracle** (§2.6): `/register`, `/register/resend` and `/password/forgot` always redirect to the
+  same "check your email" page; `LocalAccountService` decides what, if anything, to mail. A taken
+  address gets a "someone tried" mail, never an error. Do not add "address already registered".
+- **Every sign-in failure is one `BadCredentialsException`** (`LocalAuthenticationProvider`): unknown,
+  wrong password, pending, throttled. It is **not a bean** — a `UserDetailsService` or provider bean
+  would also feed a global manager with Spring's default checks; the chain constructs it.
+- **Links** (`account_tokens`): 32 random bytes, stored as **SHA-256** (enough at that entropy, and
+  findable by hash), single-use, 24 h to complete a sign-up, 1 h to reset. Issuing voids earlier ones,
+  and setting a password voids all.
+- **A password change ends every other session.** `LocalUser` carries `signedInAt`;
+  `CurrentUserService.endOfSession()` — read by `SuspendedAccountFilter` on every request, next to
+  suspension — ends a session older than `password_changed_at` at `/login?expired`. The session that
+  changed it is re-authenticated with a fresh `LocalUser` in `AccountController`.
+- **Throttles** (`Throttle`, in memory, per instance): failed sign-ins per address and per client;
+  the mail-sending forms per client. `app.local-accounts.max-attempts`, `max-mails`, `throttle-window`.
+- **Password rule** is `@NewPassword`, a class-level constraint whose validator is a Spring bean
+  reading `min-password-length` — Bean Validation creates validators through Spring, so they can take
+  constructor arguments.
+- **Mail** (`mail/Mailer`) is published as an event and sent `AFTER_COMMIT`: a refused change mails
+  nobody, and a failed delivery is logged without changing the page (which would break the no-oracle
+  rule). Without `spring.mail.host` nothing is sent and a warning says so — never the body, which
+  holds a secret. Templates are plain text, `templates/mail/*.txt`, resolved by `MailTemplateConfig`
+  and rendered in the requester's locale.
 
 ### Invitations and membership
 
@@ -572,7 +613,9 @@ The dark palette comes from `data-bs-theme-base="gray"` on `<html>` in `layout.h
 assumes a signed-in user's sidebar, switcher and user menu. It is served by `security/LoginController`
 and permitted **by path** in the OIDC chain — `loginPage("/login").permitAll()` alone matches the
 login and failure URLs exactly, query string included, so `/login?logout` and `?lang=de` were bounced
-to a bare `/login`. The locked chain does not permit it. There is no password field and never will be.
+to a bare `/login`. The locked chain does not permit it. It has a password field only when local
+accounts are enabled (§2.12); a provider's credentials are never entered here. The account screens
+(`templates/account/`) decorate their own standalone shell, `account/standalone.html`.
 
 Alerts follow Tabler's structure: the icon (`icon alert-icon flex-shrink-0`) is a **direct child** of
 `.alert`, which is itself a flex row with a gap. Wrapped in an extra `d-flex` div the text sits against
@@ -646,6 +689,8 @@ TEST_DB=sqlite ./mvnw test                   # all, on SQLite; no server
 ./mvnw test -Dtest=ApiLimitsTest             # depth, rate and body limits, with the ceilings lowered
 ./mvnw test -Dtest=PeopleScreenTest          # the People screen as an editor, not an admin
 ./mvnw test -Dtest=OidcLoginTest             # real sign-in without the bypass: PKCE, accounts, logout
+./mvnw test -Dtest=LocalAccountTest          # email/password: sign-up, links, sessions, no oracle, throttle
+./mvnw test -Dtest=LocalAccountsWithProvidersTest # the form beside a provider; LocalAccountsDisabledTest without
 ./mvnw test -Dtest=LockedChainTest           # no provider, no dev: the back-office is closed
 ./mvnw test -Dtest=LoginProvidersTest        # several providers: one button each, sorted, branded
 ./mvnw test -Dtest=LoginOptionsTest          # provider check (OIDC + GitHub) and brand by host; no Spring
@@ -690,7 +735,9 @@ credential — the seed runs wherever the dev or test profile starts. Keep that 
 files**, or the tests lose it on one database.
 
 Test configuration lives in `src/test/resources/application-test.yml` (profile `test`), pointing at
-`publisher_test` and starting sessions in admin mode. **It must stay profile-specific.** A plain
+`publisher_test` and starting sessions in admin mode. Its Hikari pool is **small and shrinks when idle**: Spring caches a
+context per distinct test configuration, each with its own pool, and full default pools once
+exhausted MariaDB's `max_connections` — "Too many connections" in whichever class started next. **It must stay profile-specific.** A plain
 `src/test/resources/application.yml` loses to `src/main/resources/application.properties`, so its
 overrides are silently ignored.
 

@@ -1,0 +1,8 @@
+[(#{mail.greeting(${name})})]
+
+[(#{mail.signupExisting.body})]
+
+[(#{mail.signupExisting.login})] [(${loginUrl})]
+[(#{mail.signupExisting.forgot})] [(${forgotUrl})]
+
+[(#{mail.notYou})]

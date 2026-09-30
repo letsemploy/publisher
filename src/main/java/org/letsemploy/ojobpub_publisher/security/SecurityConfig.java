@@ -1,26 +1,39 @@
 package org.letsemploy.ojobpub_publisher.security;
 
+import org.letsemploy.ojobpub_publisher.account.LocalAccountProperties;
+import org.letsemploy.ojobpub_publisher.account.LocalAccountRepo;
+import org.letsemploy.ojobpub_publisher.account.LocalAuthenticationProvider;
 import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.client.oidc.web.logout.OidcClientInitiatedLogoutSuccessHandler;
 import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
 import org.springframework.security.oauth2.client.web.DefaultOAuth2AuthorizationRequestResolver;
 import org.springframework.security.oauth2.client.web.OAuth2AuthorizationRequestCustomizers;
 import org.springframework.security.oauth2.client.web.OAuth2AuthorizationRequestRedirectFilter;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.logout.LogoutSuccessHandler;
+import org.springframework.security.web.authentication.logout.SimpleUrlLogoutSuccessHandler;
 import org.springframework.security.web.servlet.util.matcher.PathPatternRequestMatcher;
 
 /**
  * The filter chains of spec 9.4, in order: the management API (bearer token),
- * the public feed (anonymous), and the back-office - which is the OIDC login
- * chain, the development bypass under the dev profile, or a closed chain when no
- * identity provider is configured.
+ * the public feed (anonymous), and the back-office - which is sign-in through
+ * identity providers, local accounts or both, the development bypass under the
+ * dev profile, or a closed chain when there is no way to sign in at all.
  */
 @Configuration
+@EnableConfigurationProperties(LocalAccountProperties.class)
 public class SecurityConfig {
+
+    /** The account screens a signed-out visitor must reach (spec 7.24). */
+    private static final String[] ACCOUNT = {
+            "/register", "/register/**", "/password/forgot", "/password/reset", "/password/sent"
+    };
 
     private static final String[] PUBLIC = {
             "/ojobpub/**", "/actuator/health/**", "/actuator/info",
@@ -90,8 +103,8 @@ public class SecurityConfig {
     }
 
     /**
-     * The back-office outside development: OIDC login if an identity provider is
-     * configured, and closed if not.
+     * The back-office outside development: sign-in if an identity provider is
+     * configured or local accounts are enabled (spec 2.12), and closed if neither.
      *
      * <p>One bean deciding at creation time, not two behind
      * {@code @ConditionalOnBean}/{@code @ConditionalOnMissingBean}. Those
@@ -107,14 +120,24 @@ public class SecurityConfig {
     @org.springframework.core.annotation.Order(2)
     SecurityFilterChain backOfficeChain(HttpSecurity http,
                                         ObjectProvider<ClientRegistrationRepository> registrations,
-                                        CurrentUserService currentUserService)
+                                        CurrentUserService currentUserService,
+                                        LocalAccountProperties localAccounts,
+                                        LocalAccountRepo accounts,
+                                        PasswordEncoder passwordEncoder)
             throws Exception {
         ClientRegistrationRepository repository = registrations.getIfAvailable();
-        return repository == null ? locked(http) : oidcLogin(http, repository, currentUserService);
+        LocalAuthenticationProvider local = localAccounts.enabled()
+                ? new LocalAuthenticationProvider(accounts, passwordEncoder, localAccounts)
+                : null;
+        return repository == null && local == null
+                ? locked(http)
+                : signIn(http, repository, local, currentUserService);
     }
 
     /**
-     * OIDC authorization-code login, with PKCE (spec 2.2).
+     * Sign-in: OIDC authorization-code login with PKCE for the configured
+     * providers (spec 2.2), a form for local accounts (spec 2.12), or both on one
+     * page (spec 7.19).
      *
      * <p>Spring adds PKCE by itself only for a public client. This one is
      * confidential - it holds a client secret - and the spec requires PKCE all the
@@ -122,45 +145,71 @@ public class SecurityConfig {
      * not. Logout ends the provider's session too where the provider advertises
      * an end-session endpoint, and falls back to a local logout where it does not.
      */
-    private SecurityFilterChain oidcLogin(HttpSecurity http, ClientRegistrationRepository registrations,
-                                          CurrentUserService currentUserService)
+    private SecurityFilterChain signIn(HttpSecurity http, ClientRegistrationRepository registrations,
+                                       LocalAuthenticationProvider local,
+                                       CurrentUserService currentUserService)
             throws Exception {
-        // Refuse a provider that would sign people in as nobody (spec 2.2) - at
-        // startup, rather than as a login that completes and then goes nowhere.
-        LoginOptions.requireSupportedProviders(registrations);
-
-        DefaultOAuth2AuthorizationRequestResolver authorizationRequests =
-                new DefaultOAuth2AuthorizationRequestResolver(registrations,
-                        OAuth2AuthorizationRequestRedirectFilter.DEFAULT_AUTHORIZATION_REQUEST_BASE_URI);
-        authorizationRequests.setAuthorizationRequestCustomizer(
-                OAuth2AuthorizationRequestCustomizers.withPkce());
-
         // Signing out ends on our sign-in page, saying so (spec 7.19) - via the
         // provider when it advertises an end-session endpoint, directly when not.
-        OidcClientInitiatedLogoutSuccessHandler providerLogout =
-                new OidcClientInitiatedLogoutSuccessHandler(registrations);
-        providerLogout.setPostLogoutRedirectUri("{baseUrl}/login?logout");
-        providerLogout.setDefaultTargetUrl("/login?logout");
+        LogoutSuccessHandler logoutSuccess;
+        if (registrations != null) {
+            // Refuse a provider that would sign people in as nobody (spec 2.2) - at
+            // startup, rather than as a login that completes and then goes nowhere.
+            LoginOptions.requireSupportedProviders(registrations);
 
-        http.authorizeHttpRequests(a -> a
-                        .requestMatchers(PUBLIC).permitAll()
-                        // By path, so every variant is reachable - ?error, ?logout,
-                        // ?lang=de. The configurer's own permitAll() matches the
-                        // login and failure URLs exactly, query string included, and
-                        // bounced /login?logout back to a bare /login.
-                        .requestMatchers("/login").permitAll()
-                        .anyRequest().authenticated())
-                // Our own sign-in page rather than Spring's generated one, which is
-                // English only and unstyled under this CSP (spec 7.19). It is also
-                // where a failed sign-in lands: /login?error.
-                .oauth2Login(login -> login
-                        .loginPage("/login")
-                        .authorizationEndpoint(a -> a.authorizationRequestResolver(authorizationRequests))
-                        // Used only for providers without OpenID Connect - which, after
-                        // the check above, means GitHub (spec 2.2).
-                        .userInfoEndpoint(u -> u.userService(new GitHubUserService()))
-                        .defaultSuccessUrl("/", true))
-                .logout(logout -> logout.logoutSuccessHandler(providerLogout))
+            DefaultOAuth2AuthorizationRequestResolver authorizationRequests =
+                    new DefaultOAuth2AuthorizationRequestResolver(registrations,
+                            OAuth2AuthorizationRequestRedirectFilter.DEFAULT_AUTHORIZATION_REQUEST_BASE_URI);
+            authorizationRequests.setAuthorizationRequestCustomizer(
+                    OAuth2AuthorizationRequestCustomizers.withPkce());
+
+            OidcClientInitiatedLogoutSuccessHandler providerLogout =
+                    new OidcClientInitiatedLogoutSuccessHandler(registrations);
+            providerLogout.setPostLogoutRedirectUri("{baseUrl}/login?logout");
+            providerLogout.setDefaultTargetUrl("/login?logout");
+            logoutSuccess = providerLogout;
+
+            // Our own sign-in page rather than Spring's generated one, which is
+            // English only and unstyled under this CSP (spec 7.19). It is also
+            // where a failed sign-in lands: /login?error.
+            http.oauth2Login(login -> login
+                    .loginPage("/login")
+                    .authorizationEndpoint(a -> a.authorizationRequestResolver(authorizationRequests))
+                    // Used only for providers without OpenID Connect - which, after
+                    // the check above, means GitHub (spec 2.2).
+                    .userInfoEndpoint(u -> u.userService(new GitHubUserService()))
+                    .defaultSuccessUrl("/", true));
+        } else {
+            SimpleUrlLogoutSuccessHandler plainLogout = new SimpleUrlLogoutSuccessHandler();
+            plainLogout.setDefaultTargetUrl("/login?logout");
+            logoutSuccess = plainLogout;
+        }
+
+        if (local != null) {
+            // Email and password on the same page (spec 2.12, 7.19). Every failure
+            // lands on the one ?error, whatever the reason.
+            http.authenticationProvider(local)
+                    .formLogin(form -> form
+                            .loginPage("/login")
+                            .loginProcessingUrl("/login")
+                            .usernameParameter("email")
+                            .failureUrl("/login?error")
+                            .defaultSuccessUrl("/", true));
+        }
+
+        http.authorizeHttpRequests(a -> {
+                    a.requestMatchers(PUBLIC).permitAll()
+                            // By path, so every variant is reachable - ?error, ?logout,
+                            // ?lang=de. The configurer's own permitAll() matches the
+                            // login and failure URLs exactly, query string included, and
+                            // bounced /login?logout back to a bare /login.
+                            .requestMatchers("/login").permitAll();
+                    if (local != null) {
+                        a.requestMatchers(ACCOUNT).permitAll();
+                    }
+                    a.anyRequest().authenticated();
+                })
+                .logout(logout -> logout.logoutSuccessHandler(logoutSuccess))
                 // After the session's authentication is restored and before anything
                 // is authorised: a suspended account goes no further (spec 2.11).
                 .addFilterAfter(new SuspendedAccountFilter(currentUserService),

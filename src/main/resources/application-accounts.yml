@@ -1,0 +1,10 @@
+# Local accounts without an identity provider (profile group: accounts = local +
+# this file), so sign-up, the mailed links and password reset can be tried
+# locally: ./mvnw spring-boot:run -Dspring-boot.run.profiles=accounts
+#
+# Mail goes to Mailpit from docker-compose.yml (http://localhost:8026), as set in
+# application-local.yml. No captcha: the forms work without one, and a warning
+# at startup says so (spec 9.5).
+app:
+  local-accounts:
+    enabled: true

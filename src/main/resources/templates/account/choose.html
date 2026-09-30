@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<!--
+  Choose a password from a mailed link (spec 7.24): completing a sign-up, or a
+  reset. The token travels in a hidden field; the passwords are never sent back.
+-->
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{account/standalone}">
+<head><title th:text="${reset} ? #{account.choose.reset} : #{account.choose.title}">Choose your password</title></head>
+<body>
+<div layout:fragment="card">
+    <h1 class="h2 text-center mb-3" th:text="${reset} ? #{account.choose.reset} : #{account.choose.title}">Choose your password</h1>
+    <div th:replace="~{fragments/form :: errorSummary(${errors})}"></div>
+    <form th:action="${reset} ? @{/password/reset} : @{/register/complete}" method="post" novalidate>
+        <input type="hidden" name="token" th:value="${form.token}"/>
+        <th:block th:replace="~{account/fragments :: newPassword}"></th:block>
+        <button type="submit" class="btn btn-primary w-100" th:text="#{account.choose.submit}">Save password</button>
+    </form>
+</div>
+</body>
+</html>

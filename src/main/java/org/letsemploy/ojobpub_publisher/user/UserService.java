@@ -163,8 +163,14 @@ public class UserService {
         }
     }
 
-    /** "accounts.google.com" rather than the full issuer; "development" for the seed. */
+    /**
+     * "accounts.google.com" rather than the full issuer; "email and password" for a
+     * local account (spec 2.12); "development" for the seed.
+     */
     static String provider(String issuer) {
+        if (org.letsemploy.ojobpub_publisher.account.LocalAccount.ISSUER.equals(issuer)) {
+            return "email and password";
+        }
         try {
             String host = URI.create(issuer).getHost();
             return host != null ? host : "development";

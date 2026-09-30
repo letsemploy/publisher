@@ -128,6 +128,11 @@
                         <svg th:replace="~{fragments/icon :: i('history','icon dropdown-item-icon')}"></svg>
                         <span th:text="#{activity.mine}">My activity</span>
                     </a>
+                    <!-- Only a local account has a password here (spec 7.24). -->
+                    <a class="dropdown-item" th:if="${ui.passwordChangeable}" th:href="@{/account/password}">
+                        <svg th:replace="~{fragments/icon :: i('lock','icon dropdown-item-icon')}"></svg>
+                        <span th:text="#{account.menu.password}">Change password</span>
+                    </a>
                     <!-- Only for an admin acting as themselves (spec 2.10); a POST, so the
                          switch is a deliberate act and the audit log can record it. -->
                     <form th:if="${ui.adminModeAvailable}" method="post"

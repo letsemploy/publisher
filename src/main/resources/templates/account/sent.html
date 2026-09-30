@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<!-- The one page after sign-up, resend and forgot, whatever happened (spec 2.12). -->
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{account/standalone}">
+<head><title th:text="#{account.sent.title}">Check your email</title></head>
+<body>
+<div layout:fragment="card">
+    <h1 class="h2 text-center mb-3" th:text="#{account.sent.title}">Check your email</h1>
+    <p th:text="${reset} ? #{account.sent.reset} : #{account.sent.register}">We have sent a message.</p>
+    <p class="text-secondary mb-0">
+        <span th:text="#{account.sent.nothing}">Nothing arrived?</span>
+        <a th:href="${reset} ? @{/password/forgot} : @{/register/resend}"
+           th:text="#{account.address.submit}">Send the link</a>
+    </p>
+</div>
+</body>
+</html>

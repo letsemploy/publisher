@@ -1,0 +1,9 @@
+[(#{mail.greeting(${name})})]
+
+[(#{mail.reset.body})]
+
+[(${link})]
+
+[(#{mail.reset.expiry})]
+
+[(#{mail.notYou})]
