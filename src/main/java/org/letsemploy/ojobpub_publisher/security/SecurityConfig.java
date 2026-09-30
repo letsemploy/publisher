@@ -1,5 +1,6 @@
 package org.letsemploy.ojobpub_publisher.security;
 
+import org.letsemploy.ojobpub_publisher.account.CaptchaCheck;
 import org.letsemploy.ojobpub_publisher.account.LocalAccountProperties;
 import org.letsemploy.ojobpub_publisher.account.LocalAccountRepo;
 import org.letsemploy.ojobpub_publisher.account.LocalAuthenticationProvider;
@@ -18,6 +19,11 @@ import org.springframework.security.oauth2.client.web.OAuth2AuthorizationRequest
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.logout.LogoutSuccessHandler;
 import org.springframework.security.web.authentication.logout.SimpleUrlLogoutSuccessHandler;
+import org.springframework.security.web.header.writers.DelegatingRequestMatcherHeaderWriter;
+import org.springframework.security.web.header.writers.StaticHeadersWriter;
+import org.springframework.security.web.util.matcher.NegatedRequestMatcher;
+import org.springframework.security.web.util.matcher.OrRequestMatcher;
+import org.springframework.security.web.util.matcher.RequestMatcher;
 import org.springframework.security.web.servlet.util.matcher.PathPatternRequestMatcher;
 
 /**
@@ -29,6 +35,20 @@ import org.springframework.security.web.servlet.util.matcher.PathPatternRequestM
 @Configuration
 @EnableConfigurationProperties(LocalAccountProperties.class)
 public class SecurityConfig {
+
+    /**
+     * Self-hosted assets only, so the policy can be genuinely strict (spec 9.4). No
+     * 'unsafe-inline' and no 'unsafe-eval': all behaviour lives in a module file,
+     * so nothing evaluates code from a string.
+     */
+    private static final String POLICY = "default-src 'self'; img-src 'self' data:; "
+            + "style-src 'self'; script-src 'self'; base-uri 'self'; frame-ancestors 'none'";
+
+    /** The forms carrying the captcha, and the only pages whose policy it widens (spec 7.2). */
+    private static final RequestMatcher CAPTCHA_PAGES = new OrRequestMatcher(
+            PathPatternRequestMatcher.withDefaults().matcher("/register"),
+            PathPatternRequestMatcher.withDefaults().matcher("/register/resend"),
+            PathPatternRequestMatcher.withDefaults().matcher("/password/forgot"));
 
     /** The account screens a signed-out visitor must reach (spec 7.24). */
     private static final String[] ACCOUNT = {
@@ -123,7 +143,8 @@ public class SecurityConfig {
                                         CurrentUserService currentUserService,
                                         LocalAccountProperties localAccounts,
                                         LocalAccountRepo accounts,
-                                        PasswordEncoder passwordEncoder)
+                                        PasswordEncoder passwordEncoder,
+                                        CaptchaCheck captcha)
             throws Exception {
         ClientRegistrationRepository repository = registrations.getIfAvailable();
         LocalAuthenticationProvider local = localAccounts.enabled()
@@ -131,7 +152,7 @@ public class SecurityConfig {
                 : null;
         return repository == null && local == null
                 ? locked(http)
-                : signIn(http, repository, local, currentUserService);
+                : signIn(http, repository, local, currentUserService, captcha);
     }
 
     /**
@@ -147,7 +168,8 @@ public class SecurityConfig {
      */
     private SecurityFilterChain signIn(HttpSecurity http, ClientRegistrationRepository registrations,
                                        LocalAuthenticationProvider local,
-                                       CurrentUserService currentUserService)
+                                       CurrentUserService currentUserService,
+                                       CaptchaCheck captcha)
             throws Exception {
         // Signing out ends on our sign-in page, saying so (spec 7.19) - via the
         // provider when it advertises an end-session endpoint, directly when not.
@@ -214,14 +236,37 @@ public class SecurityConfig {
                 // is authorised: a suspended account goes no further (spec 2.11).
                 .addFilterAfter(new SuspendedAccountFilter(currentUserService),
                         org.springframework.security.web.authentication.AnonymousAuthenticationFilter.class)
-                .headers(h -> h.contentSecurityPolicy(csp ->
-                        // Self-hosted assets only, so the policy can be genuinely strict (spec 9.4).
-                        // No 'unsafe-inline' and no 'unsafe-eval': all behaviour lives in
-                        // a module file, so nothing evaluates code from a string (spec 9.4).
-                        csp.policyDirectives("default-src 'self'; img-src 'self' data:; "
-                                + "style-src 'self'; script-src 'self'; "
-                                + "base-uri 'self'; frame-ancestors 'none'")));
+                .headers(h -> {
+                    String additions = local == null ? "" : captcha.policyAdditions();
+                    if (additions.isEmpty()) {
+                        h.contentSecurityPolicy(csp -> csp.policyDirectives(POLICY));
+                        return;
+                    }
+                    // A hosted captcha's widget needs more than 'self', on its own pages
+                    // alone (spec 7.2); every other page keeps the strict policy.
+                    h.addHeaderWriter(new DelegatingRequestMatcherHeaderWriter(CAPTCHA_PAGES,
+                                    new StaticHeadersWriter("Content-Security-Policy", widened(additions))))
+                            .addHeaderWriter(new DelegatingRequestMatcherHeaderWriter(
+                                    new NegatedRequestMatcher(CAPTCHA_PAGES),
+                                    new StaticHeadersWriter("Content-Security-Policy", POLICY)));
+                });
         return http.build();
+    }
+
+    /** The strict policy, with the captcha's directives replacing or adding to its own. */
+    static String widened(String additions) {
+        java.util.Map<String, String> directives = new java.util.LinkedHashMap<>();
+        for (String policy : new String[]{POLICY, additions}) {
+            for (String directive : policy.split(";")) {
+                String trimmed = directive.trim();
+                if (!trimmed.isEmpty()) {
+                    int space = trimmed.indexOf(' ');
+                    directives.put(trimmed.substring(0, space), trimmed.substring(space + 1));
+                }
+            }
+        }
+        return String.join("; ", directives.entrySet().stream()
+                .map(e -> e.getKey() + " " + e.getValue()).toList());
     }
 
     /**

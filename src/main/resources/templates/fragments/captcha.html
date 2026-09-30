@@ -1,7 +1,29 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
 <body>
-<!-- The captcha of the forms that send mail (spec 2.12). Empty until one is configured. -->
-<th:block th:fragment="widget"></th:block>
+<!--
+  The captcha of the forms that send mail (spec 2.12), for whichever provider is
+  configured; nothing without one. The pages carrying it get a content security
+  policy widened for that provider alone (spec 7.2). Scripts load from src, never
+  inline, and after the markup they attach to.
+-->
+<th:block th:fragment="widget" th:with="captcha=${@captchaCheck}">
+    <div class="mb-3" id="captcha" th:if="${captcha.provider() != null}">
+        <th:block th:if="${captcha.provider() == 'hcaptcha'}">
+            <div class="h-captcha" th:attr="data-sitekey=${captcha.siteKey()}"></div>
+            <script src="https://js.hcaptcha.com/1/api.js" async defer></script>
+        </th:block>
+        <th:block th:if="${captcha.provider() == 'mcaptcha'}">
+            <label id="mcaptcha__token-label" for="mcaptcha__token"
+                   th:attr="data-mcaptcha_url=${captcha.widgetUrl()}" th:text="#{captcha.label}">I am not a robot</label>
+            <input type="text" name="mcaptcha__token" id="mcaptcha__token" required/>
+            <div id="mcaptcha__widget-container" class="captcha-frame"></div>
+            <!-- Vendored (spec 7.2); it starts at once, so it comes after the elements above. -->
+            <script th:src="@{/vendor/mcaptcha-glue.js}"></script>
+        </th:block>
+        <div class="invalid-feedback d-block" th:if="${fieldErrors?.get('captcha') != null}"
+             th:text="${fieldErrors.get('captcha')}"></div>
+    </div>
+</th:block>
 </body>
 </html>

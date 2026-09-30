@@ -327,6 +327,16 @@ email. `CurrentUserService.identityOf` turns the `LocalUser` principal into an `
   rule). Without `spring.mail.host` nothing is sent and a warning says so — never the body, which
   holds a secret. Templates are plain text, `templates/mail/*.txt`, resolved by `MailTemplateConfig`
   and rendered in the requester's locale.
+- **Captcha** (`CaptchaCheck`, `com.moser-systems:captcha-spring-boot-starter`): hCaptcha or mCaptcha by
+  `captcha.provider`, **off by default** (`captcha.enabled=false`, because the starter would otherwise
+  start an hCaptcha verifier with no keys). On the three forms that mail a typed address; without one
+  they work and startup warns. `fragments/captcha :: widget` renders the provider's markup.
+  - **CSP is widened on those pages only** (`SecurityConfig.CAPTCHA_PAGES`, §7.2): hCaptcha's
+    `api.js` cannot be self-hosted, so script/frame/style/connect-src add `*.hcaptcha.com` there;
+    mCaptcha's glue is **vendored** (`@mcaptcha/vanilla-glue` → `vendor/mcaptcha-glue.js`) and only
+    `frame-src` gains the instance. Every other page keeps the strict policy.
+  - The mCaptcha glue **runs as soon as it loads**, so its script tag must follow the elements it
+    looks up by id (`mcaptcha__token-label`, `mcaptcha__widget-container`).
 
 ### Invitations and membership
 
@@ -691,6 +701,7 @@ TEST_DB=sqlite ./mvnw test                   # all, on SQLite; no server
 ./mvnw test -Dtest=OidcLoginTest             # real sign-in without the bypass: PKCE, accounts, logout
 ./mvnw test -Dtest=LocalAccountTest          # email/password: sign-up, links, sessions, no oracle, throttle
 ./mvnw test -Dtest=LocalAccountsWithProvidersTest # the form beside a provider; LocalAccountsDisabledTest without
+./mvnw test -Dtest=HCaptchaTest              # widget, refusal, CSP widened on captcha pages only; MCaptchaTest too
 ./mvnw test -Dtest=LockedChainTest           # no provider, no dev: the back-office is closed
 ./mvnw test -Dtest=LoginProvidersTest        # several providers: one button each, sorted, branded
 ./mvnw test -Dtest=LoginOptionsTest          # provider check (OIDC + GitHub) and brand by host; no Spring

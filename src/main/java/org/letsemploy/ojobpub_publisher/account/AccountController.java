@@ -42,14 +42,17 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 public class AccountController {
 
     private final LocalAccountService service;
+    private final CaptchaCheck captcha;
     private final CurrentUserService currentUserService;
     private final MessageSource messages;
     private final Throttle mailsPerClient;
     private final int minPasswordLength;
 
-    public AccountController(LocalAccountService service, CurrentUserService currentUserService,
+    public AccountController(LocalAccountService service, CaptchaCheck captcha,
+                             CurrentUserService currentUserService,
                              MessageSource messages, LocalAccountProperties properties) {
         this.service = service;
+        this.captcha = captcha;
         this.currentUserService = currentUserService;
         this.messages = messages;
         this.mailsPerClient = new Throttle(properties.maxMails(), properties.throttleWindow(), Clock.systemUTC());
@@ -91,6 +94,7 @@ public class AccountController {
             return "account/register";
         }
         try {
+            captcha.verify(request);
             service.signUp(form, locale());
         } catch (ValidationFailure e) {
             errors(model, e);
@@ -131,6 +135,7 @@ public class AccountController {
             return "account/address";
         }
         try {
+            captcha.verify(request);
             service.resend(form, locale());
         } catch (ValidationFailure e) {
             errors(model, e);
@@ -156,6 +161,7 @@ public class AccountController {
             return "account/address";
         }
         try {
+            captcha.verify(request);
             service.forgot(form, locale());
         } catch (ValidationFailure e) {
             errors(model, e);

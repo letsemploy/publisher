@@ -132,6 +132,12 @@
 			<groupId>org.hibernate.orm</groupId>
 			<artifactId>hibernate-community-dialects</artifactId>
 		</dependency>
+		<!-- The captcha of the forms that mail a typed address (spec 2.12): hCaptcha or mCaptcha. -->
+		<dependency>
+			<groupId>com.moser-systems</groupId>
+			<artifactId>captcha-spring-boot-starter</artifactId>
+			<version>0.1.0</version>
+		</dependency>
 		<!-- Verification and password-reset mail for local accounts (spec 2.12). -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>

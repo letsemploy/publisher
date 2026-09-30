@@ -38,3 +38,8 @@
     line-height: 1.5;
     tab-size: 2;
 }
+
+/* mCaptcha frames its widget at 100% of this box (spec 2.12). */
+.captcha-frame {
+    height: 5.5rem;
+}

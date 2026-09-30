@@ -114,6 +114,21 @@ server:
         same-site: lax
   shutdown: graceful
 
+# The captcha of the sign-up and forgot-password forms (spec 2.12): hCaptcha, or a
+# self-hosted mCaptcha. Off unless enabled; local accounts without one start with
+# a warning. The pages carrying it get a policy widened for that provider alone.
+# captcha:
+#   enabled: true
+#   provider: mcaptcha                  # or hcaptcha
+#   mcaptcha:
+#     url: https://mcaptcha.example.com
+#     site-key: ${MCAPTCHA_SITEKEY}
+#     secret: ${MCAPTCHA_SECRET}
+#   hcaptcha:
+#     site-key: ${HCAPTCHA_SITEKEY}
+#     secret: ${HCAPTCHA_SECRET}
+#     hostname: publisher.example.com   # reject tokens solved elsewhere
+
 spring:
   # --- Database: MariaDB ------------------------------------------------------
   # The database must exist; its tables are created and upgraded on start.

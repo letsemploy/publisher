@@ -28,6 +28,8 @@ copy "$MODULES/@tabler/core/dist/css/tabler.min.css" tabler.min.css
 copy "$MODULES/@tabler/core/dist/css/tabler-themes.min.css" tabler-themes.min.css
 copy "$MODULES/@tabler/core/dist/js/tabler.min.js"   tabler.min.js
 copy "$MODULES/htmx.org/dist/htmx.min.js"            htmx.min.js
+# mCaptcha's widget glue (spec 2.12, 7.2): used only where mCaptcha is the configured captcha.
+copy "$MODULES/@mcaptcha/vanilla-glue/dist/index.js" mcaptcha-glue.js
 
 # The sprite carries only the icons actually referenced, from BOTH sources:
 # templates use fragments/icon, and the sidebar's icon names live in Java.
