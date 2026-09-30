@@ -102,6 +102,7 @@ the text such as §2.6 means the same thing: find the chapter below, then the se
   - [9.3 Persistence](spec/09-technical-shape.md#93-persistence)
   - [9.4 Security configuration](spec/09-technical-shape.md#94-security-configuration)
   - [9.5 Configuration](spec/09-technical-shape.md#95-configuration)
+  - [9.6 Code conventions](spec/09-technical-shape.md#96-code-conventions)
 - **[10. Non-functional requirements](spec/10-non-functional.md)**
 - **[11. Management API](spec/11-management-api.md)**
   - [11.1 Purpose](spec/11-management-api.md#111-purpose)

@@ -21,6 +21,8 @@
 ## 8.2 Validation and errors
 
 - Validation runs on the server. Client-side validation is a convenience and never the only check.
+- Input shape is declared with Bean Validation and checked in the services; rules needing the
+  database or the actor are written out there (§9.6).
 - Field errors appear beside their field; form-level errors appear at the top of the form.
 - Flash messages after a redirect are used for success and for errors that no longer have a form.
 - Unexpected errors render a friendly error page with a correlation id, and the detail goes to the log.

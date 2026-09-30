@@ -154,3 +154,28 @@ not request `openid` stops the application at startup (§2.2). For local work th
 
 The database is MariaDB unless the `sqlite` profile is active (§9.3), in which case the file is
 `app.sqlite.path` (`APP_SQLITE_PATH`), default `data/ojobpub.db`, and its directory is created on start.
+
+## 9.6 Code conventions
+
+Plain Java first. Lombok is **reduced to accessors on mutable classes**, and everything else is
+written out, so that what a class does is what it says.
+
+- **Values are records**: view models, the published DTOs (§9.2), service results and small carriers.
+  A derived property stays on the record as a method; templates read record accessors directly.
+- **Lombok is allowed only as `@Getter`, `@Setter` and `@NoArgsConstructor`**, on JPA entities (which
+  cannot be records) and on the few mutable classes that bind a form or hold session state. `@Data`,
+  `@Value`, `@RequiredArgsConstructor`, `@AllArgsConstructor`, `@Slf4j` and generated
+  `equals`/`hashCode`/`toString` are not used. Generated equality on an entity is wrong in any case.
+- **Spring beans take an explicit constructor.** Injection is constructor injection and never a field;
+  a configured value (`@Value`) is a constructor parameter, so every injected field is `final`.
+- **Loggers are plain SLF4J fields**, `private static final Logger log = LoggerFactory.getLogger(…)`.
+- **Input shape is validated with Jakarta Bean Validation** — required, length, format, and
+  cross-field orderings as class-level constraints — on the input a **service** receives, and checked
+  by that service. The form and the management API (§11) reach the same service, so they cannot
+  validate differently. Violations are turned into the same field errors as every other refusal
+  (§8.2, §11.4), keyed by the field the user typed into, and their messages are message-bundle keys,
+  so they are translated (§8.1).
+- **Rules are not constraints.** Whatever needs the database, the acting user or the current state —
+  duplicates, another employer's records, quotas (§8.4), the last owner (§2.7), state transitions and
+  publication readiness (§4) — stays written out in the service, as does parsing a raw string into an
+  id, a date or an enum.

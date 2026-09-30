@@ -617,8 +617,19 @@ enforced it.) Controllers pass message *keys* as flash attributes and templates 
 
 ### Conventions
 
-- Lombok throughout: `@Getter/@Setter/@Value/@Data/@Slf4j`, and `@RequiredArgsConstructor` for
-  **constructor injection**. There is no `@Autowired` field injection anywhere; keep it that way.
+- **Less Lombok, plain Java** (§9.6). Values are **records** — view models, `ojobpub/v1/dto`, service
+  results. Lombok survives only as `@Getter/@Setter/@NoArgsConstructor` on JPA entities and the few
+  mutable classes (`JobForm`, `EmployerContext`); no `@Data`, `@Value`, `@RequiredArgsConstructor`,
+  `@Slf4j`. Beans have an **explicit constructor** — constructor injection, never an `@Autowired`
+  field, `@Value` settings as constructor parameters. Loggers are
+  `private static final Logger log = LoggerFactory.getLogger(X.class)`.
+  `Actor` stays a class with getters: as a record every `getId()`/`isAdmin()` call would be renamed.
+- **Input shape is Bean Validation, checked in the service** (`common/validation/InputValidator`), so
+  the form and the API share it. `check` throws `ValidationFailure`, never
+  `ConstraintViolationException`, with the **same field keys** as before — `ApiErrors` maps them.
+  Messages are `{validation.*}` bundle keys, in both bundles. Rules needing the database, the actor or
+  the state (duplicates, `requireOwn`, quotas, last owner, readiness) stay hand-written, and so do
+  parse failures.
 - `-parameters` compilation is expected (Spring Data and MVC parameter binding rely on it).
 
 ## Tests
