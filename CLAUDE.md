@@ -724,6 +724,11 @@ enforced it.) Controllers pass message *keys* as flash attributes and templates 
   the state (duplicates, `requireOwn`, quotas, last owner, readiness) stay hand-written, and so do
   parse failures.
 - `-parameters` compilation is expected (Spring Data and MVC parameter binding rely on it).
+- **`CHANGELOG.md`** follows Keep a Changelog 1.1.0. A change someone running the publisher, or
+  reading its feed or API, would notice adds a line under `## [Unreleased]` in the same commit;
+  dependency bumps, CI and refactors do not. A release renames that heading to
+  `## [x.y.z] - YYYY-MM-DD` and adds its compare link. v0.4.0 was never tagged, so its links use the
+  release commit `0ff137f`.
 
 ## Tests
 

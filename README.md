@@ -104,6 +104,7 @@ and what each test guards.
 
 [`docs/SPEC.md`](docs/SPEC.md) is the index of the full specification in `docs/spec/`: roles, the
 job lifecycle, the feed contract, the API and every configuration setting.
+[`CHANGELOG.md`](CHANGELOG.md) lists the notable changes of each release.
 
 ## License
 
