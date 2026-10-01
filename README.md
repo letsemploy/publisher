@@ -2,7 +2,7 @@
 
 [![Build](https://github.com/letsemploy/publisher/actions/workflows/build.yml/badge.svg)](https://github.com/letsemploy/publisher/actions/workflows/build.yml)
 [![Container image](https://github.com/letsemploy/publisher/actions/workflows/container.yml/badge.svg)](https://github.com/letsemploy/publisher/actions/workflows/container.yml)
-[![Release](https://img.shields.io/github/v/release/letsemploy/publisher)](https://github.com/letsemploy/publisher/releases)
+[![Release](https://img.shields.io/github/v/tag/letsemploy/publisher)](https://github.com/letsemploy/publisher/tag)
 [![License](https://img.shields.io/github/license/letsemploy/publisher)](LICENSE)
 
 Manage your organisation's job postings and publish them as an
@@ -35,7 +35,7 @@ job boards and aggregators can read without an API key.
 ## Run it
 
 The image is published at `ghcr.io/letsemploy/publisher` for `amd64` and `arm64`, tagged per release
-(`0.8.0`, `0.8`), `latest` for the newest release and `main` for the development build. The smallest
+and `latest` for the newest release and `main` for the development build. The smallest
 installation uses SQLite, a single file on a volume, so there is no database server to run:
 
 ```bash
