@@ -8,6 +8,12 @@ Section numbers such as §5.6 refer to the specification in [`docs/SPEC.md`](doc
 
 ## [Unreleased]
 
+### Added
+
+- Webserver configuration for a permalink, on its edit page: a redirect and a reverse proxy from
+  `/.well-known/ojobpub.json` on the employer's own domain, for Apache, nginx and Caddy, ready to
+  copy (§7.23).
+
 ## [0.9.0] - 2026-09-30
 
 ### Added

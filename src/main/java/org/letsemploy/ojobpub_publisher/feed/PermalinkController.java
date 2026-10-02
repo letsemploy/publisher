@@ -12,6 +12,7 @@ import org.letsemploy.ojobpub_publisher.web.view.Crumb;
 import org.letsemploy.ojobpub_publisher.web.view.FieldError;
 import org.letsemploy.ojobpub_publisher.web.view.PageMeta;
 import org.letsemploy.ojobpub_publisher.web.view.PermalinkFormView;
+import org.letsemploy.ojobpub_publisher.web.view.WebserverSnippet;
 import org.springframework.context.MessageSource;
 import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.stereotype.Controller;
@@ -54,7 +55,8 @@ public class PermalinkController {
     @GetMapping("/create")
     public String createForm(Model model) {
         Employer employer = scope.requireActiveEmployer();
-        return form(model, employer, new PermalinkFormView(null, null, null, "", null), Map.of());
+        return form(model, employer, new PermalinkFormView(null, null, null, "", null), Map.of(),
+                Map.of());
     }
 
     @GetMapping("/{id}/update")
@@ -63,7 +65,7 @@ public class PermalinkController {
         return form(model, permalink.getEmployer(), new PermalinkFormView(id.toString(), permalink.getName(),
                 permalink.getDescription(),
                 permalink.getFeed() == null ? "" : permalink.getFeed().getId().toString(),
-                views.permalinkUrl(permalink)), Map.of());
+                views.permalinkUrl(permalink)), views.webserverSnippets(permalink), Map.of());
     }
 
     @PostMapping({"/create", "/{id}/update"})
@@ -82,7 +84,8 @@ public class PermalinkController {
             // Back to the form with what was typed (spec 7.7).
             return form(model, employer, new PermalinkFormView(id == null ? null : id.toString(), name,
                     description, feed == null ? "" : feed,
-                    existing == null ? null : views.permalinkUrl(existing)), e.getFieldErrors());
+                    existing == null ? null : views.permalinkUrl(existing)),
+                    existing == null ? Map.of() : views.webserverSnippets(existing), e.getFieldErrors());
         }
     }
 
@@ -116,11 +119,13 @@ public class PermalinkController {
         return "redirect:/feeds";
     }
 
-    private String form(Model model, Employer employer, PermalinkFormView form, Map<String, String> fieldErrors) {
+    private String form(Model model, Employer employer, PermalinkFormView form,
+                        Map<String, List<WebserverSnippet>> webserver, Map<String, String> fieldErrors) {
         String title = message(form.id() == null ? "permalink.create" : "permalink.edit");
         model.addAttribute("page", new PageMeta(title, null,
                 List.of(new Crumb(message("nav.feeds"), "/feeds"), new Crumb(title, null))));
         model.addAttribute("form", form);
+        model.addAttribute("webserver", webserver);
         Map<String, String> options = new LinkedHashMap<>();
         feedService.findByEmployer(employer.getId()).forEach(f -> options.put(f.getId().toString(), f.getName()));
         model.addAttribute("feedOptions", options);

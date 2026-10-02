@@ -626,6 +626,11 @@ a way of publishing them.
   reaches consumers within the cache lifetime (§5.5).
 - **Create / edit** — name, description and the feed, on a form of its own. The URL is shown once the
   permalink exists.
+- **Webserver configuration** — on the edit form, once the URL exists: a tab each for Apache, nginx
+  and Caddy, holding a redirect and a reverse proxy from `/.well-known/ojobpub.json` on the
+  employer's own domain to the permalink, filled in and each with a copy action. Without JavaScript
+  the three show one below the other (§7.1). The screen says why one might choose either: a redirect
+  is simpler, but fails a consumer that does not follow one (§5.5).
 - **Delete** — modal confirmation stating that the URL will stop working and consumers will receive
   `404`, and pointing to *No feed* for anyone who meant to stop publishing but keep the URL.
 

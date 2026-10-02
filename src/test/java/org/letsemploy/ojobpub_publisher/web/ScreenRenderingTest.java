@@ -291,6 +291,25 @@ class ScreenRenderingTest {
     }
 
     /**
+     * An existing permalink's edit page offers webserver configuration for the
+     * employer's own domain, a tab per server; a new one has no URL yet, so none
+     * (spec 7.23).
+     */
+    @Test
+    void thePermalinkEditPageOffersWebserverConfiguration() throws Exception {
+        assertThat(html("/feeds/permalinks/" + PERMALINK + "/update"))
+                .contains("Webserver configuration")
+                .contains("/.well-known/ojobpub.json")
+                .contains("Redirect 302")
+                .contains("reverse_proxy")
+                // A tab per server; the bar is an enhancement, hidden until app.js runs.
+                .contains("data-bs-target=\"#webserver-apache\"", "data-bs-target=\"#webserver-nginx\"",
+                        "data-bs-target=\"#webserver-caddy\"")
+                .containsPattern("<ul class=\"nav nav-tabs[^\"]*\" role=\"tablist\" data-enhanced hidden");
+        assertThat(html("/feeds/permalinks/create")).doesNotContain("/.well-known/ojobpub.json");
+    }
+
+    /**
      * The dashboard offers the permalink URLs a website is configured with, and not
      * the feeds' own URLs, which are for testing (spec 7.10).
      */

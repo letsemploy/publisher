@@ -19,6 +19,7 @@ import org.letsemploy.ojobpub_publisher.click.JobClickService;
 import org.letsemploy.ojobpub_publisher.employer.Employer;
 import org.letsemploy.ojobpub_publisher.feed.Feed;
 import org.letsemploy.ojobpub_publisher.feed.Permalink;
+import org.letsemploy.ojobpub_publisher.feed.WebserverConfig;
 import org.letsemploy.ojobpub_publisher.job.DashboardJobs;
 import org.letsemploy.ojobpub_publisher.job.Job;
 import org.letsemploy.ojobpub_publisher.job.JobStatusEvent;
@@ -68,6 +69,15 @@ public class Views {
     /** A permalink's URL: the id alone, since it names no one feed (spec 5.5). */
     public String permalinkUrl(Permalink permalink) {
         return baseUrl + "/ojobpub/v1/permalink/" + permalink.getId() + "/ojobpub.json";
+    }
+
+    /**
+     * Webserver configuration putting a permalink under the employer's own domain
+     * (spec 7.23), by server in the order offered, for one tab each.
+     */
+    public Map<String, List<WebserverSnippet>> webserverSnippets(Permalink permalink) {
+        return WebserverConfig.snippets(permalinkUrl(permalink)).stream()
+                .collect(Collectors.groupingBy(WebserverSnippet::server, LinkedHashMap::new, Collectors.toList()));
     }
 
     /**

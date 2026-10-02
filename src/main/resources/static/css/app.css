@@ -79,3 +79,20 @@
     height: 1.75rem;
     flex-shrink: 0;
 }
+
+/* Webserver configuration for a permalink (spec 7.23): sized by its rows, never wrapped. */
+.webserver-snippet {
+    font-size: .8125rem;
+    resize: vertical;
+    white-space: pre;
+    overflow-x: auto;
+}
+
+/* Tabs as an enhancement (spec 7.1): without app.js every pane shows under its own
+   heading; once it runs, Bootstrap's tabs show one pane and the bar replaces the headings. */
+[data-tabs]:not(.tabs-enhanced) > .tab-pane {
+    display: block;
+}
+.tabs-enhanced .tabs-fallback-heading {
+    display: none;
+}

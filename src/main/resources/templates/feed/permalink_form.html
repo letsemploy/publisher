@@ -25,6 +25,53 @@
                     <div th:replace="~{fragments/form :: actions('label.save','/feeds')}"></div>
                 </div>
             </form>
+            <!-- Webserver configuration for the employer's own domain (spec 7.23): a tab per
+                 server. The tabs are an enhancement: without JavaScript the bar stays hidden and
+                 every pane shows, under its own heading (spec 7.1). -->
+            <div class="card mt-3" id="webserver" th:unless="${webserver.isEmpty()}">
+                <div class="card-header">
+                    <h3 class="card-title" th:text="#{permalink.webserver.title}">Webserver configuration</h3>
+                </div>
+                <div class="card-body">
+                    <p class="text-secondary" th:text="#{permalink.webserver.intro}">Put the document under your own domain.</p>
+                    <p class="text-secondary" th:text="#{permalink.webserver.choice}">Redirect or proxy.</p>
+                    <ul class="nav nav-tabs mb-3" role="tablist" data-enhanced hidden>
+                        <li class="nav-item" role="presentation" th:each="server, it : ${webserver}">
+                            <button type="button" class="nav-link" role="tab" data-bs-toggle="tab"
+                                    th:classappend="${it.first} ? 'active'"
+                                    th:id="'webserver-tab-' + ${server.key}"
+                                    th:attr="data-bs-target='#webserver-' + ${server.key},aria-controls='webserver-' + ${server.key},aria-selected=${it.first}"
+                                    th:text="#{'permalink.webserver.' + ${server.key}}">Apache</button>
+                        </li>
+                    </ul>
+                    <div class="tab-content" data-tabs>
+                        <div class="tab-pane" role="tabpanel" th:each="server, it : ${webserver}"
+                             th:classappend="${it.first} ? 'active show'"
+                             th:id="'webserver-' + ${server.key}"
+                             th:attr="aria-labelledby='webserver-tab-' + ${server.key}">
+                            <h4 class="tabs-fallback-heading" th:text="#{'permalink.webserver.' + ${server.key}}">Apache</h4>
+                            <div class="mb-3" th:each="s : ${server.value}">
+                                <label class="form-label" th:for="'webserver-' + ${s.server} + '-' + ${s.kind}"
+                                       th:text="#{'permalink.webserver.' + ${s.kind}}">Redirect</label>
+                                <div class="input-group input-group-flat">
+                                    <textarea class="form-control font-monospace webserver-snippet" readonly spellcheck="false"
+                                              th:id="'webserver-' + ${s.server} + '-' + ${s.kind}"
+                                              th:rows="${s.lines()}"
+                                              th:text="${s.config}">Redirect 302 …</textarea>
+                                    <span class="input-group-text align-items-start">
+                                        <button type="button" class="btn btn-link link-secondary p-0 border-0"
+                                                th:title="#{label.copy}" th:aria-label="#{label.copy}"
+                                                th:attr="data-copied-label=#{label.copied}"
+                                                data-action="copy" data-enhanced hidden>
+                                            <svg th:replace="~{fragments/icon :: i('copy','icon')}"></svg>
+                                        </button>
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </div>

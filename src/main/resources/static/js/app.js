@@ -17,11 +17,13 @@
     /** Reveal controls that only make sense once this module is running. */
     const revealEnhancedControls = (root = document) => {
         root.querySelectorAll('[data-enhanced]').forEach((el) => el.removeAttribute('hidden'));
+        // Tabs (spec 7.23): until now every pane showed, for a page without JavaScript.
+        root.querySelectorAll('[data-tabs]').forEach((el) => el.classList.add('tabs-enhanced'));
     };
 
     /** Copy the value of the input in the same group, with brief feedback. */
     const copyFromGroup = async (button) => {
-        const input = button.closest('.input-group')?.querySelector('input');
+        const input = button.closest('.input-group')?.querySelector('input, textarea');
         if (!input) {
             return;
         }

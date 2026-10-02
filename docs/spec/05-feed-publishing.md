@@ -118,6 +118,9 @@ selection, with one switch.
 - **A switch reaches consumers within the cache lifetime** (`max-age`, five minutes by default). The
   back-office says so when it confirms one.
 - Deleting a permalink ends its URL: `404`, like a deleted feed.
+- **Under the employer's own domain**, a website may redirect a path of its own to the permalink, or
+  reverse-proxy it, which serves every consumer. The back-office offers the configuration for both
+  (§7.23).
 
 ## 5.6 Job links
 
