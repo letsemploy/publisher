@@ -8,6 +8,12 @@ Section numbers such as §5.6 refer to the specification in [`docs/SPEC.md`](doc
 
 ## [Unreleased]
 
+### Fixed
+
+- A user who belongs to no employer yet - a new account, signing in by any means - was offered
+  *New location*, *New tag*, *New job* and *New feed*, each of which answered "not found". Those
+  lists now say that an employer is needed and link to creating one (§2.5).
+
 ## [1.0.1] - 2026-10-02
 
 ### Fixed

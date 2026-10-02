@@ -758,6 +758,7 @@ TEST_DB=sqlite ./mvnw test                   # all, on SQLite; no server
 ./mvnw test -Dtest=ManagementApiTest         # the GraphQL API end to end
 ./mvnw test -Dtest=ApiLimitsTest             # depth, rate and body limits, with the ceilings lowered
 ./mvnw test -Dtest=PeopleScreenTest          # the People screen as an editor, not an admin
+./mvnw test -Dtest=NoEmployerScreensTest     # lists for a user with no employer: how to get one, no dead create
 ./mvnw test -Dtest=OidcLoginTest             # real sign-in without the bypass: PKCE, accounts, logout
 ./mvnw test -Dtest=LocalAccountTest          # email/password: sign-up, links, sessions, no oracle, throttle
 ./mvnw test -Dtest=LocalAccountsWithProvidersTest # the form beside a provider; LocalAccountsDisabledTest without
