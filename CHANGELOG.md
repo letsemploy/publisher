@@ -8,6 +8,12 @@ Section numbers such as §5.6 refer to the specification in [`docs/SPEC.md`](doc
 
 ## [Unreleased]
 
+### Fixed
+
+- The 1.0.0 container image did not start: Flyway and JPA depended on each other ("Circular
+  depends-on relationship between 'flyway' and 'entityManagerFactory'"), in an order the build's
+  classpath decided. Flyway now always migrates first, then the seed, then Hibernate.
+
 ## [1.0.0] - 2026-10-02
 
 ### Added

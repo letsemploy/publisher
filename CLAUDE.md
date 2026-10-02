@@ -587,6 +587,10 @@ everything, and SQLite ignores that pragma inside a transaction. It opens its ow
   `hibernate.ddl-auto: none`. Schema changes need a new `V<n>__*.sql` **in both `mariadb/` and
   `sqlite/`** — never rely on JPA DDL, and never edit an applied migration. `MigrationParityTest`
   fails the build if a version exists in one folder only.
+- **Flyway migrates, then the seed runs, then Hibernate starts**, ordered by Boot itself.
+  **Never set `spring.jpa.defer-datasource-initialization`**: with Flyway it makes the two depend on
+  each other in an order only the classpath decides. Maven's order worked; the 1.0.0 image's
+  alphabetical one did not start. `DatabaseInitOrderTest` checks the bean dependencies.
 - `common/Base` is the `@MappedSuperclass` for UUID-keyed entities with `createdAt`/`lastModifiedAt`:
   `Employer`, `Job`, `Location`, `Feed`, `Invitation`, `Membership`, `UserEntity`. `Tag` is the
   exception (numeric identity id), as is `JobStatusEvent`.
@@ -785,6 +789,7 @@ TEST_DB=sqlite ./mvnw test                   # all, on SQLite; no server
 ./mvnw test -Dtest=JobLinkTest               # /go/{id}: redirect, 410, what counts, country, no session
 ./mvnw test -Dtest=JobClickServiceTest       # the dashboard's click figures, scoped to the employers asked
 ./mvnw test -Dtest=FeedStatelessTest         # no feed answer opens a session; a failure is JSON
+./mvnw test -Dtest=DatabaseInitOrderTest     # Flyway, then the seed, then Hibernate, whatever the classpath
 make assets                                  # refresh vendored front-end deps (needs Node)
 ```
 
