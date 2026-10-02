@@ -8,6 +8,8 @@ Section numbers such as §5.6 refer to the specification in [`docs/SPEC.md`](doc
 
 ## [Unreleased]
 
+## [1.0.2] - 2026-10-02
+
 ### Fixed
 
 - A user who belongs to no employer yet - a new account, signing in by any means - was offered
@@ -172,7 +174,8 @@ Section numbers such as §5.6 refer to the specification in [`docs/SPEC.md`](doc
 - MariaDB, or SQLite for a single instance.
 - English and German.
 
-[Unreleased]: https://github.com/letsemploy/publisher/compare/v1.0.1...HEAD
+[Unreleased]: https://github.com/letsemploy/publisher/compare/v1.0.2...HEAD
+[1.0.2]: https://github.com/letsemploy/publisher/compare/v1.0.1...v1.0.2
 [1.0.1]: https://github.com/letsemploy/publisher/compare/v1.0.0...v1.0.1
 [1.0.0]: https://github.com/letsemploy/publisher/compare/v0.9.0...v1.0.0
 [0.9.0]: https://github.com/letsemploy/publisher/compare/v0.8.0...v0.9.0
