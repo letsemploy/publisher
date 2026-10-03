@@ -8,6 +8,8 @@ Section numbers such as §5.6 refer to the specification in [`docs/SPEC.md`](doc
 
 ## [Unreleased]
 
+## [1.2.0] - 2026-10-03
+
 ### Added
 
 - Account pictures, in the user menu and on the People and Users screens, with initials where there is
@@ -214,7 +216,8 @@ Section numbers such as §5.6 refer to the specification in [`docs/SPEC.md`](doc
 - MariaDB, or SQLite for a single instance.
 - English and German.
 
-[Unreleased]: https://github.com/letsemploy/publisher/compare/v1.1.0...HEAD
+[Unreleased]: https://github.com/letsemploy/publisher/compare/v1.2.0...HEAD
+[1.2.0]: https://github.com/letsemploy/publisher/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/letsemploy/publisher/compare/v1.0.2...v1.1.0
 [1.0.2]: https://github.com/letsemploy/publisher/compare/v1.0.1...v1.0.2
 [1.0.1]: https://github.com/letsemploy/publisher/compare/v1.0.0...v1.0.1
