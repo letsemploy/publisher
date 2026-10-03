@@ -11,6 +11,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.regex.Pattern;
+import org.letsemploy.ojobpub_publisher.config.WebLangConfig;
 import org.letsemploy.ojobpub_publisher.employer.Employer;
 import org.letsemploy.ojobpub_publisher.job.Job;
 import org.letsemploy.ojobpub_publisher.job.JobService;
@@ -52,8 +53,9 @@ public class JobLinkHandler {
     private static final Pattern UUID_PATTERN = Pattern.compile(
             "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$");
 
-    /** The languages the bundles hold; the first is the fallback. */
-    private static final List<Locale> LANGUAGES = List.of(Locale.ENGLISH, Locale.GERMAN);
+    /** The languages the bundles hold; the first, English, is the fallback. */
+    private static final List<Locale> LANGUAGES = WebLangConfig.LANGUAGES.stream()
+            .map(Locale::forLanguageTag).toList();
 
     private final JobService jobService;
     private final JobClickService clicks;

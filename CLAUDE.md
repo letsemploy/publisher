@@ -758,10 +758,14 @@ annotated `@HxRequest(boosted = false)` returning a fragment selector (`"tag/fra
 The `boosted = false` matters: navigation uses `hx-boost`, so a boosted request is an htmx request that
 still wants a whole page.
 
-i18n: `messages.properties` / `messages_de.properties`, session locale, switchable with `?lang=`. The
-bundles are asserted **at parity** by `MessageBundleTest` — a key added to one and not the other fails
-the build, as does an empty value. (That claim stood in this file for a long time before any test
-enforced it.) Controllers pass message *keys* as flash attributes and templates resolve them.
+i18n: `messages.properties` (English, the original and the fallback) plus one bundle per language in
+`WebLangConfig.LANGUAGES` — en, de, fr, it, es, pt, ja, ru, zh. That list is the only one: Settings, the
+sign-in page's language links and `JobLinkHandler` all read it. A new key goes into **every** bundle.
+`MessageBundleTest` asserts them at parity, no empty value, and that every message with arguments
+still shows each argument when formatted by MessageFormat — where a lone ASCII `'` swallows text, so
+translations use ’ or `''`. `ScreenRenderingTest` renders every screen in every language.
+`spring.messages.fallback-to-system-locale=false`: a missing key falls back to English, never to the
+host's locale. Controllers pass message *keys* as flash attributes and templates resolve them.
 
 ### Conventions
 
@@ -775,7 +779,7 @@ enforced it.) Controllers pass message *keys* as flash attributes and templates 
 - **Input shape is Bean Validation, checked in the service** (`common/validation/InputValidator`), so
   the form and the API share it. `check` throws `ValidationFailure`, never
   `ConstraintViolationException`, with the **same field keys** as before — `ApiErrors` maps them.
-  Messages are `{validation.*}` bundle keys, in both bundles. Rules needing the database, the actor or
+  Messages are `{validation.*}` bundle keys, in every bundle. Rules needing the database, the actor or
   the state (duplicates, `requireOwn`, quotas, last owner, readiness) stay hand-written, and so do
   parse failures.
 - `-parameters` compilation is expected (Spring Data and MVC parameter binding rely on it).
@@ -825,7 +829,7 @@ TEST_DB=sqlite ./mvnw test                   # all, on SQLite; no server
 ./mvnw test -Dtest=SettingsTest              # settings: saved, applied to a new session, not while viewing as
 ./mvnw test -Dtest=ResourceLimitsTest        # the quota convention; no Spring, no database
 ./mvnw test -Dtest=QuotaEnforcementTest      # the seven quotas against the seed data
-./mvnw test -Dtest=MessageBundleTest         # the two bundles, at parity
+./mvnw test -Dtest=MessageBundleTest         # every bundle at parity, and every argument survives formatting
 ./mvnw test -Dtest=InputValidatorTest        # Bean Validation: field keys, localized messages; no database
 ./mvnw test -Dtest=TokenLifecycleTest        # the expiry boundaries; no Spring, no database
 ./mvnw test -Dtest=PermalinkServingTest      # the permalink URL: switched, empty, dated forward, 404/301

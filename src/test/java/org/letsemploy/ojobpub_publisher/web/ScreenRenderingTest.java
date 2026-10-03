@@ -99,6 +99,25 @@ class ScreenRenderingTest {
     }
 
     /** Assets are self-hosted so the strict CSP of spec 9.4 can hold (spec 7.2). */
+    /**
+     * Every screen in every language (spec 8.1): a key missing from one bundle, or
+     * a translation that breaks its formatting, fails here rather than in front
+     * of the people who read that language.
+     */
+    @ParameterizedTest(name = "every screen renders in {0}")
+    @MethodSource("org.letsemploy.ojobpub_publisher.web.MessageBundleTest#translations")
+    void everyScreenRendersInEveryLanguage(String language) throws Exception {
+        org.springframework.mock.web.MockHttpSession session = new org.springframework.mock.web.MockHttpSession();
+        assertThat(mvc.perform(get("/").param("lang", language).session(session)).andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString()).contains("lang=\"" + language + "\"");
+        for (String path : everyScreen().toList()) {
+            assertThat(mvc.perform(get(path).session(session)).andExpect(status().isOk())
+                    .andReturn().getResponse().getContentAsString())
+                    .as(language + " " + path)
+                    .doesNotContainPattern("\\?\\?[\\w.]+\\?\\?");
+        }
+    }
+
     @ParameterizedTest(name = "no external asset or inline script on {0}")
     @MethodSource("everyScreen")
     void javascriptBudgetHolds(String path) throws Exception {

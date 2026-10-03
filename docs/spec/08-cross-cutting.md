@@ -5,14 +5,16 @@
 
 ## 8.1 Internationalization
 
-- The back-office UI ships in **English and German**; English is the fallback.
-- Language is switchable at any time via `?lang=` and persists in the session.
-- New screens add their keys to **both** bundles: `nav.invitations`, the `invitation.*` family for §7.16
-  and the People screen, and `role.*` for the membership roles of §2.1. The bundles are asserted at parity, so a key added to one and not the
-  other fails the build.
+- The back-office UI ships in **English, German, French, Italian, Spanish, Portuguese, Japanese,
+  Russian and Simplified Chinese**; English is the fallback, whatever the server's own locale.
+- A signed-in person chooses the language in Settings (§7.26); the signed-out pages offer it via
+  `?lang=` for the session.
+- New screens add their keys to **every** bundle. The bundles are asserted at parity, so a key added to
+  one and not the others fails the build, and every message that takes arguments must still show each
+  of them in every language.
 - **Every** user-visible string comes from a message bundle. There must be no hard-coded text in
   templates, and no enum constant may render as its raw name — `DIRECTOR`, every `SalaryInterval` value
-  and every status value need labels in both bundles. A missing key must fail the build, not render as
+  and every status value need labels in every bundle. A missing key must fail the build, not render as
   a key at runtime.
 - Country names are rendered localized; country *codes* are stored and published unchanged.
 - The UI language is unrelated to `Job.languageCode`, which describes the posting's own text. A German

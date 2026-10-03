@@ -15,7 +15,7 @@ import org.springframework.web.servlet.i18n.SessionLocaleResolver;
 public class WebLangConfig implements WebMvcConfigurer {
 
     /** The languages there are bundles for (spec 8.1): the menu, the account screens and Settings offer these. */
-    public static final List<String> LANGUAGES = List.of("en", "de");
+    public static final List<String> LANGUAGES = List.of("en", "de", "fr", "it", "es", "pt", "ja", "ru", "zh");
 
     /** Neither the public URLs (spec 5.1, 5.6) nor static files are anybody's. */
     private static final String[] UNPERSONAL = {

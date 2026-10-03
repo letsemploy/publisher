@@ -19,6 +19,8 @@ Section numbers such as §5.6 refer to the specification in [`docs/SPEC.md`](doc
 - A Settings page, from the user menu (§7.26): language, theme, time zone for every date and time
   shown, and whether invitations are mailed. A local account can change its name there. Change
   password and Delete account moved there from the user menu.
+- The application in French, Italian, Spanish, Portuguese, Japanese, Russian and Simplified Chinese,
+  besides English and German (§8.1); chosen in Settings, or on the sign-in page.
 
 ### Changed
 
@@ -29,6 +31,11 @@ Section numbers such as §5.6 refer to the specification in [`docs/SPEC.md`](doc
 - An API token outlives the account that created it: deleting that account keeps the token working,
   and the API tokens screen says it was created by a deleted account. Database migration V14 makes
   the creator optional.
+
+### Fixed
+
+- A missing translation falls back to English, never to the server's own language: on a host with a
+  German system locale, English pages could otherwise show German.
 
 ## [1.0.2] - 2026-10-02
 
