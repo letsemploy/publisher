@@ -39,8 +39,9 @@ public class ServiceToken extends Base {
     @Enumerated(EnumType.STRING)
     private Set<TokenScope> scopes = new LinkedHashSet<>();
 
-    @ManyToOne(fetch = FetchType.EAGER, optional = false)
-    @JoinColumn(name = "created_by_id", nullable = false, updatable = false)
+    /** Null once the account that created it is deleted: the token outlives it (spec 2.13). */
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "created_by_id", updatable = false)
     private UserEntity createdBy;
 
     /** What makes a dormant integration visible; there is no expiry (spec 2.8). */

@@ -651,3 +651,18 @@ accounts are enabled; otherwise they do not exist.
   the new one twice. Accounts from a provider are not offered it; their password is the provider's.
 - Every form says its password rule before it is broken, and keeps what was typed except passwords
   when it refuses.
+
+## 7.25 Deleting one's account
+
+For every signed-in person, from the user menu, inside the shell (§7.3) — not standalone like the
+account screens (§7.24), because it is reached while signed in, whatever the way in. The rules are
+§2.13.
+
+- **What goes, what stays:** the employers deleted with the account, by name, and those the person
+  only leaves. A warning that it cannot be undone, and — when an employer goes — that its public feed
+  URLs will stop working.
+- **The confirmation** asks for the email address, shown in the label; the button stays disabled until
+  it matches, as for deleting an employer (§7.13), and the server checks it all the same. A mismatch
+  re-shows the page saying nothing was deleted.
+- **The only admin** is shown why not, and what to do first, instead of the form.
+- **Afterwards** the sign-in page says the account was deleted, and offers the way back, not the form.

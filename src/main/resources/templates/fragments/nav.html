@@ -127,6 +127,11 @@
                         <svg th:replace="~{fragments/icon :: i('lock','icon dropdown-item-icon')}"></svg>
                         <span th:text="#{account.menu.password}">Change password</span>
                     </a>
+                    <!-- Anyone, as themselves - never the person being viewed (spec 2.13). -->
+                    <a class="dropdown-item" th:unless="${ui.viewingAs}" th:href="@{/account/delete}">
+                        <svg th:replace="~{fragments/icon :: i('user-x','icon dropdown-item-icon')}"></svg>
+                        <span th:text="#{account.menu.delete}">Delete account</span>
+                    </a>
                     <!-- Only for an admin acting as themselves (spec 2.10); a POST, so the
                          switch is a deliberate act and the audit log can record it. -->
                     <form th:if="${ui.adminModeAvailable}" method="post"

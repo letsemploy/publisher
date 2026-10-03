@@ -71,6 +71,8 @@ class ScreenRenderingTest {
                 "/tags", "/tags/create", "/tags?q=jav",
                 "/invitations", "/people", "/tokens", "/users", "/users?q=mara", "/users?suspended=true",
                 "/users/" + MEMBER + "/suspend",
+                // The seeded admin is the only one: this renders the refusal (spec 2.13).
+                "/account/delete",
                 "/activity", "/activity/all", "/activity/mine", "/users/44444444-4444-4444-8444-444444444444/activity",
                 "/employers/" + EMPLOYER + "/people",
                 "/employers/" + EMPLOYER + "/people/members/" + MEMBER + "/remove",

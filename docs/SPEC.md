@@ -33,6 +33,7 @@ the text such as §2.6 means the same thing: find the chapter below, then the se
   - [2.10 Admin mode](spec/02-actors-and-access.md#210-admin-mode)
   - [2.11 Suspending an account](spec/02-actors-and-access.md#211-suspending-an-account)
   - [2.12 Local accounts](spec/02-actors-and-access.md#212-local-accounts)
+  - [2.13 Deleting one's own account](spec/02-actors-and-access.md#213-deleting-ones-own-account)
 - **[3. Domain model](spec/03-domain-model.md)**
   - [3.1 Employer](spec/03-domain-model.md#31-employer)
   - [3.2 Location](spec/03-domain-model.md#32-location)
@@ -95,6 +96,7 @@ the text such as §2.6 means the same thing: find the chapter below, then the se
   - [7.22 My activity](spec/07-user-interface.md#722-my-activity)
   - [7.23 Permalinks](spec/07-user-interface.md#723-permalinks)
   - [7.24 Account screens](spec/07-user-interface.md#724-account-screens)
+  - [7.25 Deleting one's account](spec/07-user-interface.md#725-deleting-ones-account)
 - **[8. Cross-cutting behaviour](spec/08-cross-cutting.md)**
   - [8.1 Internationalization](spec/08-cross-cutting.md#81-internationalization)
   - [8.2 Validation and errors](spec/08-cross-cutting.md#82-validation-and-errors)

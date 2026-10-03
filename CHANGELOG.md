@@ -8,6 +8,18 @@ Section numbers such as §5.6 refer to the specification in [`docs/SPEC.md`](doc
 
 ## [Unreleased]
 
+### Added
+
+- Deleting one's own account, from the user menu, after typing one's email address back (§2.13,
+  §7.25). Employers nobody else owns are deleted with it, with everything they hold; employers
+  someone else owns stay. The only admin cannot delete their account.
+
+### Changed
+
+- An API token outlives the account that created it: deleting that account keeps the token working,
+  and the API tokens screen says it was created by a deleted account. Database migration V14 makes
+  the creator optional.
+
 ## [1.0.2] - 2026-10-02
 
 ### Fixed

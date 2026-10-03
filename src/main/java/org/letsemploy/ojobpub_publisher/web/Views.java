@@ -353,7 +353,8 @@ public class Views {
     public TokenRow tokenRow(ServiceToken token, Instant now, int warningDays) {
         return new TokenRow(token.getId().toString(), token.getName(), token.getPrefix(),
                 token.getScopes().stream().map(s -> s.name().toLowerCase()).sorted().toList(),
-                displayName(token.getCreatedBy()),
+                // Null once that account is deleted (spec 2.13); the template says so.
+                token.getCreatedBy() == null ? null : displayName(token.getCreatedBy()),
                 TIMESTAMP.format(token.getCreatedAt()),
                 token.getLastUsedAt() == null ? null : TIMESTAMP.format(token.getLastUsedAt()),
                 token.getExpiresAt() == null ? null : TIMESTAMP.format(token.getExpiresAt()),

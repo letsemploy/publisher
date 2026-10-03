@@ -275,6 +275,15 @@ auto-configured bean. `OidcLoginTest` and `LockedChainTest` guard both direction
   suspended account untouched, so it is neither refreshed nor re-decided by the admin rules.
   Memberships stay, and a sole owner is named on the confirmation, not protected. The dev bypass never
   checks it. `OidcLoginTest` covers the sign-in half, `AccountSuspensionTest` the admin half.
+- **Deleting one's own account** (§2.13) is `user/AccountDeletionService`, from the user menu at
+  `/account/delete`, for anyone signed in as themselves (never a token; viewing-as is refused by
+  `ImpersonationGuard`). The email is typed back and checked in the service; the **only unsuspended
+  stored `ADMIN`** may not. Employers from `MembershipService.soleOwnershipsOf` are deleted first via
+  `EmployerService.deleteAsDepartingOwner` (no typed name — the email confirmed it), then the
+  `local_accounts` row (no FK joins it to `users`), then `UserRepo.deleteWithEverything`, a bulk
+  `DELETE` like the employer's: memberships and invitations cascade, and **`service_tokens.created_by_id`
+  is `ON DELETE SET NULL`** since V14, so a co-owned employer's tokens keep working ("created by a
+  deleted account"). The audit log is left as written (§3.12). The session ends at `/login?deleted`.
 - **Logout** uses `OidcClientInitiatedLogoutSuccessHandler`: it ends the provider's session when the
   provider advertises an end-session endpoint, and is a local logout otherwise. With local accounts
   only, a plain handler ends at `/login?logout`.
@@ -779,6 +788,7 @@ TEST_DB=sqlite ./mvnw test                   # all, on SQLite; no server
 ./mvnw test -Dtest=AdminModeTest             # admins start in the user view; every power follows the switch
 ./mvnw test -Dtest=MemberSuspensionScreenTest # suspending and reinstating from the People screen
 ./mvnw test -Dtest=AccountSuspensionTest     # suspending accounts: admins only, never self or an admin
+./mvnw test -Dtest=AccountDeletionTest       # deleting one's own account: sole employers go, tokens stay, only admin may not
 ./mvnw test -Dtest=ResourceLimitsTest        # the quota convention; no Spring, no database
 ./mvnw test -Dtest=QuotaEnforcementTest      # the seven quotas against the seed data
 ./mvnw test -Dtest=MessageBundleTest         # the two bundles, at parity

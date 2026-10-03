@@ -66,6 +66,8 @@ public enum AuditAction {
     ADMIN_REVOKED(Audience.PERSONAL),
     ACCOUNT_SUSPENDED(Audience.PERSONAL),
     ACCOUNT_REINSTATED(Audience.PERSONAL),
+    // About someone who is gone: only admins read it, at /activity/all (spec 2.13).
+    ACCOUNT_DELETED(Audience.PERSONAL),
     // A local account's own password (spec 2.12).
     PASSWORD_CHANGED(Audience.PERSONAL),
     PASSWORD_RESET(Audience.PERSONAL),

@@ -231,7 +231,7 @@ A credential that lets another system act on one employer (§2.8).
 | `prefix` | string | **yes** | a short public fragment identifying the token without revealing it |
 | `secretHash` | string | **yes** | the hash of the secret. The secret itself is **never** stored |
 | `scopes` | set of enum | **yes** | from the six of §2.8; at least one |
-| `createdBy` | User | **yes** | the owner who created it; a token is always someone's decision |
+| `createdBy` | User | no | the owner who created it; a token is always someone's decision. Null once that account is deleted (§2.13): the token belongs to the employer and outlives it |
 | `lastUsedAt` | instant | no | set on each **accepted** request; what makes a dormant token visible |
 | `expiresAt` | instant | no | when it stops working; **null means never**, which a lifetime of 0 configures. Renewal moves it; nothing else does |
 | `revokedAt` | instant | no | once set the token is dead, permanently |
@@ -253,7 +253,8 @@ database still enforces that the reference points at something real.
 An audit record names the **token**, not the person who created it. The token is what acted; attributing
 its actions to a human would put words in the mouth of someone who may have been asleep. The person is
 still reachable — `ServiceToken.createdBy` records who decided the integration should exist — so the
-question "who is answerable for this?" is answerable, one step removed.
+question "who is answerable for this?" is answerable, one step removed, for as long as that account
+exists (§2.13); after that, the audit log still names who created the token.
 
 ## 3.12 AuditEvent
 
@@ -264,7 +265,7 @@ that is refused or rolled back is not recorded, and neither is one that changes 
 | Field | Notes |
 |---|---|
 | `occurredAt` | When. |
-| `action` | What kind of event, from a fixed catalogue: an employer, job, feed, location or tag created, edited or deleted; a job's status changed; a job added to or removed from a feed; a permalink created, edited, switched or deleted (§3.13); a member joined, changed role, suspended, reinstated or removed; an invitation sent, withdrawn or declined; a token created, renewed or revoked; an account created, suspended or reinstated (§2.11); admin granted or removed by the configured rules (§2.2); viewing as a user started or stopped (§2.9); admin mode switched on or off (§2.10). |
+| `action` | What kind of event, from a fixed catalogue: an employer, job, feed, location or tag created, edited or deleted; a job's status changed; a job added to or removed from a feed; a permalink created, edited, switched or deleted (§3.13); a member joined, changed role, suspended, reinstated or removed; an invitation sent, withdrawn or declined; a token created, renewed or revoked; an account created, suspended or reinstated (§2.11), or deleted by its holder (§2.13); admin granted or removed by the configured rules (§2.2); viewing as a user started or stopped (§2.9); admin mode switched on or off (§2.10). |
 | actor | A user, a token (§3.11) — or **the application itself**, for what nobody did by hand, such as the admin rules applied at sign-in. |
 | `employer` | Nullable. Which employer's log it belongs to. |
 | `subject` | Nullable. The person it is about, whose own log it belongs to. |

@@ -8,6 +8,9 @@ import java.util.UUID;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 public interface UserRepo extends JpaRepository<UserEntity, UUID>, JpaSpecificationExecutor<UserEntity> {
 
@@ -51,5 +54,18 @@ public interface UserRepo extends JpaRepository<UserEntity, UUID>, JpaSpecificat
         List<UserEntity> found = findAllByEmailIgnoreCase(email);
         return found.size() == 1 ? Optional.of(found.get(0)) : Optional.empty();
     }
+
+    /** Who could still act as an admin: the only-admin rule of spec 2.13 counts these. */
+    long countByRoleAndSuspendedAtIsNull(UserEntity.Role role);
+
+    /**
+     * Deletes the account alone and lets the database's foreign keys take the
+     * rest (spec 2.13): its memberships and invitations cascade, and the tokens it
+     * created forget their creator. A bulk statement, as for an employer, so no
+     * loaded membership is left pointing at a removed user when Hibernate flushes.
+     */
+    @Modifying(flushAutomatically = true, clearAutomatically = true)
+    @Query("DELETE FROM UserEntity u WHERE u.id = :id")
+    int deleteWithEverything(@Param("id") UUID id);
 
 }

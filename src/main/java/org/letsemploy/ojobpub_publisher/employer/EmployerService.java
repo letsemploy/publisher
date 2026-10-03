@@ -185,11 +185,29 @@ public class EmployerService {
         if (typedName == null || !typedName.trim().equals(employer.getName())) {
             throw new ValidationFailure("confirmName", "Type the employer's name exactly to delete it.");
         }
-        employerRepo.deleteWithEverything(id);
+        deleteWithEverything(employer, actor);
+    }
+
+    /**
+     * Delete an employer its last active owner leaves by deleting their own
+     * account (spec 2.13). That screen asks for the account's email rather than
+     * each employer's name, so there is no name to check here - only that the
+     * actor is a person who owns it.
+     */
+    @Transactional
+    public void deleteAsDepartingOwner(Employer employer, Actor actor) {
+        if (actor.isToken() || !actor.isOwnerOf(employer.getId())) {
+            throw new NotFoundException("Employer not found: " + employer.getId());
+        }
+        deleteWithEverything(employer, actor);
+    }
+
+    private void deleteWithEverything(Employer employer, Actor actor) {
+        employerRepo.deleteWithEverything(employer.getId());
         // Kept after the employer is gone - the one row that says what became of
         // it - readable by admins only from here on (spec 3.12).
         auditLog.record(AuditEvent.of(AuditAction.EMPLOYER_DELETED, actor).in(employer)
-                .target(id, employer.getName()));
-        log.info("User {} deleted employer {} ({})", actor.getId(), id, employer.getName());
+                .target(employer.getId(), employer.getName()));
+        log.info("User {} deleted employer {} ({})", actor.getId(), employer.getId(), employer.getName());
     }
 }

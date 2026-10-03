@@ -76,7 +76,8 @@
                                 <!-- The column that earns its place: a token unused for
                                      months is the one to revoke (spec 7.17). -->
                                 <div th:text="${t.lastUsedAt ?: #messages.msg('token.neverUsed')}">never</div>
-                                <div class="small" th:text="#{token.createdBy(${t.createdBy},${t.createdAt})}">by dev</div>
+                                <div class="small" th:if="${t.createdBy != null}" th:text="#{token.createdBy(${t.createdBy},${t.createdAt})}">by dev</div>
+                                <div class="small" th:if="${t.createdBy == null}" th:text="#{token.createdBy.deleted(${t.createdAt})}">by a deleted account</div>
                             </td>
                             <td class="text-secondary">
                                 <!-- Expiry is derived from the date, never stored as

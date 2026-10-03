@@ -493,3 +493,30 @@ configured. It is **off unless configured** (§9.5), and it can be offered alone
 - **Recorded:** changing and resetting a password, in the person's own log (§3.12). The account is
   recorded as created at its first sign-in, as for a provider.
 - **Not yet:** changing the email of a local account, and linking one to a provider account (§12).
+
+## 2.13 Deleting one's own account
+
+Any person may **delete their own account**, from the user menu (§7.25). It is the one way an account
+ends; suspension (§2.11) only stops it.
+
+- **Their own, and only as themselves.** Not another person's — an admin who must stop an account
+  suspends it — not while viewing as someone (§2.9), and never a token, which is not a person.
+- **The email is typed back** to confirm, and checked by the server, ignoring case and surrounding
+  space. An account without a stored email (§2.2) types its name instead.
+- **Not the only admin.** Someone must be left to run the platform: an admin may delete their account
+  only while another unsuspended admin exists. It is the stored role that counts (§2.10), not admin
+  mode — this is about who someone is, not what they are doing.
+- **Employers only they own go with it**, with everything they hold, exactly as if deleted on their
+  own (§2.7): an employer is never left without an active owner who is a person. "Only" is the
+  last-owner rule's: a suspended co-owner or an owner-role token does not count. The confirmation
+  names these employers, and that their public feed URLs will answer `404`.
+- **Everything else stays without them.** Their memberships end, and invitations they sent or received
+  go. Employers someone else owns keep everything, including the API tokens the person created:
+  tokens belong to the employer (§2.8), so they keep working, and the register says they were created
+  by a deleted account.
+- **The record stays.** The audit log keeps its rows as written (§3.12), names included, and records
+  the deletion in the person's own log, which from then on only admins read.
+- **What remains is nothing.** The `users` record goes, and a local account (§2.12) its password and
+  links with it; the session ends and the sign-in page says the account was deleted. Signing in
+  again through a provider makes a new, empty account (§2.2) — the provider's identity is not
+  remembered, because remembering it would be keeping the person.

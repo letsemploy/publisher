@@ -35,6 +35,7 @@ log (§3.12), readable on the Activity screen (§7.21), and a person's own stand
 viewed as, on theirs (§7.22).
 
 **Data protection.** The application stores no applicant data. Personal data is limited to back-office
-user records (issuer, subject, email, display name), which are deleted with the user. Clicks on job
+user records (issuer, subject, email, display name), which are deleted with the user — by the
+person themselves (§2.13). The audit log keeps the name labels it wrote (§3.12). Clicks on job
 links (§5.6) are kept as counters per job, day and country (§3.14); the visitor's address is used to look
 up the country and is neither stored nor logged, and nothing identifies a visitor.

@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<!--
+  Deleting one's own account (spec 2.13, 7.25): from the user menu. It cannot be
+  undone, and employers nobody else owns go with it - so the page says what goes
+  and what stays, and asks for the email address.
+
+  The address is checked by the server (AccountDeletionService.delete), whatever
+  happens here. app.js only keeps the button disabled until it matches; without
+  JavaScript the button works and the server refuses a wrong address.
+-->
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout}">
+<head><title th:text="#{account.delete.title}">Delete account</title></head>
+<body>
+<div layout:fragment="content">
+
+    <!-- The only admin: nothing to confirm, only what to do first. -->
+    <div class="card" th:if="${deletion.onlyAdmin}">
+        <div class="card-body">
+            <div class="alert alert-warning mb-0" role="alert" id="only-admin">
+                <svg th:replace="~{fragments/icon :: i('alert-triangle','icon alert-icon flex-shrink-0')}"></svg>
+                <div th:text="#{account.delete.onlyAdmin}">You are the only admin. Make someone else an admin first.</div>
+            </div>
+        </div>
+    </div>
+
+    <form class="card" th:unless="${deletion.onlyAdmin}" th:action="@{/account/delete}" method="post">
+        <div class="card-status-top bg-danger"></div>
+        <div class="card-body">
+            <p th:text="#{account.delete.lead}">Your account is removed permanently: your memberships end, and your
+                pending invitations go.</p>
+
+            <th:block th:unless="${deletion.deletedEmployers.isEmpty()}">
+                <p class="mb-1" th:text="#{account.delete.employers}">Nobody else owns these employers, so they are
+                    deleted with everything they hold:</p>
+                <ul id="deleted-employers">
+                    <li th:each="name : ${deletion.deletedEmployers}" class="fw-bold" th:text="${name}">Acme AG</li>
+                </ul>
+            </th:block>
+
+            <th:block th:unless="${deletion.leftEmployers.isEmpty()}">
+                <p class="mb-1" th:text="#{account.delete.left}">You leave these employers; their other owners keep
+                    them:</p>
+                <ul id="left-employers">
+                    <li th:each="name : ${deletion.leftEmployers}" th:text="${name}">Globex</li>
+                </ul>
+            </th:block>
+
+            <div class="alert alert-danger" role="alert">
+                <svg th:replace="~{fragments/icon :: i('alert-triangle','icon alert-icon flex-shrink-0')}"></svg>
+                <div th:text="${deletion.deletedEmployers.isEmpty()} ? #{account.delete.irreversible}
+                                                                     : #{account.delete.irreversibleUrls}">
+                    This cannot be undone.
+                </div>
+            </div>
+
+            <label class="form-label" for="confirmEmail"
+                   th:text="#{account.delete.typeEmail(${deletion.confirmWith})}">Type you@example.com to confirm</label>
+            <input class="form-control" type="text" id="confirmEmail" name="confirmEmail"
+                   autocomplete="off" spellcheck="false" required
+                   th:classappend="${mismatch} ? 'is-invalid'"
+                   th:attr="data-confirm-name=${deletion.confirmWith},
+                            aria-invalid=${mismatch} ? 'true' : null,
+                            aria-describedby=${mismatch} ? 'confirmEmail-err' : null"/>
+            <div class="invalid-feedback" id="confirmEmail-err" th:if="${mismatch}"
+                 th:text="#{account.delete.mismatch}">That is not your email address.</div>
+        </div>
+        <div class="card-footer d-flex">
+            <a class="btn btn-link link-secondary me-auto" th:href="@{/}" th:text="#{label.cancel}">Cancel</a>
+            <button type="submit" class="btn btn-danger" th:text="#{account.delete.submit}">Delete my account</button>
+        </div>
+    </form>
+</div>
+</body>
+</html>

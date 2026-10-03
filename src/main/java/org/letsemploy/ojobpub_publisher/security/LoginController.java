@@ -45,7 +45,11 @@ public class LoginController {
         }
         // Present or not; the parameters carry no value (/login?error).
         model.addAttribute("error", request.getParameterMap().containsKey("error"));
-        model.addAttribute("loggedOut", request.getParameterMap().containsKey("logout"));
+        // A deleted account (spec 2.13) is signed out too, and has nothing left to
+        // sign in to: the page offers the way back, not the form.
+        boolean deleted = request.getParameterMap().containsKey("deleted");
+        model.addAttribute("accountDeleted", deleted);
+        model.addAttribute("loggedOut", deleted || request.getParameterMap().containsKey("logout"));
         // Only ever shown to the person just signed out for it (spec 2.11), so it
         // tells nobody else anything.
         model.addAttribute("suspended", request.getParameterMap().containsKey("suspended"));
