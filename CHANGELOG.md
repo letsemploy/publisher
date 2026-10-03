@@ -8,6 +8,8 @@ Section numbers such as §5.6 refer to the specification in [`docs/SPEC.md`](doc
 
 ## [Unreleased]
 
+## [1.1.0] - 2026-10-03
+
 ### Added
 
 - Deleting one's own account, from Settings, after typing one's email address back (§2.13,
@@ -203,7 +205,8 @@ Section numbers such as §5.6 refer to the specification in [`docs/SPEC.md`](doc
 - MariaDB, or SQLite for a single instance.
 - English and German.
 
-[Unreleased]: https://github.com/letsemploy/publisher/compare/v1.0.2...HEAD
+[Unreleased]: https://github.com/letsemploy/publisher/compare/v1.1.0...HEAD
+[1.1.0]: https://github.com/letsemploy/publisher/compare/v1.0.2...v1.1.0
 [1.0.2]: https://github.com/letsemploy/publisher/compare/v1.0.1...v1.0.2
 [1.0.1]: https://github.com/letsemploy/publisher/compare/v1.0.0...v1.0.1
 [1.0.0]: https://github.com/letsemploy/publisher/compare/v0.9.0...v1.0.0
