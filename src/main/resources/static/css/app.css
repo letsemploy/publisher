@@ -96,3 +96,12 @@
 .tabs-enhanced .tabs-fallback-heading {
     display: none;
 }
+
+/* A picture inside a Tabler avatar (spec 7.27): Tabler styles only a background
+   image, which would need a style attribute the CSP forbids (spec 9.4). */
+.avatar > img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: inherit;
+}

@@ -8,6 +8,15 @@ Section numbers such as §5.6 refer to the specification in [`docs/SPEC.md`](doc
 
 ## [Unreleased]
 
+### Added
+
+- Account pictures, in the user menu and on the People and Users screens, with initials where there is
+  none (§7.27). A provider's picture (the OpenID Connect `picture` claim, GitHub's avatar) is copied in
+  at sign-in; anyone can upload their own in Settings, which the provider then never replaces. Every
+  picture is cropped, shrunk and re-encoded, and served by the publisher itself, so no page loads
+  anything from a third party. The server needs outbound https to fetch provider pictures;
+  `app.pictures.fetch-provider=false` turns that off. Database migration V16.
+
 ## [1.1.0] - 2026-10-03
 
 ### Added

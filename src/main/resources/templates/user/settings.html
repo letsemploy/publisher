@@ -104,6 +104,35 @@
             <div th:replace="~{fragments/form :: actions('settings.submit', @{/})}"></div>
         </div>
     </form>
+
+    <!-- The picture (spec 7.27): forms of their own, since a file goes as
+         multipart and saving it should not also save the settings above. -->
+    <div class="card mt-3" id="picture">
+        <div class="card-header"><h3 class="card-title" th:text="#{settings.picture}">Picture</h3></div>
+        <div class="card-body">
+            <div class="d-flex align-items-center mb-3">
+                <span th:replace="~{fragments/avatar :: avatar(${settings.avatar}, 'avatar-xl me-3')}"></span>
+                <p class="text-secondary mb-0"
+                   th:text="${settings.local} ? #{settings.picture.hint.local} : #{settings.picture.hint.provider}">
+                    Shown beside your name to the people you work with.</p>
+            </div>
+            <form th:action="@{/settings/picture}" method="post" enctype="multipart/form-data" hx-boost="false">
+                <label class="form-label" for="picture-file" th:text="#{settings.picture.choose}">Choose a picture</label>
+                <input class="form-control" type="file" id="picture-file" name="picture" required
+                       accept="image/jpeg,image/png,image/gif" aria-describedby="picture-hint"
+                       th:attr="data-max-bytes=${settings.pictureMaxBytes},data-too-big=#{validation.picture.fileTooBig}"/>
+                <small class="form-hint" id="picture-hint" th:text="#{settings.picture.formats}">
+                    JPEG, PNG or GIF, up to 5 MB.</small>
+                <div class="btn-list mt-3">
+                    <button type="submit" class="btn btn-primary" th:text="#{settings.picture.upload}">Upload</button>
+                </div>
+            </form>
+            <form th:if="${settings.pictureUploaded}" th:action="@{/settings/picture/remove}" method="post"
+                  hx-boost="false" class="mt-2">
+                <button type="submit" class="btn btn-outline-danger" th:text="#{settings.picture.remove}">Remove picture</button>
+            </form>
+        </div>
+    </div>
 </div>
 </body>
 </html>

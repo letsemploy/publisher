@@ -11,6 +11,8 @@ import org.letsemploy.ojobpub_publisher.membership.MembershipService;
 import org.letsemploy.ojobpub_publisher.security.Actor;
 import org.letsemploy.ojobpub_publisher.security.CurrentUserService;
 import org.letsemploy.ojobpub_publisher.security.UserEntity;
+import org.letsemploy.ojobpub_publisher.user.PictureService;
+import org.letsemploy.ojobpub_publisher.web.view.Avatar;
 import org.letsemploy.ojobpub_publisher.web.view.NavItem;
 import org.letsemploy.ojobpub_publisher.web.view.Ref;
 import org.letsemploy.ojobpub_publisher.web.view.UiContext;
@@ -38,6 +40,7 @@ public class UiContextFactory {
     private final ObjectProvider<BuildProperties> buildProperties;
 
     private final MembershipService membershipService;
+    private final PictureService pictures;
     private final String projectUrl;
 
     public UiContextFactory(CurrentUserService currentUserService,
@@ -46,6 +49,7 @@ public class UiContextFactory {
                             InvitationService invitationService,
                             ObjectProvider<BuildProperties> buildProperties,
                             MembershipService membershipService,
+                            PictureService pictures,
                             @Value("${app.project-url}") String projectUrl) {
         this.currentUserService = currentUserService;
         this.employerService = employerService;
@@ -53,6 +57,7 @@ public class UiContextFactory {
         this.invitationService = invitationService;
         this.buildProperties = buildProperties;
         this.membershipService = membershipService;
+        this.pictures = pictures;
         this.projectUrl = projectUrl;
     }
 
@@ -94,7 +99,11 @@ public class UiContextFactory {
         }
         UserEntity viewing = currentUserService.viewedUser().orElse(null);
 
-        return new UiContext(user.getDisplayName(), user.isAdmin(),
+        // While viewing as someone, the actor is them: theirs is the picture shown.
+        String pictureUrl = user.isAnonymous() || user.isToken() ? null
+                : pictures.urlFor(user.getId()).orElse(null);
+
+        return new UiContext(user.getDisplayName(), Avatar.of(pictureUrl, user.getDisplayName()), user.isAdmin(),
                 currentUserService.isDevMode(), employerContext.getTheme(),
                 active, employers.stream().map(e -> new Ref(e.getId().toString(), e.getName())).toList(),
                 nav, WebLangConfig.LANGUAGES, invitationService.countPendingFor(user),

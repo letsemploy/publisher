@@ -1,5 +1,6 @@
 package org.letsemploy.ojobpub_publisher.security;
 
+import jakarta.servlet.http.HttpSession;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -13,6 +14,7 @@ import org.letsemploy.ojobpub_publisher.audit.AuditEvent;
 import org.letsemploy.ojobpub_publisher.audit.AuditLog;
 import org.letsemploy.ojobpub_publisher.membership.MembershipRole;
 import org.letsemploy.ojobpub_publisher.membership.MembershipService;
+import org.letsemploy.ojobpub_publisher.user.PictureService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -22,6 +24,8 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.core.oidc.user.OidcUser;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 
 /**
  * Resolves the current {@link Actor}: creating the local account on first OIDC
@@ -43,6 +47,10 @@ public class CurrentUserService {
     private final Environment environment;
     private final AuditLog auditLog;
     private final LocalAccountRepo localAccounts;
+    private final PictureService pictures;
+
+    /** The provider picture address this session last reported (spec 7.27); "" for none. */
+    private static final String PICTURE_SEEN = CurrentUserService.class.getName() + ".PICTURE_SEEN";
 
     public CurrentUserService(UserRepo userRepo,
                               MembershipService membershipService,
@@ -50,6 +58,7 @@ public class CurrentUserService {
                               Environment environment,
                               AuditLog auditLog,
                               LocalAccountRepo localAccounts,
+                              PictureService pictures,
                               @Value("${app.oidc.require-verified-email:true}") boolean requireVerifiedEmail,
                               @Value("${app.admin.start-in-admin-mode:false}") boolean startInAdminMode) {
         this.userRepo = userRepo;
@@ -58,6 +67,7 @@ public class CurrentUserService {
         this.environment = environment;
         this.auditLog = auditLog;
         this.localAccounts = localAccounts;
+        this.pictures = pictures;
         this.requireVerifiedEmail = requireVerifiedEmail;
         this.startInAdminMode = startInAdminMode;
     }
@@ -112,7 +122,31 @@ public class CurrentUserService {
         // A suspended account is nobody (spec 2.11). SuspendedAccountFilter ends
         // its session before a handler runs; this is what holds if it did not.
         UserEntity user = signIn(identity);
-        return user.isSuspended() ? Actor.anonymous() : toAppUser(user);
+        if (user.isSuspended()) {
+            return Actor.anonymous();
+        }
+        noticePicture(user, identity);
+        return toAppUser(user);
+    }
+
+    /**
+     * Reports the provider's picture address once per session, not per request:
+     * a new picture at the provider is picked up at the next sign-in (spec 7.27).
+     * A local account has no provider, and a request without a session - the
+     * stateless API - is never given one.
+     */
+    private void noticePicture(UserEntity user, Identity identity) {
+        if (LocalAccount.ISSUER.equals(identity.issuer())
+                || !(RequestContextHolder.getRequestAttributes() instanceof ServletRequestAttributes attributes)) {
+            return;
+        }
+        HttpSession session = attributes.getRequest().getSession(false);
+        String seen = identity.pictureUrl() == null ? "" : identity.pictureUrl();
+        if (session == null || seen.equals(session.getAttribute(PICTURE_SEEN))) {
+            return;
+        }
+        pictures.providerPictureSeen(user.getId(), identity.pictureUrl());
+        session.setAttribute(PICTURE_SEEN, seen);
     }
 
     /**
@@ -235,7 +269,7 @@ public class CurrentUserService {
      * if it may be trusted - or null when the principal is nobody we recognise.
      */
     private record Identity(String issuer, String subject, String displayName, String email,
-                            boolean emailVerified, Map<String, Object> claims) {
+                            boolean emailVerified, Map<String, Object> claims, String pictureUrl) {
     }
 
     private Identity identityOf(Object principal) {
@@ -244,7 +278,7 @@ public class CurrentUserService {
             // arrive through user-info, and the admin mapping reads them (spec 2.2).
             return new Identity(String.valueOf(oidc.getIssuer()), oidc.getSubject(),
                     displayName(oidc), trustedEmail(oidc),
-                    Boolean.TRUE.equals(oidc.getEmailVerified()), oidc.getAttributes());
+                    Boolean.TRUE.equals(oidc.getEmailVerified()), oidc.getAttributes(), blankToNull(oidc.getPicture()));
         }
         // A local account: its address was confirmed before it could have a
         // password, so it is verified by construction (spec 2.12).
@@ -255,7 +289,7 @@ public class CurrentUserService {
             String name = localAccounts.findById(local.getId())
                     .map(LocalAccount::getDisplayName).orElse(local.getDisplayName());
             return new Identity(LocalAccount.ISSUER, local.getId().toString(), name,
-                    local.getEmail(), true, Map.of());
+                    local.getEmail(), true, Map.of(), null);
         }
         // GitHub: OAuth 2.0 without OpenID Connect, identified by GitHubUserService.
         if (principal instanceof GitHubUser github) {
@@ -263,7 +297,7 @@ public class CurrentUserService {
                     ? github.getVerifiedEmail()
                     : github.getPublicEmail();
             return new Identity(github.getIssuer(), github.getSubject(), github.getDisplayName(), email,
-                    github.getVerifiedEmail() != null, github.getAttributes());
+                    github.getVerifiedEmail() != null, github.getAttributes(), github.getAvatarUrl());
         }
         return null;
     }
@@ -341,6 +375,10 @@ public class CurrentUserService {
             return null;
         }
         return oidc.getEmail();
+    }
+
+    private static String blankToNull(String s) {
+        return s == null || s.isBlank() ? null : s;
     }
 
     private static String displayName(OidcUser oidc) {

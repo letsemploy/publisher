@@ -111,9 +111,7 @@
             <div class="nav-item dropdown">
                 <a href="#" class="nav-link d-flex align-items-center text-reset dropdown-toggle"
                    data-bs-toggle="dropdown" aria-expanded="false" th:aria-label="#{label.userMenu}">
-                    <span class="avatar avatar-sm">
-                        <svg th:replace="~{fragments/icon :: i('user','icon')}"></svg>
-                    </span>
+                    <span th:replace="~{fragments/avatar :: avatar(${ui.userAvatar}, 'avatar-sm')}"></span>
                     <span class="d-none d-xl-block ps-2 text-truncate" style="max-width:12rem"
                           th:text="${ui.userName}">User</span>
                 </a>

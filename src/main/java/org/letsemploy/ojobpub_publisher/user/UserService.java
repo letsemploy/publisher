@@ -21,6 +21,7 @@ import org.letsemploy.ojobpub_publisher.security.Actor;
 import org.letsemploy.ojobpub_publisher.security.UserEntity;
 import org.letsemploy.ojobpub_publisher.security.UserRepo;
 import org.letsemploy.ojobpub_publisher.web.Views;
+import org.letsemploy.ojobpub_publisher.web.view.Avatar;
 import org.letsemploy.ojobpub_publisher.web.view.PageView;
 import org.letsemploy.ojobpub_publisher.web.view.SuspensionView;
 import org.letsemploy.ojobpub_publisher.web.view.UserRow;
@@ -51,13 +52,15 @@ public class UserService {
     private final MembershipService membershipService;
     private final AuditLog auditLog;
     private final InputValidator inputs;
+    private final PictureService pictures;
 
     public UserService(UserRepo userRepo, MembershipService membershipService, AuditLog auditLog,
-                       InputValidator inputs) {
+                       InputValidator inputs, PictureService pictures) {
         this.userRepo = userRepo;
         this.membershipService = membershipService;
         this.auditLog = auditLog;
         this.inputs = inputs;
+        this.pictures = pictures;
     }
 
     @Transactional(readOnly = true)
@@ -66,10 +69,12 @@ public class UserService {
         Page<UserEntity> users = userRepo.search(q, suspendedOnly,
                 PageRequest.of(Math.max(page, 0), PAGE_SIZE, Sort.by("displayName")));
         // One count query for the page, not one per row.
-        Map<UUID, Long> employers = membershipService.countsByUser(
-                users.getContent().stream().map(UserEntity::getId).toList());
+        List<UUID> ids = users.getContent().stream().map(UserEntity::getId).toList();
+        Map<UUID, Long> employers = membershipService.countsByUser(ids);
+        Map<UUID, String> pictureUrls = pictures.urlsFor(ids);
         List<UserRow> rows = users.getContent().stream()
-                .map(u -> new UserRow(u.getId().toString(), u.getLabel(), u.getEmail(), provider(u.getIssuer()),
+                .map(u -> new UserRow(u.getId().toString(), u.getLabel(),
+                        Avatar.of(pictureUrls.get(u.getId()), u.getLabel()), u.getEmail(), provider(u.getIssuer()),
                         u.getRole() == UserEntity.Role.ADMIN, employers.getOrDefault(u.getId(), 0L),
                         u.getId().equals(actor.getId()) ? "self"
                                 : u.getRole() == UserEntity.Role.ADMIN ? "admin" : null,

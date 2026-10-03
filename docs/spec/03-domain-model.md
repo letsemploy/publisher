@@ -180,6 +180,10 @@ itself (§2.12) — owns everything else about them.
 The four settings are the person's own: signing in never refreshes them from a provider, as it does the
 name and email (§2.2).
 
+A user may also have a **picture** (§7.27), kept in a table of its own rather than on this record, which
+is read on every request. It is either their own upload, which the provider never replaces, or a copy
+of the provider's, refreshed at sign-in like the name. It is deleted with the user.
+
 The development administrator (§2.3) is an ordinary row of this table, seeded rather than provisioned.
 
 ## 3.8 Invitation

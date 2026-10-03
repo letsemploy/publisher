@@ -13,6 +13,12 @@ public record SettingsView(
         boolean mailInvitations,
         String name,
         String email,
+        /** The current picture or initials (spec 7.27). */
+        Avatar avatar,
+        /** Whether the picture is one they uploaded, rather than the provider's or none. */
+        boolean pictureUploaded,
+        /** The largest file accepted, for the form to refuse before sending. */
+        int pictureMaxBytes,
         /** A local account names itself; a provider's account is named by the provider. */
         boolean local,
         /** Whether invitation mail can go out at all here. */

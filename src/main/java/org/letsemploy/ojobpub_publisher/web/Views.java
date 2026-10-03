@@ -343,9 +343,10 @@ public class Views {
                 timestamp(invitation.getCreatedAt()));
     }
 
-    public MemberRow memberRow(Membership membership, boolean lastOwner, UUID viewerId) {
+    public MemberRow memberRow(Membership membership, boolean lastOwner, UUID viewerId, String pictureUrl) {
         UserEntity user = membership.getUser();
-        return new MemberRow(user.getId().toString(), displayName(user), user.getEmail(),
+        return new MemberRow(user.getId().toString(), displayName(user),
+                Avatar.of(pictureUrl, displayName(user)), user.getEmail(),
                 membership.getRole().name().toLowerCase(), lastOwner,
                 membership.isSuspended() ? timestamp(membership.getSuspendedAt()) : null,
                 user.getId().equals(viewerId));

@@ -38,7 +38,12 @@
                         </thead>
                         <tbody>
                         <tr th:each="m : ${people.members}">
-                            <td th:text="${m.displayName}">Name</td>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <span th:replace="~{fragments/avatar :: avatar(${m.avatar}, 'avatar-sm me-2')}"></span>
+                                    <span th:text="${m.displayName}">Name</span>
+                                </div>
+                            </td>
                             <td class="text-secondary" th:text="${m.email ?: '—'}">a@b.c</td>
                             <td>
                                 <span class="badge" th:classappend="${m.role == 'owner'} ? 'bg-azure-lt' : 'bg-secondary-lt'"

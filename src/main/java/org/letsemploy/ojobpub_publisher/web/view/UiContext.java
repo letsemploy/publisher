@@ -5,6 +5,8 @@ import java.util.List;
 /** Everything the shell needs: identity, employer context, navigation, theme (spec 7.3). */
 public record UiContext(
         String userName,
+        /** The user's picture or initials, in the user menu (spec 7.27). */
+        Avatar userAvatar,
         /** Acting with admin reach right now: an admin in admin mode (spec 2.10). */
         boolean admin,
         boolean devMode,

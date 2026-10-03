@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<!--
+  A person's picture, or their initials without one (spec 7.27).
+  Usage: <span th:replace="~{fragments/avatar :: avatar(${m.avatar}, 'avatar-sm')}"></span>
+
+  Decorative: the name is always printed beside it, so the image has an empty
+  alt and the whole is hidden from assistive technology. The picture is served by
+  the application (/pictures/...), never by a provider, so img-src stays 'self'.
+-->
+<!-- On one line: whitespace inside would push the initials off centre. -->
+<span th:fragment="avatar(a, size)" class="avatar" th:classappend="${size}" aria-hidden="true"><img
+        th:if="${a.url != null}" th:src="@{${a.url}}" alt="" loading="lazy" decoding="async"/><th:block
+        th:if="${a.url == null}" th:text="${a.initials}">AL</th:block></span>
+</body>
+</html>

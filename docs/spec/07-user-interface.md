@@ -60,6 +60,9 @@ Rules:
     configured captcha (§2.12) it is loaded from hCaptcha, on the pages that carry the captcha only,
     and the policy is widened for hCaptcha on those pages alone. mCaptcha's script is vendored like
     any other dependency; only its widget frame comes from the configured instance.
+  - **Not an exception: account pictures.** A provider's picture is copied by the server and served
+    from the application (§7.27), never linked, so showing someone's face tells no third party who
+    is looking at it.
 - **No inline script and no `eval`.** The CSP is `script-src 'self'` with neither `unsafe-inline` nor
   `unsafe-eval` (§9.4). This is why the application's behaviour lives in a module file rather than in
   attributes evaluated at runtime, and it is what makes the strict policy achievable rather than
@@ -124,7 +127,8 @@ left out when printing.
   server, which stores the choice in the session and redirects to the dashboard (§7.10). Not back to
   the current screen: that may show a record of the employer just left, which the new scope does not
   cover.
-- The **user menu**: the current user, with *My activity* (§7.22), *Settings* (§7.26) and *Log out*.
+- The **user menu**: the current user, shown by their picture or initials (§7.27), with *My activity*
+  (§7.22), *Settings* (§7.26) and *Log out*.
   Language and theme are settings, chosen there and nowhere else; the signed-out pages (§7.19, §7.24)
   keep a language switch of their own, which lasts the session.
   For an admin it also offers *Switch to admin mode* or *Leave admin mode* (§2.10).
@@ -498,8 +502,8 @@ Who belongs to an employer. A sidebar destination covering the **active employer
 screen reachable per-employer at the employer record (§7.13) — an admin, and anyone with several
 employers, needs to look at one that is not the one they are working in.
 
-**Every member sees the membership list**, editors included (§2.1): name, email address and role, with
-the sole owner marked. Someone editing an employer's jobs works alongside these people and has to know
+**Every member sees the membership list**, editors included (§2.1): picture (§7.27), name, email
+address and role, with the sole owner marked. Someone editing an employer's jobs works alongside these people and has to know
 who to ask when they need access or a decision; a screen that answers that question only for owners
 makes the owner a lookup service for their own colleagues.
 
@@ -685,5 +689,35 @@ viewing as someone (§2.9), and a token has none.
 - **Account** — the name, editable by a local account only (§2.12): a provider names its accounts and
   renames them at the next sign-in (§2.2), so for those it is shown with that reason. The email, read
   only (§12). *Change password* for a local account (§7.24) and *Delete account* (§7.25).
+- **Picture** — upload or remove one's own (§7.27), in a form of its own beside the others.
 
 The selects offer only what may be chosen, and the server checks it all the same.
+
+## 7.27 Account pictures
+
+A person may have a picture: in the user menu (§7.3), on People (§7.18) and on Users (§7.20). Without one
+they are shown by their **initials**, so no row is left with a gap. The name is always printed beside
+it; the picture is decoration, and hidden from assistive technology.
+
+- **Where it comes from.** A provider that names one — the OpenID Connect `picture` claim, GitHub's
+  avatar (§2.2) — supplies it, refreshed at sign-in like the name. Anyone may **upload** their own from
+  Settings (§7.26), and a local account (§2.12) has no other way. An upload outranks the provider and is
+  never replaced by it; removing it brings the provider's back at the next sign-in.
+- **Stored, never linked** (§7.2). An upload is cropped to a square, shrunk and re-encoded as JPEG, so
+  nothing but pixels is kept — no metadata, such as the position a phone writes into a photo. A
+  provider's picture is downloaded by the server, after the sign-in and off the request, and treated
+  the same way. The browser loads every picture from the application, and the policy keeps
+  `img-src 'self'` (§9.4).
+- **The provider's address is fenced.** Some providers let a person set it, so the server fetches it
+  only over `https`, only from public addresses, without following redirects, within a time and a size
+  limit; anything that does not decode as a picture is dropped. The address is never logged. An
+  operator can turn fetching off, leaving initials or an upload.
+- **Accepted:** JPEG, PNG and GIF, up to 5 MB and 10,000 pixels on a side, which is read from the
+  header before anything is decoded. A form refuses an oversized file before sending it; the server
+  checks again. A phone photo's orientation flag is not applied.
+- **Who may see one:** the person, an admin (§2.10), and the members of an employer they belong to —
+  the people who see them on People. Anyone else is answered `404`, as for a person with no picture
+  (§2.4). A token has none and sees none.
+- Changing and removing one's own is recorded in one's own log (§3.12); a provider's refresh is not,
+  like the name's. Not while viewing as someone (§2.9).
+

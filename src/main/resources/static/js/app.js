@@ -140,6 +140,21 @@
     });
 
     /**
+     * A file over the server's limit is refused here, before it is sent: past
+     * the limit the server cannot answer with the form (spec 7.27). The server
+     * checks again; this only saves the wait and the error page.
+     */
+    document.addEventListener('change', (event) => {
+        const input = event.target.closest('input[type="file"][data-max-bytes]');
+        if (!input) {
+            return;
+        }
+        const tooBig = [...(input.files || [])].some((file) => file.size > Number(input.dataset.maxBytes));
+        input.setCustomValidity(tooBig ? input.dataset.tooBig : '');
+        input.reportValidity();
+    });
+
+    /**
      * Draw Tabler's sparklines (spec 7.10). tabler.min.js draws those present when
      * the page loads; a boosted navigation swaps the body in afterwards, and its
      * charts would stay empty. The figures are in the text beside them either way.

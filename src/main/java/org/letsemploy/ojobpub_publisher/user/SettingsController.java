@@ -14,6 +14,7 @@ import org.letsemploy.ojobpub_publisher.security.CurrentUserService;
 import org.letsemploy.ojobpub_publisher.security.UserEntity;
 import org.letsemploy.ojobpub_publisher.web.UserPreferences;
 import org.letsemploy.ojobpub_publisher.web.view.FieldError;
+import org.letsemploy.ojobpub_publisher.web.view.Avatar;
 import org.letsemploy.ojobpub_publisher.web.view.PageMeta;
 import org.letsemploy.ojobpub_publisher.web.view.SettingsView;
 import org.springframework.context.MessageSource;
@@ -41,17 +42,20 @@ public class SettingsController {
     private final UserPreferences preferences;
     private final Mailer mailer;
     private final MessageSource messages;
+    private final PictureService pictures;
 
     public SettingsController(SettingsService settings,
                               CurrentUserService currentUserService,
                               UserPreferences preferences,
                               Mailer mailer,
-                              MessageSource messages) {
+                              MessageSource messages,
+                              PictureService pictures) {
         this.settings = settings;
         this.currentUserService = currentUserService;
         this.preferences = preferences;
         this.mailer = mailer;
         this.messages = messages;
+        this.pictures = pictures;
     }
 
     @GetMapping("/settings")
@@ -90,7 +94,9 @@ public class SettingsController {
                         boolean mailInvitations, String name, Map<String, String> fieldErrors) {
         model.addAttribute("page", PageMeta.of(message("settings.title")));
         model.addAttribute("settings", new SettingsView(language, theme == null ? "auto" : theme, timeZone,
-                mailInvitations, name, user.getEmail(), SettingsService.isLocal(user), mailer.configured(),
+                mailInvitations, name, user.getEmail(),
+                Avatar.of(pictures.urlFor(user.getId()).orElse(null), user.getLabel()),
+                pictures.hasUpload(user.getId()), PictureProcessor.MAX_BYTES, SettingsService.isLocal(user), mailer.configured(),
                 WebLangConfig.LANGUAGES, SettingsService.THEMES, SettingsService.ZONES,
                 ZoneId.systemDefault().getId()));
         model.addAttribute("fieldErrors", fieldErrors);

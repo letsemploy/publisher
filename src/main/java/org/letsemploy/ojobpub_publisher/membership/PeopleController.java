@@ -9,6 +9,7 @@ import org.letsemploy.ojobpub_publisher.common.exception.ValidationFailure;
 import org.letsemploy.ojobpub_publisher.employer.Employer;
 import org.letsemploy.ojobpub_publisher.employer.EmployerService;
 import org.letsemploy.ojobpub_publisher.invitation.InvitationService;
+import org.letsemploy.ojobpub_publisher.user.PictureService;
 import org.letsemploy.ojobpub_publisher.web.Scope;
 import org.letsemploy.ojobpub_publisher.web.Views;
 import org.letsemploy.ojobpub_publisher.web.view.*;
@@ -40,19 +41,22 @@ public class PeopleController {
     private final Scope scope;
     private final Views views;
     private final MessageSource messages;
+    private final PictureService pictures;
 
     public PeopleController(EmployerService employerService,
                             InvitationService invitationService,
                             MembershipService membershipService,
                             Scope scope,
                             Views views,
-                            MessageSource messages) {
+                            MessageSource messages,
+                            PictureService pictures) {
         this.employerService = employerService;
         this.invitationService = invitationService;
         this.membershipService = membershipService;
         this.scope = scope;
         this.views = views;
         this.messages = messages;
+        this.pictures = pictures;
     }
 
     /**
@@ -198,8 +202,12 @@ public class PeopleController {
 
     private List<MemberRow> memberRows(UUID employerId) {
         UUID viewer = scope.user().getId();
-        return membershipService.membersOf(employerId).stream()
-                .map(m -> views.memberRow(m, membershipService.isLastOwner(employerId, m), viewer))
+        List<Membership> members = membershipService.membersOf(employerId);
+        // One query for the pictures of the whole list (spec 7.27).
+        Map<UUID, String> pictureUrls = pictures.urlsFor(members.stream().map(m -> m.getUser().getId()).toList());
+        return members.stream()
+                .map(m -> views.memberRow(m, membershipService.isLastOwner(employerId, m), viewer,
+                        pictureUrls.get(m.getUser().getId())))
                 .toList();
     }
 

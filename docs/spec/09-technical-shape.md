@@ -107,8 +107,8 @@ changes.
 - Standard security response headers (HSTS, `X-Content-Type-Options`, a restrictive
   `Content-Security-Policy`, `Referrer-Policy`) are set on back-office responses.
 - Because all assets are self-hosted and the application's own behaviour lives in a module file
-  (§7.2), the policy is genuinely strict: `default-src 'self'` with no external script, style or font
-  origin, **no `unsafe-inline`** and **no `unsafe-eval`**. An inline `<style>` or `<script>` block, a
+  (§7.2), the policy is genuinely strict: `default-src 'self'` with no external script, style, font or
+  image origin — account pictures are copied in, not linked (§7.27) — **no `unsafe-inline`** and **no `unsafe-eval`**. An inline `<style>` or `<script>` block, a
   CDN reference, or anything that evaluates code from a string will break the page outright, which is
   the intended feedback.
 - The `dev` bypass is constrained exactly as described in §2.3.

@@ -39,7 +39,12 @@
                 </thead>
                 <tbody>
                 <tr th:each="u : ${users.content}">
-                    <td class="fw-bold" th:text="${u.displayName}">Mara Member</td>
+                    <td>
+                        <div class="d-flex align-items-center">
+                            <span th:replace="~{fragments/avatar :: avatar(${u.avatar}, 'avatar-sm me-2')}"></span>
+                            <span class="fw-bold" th:text="${u.displayName}">Mara Member</span>
+                        </div>
+                    </td>
                     <td class="text-secondary" th:text="${u.email ?: '—'}">a@b.c</td>
                     <td class="text-secondary" th:text="${u.provider}">accounts.google.com</td>
                     <td>

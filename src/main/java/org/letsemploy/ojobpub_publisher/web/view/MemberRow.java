@@ -4,6 +4,7 @@ package org.letsemploy.ojobpub_publisher.web.view;
 public record MemberRow(
         String id,
         String displayName,
+        Avatar avatar,
         String email,
         String role,
         /** The last active owner cannot be demoted, removed or suspended (spec 2.7). */

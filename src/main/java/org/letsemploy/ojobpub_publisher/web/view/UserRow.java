@@ -4,6 +4,7 @@ package org.letsemploy.ojobpub_publisher.web.view;
 public record UserRow(
         String id,
         String displayName,
+        Avatar avatar,
         String email,
         /** The identity provider's host, or "development" for the seeded users. */
         String provider,

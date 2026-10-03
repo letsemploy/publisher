@@ -530,6 +530,38 @@ person's own: `signIn` never touches them. Null means "not chosen".
 - `WebLangConfig.LANGUAGES` is the one list of languages; the menu, the account screens and Settings
   read it.
 
+### Account pictures (`user/Picture*`, `user/UserPicture*`, §7.27)
+
+Stored in `user_pictures` (V16), never linked, so the CSP keeps `img-src 'self'` and no page tells a
+third party who is looking. One row per user, `ON DELETE CASCADE` from `users`.
+
+- **A table of its own, not a column on `users`**, which `signIn` loads on every request. The bytes
+  are a plain `byte[]`, never `@Lob`, because the SQLite driver has no `Blob`. Lists get their URLs
+  from `PictureService.urlsFor` (one projection query, no bytes), and a URL carries `?v=` the
+  `updated_at`, so `GET /pictures/{id}` is cached `private, immutable`.
+- **`PictureProcessor`** (pure, no Spring) is the one way in: the size is read from the header before
+  decoding, then centre-crop, 256 px, JPEG on white. Re-encoding is what strips EXIF/GPS; never store
+  the bytes that arrived. JPEG/PNG/GIF only, no library for WebP/HEIC. A refusal is `Rejected`, whose
+  reason is a `validation.picture.*` key that the controller flashes.
+- **Provider pictures:** `CurrentUserService.noticePicture` reports the claim's URL (`picture`, or
+  GitHub's `avatar_url`) **once per session**, behind a session attribute, never on every request.
+  `PictureService.providerPictureSeen` only reads and publishes an event, because it may run inside a
+  read-only transaction. `ProviderPictureFetcher` downloads `AFTER_COMMIT` on `applicationTaskExecutor`.
+- **The fetch is an SSRF surface:** some IdPs let users set `picture`. So it uses `https` only, every
+  resolved address must be public (`isPublic`), redirects are never followed, the timeout is 5 s, the
+  body is capped with `BodyHandlers.limiting`, and the result goes through the processor. Log the
+  user id, **never the URL**. Do not relax any of this to "support" a provider. Tests use the
+  package-private constructor that takes the address rule.
+- **An upload always wins.** `storeProviderPicture`/`dropProviderPicture` leave `UPLOAD` alone.
+  Removing deletes the row, so the next session fetches the provider's again.
+- **Who sees one** is decided in `PictureService.find`: oneself, `actor.isAdmin()`, or a member of an
+  employer in the actor's active roles. Anyone else gets 404, the same answer as no picture.
+- `fragments/avatar` renders the `<img>` or the initials (`web/view/Avatar`). Keep it on one line:
+  whitespace pushes the initials off centre. Tabler only styles avatar background images, which need
+  a `style` attribute the CSP forbids, hence `.avatar > img` in `app.css`.
+- Multipart is limited to 5 MB (`spring.servlet.multipart.*`). Beyond that Tomcat cannot hand the
+  form to us at all, so `app.js` refuses an oversized file in the browser (`data-max-bytes`).
+
 ### Audit log (`audit/`, §3.12)
 
 One table, `audit_events`, and **two scopes that are columns, not types**: `employer_id` puts a row in
@@ -839,6 +871,10 @@ TEST_DB=sqlite ./mvnw test                   # all, on SQLite; no server
 ./mvnw test -Dtest=JobClickServiceTest       # the dashboard's click figures, scoped to the employers asked
 ./mvnw test -Dtest=FeedStatelessTest         # no feed answer opens a session; a failure is JSON
 ./mvnw test -Dtest=DatabaseInitOrderTest     # Flyway, then the seed, then Hibernate, whatever the classpath
+./mvnw test -Dtest=PictureProcessorTest      # crop, size, metadata stripped, refused before decoding; no Spring
+./mvnw test -Dtest=ProviderPictureFetcherTest # the fetch fence: https, public addresses, no redirects, size; no Spring
+./mvnw test -Dtest=PictureServiceTest        # uploads, the provider's copy, who may see whose picture
+./mvnw test -Dtest=PictureScreenTest         # Settings upload, served from here, People and Users
 make assets                                  # refresh vendored front-end deps (needs Node)
 ```
 

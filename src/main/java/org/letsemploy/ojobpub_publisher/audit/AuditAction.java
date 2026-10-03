@@ -71,6 +71,9 @@ public enum AuditAction {
     // A local account's own password (spec 2.12).
     PASSWORD_CHANGED(Audience.PERSONAL),
     PASSWORD_RESET(Audience.PERSONAL),
+    // One's own upload (spec 7.27); a provider's picture is refreshed unrecorded, like the name.
+    PICTURE_CHANGED(Audience.PERSONAL),
+    PICTURE_REMOVED(Audience.PERSONAL),
     ADMIN_MODE_ENTERED(Audience.PERSONAL),
     ADMIN_MODE_LEFT(Audience.PERSONAL),
     VIEW_AS_STARTED(Audience.PERSONAL),

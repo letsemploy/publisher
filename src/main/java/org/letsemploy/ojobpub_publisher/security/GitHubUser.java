@@ -54,6 +54,11 @@ public class GitHubUser extends DefaultOAuth2User {
         return name != null ? name : text(getAttribute("login"));
     }
 
+    /** The profile picture, copied into the application rather than linked (spec 7.27). */
+    public String getAvatarUrl() {
+        return text(getAttribute("avatar_url"));
+    }
+
     private static String text(Object value) {
         return value == null || value.toString().isBlank() ? null : value.toString();
     }

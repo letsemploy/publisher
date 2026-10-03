@@ -65,6 +65,13 @@ app:
   #   geoip-database: /data/geoip/GeoLite2-Country.mmdb         # or DB-IP Lite; a missing file fails startup
   #   dashboard-days: 30
 
+  # Account pictures (spec 7.27). A provider's picture is downloaded by the
+  # server - https, public addresses only - and served from here, never linked.
+  # The server then needs outbound https to wherever the provider keeps them
+  # (for GitHub, avatars.githubusercontent.com). false: initials, or an upload.
+  # pictures:
+  #   fetch-provider: true
+
   # Email-and-password accounts (spec 2.12), beside or instead of the identity
   # providers below. Off unless enabled. They need mail (spring.mail below) for the
   # sign-up and reset links, and should have a captcha (captcha.* below): the
