@@ -48,6 +48,16 @@ public class Mailer {
         this.from = from;
     }
 
+    /**
+     * Whether a mail server is configured ({@code spring.mail.host}). For mail
+     * that is a courtesy rather than the only way through - an invitation the
+     * invitee also sees on signing in (spec 2.6) - so a deployment without mail
+     * is not warned about it on every send.
+     */
+    public boolean configured() {
+        return sender.getIfAvailable() != null;
+    }
+
     /** Queues the message for delivery after commit, or at once outside a transaction. */
     public void send(Mail mail) {
         events.publishEvent(mail);

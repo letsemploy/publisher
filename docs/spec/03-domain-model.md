@@ -171,7 +171,14 @@ itself (§2.12) — owns everything else about them.
 | `displayName` | string | no | for display; falls back to email, then subject |
 | `role` | enum | **yes** | the **platform** role (§2.1): `USER` (default) or `ADMIN` |
 | `suspendedAt` | instant | no | set while an admin has suspended the account (§2.11); null means active |
+| `language` | string | no | the person's own choice (§7.26), one of the languages there are bundles for; null leaves it to the browser |
+| `theme` | enum | no | `auto`, `light` or `dark` (§7.3); null is `auto` |
+| `timeZone` | string | no | an IANA zone for every timestamp shown to them; null is the server's |
+| `mailInvitations` | boolean | **yes** | whether an invitation is also mailed to them (§2.6); default true |
 | `memberships` | set of Membership | no | the employers this user belongs to, and with what role (§3.9) |
+
+The four settings are the person's own: signing in never refreshes them from a provider, as it does the
+name and email (§2.2).
 
 The development administrator (§2.3) is an ordinary row of this table, seeded rather than provisioned.
 

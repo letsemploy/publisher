@@ -41,6 +41,22 @@ public class UserEntity extends Base {
         return suspendedAt != null;
     }
 
+    // The person's own settings (spec 7.26). Never refreshed from a provider at
+    // sign-in; null means not chosen.
+
+    /** A language tag such as {@code de}; null leaves it to the browser. */
+    private String language;
+
+    /** {@code auto}, {@code light} or {@code dark}; null is {@code auto}. */
+    private String theme;
+
+    /** An IANA zone id, for timestamps on screen; null is the server's zone. */
+    private String timeZone;
+
+    /** Whether an invitation is also mailed to them (spec 2.6). */
+    @Column(name = "mail_invitations", nullable = false)
+    private boolean mailInvitations = true;
+
     /**
      * The platform role (spec 2.1). Per-employer standing lives on the membership,
      * not here: {@code EDITOR} named a global role that no longer exists.

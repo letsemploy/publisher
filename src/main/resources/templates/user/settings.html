@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<!--
+  A person's own settings (spec 7.26), from the user menu. Saved with the account,
+  so they follow the person into every new session; applied at once on saving.
+
+  Not boosted: the language and theme live on <html>, which hx-boost does not
+  swap (see fragments/nav.html), so saving is a whole-page navigation.
+-->
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout}">
+<head><title th:text="#{settings.title}">Settings</title></head>
+<body>
+<div layout:fragment="content">
+    <form th:action="@{/settings}" method="post" hx-boost="false" novalidate>
+        <div th:replace="~{fragments/form :: errorSummary(${errors})}"></div>
+
+        <div class="card mb-3">
+            <div class="card-header"><h3 class="card-title" th:text="#{settings.preferences}">Preferences</h3></div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <label class="form-label" for="language" th:text="#{label.language}">Language</label>
+                    <select class="form-select" id="language" name="language"
+                            th:classappend="${fieldErrors.get('language') != null} ? 'is-invalid'">
+                        <option value="" th:text="#{settings.language.browser}">As my browser</option>
+                        <option th:each="l : ${settings.languages}" th:value="${l}" th:text="#{'lang.' + ${l}}"
+                                th:selected="${l == settings.language}">English</option>
+                    </select>
+                    <div class="invalid-feedback" th:if="${fieldErrors.get('language') != null}"
+                         th:text="${fieldErrors.get('language')}"></div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label" for="theme" th:text="#{label.theme}">Theme</label>
+                    <select class="form-select" id="theme" name="theme"
+                            th:classappend="${fieldErrors.get('theme') != null} ? 'is-invalid'">
+                        <option th:each="t : ${settings.themes}" th:value="${t}" th:text="#{'theme.' + ${t}}"
+                                th:selected="${t == settings.theme}">System</option>
+                    </select>
+                    <div class="invalid-feedback" th:if="${fieldErrors.get('theme') != null}"
+                         th:text="${fieldErrors.get('theme')}"></div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label" for="timeZone" th:text="#{settings.timeZone}">Time zone</label>
+                    <select class="form-select" id="timeZone" name="timeZone"
+                            th:classappend="${fieldErrors.get('timeZone') != null} ? 'is-invalid'"
+                            aria-describedby="timeZone-hint">
+                        <option value="" th:text="#{settings.timeZone.server(${settings.serverZone})}">As the server</option>
+                        <option th:each="z : ${settings.zones}" th:value="${z}" th:text="${z}"
+                                th:selected="${z == settings.timeZone}">Europe/Zurich</option>
+                    </select>
+                    <small class="form-hint" id="timeZone-hint" th:text="#{settings.timeZone.hint}">For every date and time shown.</small>
+                    <div class="invalid-feedback" th:if="${fieldErrors.get('timeZone') != null}"
+                         th:text="${fieldErrors.get('timeZone')}"></div>
+                </div>
+                <div>
+                    <label class="form-check">
+                        <input class="form-check-input" type="checkbox" id="mailInvitations" name="mailInvitations"
+                               value="true" th:checked="${settings.mailInvitations}" aria-describedby="mailInvitations-hint"/>
+                        <span class="form-check-label" th:text="#{settings.mailInvitations}">Mail me when I am invited to an employer</span>
+                    </label>
+                    <small class="form-hint" id="mailInvitations-hint"
+                           th:text="${settings.mailConfigured} ? #{settings.mailInvitations.hint} : #{settings.mailInvitations.noMail}">
+                        The invitation also waits for you here.</small>
+                </div>
+            </div>
+        </div>
+
+        <div class="card mb-3">
+            <div class="card-header"><h3 class="card-title" th:text="#{settings.account}">Account</h3></div>
+            <div class="card-body">
+                <!-- A local account names itself (spec 2.12); a provider names its own. -->
+                <div class="mb-3" th:if="${settings.local}">
+                    <label class="form-label required" for="name" th:text="#{label.name}">Name</label>
+                    <input class="form-control" id="name" name="name" type="text" required maxlength="255"
+                           autocomplete="name" th:value="${settings.name}"
+                           th:classappend="${fieldErrors.get('name') != null} ? 'is-invalid'"
+                           th:attr="aria-invalid=${fieldErrors.get('name') != null} ? 'true' : null"/>
+                    <div class="invalid-feedback" th:if="${fieldErrors.get('name') != null}"
+                         th:text="${fieldErrors.get('name')}"></div>
+                </div>
+                <div class="mb-3" th:unless="${settings.local}">
+                    <div class="form-label" th:text="#{label.name}">Name</div>
+                    <div id="name-readonly" th:text="${settings.name}">Ada</div>
+                    <small class="form-hint" th:text="#{settings.name.provider}">Your sign-in provider sets your name.</small>
+                </div>
+                <div class="mb-3">
+                    <div class="form-label" th:text="#{label.email}">Email</div>
+                    <div th:text="${settings.email ?: #messages.msg('settings.email.none')}">ada@example.com</div>
+                </div>
+                <div class="btn-list">
+                    <a class="btn" th:if="${settings.local}" th:href="@{/account/password}">
+                        <svg th:replace="~{fragments/icon :: i('lock','icon')}"></svg>
+                        <span th:text="#{account.menu.password}">Change password</span>
+                    </a>
+                    <a class="btn btn-outline-danger" th:href="@{/account/delete}">
+                        <svg th:replace="~{fragments/icon :: i('user-x','icon')}"></svg>
+                        <span th:text="#{account.menu.delete}">Delete account</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div th:replace="~{fragments/form :: actions('settings.submit', @{/})}"></div>
+        </div>
+    </form>
+</div>
+</body>
+</html>

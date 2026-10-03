@@ -151,19 +151,6 @@ class ImpersonationTest {
                 .isEqualTo(InvitationStatus.PENDING);
     }
 
-    /** What only changes the viewer's own view still works. */
-    @Test
-    void theThemeCanStillBeSwitched() throws Exception {
-        viewAs(MARA);
-        mvc.perform(post("/context/theme").session(session).param("theme", "dark"))
-                .andExpect(status().is3xxRedirection())
-                .andExpect(flash().attributeCount(0));
-        assertThat(page("/")).contains("data-bs-theme=\"dark\"");
-        mvc.perform(post("/context/theme").session(session).param("theme", "auto"))
-                .andExpect(status().is3xxRedirection());
-        assertThat(page("/")).contains("data-bs-theme=\"auto\"");
-    }
-
     // ----------------------------------------------------------------- limits
 
     /** Never another admin, never oneself, never someone who does not exist: 404. */

@@ -209,6 +209,35 @@ class LocalAccountTest {
         signIn(email, newPassword);
     }
 
+    /**
+     * A local account renames itself in Settings (spec 2.12, 7.26). Every request
+     * refreshes the user record from the sign-in, so the name must come from the
+     * account and not from a session's copy - or the other session would write
+     * the old name back at its next request.
+     */
+    @Test
+    void aRenameHoldsAcrossSessions() throws Exception {
+        String email = verifiedAccount("Ada");
+        MockHttpSession here = signIn(email, PASSWORD);
+        MockHttpSession elsewhere = signIn(email, PASSWORD);
+        mvc.perform(get("/").session(elsewhere)).andExpect(status().isOk());
+
+        mvc.perform(from(post("/settings").session(here).param("name", "Ada Lovelace")
+                        .param("mailInvitations", "true")))
+                .andExpect(redirectedUrl("/settings"));
+        assertThat(mvc.perform(get("/").session(elsewhere)).andReturn().getResponse().getContentAsString())
+                .contains("Ada Lovelace");
+        assertThat(mvc.perform(get("/settings").session(here)).andReturn().getResponse().getContentAsString())
+                .contains("value=\"Ada Lovelace\"");
+        assertThat(users.findAll().stream().filter(u -> email.equals(u.getEmail())).findFirst().orElseThrow()
+                .getDisplayName()).isEqualTo("Ada Lovelace");
+        assertThat(accounts.findByEmailIgnoreCase(email).orElseThrow().getDisplayName()).isEqualTo("Ada Lovelace");
+
+        // A blank name is refused, and nothing changes.
+        mvc.perform(from(post("/settings").session(here).param("name", " "))).andExpect(status().isOk());
+        assertThat(accounts.findByEmailIgnoreCase(email).orElseThrow().getDisplayName()).isEqualTo("Ada Lovelace");
+    }
+
     @Test
     void aResetEndsTheSessionsThatWereOpen() throws Exception {
         String email = verifiedAccount("Ada");
@@ -241,7 +270,8 @@ class LocalAccountTest {
     void theChangeScreenIsOnlyForALocalAccountAndNeedsTheCurrentPassword() throws Exception {
         String email = verifiedAccount("Ada");
         MockHttpSession session = signIn(email, PASSWORD);
-        assertThat(mvc.perform(get("/").session(session)).andReturn().getResponse().getContentAsString())
+        // Reached from Settings (spec 7.26), which offers it to a local account only.
+        assertThat(mvc.perform(get("/settings").session(session)).andReturn().getResponse().getContentAsString())
                 .contains("href=\"/account/password\"");
         String refused = mvc.perform(from(post("/account/password").session(session)
                         .param("current", "not it at all").param("password", "another long passphrase")

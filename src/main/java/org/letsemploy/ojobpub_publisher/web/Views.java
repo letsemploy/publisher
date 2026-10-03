@@ -3,7 +3,6 @@ package org.letsemploy.ojobpub_publisher.web;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
-import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
@@ -44,8 +43,7 @@ import org.springframework.stereotype.Component;
 @Component
 public class Views {
 
-    private static final DateTimeFormatter TIMESTAMP =
-            DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm").withZone(ZoneId.systemDefault());
+    private static final DateTimeFormatter PATTERN = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
 
     private final MessageSource messages;
     /** Feed URLs must be absolute and correct behind a reverse proxy (spec 9.5). */
@@ -56,9 +54,12 @@ public class Views {
         this.baseUrl = baseUrl;
     }
 
-    /** An instant as every screen shows one. */
+    /**
+     * An instant as every screen shows one: in the viewer's time zone (spec 7.26),
+     * which is the server's until they choose one.
+     */
     public static String timestamp(Instant instant) {
-        return TIMESTAMP.format(instant);
+        return PATTERN.withZone(LocaleContextHolder.getTimeZone().toZoneId()).format(instant);
     }
 
     public String feedUrl(Feed feed) {
@@ -150,7 +151,7 @@ public class Views {
                 new Object[]{e.getTargetLabel(), detail == null ? "—" : detail}, LocaleContextHolder.getLocale());
         String actor = e.getActorType() == AuditEvent.ActorType.SYSTEM
                 ? message("audit.actor.system") : e.getActorLabel();
-        return new ActivityRow(TIMESTAMP.format(e.getOccurredAt()), actor,
+        return new ActivityRow(timestamp(e.getOccurredAt()), actor,
                 e.getActorType().name().toLowerCase(), text, e.getEmployerLabel());
     }
 
@@ -161,7 +162,7 @@ public class Views {
     private TransitionEvent event(JobStatusEvent e) {
         return new TransitionEvent(
                 e.getFromStatus() == null ? "-" : e.getFromStatus().name(),
-                e.getToStatus().name(), e.getActor(), TIMESTAMP.format(e.getOccurredAt()));
+                e.getToStatus().name(), e.getActor(), timestamp(e.getOccurredAt()));
     }
 
     private String workLoad(Job job) {
@@ -306,7 +307,7 @@ public class Views {
     public FeedRow feedRow(Feed feed, int publishedCount, int excludedCount) {
         return new FeedRow(feed.getId().toString(), feed.getName(), feed.getSlug(),
                 feedUrl(feed), publishedCount, feed.getJobs().size(),
-                feed.getLastModifiedAt() == null ? "-" : TIMESTAMP.format(feed.getLastModifiedAt()),
+                feed.getLastModifiedAt() == null ? "-" : timestamp(feed.getLastModifiedAt()),
                 excludedCount);
     }
 
@@ -330,7 +331,7 @@ public class Views {
                 invitation.getEmployer().getName(),
                 invitation.getRole().name().toLowerCase(),
                 invitation.getInvitedByLabel(),
-                TIMESTAMP.format(invitation.getCreatedAt()));
+                timestamp(invitation.getCreatedAt()));
     }
 
     public PendingInvitationRow pendingInvitationRow(Invitation invitation) {
@@ -339,14 +340,14 @@ public class Views {
                 invitation.getInvitee().getEmail(),
                 invitation.getRole().name().toLowerCase(),
                 invitation.getInvitedByLabel(),
-                TIMESTAMP.format(invitation.getCreatedAt()));
+                timestamp(invitation.getCreatedAt()));
     }
 
     public MemberRow memberRow(Membership membership, boolean lastOwner, UUID viewerId) {
         UserEntity user = membership.getUser();
         return new MemberRow(user.getId().toString(), displayName(user), user.getEmail(),
                 membership.getRole().name().toLowerCase(), lastOwner,
-                membership.isSuspended() ? TIMESTAMP.format(membership.getSuspendedAt()) : null,
+                membership.isSuspended() ? timestamp(membership.getSuspendedAt()) : null,
                 user.getId().equals(viewerId));
     }
 
@@ -355,9 +356,9 @@ public class Views {
                 token.getScopes().stream().map(s -> s.name().toLowerCase()).sorted().toList(),
                 // Null once that account is deleted (spec 2.13); the template says so.
                 token.getCreatedBy() == null ? null : displayName(token.getCreatedBy()),
-                TIMESTAMP.format(token.getCreatedAt()),
-                token.getLastUsedAt() == null ? null : TIMESTAMP.format(token.getLastUsedAt()),
-                token.getExpiresAt() == null ? null : TIMESTAMP.format(token.getExpiresAt()),
+                timestamp(token.getCreatedAt()),
+                token.getLastUsedAt() == null ? null : timestamp(token.getLastUsedAt()),
+                token.getExpiresAt() == null ? null : timestamp(token.getExpiresAt()),
                 TokenLifecycle.state(token, now, warningDays).name().toLowerCase(),
                 token.isRevoked());
     }

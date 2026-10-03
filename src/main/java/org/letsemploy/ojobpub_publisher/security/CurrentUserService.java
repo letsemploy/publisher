@@ -153,12 +153,6 @@ public class CurrentUserService {
         return Optional.empty();
     }
 
-    /** Signed in with a local account, as themselves: the one person who has a password here (spec 7.24). */
-    public boolean isLocalAccount() {
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        return auth != null && auth.getPrincipal() instanceof LocalUser && !isImpersonating();
-    }
-
     /**
      * The user being viewed, with their own memberships and never admin standing.
      * Re-checked on every request: the viewer must still be the admin who started
@@ -255,7 +249,12 @@ public class CurrentUserService {
         // A local account: its address was confirmed before it could have a
         // password, so it is verified by construction (spec 2.12).
         if (principal instanceof LocalUser local) {
-            return new Identity(LocalAccount.ISSUER, local.getId().toString(), local.getDisplayName(),
+            // The name is read from the account, not the session: it is the
+            // person's to change (spec 7.26), and every other open session would
+            // otherwise write the old one back at its next request.
+            String name = localAccounts.findById(local.getId())
+                    .map(LocalAccount::getDisplayName).orElse(local.getDisplayName());
+            return new Identity(LocalAccount.ISSUER, local.getId().toString(), name,
                     local.getEmail(), true, Map.of());
         }
         // GitHub: OAuth 2.0 without OpenID Connect, identified by GitHubUserService.

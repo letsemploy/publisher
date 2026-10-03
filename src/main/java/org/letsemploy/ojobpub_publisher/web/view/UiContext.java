@@ -22,9 +22,7 @@ public record UiContext(
         String viewingAsName,
         String viewingAsEmail,
         /** May switch admin mode on or off: an admin, acting as themselves (spec 2.10). */
-        boolean adminModeAvailable,
-        /** Signed in with a local account, as themselves: may change its password (spec 7.24). */
-        boolean passwordChangeable) {
+        boolean adminModeAvailable) {
 
     public boolean isViewingAs() {
         return viewingAsName != null;

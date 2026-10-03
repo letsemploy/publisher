@@ -7,6 +7,7 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import org.letsemploy.ojobpub_publisher.config.WebLangConfig;
 import org.letsemploy.ojobpub_publisher.common.exception.NotFoundException;
 import org.letsemploy.ojobpub_publisher.common.exception.ValidationFailure;
 import org.letsemploy.ojobpub_publisher.security.CurrentUserService;
@@ -70,7 +71,7 @@ public class AccountController {
     @ModelAttribute("languageLinks")
     Map<String, String> languageLinks() {
         Map<String, String> links = new java.util.LinkedHashMap<>();
-        for (String language : List.of("en", "de")) {
+        for (String language : WebLangConfig.LANGUAGES) {
             links.put(language, ServletUriComponentsBuilder.fromCurrentRequest()
                     .replaceQueryParam("lang", language).build().toUriString());
         }

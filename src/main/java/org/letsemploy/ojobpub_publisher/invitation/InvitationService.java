@@ -1,6 +1,8 @@
 package org.letsemploy.ojobpub_publisher.invitation;
 
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import org.letsemploy.ojobpub_publisher.audit.AuditAction;
@@ -11,6 +13,8 @@ import org.letsemploy.ojobpub_publisher.common.exception.NotFoundException;
 import org.letsemploy.ojobpub_publisher.common.validation.InputValidator;
 import org.letsemploy.ojobpub_publisher.employer.Employer;
 import org.letsemploy.ojobpub_publisher.employer.EmployerRepo;
+import org.letsemploy.ojobpub_publisher.mail.Mail;
+import org.letsemploy.ojobpub_publisher.mail.Mailer;
 import org.letsemploy.ojobpub_publisher.membership.MembershipRole;
 import org.letsemploy.ojobpub_publisher.membership.MembershipService;
 import org.letsemploy.ojobpub_publisher.security.Actor;
@@ -19,6 +23,8 @@ import org.letsemploy.ojobpub_publisher.token.ServiceTokenRepo;
 import org.letsemploy.ojobpub_publisher.security.UserRepo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -48,6 +54,8 @@ public class InvitationService {
     private final ResourceLimits limits;
     private final AuditLog auditLog;
     private final InputValidator inputs;
+    private final Mailer mailer;
+    private final String baseUrl;
 
     public InvitationService(InvitationRepo invitationRepo,
                              ServiceTokenRepo serviceTokenRepo,
@@ -56,7 +64,9 @@ public class InvitationService {
                              MembershipService membershipService,
                              ResourceLimits limits,
                              AuditLog auditLog,
-                             InputValidator inputs) {
+                             InputValidator inputs,
+                             Mailer mailer,
+                             @Value("${app.base-url:http://localhost:8080}") String baseUrl) {
         this.invitationRepo = invitationRepo;
         this.serviceTokenRepo = serviceTokenRepo;
         this.userRepo = userRepo;
@@ -65,6 +75,8 @@ public class InvitationService {
         this.limits = limits;
         this.auditLog = auditLog;
         this.inputs = inputs;
+        this.mailer = mailer;
+        this.baseUrl = baseUrl;
     }
 
     // ------------------------------------------------------------- the invitee
@@ -188,8 +200,33 @@ public class InvitationService {
                         granted);
         invitationRepo.save(invitation);
         recordSent(employer, invitee, granted, actor);
+        mailInvitee(invitation);
         log.info("{} invited user {} to employer {}", actor.getDisplayName(), invitee.getId(), employerId);
         return InviteOutcome.SENT;
+    }
+
+    /**
+     * Tell the invitee by mail, when mail is configured and they have not turned
+     * it off (spec 2.6, 7.26). Only for an invitation that exists - an unknown
+     * address gets nothing, so the form cannot be used to mail anyone at all - and
+     * after commit, so a refused one mails nobody. In the invitee's language when
+     * they have chosen one, else the inviter's: colleagues usually share it. A
+     * courtesy, not the delivery: the invitation waits on the invitations screen
+     * either way.
+     */
+    private void mailInvitee(Invitation invitation) {
+        UserEntity invitee = invitation.getInvitee();
+        if (!mailer.configured() || !invitee.isMailInvitations()) {
+            return;
+        }
+        mailer.send(new Mail(invitee.getEmail(), "invitation", "mail.invitation.subject",
+                Map.of("name", invitee.getLabel(),
+                        "inviter", invitation.getInvitedByLabel(),
+                        "employer", invitation.getEmployer().getName(),
+                        "role", "role." + invitation.getRole().name().toLowerCase(),
+                        "link", baseUrl + "/invitations"),
+                invitee.getLanguage() != null ? Locale.forLanguageTag(invitee.getLanguage())
+                        : LocaleContextHolder.getLocale()));
     }
 
     /**

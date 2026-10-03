@@ -20,6 +20,7 @@ import org.letsemploy.ojobpub_publisher.common.validation.InputValidator;
 import org.letsemploy.ojobpub_publisher.mail.Mail;
 import org.letsemploy.ojobpub_publisher.mail.Mailer;
 import org.letsemploy.ojobpub_publisher.security.Actor;
+import org.letsemploy.ojobpub_publisher.security.UserEntity;
 import org.letsemploy.ojobpub_publisher.security.UserRepo;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.MessageSource;
@@ -127,9 +128,13 @@ public class LocalAccountService {
                 return;
             }
             String token = issue(account, AccountToken.Purpose.RESET_PASSWORD, RESET_LIFETIME);
+            // In the holder's own language once they have chosen one (spec 7.26);
+            // whoever asked may not be them, and the mail is theirs.
+            Locale theirs = users.findByIssuerAndSubject(LocalAccount.ISSUER, account.getId().toString())
+                    .map(UserEntity::getLanguage).map(Locale::forLanguageTag).orElse(locale);
             mailer.send(new Mail(account.getEmail(), "reset", "mail.reset.subject",
                     Map.of("name", account.getDisplayName(),
-                            "link", baseUrl + "/password/reset?token=" + token), locale));
+                            "link", baseUrl + "/password/reset?token=" + token), theirs));
         });
     }
 

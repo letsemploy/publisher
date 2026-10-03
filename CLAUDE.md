@@ -275,7 +275,7 @@ auto-configured bean. `OidcLoginTest` and `LockedChainTest` guard both direction
   suspended account untouched, so it is neither refreshed nor re-decided by the admin rules.
   Memberships stay, and a sole owner is named on the confirmation, not protected. The dev bypass never
   checks it. `OidcLoginTest` covers the sign-in half, `AccountSuspensionTest` the admin half.
-- **Deleting one's own account** (§2.13) is `user/AccountDeletionService`, from the user menu at
+- **Deleting one's own account** (§2.13) is `user/AccountDeletionService`, from Settings at
   `/account/delete`, for anyone signed in as themselves (never a token; viewing-as is refused by
   `ImpersonationGuard`). The email is typed back and checked in the service; the **only unsuspended
   stored `ADMIN`** may not. Employers from `MembershipService.soleOwnershipsOf` are deleted first via
@@ -388,6 +388,14 @@ memberships and roles; `InvitationService` owns invitations. Use
 `MembershipService.requireOwner(user, employerId)`, which passes for an owner of that employer **or** a
 platform admin.
 
+**A created invitation is mailed to the invitee** (§2.6) by `InvitationService.mailInvitee`, only when
+`Mailer.configured()` — without a mail server it is skipped silently, not warned about as account mail
+is. Only on the path that saves an invitation, so an unknown address (answered `SENT`) gets nothing and
+the form never mails arbitrary people; not to an invitee who turned it off (`mailInvitations`, §7.26);
+in the invitee's saved language, else the inviter's locale (`LocaleContextHolder`); after commit, like
+all mail. `InvitationMailTest` is not `@Transactional` for that reason,
+and disables `management.health.mail`, which refuses a mocked `JavaMailSender`.
+
 **Membership has exactly two write sites** (§2.2): creating an employer (`EmployerService.save` grants
 the creator `OWNER`) and accepting an invitation (with the role the invitation carried). A third would
 mean access was granted without consent. `changeRole` may only change an existing membership.
@@ -497,6 +505,30 @@ own and never satisfies the last-owner rule — which is why `MembershipRepo` co
 **Neither `ServiceTokenAuthFilter` nor `ApiTransportFilter` is a bean.** Boot registers every `Filter`
 bean against every request, which would demand a bearer token on the whole back-office; the API chain
 constructs them.
+
+### Settings (`user/Settings*`, `web/UserPreferences*`, §7.26)
+
+A person's language, theme, time zone and invitation-mail flag are columns on `users` (V15), the
+person's own: `signIn` never touches them. Null means "not chosen".
+
+- **Applied once per session** by `UserPreferencesInterceptor`, behind a session marker, and only for
+  someone signed in as themselves — so a session started on the sign-in page gets them at its first
+  request after. It writes the `SessionLocaleResolver` attributes (locale **and time zone**) and
+  `EmployerContext.theme`; `UserPreferences.apply` is the one place that does, also after saving the page.
+  Registered in `WebLangConfig` **before** the `?lang` interceptor and excluded from the public URLs and
+  static files, which must open no session.
+- **Settings is the only place to choose them.** The user menu has no language or theme switch any
+  more, and `POST /context/theme` is gone. `?lang=` remains for the signed-out pages (sign-in, account
+  screens) and lasts the session only. While viewing as someone nothing is applied: the admin keeps
+  their own.
+- **Timestamps** go through `Views.timestamp`, in `LocaleContextHolder.getTimeZone()`, which falls back
+  to the JVM zone. `TokenLifecycle` keeps the server zone: that is a rule, not a display.
+- **A local account's name** is read by `CurrentUserService.identityOf` from the `local_accounts` row,
+  not the session's `LocalUser`: `signIn` writes the name to `users` on every request, so another open
+  session would otherwise put the old name back. `SettingsService.save` renames both rows; a provider's
+  account cannot be renamed (404), since the provider renames it at the next sign-in.
+- `WebLangConfig.LANGUAGES` is the one list of languages; the menu, the account screens and Settings
+  read it.
 
 ### Audit log (`audit/`, §3.12)
 
@@ -763,6 +795,7 @@ TEST_DB=sqlite ./mvnw test                   # all, on SQLite; no server
 ./mvnw test -Dtest=OjobpubConformanceTest    # the build gate; no Spring, no database
 ./mvnw test -Dtest=ScreenRenderingTest       # renders every screen against the seed data
 ./mvnw test -Dtest=InvitationServiceTest     # consent and non-disclosure
+./mvnw test -Dtest=InvitationMailTest        # the invitation mail: who gets one, in which language, never an unknown address
 ./mvnw test -Dtest=MembershipServiceTest     # ownership, role changes, the last-owner rule
 ./mvnw test -Dtest=ManagementApiTest         # the GraphQL API end to end
 ./mvnw test -Dtest=ApiLimitsTest             # depth, rate and body limits, with the ceilings lowered
@@ -789,6 +822,7 @@ TEST_DB=sqlite ./mvnw test                   # all, on SQLite; no server
 ./mvnw test -Dtest=MemberSuspensionScreenTest # suspending and reinstating from the People screen
 ./mvnw test -Dtest=AccountSuspensionTest     # suspending accounts: admins only, never self or an admin
 ./mvnw test -Dtest=AccountDeletionTest       # deleting one's own account: sole employers go, tokens stay, only admin may not
+./mvnw test -Dtest=SettingsTest              # settings: saved, applied to a new session, not while viewing as
 ./mvnw test -Dtest=ResourceLimitsTest        # the quota convention; no Spring, no database
 ./mvnw test -Dtest=QuotaEnforcementTest      # the seven quotas against the seed data
 ./mvnw test -Dtest=MessageBundleTest         # the two bundles, at parity

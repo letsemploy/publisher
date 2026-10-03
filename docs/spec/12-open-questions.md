@@ -21,9 +21,9 @@
 6. **Feed visibility.** Every feed URL is public to anyone holding the link (§5.1). Whether a feed may
    be marked private and require a rotatable token is deferred; the UUID in the path makes a link
    impractical to guess, but it is not a secret and may appear in referrer headers and proxy logs.
-7. **Invitation delivery.** No email is sent; an invitee learns of an invitation only by signing in
-   (§2.6). Mail now exists for local accounts (§2.12), so the transport is there; what would still
-   need specification is which invitations are mailed, bounce handling and opt-outs.
+7. **Invitation delivery.** *Resolved:* a created invitation is mailed to the invitee where mail is
+   configured (§2.6), in their own language once chosen, and they may turn it off (§7.26). Still open:
+   bounce handling.
 8. **Leaving an employer.** A member can be removed by an owner (§2.6) but cannot currently remove
    themselves, and an owner cannot hand over and walk away in one action. Whether "leave" and "transfer
    ownership" should exist as first-class actions is deferred; today the sequence is promote, then ask

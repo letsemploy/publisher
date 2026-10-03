@@ -124,7 +124,9 @@ left out when printing.
   server, which stores the choice in the session and redirects to the dashboard (§7.10). Not back to
   the current screen: that may show a record of the employer just left, which the new scope does not
   cover.
-- The **user menu**: the current user, with *My activity* (§7.22), *Language*, *Theme* and *Log out*.
+- The **user menu**: the current user, with *My activity* (§7.22), *Settings* (§7.26) and *Log out*.
+  Language and theme are settings, chosen there and nowhere else; the signed-out pages (§7.19, §7.24)
+  keep a language switch of their own, which lasts the session.
   For an admin it also offers *Switch to admin mode* or *Leave admin mode* (§2.10).
 - An **Admin mode** badge while admin mode is on, so it is never on unnoticed.
 
@@ -151,8 +153,8 @@ theme. There are three choices — *System*, *Light* and *Dark* — and *System*
 `data-bs-theme="auto"`, which a small synchronous script in `<head>` (`theme.js`, not deferred, so it
 runs before the first paint) resolves to light or dark from the operating system's preference, following
 it while the page is open. *Light* and *Dark* need no JavaScript; without it, *System* shows light.
-Choosing *Light* or *Dark* overrides the system until *System* is chosen again. The menu offers all
-three rather than a toggle, because the server cannot know what the system prefers.
+Choosing *Light* or *Dark* overrides the system until *System* is chosen again. Settings (§7.26) offers
+all three rather than a toggle, because the server cannot know what the system prefers.
 
 **Dev banner** — when authentication is bypassed (§2.3), a persistent, high-contrast banner is pinned
 above the top bar on every screen.
@@ -647,14 +649,14 @@ accounts are enabled; otherwise they do not exist.
   whatever happened.
 - **Reset password** — reached from the mail: the new password twice. Afterwards sign-in, saying the
   password changed.
-- **Change password** — for a signed-in local account, from the user menu: the current password and
+- **Change password** — for a signed-in local account, from Settings (§7.26): the current password and
   the new one twice. Accounts from a provider are not offered it; their password is the provider's.
 - Every form says its password rule before it is broken, and keeps what was typed except passwords
   when it refuses.
 
 ## 7.25 Deleting one's account
 
-For every signed-in person, from the user menu, inside the shell (§7.3) — not standalone like the
+For every signed-in person, from Settings (§7.26), inside the shell (§7.3) — not standalone like the
 account screens (§7.24), because it is reached while signed in, whatever the way in. The rules are
 §2.13.
 
@@ -666,3 +668,22 @@ account screens (§7.24), because it is reached while signed in, whatever the wa
   re-shows the page saying nothing was deleted.
 - **The only admin** is shown why not, and what to do first, instead of the form.
 - **Afterwards** the sign-in page says the account was deleted, and offers the way back, not the form.
+
+## 7.26 Settings
+
+A person's own settings, from the user menu, inside the shell. Saved with the account (§3.7), so they
+follow the person into every new session and onto every device; applied at once on saving. Not while
+viewing as someone (§2.9), and a token has none.
+
+- **Language** — one of those offered, or the browser's. Mail meant for the person — an invitation
+  (§2.6), a password reset (§2.12) — is in it too once chosen.
+- **Theme** — System, Light or Dark (§7.3).
+- **Time zone** — for every date and time shown, from the named regions; until chosen, the server's.
+  Rules about time, such as a token's expiry (§2.8), are not affected: only what is shown.
+- **Invitation mail** — on by default. Turned off, an invitation is still made and waits under
+  Invitations (§7.16); it is only not mailed. Where no mail is sent at all the setting says so.
+- **Account** — the name, editable by a local account only (§2.12): a provider names its accounts and
+  renames them at the next sign-in (§2.2), so for those it is shown with that reason. The email, read
+  only (§12). *Change password* for a local account (§7.24) and *Delete account* (§7.25).
+
+The selects offer only what may be chosen, and the server checks it all the same.

@@ -122,15 +122,11 @@
                         <svg th:replace="~{fragments/icon :: i('history','icon dropdown-item-icon')}"></svg>
                         <span th:text="#{activity.mine}">My activity</span>
                     </a>
-                    <!-- Only a local account has a password here (spec 7.24). -->
-                    <a class="dropdown-item" th:if="${ui.passwordChangeable}" th:href="@{/account/password}">
-                        <svg th:replace="~{fragments/icon :: i('lock','icon dropdown-item-icon')}"></svg>
-                        <span th:text="#{account.menu.password}">Change password</span>
-                    </a>
-                    <!-- Anyone, as themselves - never the person being viewed (spec 2.13). -->
-                    <a class="dropdown-item" th:unless="${ui.viewingAs}" th:href="@{/account/delete}">
-                        <svg th:replace="~{fragments/icon :: i('user-x','icon dropdown-item-icon')}"></svg>
-                        <span th:text="#{account.menu.delete}">Delete account</span>
+                    <!-- Anyone, as themselves - never the person being viewed (spec 7.26).
+                         Changing the password and deleting the account are reached from there. -->
+                    <a class="dropdown-item" th:unless="${ui.viewingAs}" th:href="@{/settings}">
+                        <svg th:replace="~{fragments/icon :: i('settings','icon dropdown-item-icon')}"></svg>
+                        <span th:text="#{account.menu.settings}">Settings</span>
                     </a>
                     <!-- Only for an admin acting as themselves (spec 2.10); a POST, so the
                          switch is a deliberate act and the audit log can record it. -->
@@ -140,30 +136,6 @@
                             <svg th:replace="~{fragments/icon :: i('key','icon dropdown-item-icon')}"></svg>
                             <span th:text="${ui.admin} ? #{adminMode.leave} : #{adminMode.enter}">Switch to admin mode</span>
                         </button>
-                    </form>
-                    <div class="dropdown-divider"></div>
-                    <h6 class="dropdown-header" th:text="#{label.language}">Language</h6>
-                    <!--
-                      Not boosted: hx-boost swaps the body only, so the lang and
-                      data-bs-theme attributes on <html> would keep their old values.
-                      Language and theme are rare actions; a full navigation is the
-                      right trade and needs no JavaScript.
-                    -->
-                    <a class="dropdown-item" th:each="l : ${ui.languages}"
-                       th:href="@{''(lang=${l})}" hx-boost="false"
-                       th:classappend="${l == #locale.language} ? 'active'"
-                       th:text="#{'lang.' + ${l}}">English</a>
-                    <div class="dropdown-divider"></div>
-                    <h6 class="dropdown-header" th:text="#{label.theme}">Theme</h6>
-                    <!-- Three choices, not a toggle: without JavaScript the server cannot know
-                         what the system prefers, and a toggle could never return to it. -->
-                    <form th:each="t : ${ {'auto', 'light', 'dark'} }"
-                          th:action="@{/context/theme}" method="post" hx-boost="false">
-                        <input type="hidden" name="theme" th:value="${t}"/>
-                        <button type="submit" class="dropdown-item"
-                                th:classappend="${t == ui.theme} ? 'active'"
-                                th:attr="aria-current=${t == ui.theme} ? 'true' : null"
-                                th:text="#{'theme.' + ${t}}">System</button>
                     </form>
                     <div class="dropdown-divider"></div>
                     <form th:action="@{/logout}" method="post">

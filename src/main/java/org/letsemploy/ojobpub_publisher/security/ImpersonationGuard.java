@@ -28,7 +28,7 @@ import org.springframework.web.servlet.support.RequestContextUtils;
 public class ImpersonationGuard implements HandlerInterceptor, WebMvcConfigurer {
 
     static final String STOP = "/impersonation/stop";
-    private static final Set<String> ALLOWED = Set.of(STOP, "/context/employer", "/context/theme");
+    private static final Set<String> ALLOWED = Set.of(STOP, "/context/employer");
     private static final Set<String> SAFE_METHODS = Set.of("GET", "HEAD", "OPTIONS");
 
     private final CurrentUserService currentUserService;

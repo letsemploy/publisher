@@ -233,9 +233,23 @@ see — and a silent no-op there would look like a bug.
 
 **Notification**
 
-No email is sent. The application sends mail only for local accounts (§2.12); the invitee sees pending
-invitations when they next sign in (§7.3 surfaces the count in the sidebar). Delivery is recorded as an
-open question (§12).
+The invitee sees pending invitations when they next sign in (§7.3 surfaces the count in the sidebar).
+Where mail is configured (§9.5), they are also **mailed**, as a courtesy rather than the delivery:
+
+- **Once, when an invitation is created** — from the People screen or the API alike. Not when the
+  answer is *already a member* or *already invited*, and not for revoking, declining or accepting.
+- **Only to an account.** An address that names no account, or several, creates no invitation and
+  gets no mail, so the invite form cannot be used to mail anyone at all. The inviter's screen answers
+  the same either way (non-disclosure, above).
+- **To the stored, verified address** (§2.2), after the invitation is committed: a refused one mails
+  nobody, and a failed delivery changes nothing on screen.
+- **Who, what and where:** the inviter (a person's name, or a token's), the employer, the role, and a
+  link to the invitations screen, which asks to sign in. It carries no secret.
+- **In the invitee's language** once they have chosen one (§7.26), else the inviter's — colleagues
+  usually share it.
+- **Not to someone who turned it off** in their settings (§7.26). The invitation is made all the same.
+- **Without a mail server nothing is sent**, silently: unlike the account mails (§2.12) an invitation
+  does not depend on it.
 
 ## 2.7 Ownership and role changes
 
@@ -492,11 +506,13 @@ configured. It is **off unless configured** (§9.5), and it can be offered alone
   address's count.
 - **Recorded:** changing and resetting a password, in the person's own log (§3.12). The account is
   recorded as created at its first sign-in, as for a provider.
+- **Its name is its own:** a local account may rename itself in Settings (§7.26). Every sign-in reads
+  it from the account, so the change reaches every open session.
 - **Not yet:** changing the email of a local account, and linking one to a provider account (§12).
 
 ## 2.13 Deleting one's own account
 
-Any person may **delete their own account**, from the user menu (§7.25). It is the one way an account
+Any person may **delete their own account**, from Settings (§7.25, §7.26). It is the one way an account
 ends; suspension (§2.11) only stops it.
 
 - **Their own, and only as themselves.** Not another person's — an admin who must stop an account

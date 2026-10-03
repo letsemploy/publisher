@@ -72,7 +72,7 @@ class ScreenRenderingTest {
                 "/invitations", "/people", "/tokens", "/users", "/users?q=mara", "/users?suspended=true",
                 "/users/" + MEMBER + "/suspend",
                 // The seeded admin is the only one: this renders the refusal (spec 2.13).
-                "/account/delete",
+                "/account/delete", "/settings",
                 "/activity", "/activity/all", "/activity/mine", "/users/44444444-4444-4444-8444-444444444444/activity",
                 "/employers/" + EMPLOYER + "/people",
                 "/employers/" + EMPLOYER + "/people/members/" + MEMBER + "/remove",
@@ -170,7 +170,7 @@ class ScreenRenderingTest {
         int userMenu = html.indexOf("/logout");
         assertThat(sidebarEnd).as("sidebar present").isPositive();
         assertThat(userMenu).as("user menu after the sidebar").isGreaterThan(sidebarEnd);
-        assertThat(html).contains("/context/theme");
+        assertThat(html).contains("href=\"/settings\"");
         // The seed has one employer, so there is nothing to switch to (spec 2.5);
         // ActiveEmployerTest renders the switcher with two.
         assertThat(html).doesNotContain("/context/employer");
@@ -180,21 +180,17 @@ class ScreenRenderingTest {
     }
 
     /**
-     * Theme and language must not be boosted. hx-boost swaps the body only, so the
+     * Saving the settings must not be boosted. hx-boost swaps the body only, so the
      * `data-bs-theme` and `lang` attributes on <html> would keep their old values
-     * and the change would not appear until the next full page load.
+     * and the change would not appear until the next full page load (spec 7.26).
      */
     @Test
-    void themeAndLanguageForceAFullNavigation() throws Exception {
-        String html = html("/jobs");
-        int themeForm = html.indexOf("/context/theme");
-        assertThat(themeForm).isPositive();
-        assertThat(html.substring(themeForm - 120, themeForm + 120))
-                .as("theme form opts out of boosting").contains("hx-boost=\"false\"");
-        int langLink = html.indexOf("lang=de");
-        assertThat(langLink).isPositive();
-        assertThat(html.substring(langLink - 200, langLink + 120))
-                .as("language links opt out of boosting").contains("hx-boost=\"false\"");
+    void savingSettingsForcesAFullNavigation() throws Exception {
+        String html = html("/settings");
+        int form = html.indexOf("action=\"/settings\"");
+        assertThat(form).isPositive();
+        assertThat(html.substring(form - 20, form + 120))
+                .as("settings form opts out of boosting").contains("hx-boost=\"false\"");
     }
 
     /** The attribute the theme actually depends on is on <html>, and reflects the session. */

@@ -1,14 +1,14 @@
 package org.letsemploy.ojobpub_publisher.web;
 
-import jakarta.servlet.http.HttpServletRequest;
 import java.util.UUID;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
 /**
- * Switching the active employer and the theme (spec 7.3). Both are ordinary form
- * posts followed by a redirect, so they work with JavaScript disabled.
+ * Switching the active employer (spec 2.5, 7.3): an ordinary form post followed by
+ * a redirect, so it works with JavaScript disabled. Language and theme are
+ * settings (spec 7.26), chosen on that page.
  */
 @Controller
 public class ContextController {
@@ -28,28 +28,6 @@ public class ContextController {
         }
         // To the dashboard, not back: the screen the user was on may show a record
         // of the employer they just left, which the new scope no longer covers.
-        return "redirect:/";
-    }
-
-    @PostMapping("/context/theme")
-    public String switchTheme(@RequestParam String theme, HttpServletRequest request) {
-        employerContext.setTheme(switch (theme) {
-            case "light", "dark" -> theme;
-            default -> "auto";
-        });
-        return redirectBack(request);
-    }
-
-    /** Return the user to the screen they were on: a theme changes nothing on it but the look. */
-    private String redirectBack(HttpServletRequest request) {
-        String referer = request.getHeader("Referer");
-        if (referer != null && !referer.isBlank()) {
-            int schemeEnd = referer.indexOf("://");
-            int pathStart = schemeEnd < 0 ? -1 : referer.indexOf('/', schemeEnd + 3);
-            if (pathStart > 0) {
-                return "redirect:" + referer.substring(pathStart);
-            }
-        }
         return "redirect:/";
     }
 }

@@ -1,0 +1,8 @@
+[(#{mail.greeting(${name})})]
+
+[(#{mail.invitation.body(${inviter},${employer},${#messages.msg(role)})})]
+
+[(#{mail.invitation.respond})]
+[(${link})]
+
+[(#{mail.invitation.ignore})]

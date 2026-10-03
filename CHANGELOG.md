@@ -10,12 +10,22 @@ Section numbers such as §5.6 refer to the specification in [`docs/SPEC.md`](doc
 
 ### Added
 
-- Deleting one's own account, from the user menu, after typing one's email address back (§2.13,
+- Deleting one's own account, from Settings, after typing one's email address back (§2.13,
   §7.25). Employers nobody else owns are deleted with it, with everything they hold; employers
   someone else owns stay. The only admin cannot delete their account.
+- An invited person is mailed about the invitation, with a link to accept or decline it, when a mail
+  server is configured (§2.6). Only addresses that belong to an account are mailed, and an invitee can
+  turn it off in Settings.
+- A Settings page, from the user menu (§7.26): language, theme, time zone for every date and time
+  shown, and whether invitations are mailed. A local account can change its name there. Change
+  password and Delete account moved there from the user menu.
 
 ### Changed
 
+- Language and theme are kept with the account instead of the session, so they survive signing out
+  and follow a person to other devices. They are chosen in Settings, which replaces the language and
+  theme entries of the user menu. Mail meant for a person - an invitation, a password reset - is in
+  their chosen language. Database migration V15.
 - An API token outlives the account that created it: deleting that account keeps the token working,
   and the API tokens screen says it was created by a deleted account. Database migration V14 makes
   the creator optional.
