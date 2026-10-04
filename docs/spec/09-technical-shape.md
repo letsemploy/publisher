@@ -174,6 +174,11 @@ the application at startup. Behind a reverse proxy the database needs the client
 the only way in. `app.clicks.ignore-user-agents` lists the user-agent substrings that are machines, and
 `app.clicks.dashboard-days` (30) and `app.clicks.top-jobs` (10) shape the dashboard card.
 
+The **weekly summary** (§7.28) runs on `app.summary.cron`, a Spring cron expression (second, minute,
+hour, day, month, weekday; default `0 0 7 * * MON`), in `app.summary.zone` (an IANA zone; empty, the
+default, is the server's). `app.summary.enabled=false` switches the schedule off. It needs mail, as
+above, and `app.base-url` for its links.
+
 ## 9.6 Code conventions
 
 Plain Java first. Lombok is **reduced to accessors on mutable classes**, and everything else is

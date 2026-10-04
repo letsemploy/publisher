@@ -11,10 +11,10 @@
    a natural key?) need specification.
 3. **Feed-level filters.** Feed membership is explicit. Whether a feed may instead be defined as a saved
    filter (all jobs with tag *java*) is deferred; the URL contract is unaffected either way.
-4. **Scheduled work.** The date window is evaluated at serving time, so no scheduler is required, and
-   the application ships none. If
-   notifications ("three postings expire next week") are wanted, a scheduled job and its delivery
-   channel need specification.
+4. **Scheduled work.** *Settled for notifications:* the weekly summary (§7.28) is the application's
+   one scheduled task, delivered by mail. The date window is still evaluated at serving time and token
+   expiry when a token is used or listed, so nothing else needs a scheduler. Any further scheduled work
+   — disabling unused tokens, say — needs specification of its own.
 5. **Analytics.** *Partly settled:* clicks on the job links are counted per job, day and country and
    shown to the employer's members on the dashboard (§5.6, §7.10). Whether feed *fetches* are measured
    per consumer is still unspecified.

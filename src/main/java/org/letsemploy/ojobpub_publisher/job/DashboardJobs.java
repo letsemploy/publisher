@@ -63,7 +63,7 @@ public record DashboardJobs(
                 recent++;
             }
             if (presentation == Publication.Presentation.PUBLISHED) {
-                LocalDate lastDay = lastDay(job);
+                LocalDate lastDay = Publication.lastDay(job);
                 if (lastDay != null && !lastDay.isAfter(today.plusDays(CLOSING_DAYS))) {
                     closing.add(new Closing(job, lastDay));
                 }
@@ -81,19 +81,6 @@ public record DashboardJobs(
         stale.sort(Comparator.comparing(Job::getLastModifiedAt));
         return new DashboardJobs(published, draft, expired, inactive, jobs.size(), recent,
                 List.copyOf(closing), List.copyOf(incomplete), List.copyOf(stale));
-    }
-
-    /**
-     * The last day the job is published on: the earlier of its apply-by and end
-     * dates, the two that close the date window (spec 4.4), or null for neither.
-     */
-    static LocalDate lastDay(Job job) {
-        LocalDate applyBefore = job.getApplyBefore();
-        LocalDate endDate = job.getEndDate();
-        if (applyBefore == null) {
-            return endDate;
-        }
-        return endDate == null || applyBefore.isBefore(endDate) ? applyBefore : endDate;
     }
 
     /** Published jobs as a share of all jobs, 0-100, for the KPI ring. */

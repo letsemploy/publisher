@@ -11,6 +11,8 @@ public record SettingsView(
         /** Null: the server's zone. */
         String timeZone,
         boolean mailInvitations,
+        /** Whether the weekly summary is mailed to them (spec 7.28). */
+        boolean mailSummary,
         String name,
         String email,
         /** The current picture or initials (spec 7.27). */
@@ -21,7 +23,7 @@ public record SettingsView(
         int pictureMaxBytes,
         /** A local account names itself; a provider's account is named by the provider. */
         boolean local,
-        /** Whether invitation mail can go out at all here. */
+        /** Whether invitation and summary mail can go out at all here. */
         boolean mailConfigured,
         List<String> languages,
         List<String> themes,

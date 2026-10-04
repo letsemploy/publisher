@@ -92,8 +92,9 @@ class SettingsTest {
         assertThat(saved.getLanguage()).isEqualTo("de");
         assertThat(saved.getTheme()).isEqualTo("dark");
         assertThat(saved.getTimeZone()).isEqualTo("America/New_York");
-        // The checkbox was not sent: unticked.
+        // The checkboxes were not sent: unticked.
         assertThat(saved.isMailInvitations()).isFalse();
+        assertThat(saved.isMailSummary()).isFalse();
 
         assertThat(render("/settings", session))
                 .contains("lang=\"de\"").contains("data-bs-theme=\"dark\"").contains("Einstellungen");
@@ -120,10 +121,12 @@ class SettingsTest {
         person.setTimeZone("Asia/Tokyo");
         userRepo.save(person);
         mvc.perform(post("/settings").param("language", "").param("theme", "auto").param("timeZone", "")
-                        .param("mailInvitations", "true"))
+                        .param("mailInvitations", "true").param("mailSummary", "true"))
                 .andExpect(redirectedUrl("/settings"));
 
         UserEntity saved = reloaded();
+        // The weekly summary is asked for (spec 7.28).
+        assertThat(saved.isMailSummary()).isTrue();
         assertThat(saved.getLanguage()).isNull();
         assertThat(saved.getTheme()).isNull();
         assertThat(saved.getTimeZone()).isNull();

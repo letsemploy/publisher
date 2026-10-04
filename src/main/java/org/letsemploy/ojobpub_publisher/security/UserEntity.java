@@ -57,6 +57,17 @@ public class UserEntity extends Base {
     @Column(name = "mail_invitations", nullable = false)
     private boolean mailInvitations = true;
 
+    /** Whether they receive the weekly summary (spec 7.28); off until chosen. */
+    @Column(name = "mail_summary", nullable = false)
+    private boolean mailSummary;
+
+    /**
+     * When the weekly summary was last claimed for them, whether or not a mail
+     * went out (spec 7.28). Written only by the summary's conditional update.
+     */
+    @Column(name = "summary_sent_at")
+    private Instant summarySentAt;
+
     /**
      * The platform role (spec 2.1). Per-employer standing lives on the membership,
      * not here: {@code EDITOR} named a global role that no longer exists.

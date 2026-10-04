@@ -8,6 +8,13 @@ Section numbers such as §5.6 refer to the specification in [`docs/SPEC.md`](doc
 
 ## [Unreleased]
 
+### Added
+
+- A weekly summary mail, asked for in Settings. Each Monday morning it covers the employers you belong
+  to: clicks against the week before, jobs newly published, set inactive or past their dates, what needs
+  attention, and, for owners, API tokens about to expire. It is sent only when a mail server is configured,
+  and not in a week with nothing to report. `app.summary.cron` and `app.summary.zone` set when it goes out.
+
 ### Fixed
 
 - The job list's row menu is no longer cut off by the table's scroll area.

@@ -1,12 +1,15 @@
 package org.letsemploy.ojobpub_publisher.job;
 
+import java.time.Instant;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import org.letsemploy.ojobpub_publisher.audit.AuditAction;
 import org.letsemploy.ojobpub_publisher.audit.AuditEvent;
 import org.letsemploy.ojobpub_publisher.audit.AuditLog;
@@ -274,7 +277,31 @@ public class JobService {
         for (UUID employerId : employerIds) {
             jobs.addAll(jobRepo.findByEmployerIdOrderByTitleAsc(employerId));
         }
-        return DashboardJobs.of(jobs, LocalDate.now(), java.time.Instant.now());
+        return DashboardJobs.of(jobs, LocalDate.now(), Instant.now());
+    }
+
+    /**
+     * One employer's jobs, with their locations and tags, for the weekly summary
+     * (spec 7.28). The employer must be one of the actor's.
+     */
+    @Transactional(readOnly = true)
+    public List<Job> jobsOf(UUID employerId, Actor actor) {
+        if (!actor.isAdmin() && !actor.getEmployerIds().contains(employerId)) {
+            throw new NotFoundException("Employer not found: " + employerId);
+        }
+        return jobRepo.findByEmployerIdOrderByTitleAsc(employerId);
+    }
+
+    /** The ids of the employer's jobs set inactive since an instant (spec 7.28), each once. */
+    @Transactional(readOnly = true)
+    public Set<UUID> deactivatedSince(UUID employerId, Instant since, Actor actor) {
+        if (!actor.isAdmin() && !actor.getEmployerIds().contains(employerId)) {
+            throw new NotFoundException("Employer not found: " + employerId);
+        }
+        return eventRepo.findByJobEmployerIdAndToStatusAndOccurredAtGreaterThanEqual(
+                        employerId, JobStatus.INACTIVE, since).stream()
+                .map(e -> e.getJob().getId())
+                .collect(Collectors.toSet());
     }
 
     private static <E extends Enum<E>> E enumOf(Class<E> type, String value) {

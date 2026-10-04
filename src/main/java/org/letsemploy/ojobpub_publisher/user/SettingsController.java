@@ -62,7 +62,7 @@ public class SettingsController {
     public String settings(Model model) {
         UserEntity user = settings.self(self());
         return page(model, user, user.getLanguage(), user.getTheme(), user.getTimeZone(),
-                user.isMailInvitations(), user.getDisplayName(), Map.of());
+                user.isMailInvitations(), user.isMailSummary(), user.getDisplayName(), Map.of());
     }
 
     @PostMapping("/settings")
@@ -70,20 +70,22 @@ public class SettingsController {
                        @RequestParam(required = false) String theme,
                        @RequestParam(required = false) String timeZone,
                        @RequestParam(defaultValue = "false") boolean mailInvitations,
+                       @RequestParam(defaultValue = "false") boolean mailSummary,
                        @RequestParam(required = false) String name,
                        HttpServletRequest request, HttpServletResponse response,
                        Model model, RedirectAttributes flash) {
         Actor actor = self();
         UserEntity saved;
         try {
-            saved = settings.save(actor, language, theme, timeZone, mailInvitations, name);
+            saved = settings.save(actor, language, theme, timeZone, mailInvitations, mailSummary, name);
         } catch (ValidationFailure e) {
             Map<String, String> errors = new LinkedHashMap<>();
             // A select offers only what may be chosen, so only a name is ever
             // refused for something the person typed; its message is localized.
             e.getFieldErrors().forEach((field, message) ->
                     errors.put(field, field.equals("name") ? message : message("settings.invalid")));
-            return page(model, settings.self(actor), language, theme, timeZone, mailInvitations, name, errors);
+            return page(model, settings.self(actor), language, theme, timeZone, mailInvitations, mailSummary, name,
+                    errors);
         }
         preferences.apply(request, response, saved, true);
         flash.addFlashAttribute("successMsg", "settings.saved");
@@ -91,10 +93,11 @@ public class SettingsController {
     }
 
     private String page(Model model, UserEntity user, String language, String theme, String timeZone,
-                        boolean mailInvitations, String name, Map<String, String> fieldErrors) {
+                        boolean mailInvitations, boolean mailSummary, String name,
+                        Map<String, String> fieldErrors) {
         model.addAttribute("page", PageMeta.of(message("settings.title")));
         model.addAttribute("settings", new SettingsView(language, theme == null ? "auto" : theme, timeZone,
-                mailInvitations, name, user.getEmail(),
+                mailInvitations, mailSummary, name, user.getEmail(),
                 Avatar.of(pictures.urlFor(user.getId()).orElse(null), user.getLabel()),
                 pictures.hasUpload(user.getId()), PictureProcessor.MAX_BYTES, SettingsService.isLocal(user), mailer.configured(),
                 WebLangConfig.LANGUAGES, SettingsService.THEMES, SettingsService.ZONES,

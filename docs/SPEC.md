@@ -99,6 +99,7 @@ the text such as §2.6 means the same thing: find the chapter below, then the se
   - [7.25 Deleting one's account](spec/07-user-interface.md#725-deleting-ones-account)
   - [7.26 Settings](spec/07-user-interface.md#726-settings)
   - [7.27 Account pictures](spec/07-user-interface.md#727-account-pictures)
+  - [7.28 Weekly summary](spec/07-user-interface.md#728-weekly-summary)
 - **[8. Cross-cutting behaviour](spec/08-cross-cutting.md)**
   - [8.1 Internationalization](spec/08-cross-cutting.md#81-internationalization)
   - [8.2 Validation and errors](spec/08-cross-cutting.md#82-validation-and-errors)

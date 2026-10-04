@@ -54,6 +54,9 @@ app:
   # AdminModeTest turns it off to test the default.
   admin:
     start-in-admin-mode: true
+  # The weekly summary's schedule stays off; WeeklySummaryMailTest calls the service.
+  summary:
+    enabled: false
 
 logging:
   level:

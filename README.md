@@ -67,6 +67,8 @@ docker run -d --name ojobpub -p 8080:8080 -v ojobpub-data:/data \
   start.
 - **Memory.** The image runs in a 512 MB container at about 400 MB resident. Its JVM options are set
   in `JAVA_TOOL_OPTIONS`, and setting your own replaces them.
+- **Mail** (any SMTP server, `SPRING_MAIL_HOST` and friends) is optional. It carries invitations, local
+  account links and the weekly summary people can ask for in Settings; without it nothing is sent.
 - **Click countries** come from a proxy header such as Cloudflare's `CF-IPCountry`, or from a
   mounted GeoIP database; see the prod example below.
 - **Health.** `/actuator/health` answers up or down, without details, on the application's port.

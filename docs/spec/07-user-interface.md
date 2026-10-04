@@ -686,6 +686,8 @@ viewing as someone (§2.9), and a token has none.
   Rules about time, such as a token's expiry (§2.8), are not affected: only what is shown.
 - **Invitation mail** — on by default. Turned off, an invitation is still made and waits under
   Invitations (§7.16); it is only not mailed. Where no mail is sent at all the setting says so.
+- **Weekly summary** — off by default; turned on, the summary of §7.28 is mailed. Where no mail is
+  sent at all the setting says so.
 - **Account** — the name, editable by a local account only (§2.12): a provider names its accounts and
   renames them at the next sign-in (§2.2), so for those it is shown with that reason. The email, read
   only (§12). *Change password* for a local account (§7.24) and *Delete account* (§7.25).
@@ -721,3 +723,36 @@ it; the picture is decoration, and hidden from assistive technology.
 - Changing and removing one's own is recorded in one's own log (§3.12); a provider's refresh is not,
   like the name's. Not while viewing as someone (§2.9).
 
+## 7.28 Weekly summary
+
+A person may ask, in Settings (§7.26), for a weekly mail about the employers they belong to. It is for
+someone who has no daily reason to open the dashboard (§7.10) and would otherwise learn only by chance
+that a posting left its feeds. It is **off until chosen**, and sent only where mail is configured (§9.5).
+
+- **Who gets one.** A person who asked for it, whose account is not suspended (§2.11), with an
+  address, and with at least one active membership. It covers **those employers only**, each in a
+  section of its own, by name: a suspended membership is left out as everywhere (§2.7), and a platform
+  admin's mail covers the employers they belong to, not every employer there is (§2.10). A token gets
+  none.
+- **What it says, per employer**, over the last seven days:
+  - the counts the dashboard shows — published, drafts, expired, inactive;
+  - **clicks** (§5.6) against the seven days before, and the most clicked jobs;
+  - jobs **newly published**;
+  - jobs **set inactive** that are still inactive;
+  - jobs whose **date window closed** (§4.4), so that they left their feeds. Nothing is recorded when
+    that happens, so they are found by their dates;
+  - what the dashboard lists as needing attention: closing soon, active but incomplete, forgotten
+    drafts;
+  - for an **owner** only, API tokens about to expire (§2.8), since only owners see them (§7.22).
+
+  Each job is named with a link to it, and the mail ends with links to the dashboard and to Settings to
+  turn it off.
+- **Nothing to report, no mail.** A section with no clicks in either week and nothing in any list is
+  left out; with every section left out no mail is sent. The counts alone are not news.
+- **When.** Once a week, on a schedule the installation sets (§9.5), by default Monday at 07:00. This
+  is the application's one scheduled task (§12): the date window and token expiry are still decided
+  when read. Every instance may run it; each person's summary is **claimed in the database** first, so
+  however many instances share it, a person gets one mail a week. The claim stands for a week with
+  nothing to report, and nothing is claimed while no mail server is configured.
+- **Language.** The person's own (§7.26), else English; dates are calendar dates, and a token's expiry
+  is the day in the person's time zone.

@@ -1,5 +1,6 @@
 package org.letsemploy.ojobpub_publisher.security;
 
+import java.time.Instant;
 import java.util.List;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -67,5 +68,19 @@ public interface UserRepo extends JpaRepository<UserEntity, UUID>, JpaSpecificat
     @Modifying(flushAutomatically = true, clearAutomatically = true)
     @Query("DELETE FROM UserEntity u WHERE u.id = :id")
     int deleteWithEverything(@Param("id") UUID id);
+
+    /** Who has asked for the weekly summary and can receive it (spec 7.28). */
+    List<UserEntity> findByMailSummaryIsTrueAndSuspendedAtIsNullAndEmailIsNotNull();
+
+    /**
+     * Claims this week's summary for one person (spec 7.28): stamps it unless it was
+     * stamped after {@code due}. One statement, so of several instances running the
+     * same schedule exactly one gets 1 back and sends; the others get 0.
+     */
+    @Modifying(flushAutomatically = true, clearAutomatically = true)
+    @Query("UPDATE UserEntity u SET u.summarySentAt = :now"
+            + " WHERE u.id = :id AND (u.summarySentAt IS NULL OR u.summarySentAt < :due)")
+    int claimSummary(@Param("id") UUID id, @Param("now") Instant now,
+                     @Param("due") Instant due);
 
 }

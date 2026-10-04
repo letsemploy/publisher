@@ -109,7 +109,7 @@ measure is worth:
 ### Package by feature
 
 `employer`, `job`, `location`, `tag`, `feed`, `invitation`, `membership`, `token`, `user`, `audit`,
-`account` (local accounts), `click` (job links and their counters) — each
+`account` (local accounts), `click` (job links and their counters), `summary` (the weekly mail) — each
 owns its entity, repository, service, form objects and controllers. Plus `common` (shared base types, slugs,
 exceptions), `config` (beans), `mail` (outbound mail), `security` (actors, roles, filter chains), `web` (shell context, view
 models, error handling), `ojobpub/v1` (the published contract) and `api` (the GraphQL management API).
@@ -530,6 +530,31 @@ person's own: `signIn` never touches them. Null means "not chosen".
 - `WebLangConfig.LANGUAGES` is the one list of languages; the menu, the account screens and Settings
   read it.
 
+### Weekly summary (`summary/`, §7.28)
+
+Opt-in from Settings (`users.mail_summary`, V17), one mail per person covering every employer they are
+an **active** member of. Sent only when `Mailer.configured()`.
+
+- **The one scheduled task.** `SummaryScheduler` (`@EnableScheduling` on it, behind
+  `app.summary.enabled`) calls `SummaryService.sendDue(now)` on `app.summary.cron`. The test profile
+  switches it off, and tests call `sendDue` directly.
+- **The claim makes several instances safe.** `UserRepo.claimSummary` is one conditional `UPDATE` of
+  `summary_sent_at`: whoever gets `1` sends, everyone else gets `0`. It is stamped even when there was
+  nothing to report, and **not at all without a mail server**, so the first run after one is configured
+  still reaches everyone. Each person runs in their own transaction, so one failure stops nobody else.
+  No ShedLock: the database row is the lock.
+- **It reads as the person, never as an admin.** The `Actor` is built by hand from
+  `MembershipService.activeRolesOf` with `admin` false, and every read goes through the services
+  (`EmployerService.visibleTo`, `JobService.jobsOf`/`deactivatedSince`, `ServiceTokenService.forEmployer`,
+  which checks ownership). Don't build it with the stored role, or an admin's mail covers every employer.
+- **`WeeklySummary`** is pure and clock-taking, like `DashboardJobs`, and built on it and on
+  `Publication`. "Expired this week" is **derived** (`Publication.lastDay` in the last seven days),
+  because nothing is written when a window closes. "Set inactive" comes from `job_status_events`, and
+  only jobs still inactive are reported. `isEmpty()` ignores the counts, so a quiet week sends nothing.
+- **The mail** is `templates/mail/summary.txt`. It is rendered after commit, so the template may only
+  touch fields already loaded: titles, ids, dates. Dates go through `#temporals.format(…, 'MEDIUM')`. It is
+  in the stored language, else English, since there is no request to take one from.
+
 ### Account pictures (`user/Picture*`, `user/UserPicture*`, §7.27)
 
 Stored in `user_pictures` (V16), never linked, so the CSP keeps `img-src 'self'` and no page tells a
@@ -875,6 +900,8 @@ TEST_DB=sqlite ./mvnw test                   # all, on SQLite; no server
 ./mvnw test -Dtest=ProviderPictureFetcherTest # the fetch fence: https, public addresses, no redirects, size; no Spring
 ./mvnw test -Dtest=PictureServiceTest        # uploads, the provider's copy, who may see whose picture
 ./mvnw test -Dtest=PictureScreenTest         # Settings upload, served from here, People and Users
+./mvnw test -Dtest=WeeklySummaryTest         # what one employer's summary says, and when it is empty; no Spring
+./mvnw test -Dtest=WeeklySummaryMailTest     # the weekly mail: who gets one, in which language, once a week
 make assets                                  # refresh vendored front-end deps (needs Node)
 ```
 
@@ -925,8 +952,10 @@ locally 3307, see **Commands**) and SQLite.
 
 ## Known loose ends
 
-- **No scheduler, by design.** The job date window and token expiry are evaluated when read (§4.4,
-  §2.8). JobRunr, configured but never used, was removed; `V9` drops the tables it had created.
+- **One scheduled task, and only one.** The weekly summary (§7.28, below) runs on `@Scheduled`; the
+  job date window and token expiry are still evaluated when read (§4.4, §2.8). JobRunr, configured but
+  never used, was removed; `V9` drops the tables it had created. Don't add a second scheduled task
+  without a spec section for it (§12 item 4).
 - **SQLite folds case for ASCII only.** "Zürich" and "zürich" are distinct there and equal on MariaDB,
   so a tag or city differing only in a non-ASCII capital can exist twice on SQLite.
 - **MariaDB DDL is not transactional.** A migration that fails halfway leaves the schema half-changed

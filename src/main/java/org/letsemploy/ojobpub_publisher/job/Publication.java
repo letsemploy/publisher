@@ -88,6 +88,19 @@ public final class Publication {
         return job.getEndDate() == null || !job.getEndDate().isBefore(today);
     }
 
+    /**
+     * The last day the job is published on: the earlier of its apply-by and end
+     * dates, the two that close the date window, or null for neither (spec 4.4).
+     */
+    public static LocalDate lastDay(Job job) {
+        LocalDate applyBefore = job.getApplyBefore();
+        LocalDate endDate = job.getEndDate();
+        if (applyBefore == null) {
+            return endDate;
+        }
+        return endDate == null || applyBefore.isBefore(endDate) ? applyBefore : endDate;
+    }
+
     /** A job is published only if every requirement holds. */
     public static boolean isPublishable(Job job, LocalDate today) {
         return job.getStatus() == JobStatus.ACTIVE

@@ -62,6 +62,16 @@
                            th:text="${settings.mailConfigured} ? #{settings.mailInvitations.hint} : #{settings.mailInvitations.noMail}">
                         The invitation also waits for you here.</small>
                 </div>
+                <div class="mt-3">
+                    <label class="form-check">
+                        <input class="form-check-input" type="checkbox" id="mailSummary" name="mailSummary"
+                               value="true" th:checked="${settings.mailSummary}" aria-describedby="mailSummary-hint"/>
+                        <span class="form-check-label" th:text="#{settings.mailSummary}">Mail me a weekly summary of my employers</span>
+                    </label>
+                    <small class="form-hint" id="mailSummary-hint"
+                           th:text="${settings.mailConfigured} ? #{settings.mailSummary.hint} : #{settings.mailSummary.noMail}">
+                        Clicks, jobs that ended and what needs attention.</small>
+                </div>
             </div>
         </div>
 

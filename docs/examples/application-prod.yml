@@ -65,6 +65,16 @@ app:
   #   geoip-database: /data/geoip/GeoLite2-Country.mmdb         # or DB-IP Lite; a missing file fails startup
   #   dashboard-days: 30
 
+  # The weekly summary mail (spec 7.28), for people who ask for it in Settings.
+  # Needs mail (spring.mail below). A Spring cron expression - second, minute,
+  # hour, day, month, weekday - in the zone given, else the server's. Every
+  # instance may run it: each person is claimed in the database, so one mail
+  # goes out a week.
+  # summary:
+  #   enabled: true
+  #   cron: "0 0 7 * * MON"
+  #   zone: Europe/Zurich
+
   # Account pictures (spec 7.27). A provider's picture is downloaded by the
   # server - https, public addresses only - and served from here, never linked.
   # The server then needs outbound https to wherever the provider keeps them
@@ -171,7 +181,7 @@ spring:
   #   APP_SQLITE_PATH=/data/ojobpub.db   (on a volume)
   # Everything SQLite needs is in the sqlite profile; nothing else changes here.
 
-  # --- Mail, for local accounts (spec 2.12) -------------------------------------
+  # --- Mail: accounts, invitations, weekly summary (spec 2.6, 2.12, 7.28) -----
   # Any SMTP server. Without spring.mail.host nothing is sent, and a warning says so.
   # mail:
   #   host: ${SMTP_HOST}

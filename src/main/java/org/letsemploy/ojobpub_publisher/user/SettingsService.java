@@ -19,7 +19,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 /**
  * A person's own settings (spec 7.26): language, theme, time zone, whether
- * invitations are mailed to them, and - for a local account - their name.
+ * invitations and the weekly summary (spec 7.28) are mailed to them, and - for a
+ * local account - their name.
  *
  * <p>Only ever one's own: the actor is the record, so there is no id to name
  * someone else's. Never a token, which has no settings, and never while viewing as
@@ -76,7 +77,7 @@ public class SettingsService {
      */
     @Transactional
     public UserEntity save(Actor actor, String language, String theme, String timeZone, boolean mailInvitations,
-                           String name) {
+                           boolean mailSummary, String name) {
         UserEntity user = self(actor);
         if (name != null) {
             rename(user, name);
@@ -97,6 +98,7 @@ public class SettingsService {
         user.setTheme("auto".equals(look) ? null : look);
         user.setTimeZone(zone);
         user.setMailInvitations(mailInvitations);
+        user.setMailSummary(mailSummary);
         return userRepo.save(user);
     }
 

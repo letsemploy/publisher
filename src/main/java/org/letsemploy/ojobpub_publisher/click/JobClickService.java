@@ -131,18 +131,27 @@ public class JobClickService {
      */
     @Transactional(readOnly = true)
     public Statistics statistics(Collection<UUID> employerIds) {
-        LocalDate today = LocalDate.now(ZoneOffset.UTC);
-        LocalDate since = today.minusDays(dashboardDays - 1L);
+        return statistics(employerIds, LocalDate.now(ZoneOffset.UTC), dashboardDays, topJobs);
+    }
+
+    /**
+     * The same figures over any window: the {@code days} ending {@code today}, both
+     * UTC, and the {@code top} most clicked jobs. The weekly summary asks for a week
+     * (spec 7.28).
+     */
+    @Transactional(readOnly = true)
+    public Statistics statistics(Collection<UUID> employerIds, LocalDate today, int days, int top) {
+        LocalDate since = today.minusDays(days - 1L);
         if (employerIds.isEmpty()) {
-            return new Statistics(dashboardDays, days(since, today, Map.of()), 0, List.of(), List.of());
+            return new Statistics(days, days(since, today, Map.of()), 0, List.of(), List.of());
         }
 
         Map<LocalDate, Long> perDay = clickRepo.dailyTotals(employerIds, since).stream()
                 .collect(Collectors.toMap(row -> (LocalDate) row[0], row -> ((Number) row[1]).longValue()));
-        long previous = clickRepo.totalBetween(employerIds, since.minusDays(dashboardDays), since);
+        long previous = clickRepo.totalBetween(employerIds, since.minusDays(days), since);
 
-        List<Object[]> top = clickRepo.topJobs(employerIds, since, PageRequest.of(0, topJobs));
-        List<UUID> topIds = top.stream().map(row -> (UUID) row[0]).toList();
+        List<Object[]> rows = clickRepo.topJobs(employerIds, since, PageRequest.of(0, top));
+        List<UUID> topIds = rows.stream().map(row -> (UUID) row[0]).toList();
         // One query for every title and one for every trend, not one per row.
         Map<UUID, Job> jobs = jobRepo.findWithEmployerByIdIn(topIds).stream()
                 .collect(Collectors.toMap(Job::getId, Function.identity()));
@@ -154,7 +163,7 @@ public class JobClickService {
                         .merge((LocalDate) row[1], ((Number) row[2]).longValue(), Long::sum);
             }
         }
-        List<JobClicks> topJobs = top.stream()
+        List<JobClicks> ranked = rows.stream()
                 .filter(row -> jobs.containsKey((UUID) row[0]))
                 .map(row -> {
                     Map<LocalDate, Long> trend = trends.getOrDefault((UUID) row[0], Map.of());
@@ -169,7 +178,7 @@ public class JobClickService {
         List<CountryClicks> countries = clickRepo.byCountry(employerIds, since).stream()
                 .map(row -> new CountryClicks((String) row[0], ((Number) row[1]).longValue()))
                 .toList();
-        return new Statistics(dashboardDays, days(since, today, perDay), previous, topJobs, countries);
+        return new Statistics(days, days(since, today, perDay), previous, ranked, countries);
     }
 
     /** Every day from {@code from} to {@code to}, both included, with the clicks known for it or zero. */
