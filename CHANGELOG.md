@@ -8,6 +8,10 @@ Section numbers such as §5.6 refer to the specification in [`docs/SPEC.md`](doc
 
 ## [Unreleased]
 
+### Fixed
+
+- The job list's row menu is no longer cut off by the table's scroll area.
+
 ## [1.2.0] - 2026-10-03
 
 ### Added
