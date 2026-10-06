@@ -75,7 +75,7 @@
 		<dependency>
 			<groupId>io.github.wimdeblauwe</groupId>
 			<artifactId>htmx-spring-boot-thymeleaf</artifactId>
-			<version>5.1.0</version>
+			<version>5.2.0</version>
 		</dependency>
 		<dependency>
 			<groupId>org.flywaydb</groupId>
@@ -110,7 +110,7 @@
 			<!-- Schema conformance is a build gate (spec 10); the schema copy lives in resources. -->
 			<groupId>com.networknt</groupId>
 			<artifactId>json-schema-validator</artifactId>
-			<version>3.0.7</version>
+			<version>3.0.8</version>
 		</dependency>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
