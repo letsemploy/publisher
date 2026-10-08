@@ -8,6 +8,13 @@ Section numbers such as §5.6 refer to the specification in [`docs/SPEC.md`](doc
 
 ## [Unreleased]
 
+### Changed
+
+- The front-end files (Tabler, htmx, the icon sprite, mCaptcha's glue) are no longer committed. The
+  Maven build downloads a pinned Node, installs them from `package-lock.json` and packages them, so
+  building from source needs network access to nodejs.org and the npm registry, but still no Node on
+  the machine (§9.1).
+
 ## [1.4.0] - 2026-10-08
 
 ### Added

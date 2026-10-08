@@ -7,7 +7,7 @@
   Usage: <span th:replace="~{fragments/trend :: trend(${clicks.trend})}"></span>
 
   The icon names are literal on purpose: the sprite is built from the names the
-  templates spell out (make assets), and a computed name would be missing from it.
+  templates spell out (scripts/vendor-assets.mjs, at build), and a computed name would be missing from it.
 -->
 <span th:fragment="trend(t)" class="d-inline-flex align-items-center lh-1 small text-nowrap"
       th:classappend="${t.direction == 'down'} ? 'text-red' : (${t.direction == 'flat'} ? 'text-secondary' : 'text-green')">

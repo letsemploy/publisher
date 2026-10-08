@@ -44,23 +44,12 @@ jobs:
           distribution: 'temurin'
           java-version: '25'
           cache: 'maven'
+      # The build fetches its own Node and runs `npm ci` (spec 9.1); this keeps npm's
+      # download cache between runs.
+      - uses: actions/cache@v6
+        with:
+          path: ~/.npm
+          key: npm-${{ hashFiles('package-lock.json') }}
       - name: Build with Maven
         run: mvn -B clean package --file pom.xml
 
-  # The served front-end files are committed copies in static/vendor/ (spec 7.2),
-  # so a package.json or lockfile change without `make assets` would ship the old
-  # ones under a new version number. Regenerate them and fail on any difference.
-  vendored-assets:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-node@v7
-        with:
-          node-version: 'lts/*'
-          cache: 'npm'
-      - run: make assets
-      - name: Vendored files match package-lock.json
-        run: |
-          git add -N src/main/resources/static/vendor
-          git diff --exit-code --stat -- src/main/resources/static/vendor \
-            || { echo "::error::static/vendor is stale - run 'make assets' and commit the result"; exit 1; }

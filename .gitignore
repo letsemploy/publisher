@@ -32,8 +32,9 @@ build/
 ### VS Code ###
 .vscode/
 
-### Front-end dependencies (the vendored dist files ARE committed) ###
+### Front-end dependencies: installed by the Maven build, never committed (spec 9.1) ###
 node_modules/
+/src/main/resources/static/vendor/
 
 ### Local SQLite databases (profile sqlite) ###
 /data/

@@ -14,18 +14,21 @@ with no offline or real-time requirements, and a single deployable keeps the pro
 the problem. §7.1 and §7.2 state the resulting constraints — self-hosted assets, no bundler, and a
 small amount of our own JavaScript rather than libraries — which follow from that choice.
 
-Front-end dependencies are declared in **`package.json`** with a committed lockfile. Their published
-`dist` files are copied into `src/main/resources/static` and **committed to the repository**; the
-application serves them from there.
+Front-end dependencies are declared in **`package.json`** with a committed lockfile. **The lockfile is
+the only committed record**: the build installs from it and copies the published `dist` files into the
+application's static resources, and the application serves them from there. The files themselves are
+**not committed**.
 
-**Node is a maintenance tool, never a build dependency.** `./mvnw package` **must** produce a runnable
-artifact from a clean checkout with Maven alone, on a machine with no Node installed. Neither CI nor
-the container build may require it. The cost is generated files in version control; the benefit is that
-the build has one toolchain, and the exact bytes sent to browsers are reviewable in a diff.
+**Node is fetched by the build, never a prerequisite.** `./mvnw package` **must** produce a runnable
+artifact from a clean checkout with Maven alone, on a machine with no Node installed. Maven downloads
+Node at a version pinned in `pom.xml`, runs `npm ci`, and writes the files the browser receives into
+the build output. CI and the container build need nothing more than Maven.
 
-Refreshing the assets is one documented command that installs from the lockfile and copies the `dist`
-files into place. Upgrading a dependency is therefore an ordinary reviewable commit, and the icon
-sprite is trimmed to the icons actually referenced rather than shipping the full set.
+The benefit is that a dependency update is a change to `package.json` and the lockfile alone, which
+an automated update can make, test and merge without anyone regenerating files by hand. The lockfile's
+integrity hashes pin the exact bytes sent to browsers. The icon sprite is built by the same step,
+trimmed to the icons actually referenced rather than shipping the full set, so a newly referenced icon
+reaches it with the next build.
 
 ## 9.2 Structure
 

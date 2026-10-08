@@ -292,8 +292,8 @@ auto-configured bean. `OidcLoginTest` and `LockedChainTest` guard both direction
   because Boot binds registrations into a `HashMap` and the configured order is gone before we see
   it. The label is `client-name`, or the brand when that is only the default id. The brand comes
   from the **authorisation host**, never the registration id. A new brand is one host in
-  `LoginOptions`, one literal case in `fragments/provider.html`, and `make assets`: the sprite
-  scanner only finds literal icon names.
+  `LoginOptions` and one literal case in `fragments/provider.html`, which the next build adds to
+  the sprite: its scanner only finds literal icon names.
 - **OpenID Connect providers plus GitHub**, enforced at startup by
   `LoginOptions.requireSupportedProviders`. Any other registration without `openid` would log in as a
   plain `OAuth2User`, which `CurrentUserService` treats as anonymous: a completed login that goes
@@ -736,24 +736,33 @@ One instance only: SQLite has one writer (`busy_timeout` makes others wait).
 Tabler sidenav shell, htmx for partial updates, and a JavaScript budget that bounds *dependencies*
 rather than lines (§7.2): **no bundler, no transpiler, no CDN, and a library needs a reason**.
 
-Front-end dependencies are pinned in `package.json` with a committed lockfile. Their `dist` files are
-copied into `static/vendor/` and **committed**, so `./mvnw package` works with Maven alone on a machine
-with no Node — nothing in `pom.xml` invokes it. Refresh them with:
+Front-end dependencies are pinned in `package.json` with a committed lockfile, and **the lockfile is
+the only committed record** (§9.1). `frontend-maven-plugin` in `generate-resources` downloads the Node
+pinned as `node.version` in `pom.xml` into `target/`, runs `npm ci`, then `npm run vendor`, which
+writes into **`target/classes/static/vendor/`** — never into `src/`, and `.gitignore` refuses the old
+path. So `./mvnw package` still needs no Node on the machine, every build (tests, `spring-boot:run`,
+the container) gets the files, and a Dependabot bump needs nothing pushed by hand. Running from an
+IDE after a `clean`, rebuild them with:
 
 ```bash
-make assets        # npm ci && npm run vendor
+make assets        # ./mvnw generate-resources
 ```
 
-`scripts/vendor-assets.sh` copies the dist files and rebuilds `icons.svg` from **only the icons
-actually referenced**, scanning both the templates (`fragments/icon :: i('name')`) *and* the Java
-(`new NavItem("name", …)` — the sidebar's icon names live there, not in a template). Miss the second
-source and the nav icons vanish.
+`scripts/vendor-assets.mjs` (plain Node, no dependencies) copies the dist files and builds `icons.svg`
+from **only the icons actually referenced**, scanning both the templates (`fragments/icon ::
+i('name')`) *and* the Java (`new NavItem("name", …)` — the sidebar's icon names live there, not in a
+template). Miss the second source and the nav icons vanish;
+`ScreenRenderingTest.theBuildInstallsTheFrontEndFiles` checks one is there.
+
+**Dependabot** groups npm **patches** only and `dependabot-automerge.yml` auto-merges those; an npm
+minor arrives as its own PR for review, since a Tabler minor can change how the screens look. Other
+ecosystems auto-merge minor and patch.
 
 **Charts are Tabler's sparkline and tracking**, no chart library (§7.2, §7.10). `tabler.min.js` draws
 sparklines only on page load, so `app.js` draws those an htmx swap brings in (`drawSparklines` on
 `htmx:afterSwap`) — without it a boosted visit to the dashboard shows empty charts. Sizes are classes
 in `app.css` (`sparkline-wide`), never a `style` attribute (CSP). Icon names passed to
-`fragments/icon` must be **literal** in the template, or `make assets` leaves them out of the sprite;
+`fragments/icon` must be **literal** in the template, or the sprite scanner leaves them out;
 `fragments/trend` spells its three out for that reason. The dashboard's figures come from
 `DashboardJobs` (pure and clock-taking like `Publication`) and `JobClickService.statistics`.
 
@@ -805,8 +814,8 @@ it once did on every fetch.
 
 Each controller supplies its own `page` (`PageMeta`); one that forgets it will not render. A new
 sidebar destination is added in `UiContextFactory` — there are eleven: Dashboard, Jobs, Feeds, People,
-API tokens, Employers, Locations, Tags, Invitations, Activity, Users. Its icon name lives in the `NavItem`, so a new one
-needs `make assets` to reach the sprite.
+API tokens, Employers, Locations, Tags, Invitations, Activity, Users. Its icon name lives in the `NavItem`, which the sprite
+scanner reads too.
 
 **Two entries are role-conditional.** API tokens is added only when an employer is active *and* the
 actor administers it; Users only when the actor is a platform admin. Two consequences worth knowing: a nav item renders on every
@@ -907,7 +916,7 @@ TEST_DB=sqlite ./mvnw test                   # all, on SQLite; no server
 ./mvnw test -Dtest=PictureScreenTest         # Settings upload, served from here, People and Users
 ./mvnw test -Dtest=WeeklySummaryTest         # what one employer's summary says, and when it is empty; no Spring
 ./mvnw test -Dtest=WeeklySummaryMailTest     # the weekly mail: who gets one, in which language, once a week
-make assets                                  # refresh vendored front-end deps (needs Node)
+make assets                                  # rebuild target/classes/static/vendor (Maven fetches Node)
 ```
 
 `OjobpubConformanceTest` validates generated documents against the vendored schema (minimal, maximal

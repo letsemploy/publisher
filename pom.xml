@@ -34,6 +34,8 @@
 		<java.version>25</java.version>
 		<!-- TODO: remove with version spring boot 4.0.4 https://github.com/spring-projects/spring-boot/issues/49277 -->
 		<groovy.version>5.0.3</groovy.version>
+		<!-- Fetched by frontend-maven-plugin into target/; never needed on the machine (spec 9.1). -->
+		<node.version>v24.21.0</node.version>
 	</properties>
 	<dependencies>
 		<dependency>
@@ -235,6 +237,44 @@
 						</exclude>
 					</excludes>
 				</configuration>
+			</plugin>
+			<!-- The front-end files the browser loads (spec 7.2, 9.1): a pinned Node, npm ci from
+			     the lockfile, then scripts/vendor-assets.mjs copies the dist files and builds the
+			     icon sprite into target/classes/static/vendor. Nothing of it is committed. -->
+			<plugin>
+				<groupId>com.github.eirslett</groupId>
+				<artifactId>frontend-maven-plugin</artifactId>
+				<version>2.0.2</version>
+				<configuration>
+					<nodeVersion>${node.version}</nodeVersion>
+					<installDirectory>${project.build.directory}</installDirectory>
+				</configuration>
+				<executions>
+					<execution>
+						<id>install-node-and-npm</id>
+						<goals>
+							<goal>install-node-and-npm</goal>
+						</goals>
+					</execution>
+					<execution>
+						<id>npm-ci</id>
+						<goals>
+							<goal>npm</goal>
+						</goals>
+						<configuration>
+							<arguments>ci --no-audit --no-fund --loglevel=error</arguments>
+						</configuration>
+					</execution>
+					<execution>
+						<id>vendor-assets</id>
+						<goals>
+							<goal>npm</goal>
+						</goals>
+						<configuration>
+							<arguments>run vendor -- ${project.build.outputDirectory}/static/vendor</arguments>
+						</configuration>
+					</execution>
+				</executions>
 			</plugin>
 			<plugin>
 				<groupId>org.codehaus.mojo</groupId>

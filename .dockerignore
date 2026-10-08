@@ -1,0 +1,5 @@
+# The build stage runs `mvn package`, which installs its own Node and node_modules.
+target/
+node_modules/
+data/
+*.db

@@ -135,6 +135,22 @@ class ScreenRenderingTest {
     }
 
     /**
+     * The front-end files are installed by the build, not committed (spec 9.1), so this
+     * fails if that step stops running. The sprite must hold the sidebar's icons too,
+     * whose names live in Java rather than a template.
+     */
+    @Test
+    void theBuildInstallsTheFrontEndFiles() throws Exception {
+        for (String file : new String[] {"htmx.min.js", "tabler.min.js", "tabler.min.css",
+                "tabler-themes.min.css", "mcaptcha-glue.js"}) {
+            mvc.perform(get("/vendor/" + file)).andExpect(status().isOk());
+        }
+        String sprite = mvc.perform(get("/vendor/icons.svg")).andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString();
+        assertThat(sprite).contains("id=\"ti-layout-dashboard\"");
+    }
+
+    /**
      * A control that only works with JavaScript is hidden until the module reveals
      * it, so no screen offers a dead button (spec 7.1).
      */

@@ -1,11 +1,10 @@
 clean:
 	./mvnw clean
 
-# Refresh the vendored front-end assets from the pinned npm dependencies.
-# The output is committed; ./mvnw package needs no Node (spec 9.1).
+# Rebuild the front-end files in target/classes/static/vendor, e.g. after adding
+# an icon while running from the IDE. Every Maven build does this anyway (spec 9.1).
 assets:
-	npm ci
-	npm run vendor
+	./mvnw -q generate-resources
 
 build:
 	./mvnw package

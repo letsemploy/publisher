@@ -2,9 +2,9 @@
   "name": "ojobpub-publisher-assets",
   "version": "0.0.0",
   "private": true,
-  "description": "Front-end dependencies for the ojobpub publisher (spec 7.2, 9.1). npm is a maintenance tool: the dist files are copied into src/main/resources/static/vendor and committed, so ./mvnw package needs no Node.",
+  "description": "Front-end dependencies for the ojobpub publisher (spec 7.2, 9.1). The Maven build installs them with a Node it fetches itself and copies the dist files into target/classes/static/vendor; nothing is committed.",
   "scripts": {
-    "vendor": "./scripts/vendor-assets.sh"
+    "vendor": "node scripts/vendor-assets.mjs"
   },
   "dependencies": {
     "@mcaptcha/vanilla-glue": "0.1.0-rc2",

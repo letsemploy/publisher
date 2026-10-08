@@ -6,9 +6,9 @@
   provider's authorisation host.
 
   Every icon name is written out literally, one case per brand: the sprite is
-  built from the names scripts/vendor-assets.sh finds in the templates, so a name
-  computed at runtime would never reach static/vendor/icons.svg. A new brand is
-  one case here, one host in LoginOptions, and a `make assets` run.
+  built at build time from the names scripts/vendor-assets.mjs finds in the
+  templates, so a name computed at runtime would never reach /vendor/icons.svg.
+  A new brand is one case here and one host in LoginOptions.
 
   Each case is a th:block around the svg, never th:case on the svg itself:
   th:replace runs before th:case, just as before th:if, and every icon would

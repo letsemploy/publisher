@@ -28,12 +28,13 @@ updates:
       docker-minor-and-patch:
         update-types: ["minor", "patch"]
 
-  # The files served are the copies committed in static/vendor/, so a bump fails
-  # the vendored-assets check until `make assets` is pushed to its branch.
+  # The build installs these from the lockfile (spec 9.1), so a bump needs nothing
+  # pushed by hand. Only patches are grouped and auto-merged: a Tabler or htmx
+  # minor can change what the screens look like, so minors arrive one PR each.
   - package-ecosystem: "npm"
     directory: "/"
     schedule:
       interval: "weekly"
     groups:
-      npm-minor-and-patch:
-        update-types: ["minor", "patch"]
+      npm-patch:
+        update-types: ["patch"]

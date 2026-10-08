@@ -127,7 +127,7 @@
                             <div class="list-group-header small" th:text="#{'dashboard.attention.' + ${g[0]}}">Closing soon</div>
                             <a class="list-group-item list-group-item-action d-flex align-items-center"
                                th:each="r : ${g[1].rows}" th:href="@{'/jobs/' + ${r.id}}">
-                                <!-- Literal names, so the sprite has them (make assets). -->
+                                <!-- Literal names, so the sprite scanner finds them. -->
                                 <th:block th:if="${g[0] == 'closing'}"><svg th:replace="~{fragments/icon :: i('clock','icon me-2 text-yellow')}"></svg></th:block>
                                 <th:block th:if="${g[0] == 'incomplete'}"><svg th:replace="~{fragments/icon :: i('alert-triangle','icon me-2 text-red')}"></svg></th:block>
                                 <th:block th:if="${g[0] == 'stale'}"><svg th:replace="~{fragments/icon :: i('pencil','icon me-2 text-secondary')}"></svg></th:block>

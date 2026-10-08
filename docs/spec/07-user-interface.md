@@ -20,10 +20,10 @@ client application.
    browser, and a few lines there beat a contrived server round trip. What is budgeted is *dependencies
    and complexity*, not lines: reach for a server round trip first, and when the browser is the right
    place, write the small amount of code it takes rather than adding a library.
-4. **npm manages dependencies; there is no build step.** Front-end dependencies are pinned in
-   `package.json` with a lockfile, and their published `dist` files are copied into `/static` and
-   **committed**. No bundler, no transpiler, no minifier of our own. See §7.2 for why the copied files
-   are committed.
+4. **npm manages dependencies; nothing is bundled.** Front-end dependencies are pinned in
+   `package.json` with a lockfile, and the build copies their published `dist` files into `/static`
+   as they are. No bundler, no transpiler, no minifier of our own. See §9.1 for how the build installs
+   them.
 5. **Tabler is the design system.** Its components, spacing, colour roles and icons are used as
    published. Custom CSS is a last resort, lives in one small stylesheet, and never restyles a Tabler
    component into something it is not.
@@ -49,10 +49,10 @@ Rules:
   are enough for the dashboard's trends (§7.10), and the application's module draws the sparklines an
   htmx swap brings in — no select/autocomplete library (§7.8 gives the
   server-rendered alternative). Adding one is a decision to record, not a convenience.
-- **Dependencies come from npm**, pinned in `package.json` with a committed lockfile. Their `dist`
-  files are copied into `/static` **and committed**, so a clean checkout builds with Maven alone and
-  needs no Node (§9.1). Refreshing them is one documented command and a reviewable commit — a diff
-  that shows exactly which bytes the browser will receive.
+- **Dependencies come from npm**, pinned in `package.json` with a committed lockfile. The build
+  installs them from the lockfile and copies their `dist` files into `/static`, with a Node that Maven
+  fetches itself, so a clean checkout builds with Maven alone (§9.1). Upgrading one is a change to
+  `package.json` and the lockfile, nothing else.
 - Assets are **self-hosted**, never loaded from a CDN. This keeps the application working offline and
   in restricted networks, removes a third-party availability and privacy dependency, and allows the
   strict `Content-Security-Policy` of §9.4.
@@ -67,8 +67,8 @@ Rules:
   `unsafe-eval` (§9.4). This is why the application's behaviour lives in a module file rather than in
   attributes evaluated at runtime, and it is what makes the strict policy achievable rather than
   aspirational.
-- Vendored asset files are checked in, with their versions recorded, and refreshed by a documented,
-  repeatable command. Upgrading a vendored asset is a reviewable commit.
+- Served asset files are never checked in. Their versions are recorded in the lockfile, and every
+  build installs exactly those, so what was tested is what ships.
 - Icons are the **Tabler SVG sprite**, referenced as `<svg><use href="/static/icons.svg#tabler-…"></svg>`.
   No icon font and no icon JavaScript.
 
