@@ -71,3 +71,11 @@
    telling the old one; until that is specified there is no such screen.
 17. **Linking a local account to a provider account.** The consent-based linking of item 15 would
    cover local accounts too; until then they stay separate accounts, as §2.2 requires.
+18. **PostgreSQL.** Two databases are supported, MariaDB and SQLite (§9.3). PostgreSQL would be a
+   third, and each database adds a migration folder, a seed file and a full test run in CI, all
+   kept in step. The code needs no rewrite for it, since it uses no native SQL. What remains is the
+   behaviour §9.3 promises to keep identical. PostgreSQL compares text case-sensitively, where the
+   names and addresses must not be. It also has native `ENUM` and `UUID` types, which the
+   string-persisted enumerations and the lower-case UUID literals of the seed would have to agree
+   with. Whether a deployment needs it badly enough to carry a third set of migrations is deferred
+   until someone asks.
