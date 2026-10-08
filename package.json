@@ -8,7 +8,7 @@
   },
   "dependencies": {
     "@mcaptcha/vanilla-glue": "0.1.0-rc2",
-    "@tabler/core": "1.6.0",
+    "@tabler/core": "1.6.1",
     "@tabler/icons": "3.48.0",
     "htmx.org": "2.0.11"
   }
