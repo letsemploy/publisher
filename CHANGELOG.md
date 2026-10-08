@@ -8,6 +8,8 @@ Section numbers such as §5.6 refer to the specification in [`docs/SPEC.md`](doc
 
 ## [Unreleased]
 
+## [1.4.0] - 2026-10-08
+
 ### Added
 
 - The management API's schema is published as GraphQL SDL at `/graphql/schema`, with no sign-in or
@@ -234,7 +236,8 @@ Section numbers such as §5.6 refer to the specification in [`docs/SPEC.md`](doc
 - MariaDB, or SQLite for a single instance.
 - English and German.
 
-[Unreleased]: https://github.com/letsemploy/publisher/compare/v1.3.0...HEAD
+[Unreleased]: https://github.com/letsemploy/publisher/compare/v1.4.0...HEAD
+[1.4.0]: https://github.com/letsemploy/publisher/compare/v1.3.0...v1.4.0
 [1.3.0]: https://github.com/letsemploy/publisher/compare/v1.2.0...v1.3.0
 [1.2.0]: https://github.com/letsemploy/publisher/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/letsemploy/publisher/compare/v1.0.2...v1.1.0
