@@ -32,6 +32,9 @@ wrong layer.
   fix its credentials or stop retrying.
 - The employer is **implied by the token** and never passed as an argument. A token cannot name another
   employer, so the commonest authorization bug in a multi-tenant API cannot be written.
+- **The schema is published** as SDL at `GET /graphql/schema`: public, anonymous, and opening no
+  session, like the feed (§5.1). It is the API's documentation, so a client can be generated before a
+  token exists.
 
 ## 11.3 Shape of the schema
 
@@ -97,8 +100,9 @@ The API is reachable by anything holding a token, so it is bounded by constructi
   job is to stop a runaway script rather than to meter a paid product. Recorded in §12.
 - **Batched operations are rejected** — one operation per request. Array batching turns one rate-limit
   unit into many.
-- **Introspection is disabled outside development.** It is an authenticated API with documented
-  clients; leaving the schema queryable mostly helps someone who should not be there.
+- **Introspection is disabled outside development.** It is a query surface on the authenticated
+  endpoint, and a published schema makes it unnecessary: the SDL at `GET /graphql/schema` (§11.2)
+  describes the same types and discloses no data. What a caller may *do* is still decided by its token.
 - The maximum request body is bounded, and a query that would return more than the page cap is an
   error rather than a silent truncation.
 

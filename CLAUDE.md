@@ -468,6 +468,10 @@ wrong layer.
 
 - **The employer is implied by the token** and is never an argument, so a token cannot name another
   employer. `ApiActor.employerId()` is the only source.
+- **The schema is public** as SDL at `GET /graphql/schema` (Spring's schema printer,
+  `spring.graphql.schema.printer.enabled`), while introspection stays off (§11.2, §11.6). The API
+  chain matches `/graphql` **exactly**, so the schema path is carried by the public feed chain and
+  excluded from the interceptors in `WebLangConfig` — it must open no session.
 - **Role and scope are both ceilings.** A scope check refuses early with a clearer answer; the service
   still applies the membership role.
 - **Errors split two ways** (§11.4): a domain refusal is *data*, returned in the payload's
@@ -859,6 +863,7 @@ TEST_DB=sqlite ./mvnw test                   # all, on SQLite; no server
 ./mvnw test -Dtest=InvitationMailTest        # the invitation mail: who gets one, in which language, never an unknown address
 ./mvnw test -Dtest=MembershipServiceTest     # ownership, role changes, the last-owner rule
 ./mvnw test -Dtest=ManagementApiTest         # the GraphQL API end to end
+./mvnw test -Dtest=GraphQlSchemaTest         # the SDL is public and sessionless; the API still takes a token
 ./mvnw test -Dtest=ApiLimitsTest             # depth, rate and body limits, with the ceilings lowered
 ./mvnw test -Dtest=PeopleScreenTest          # the People screen as an editor, not an admin
 ./mvnw test -Dtest=NoEmployerScreensTest     # lists for a user with no employer: how to get one, no dead create

@@ -62,7 +62,7 @@ public class SecurityConfig {
     };
 
     private static final String[] PUBLIC = {
-            "/ojobpub/**", "/go/**", "/actuator/health/**", "/actuator/info",
+            "/ojobpub/**", "/go/**", "/graphql/schema", "/actuator/health/**", "/actuator/info",
             "/css/**", "/js/**", "/vendor/**", "/images/**", "/favicon.ico", "/error"
     };
 
@@ -100,14 +100,18 @@ public class SecurityConfig {
 
     /**
      * Order 1: the published feed, and the job links in it (spec 5.6). Machines call
-     * the one and anyone follows the other; neither may ever see a login page.
+     * the one and anyone follows the other; neither may ever see a login page. Also
+     * the management API's schema (spec 11.2): the API chain matches /graphql
+     * exactly, so without this the schema would fall through to the back-office.
      */
     @Bean
     @org.springframework.core.annotation.Order(1)
     SecurityFilterChain publicFeedChain(HttpSecurity http) throws Exception {
         http.securityMatcher(new OrRequestMatcher(
                         PathPatternRequestMatcher.withDefaults().matcher("/ojobpub/**"),
-                        PathPatternRequestMatcher.withDefaults().matcher("/go/**")))
+                        PathPatternRequestMatcher.withDefaults().matcher("/go/**"),
+                        PathPatternRequestMatcher.withDefaults().matcher(
+                                org.springframework.http.HttpMethod.GET, "/graphql/schema")))
                 .authorizeHttpRequests(a -> a.anyRequest().permitAll())
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(s -> s.sessionCreationPolicy(

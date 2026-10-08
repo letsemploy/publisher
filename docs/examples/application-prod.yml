@@ -233,6 +233,10 @@ spring:
     schema:
       introspection:
         enabled: false
+      # The SDL at /graphql/schema, public and anonymous (spec 11.2). The default;
+      # false withholds it, which leaves API clients without documentation.
+      printer:
+        enabled: true
 
 management:
   endpoints:

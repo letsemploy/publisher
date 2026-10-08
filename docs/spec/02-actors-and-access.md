@@ -155,6 +155,7 @@ develop or run the application locally.
 | All other actuator endpoints | Admin only |
 | Static assets, login routes, error pages | Public |
 | The management API (`POST /graphql`) | **Token.** A bearer service token (§2.8); no session, no cookie, no CSRF |
+| The management API's schema (`GET /graphql/schema`, §11.2) | **Public.** SDL only; no session, no cookies |
 | Everything else (the entire back-office) | Authenticated |
 
 Authorization **must** be enforced server-side on every request, on the data access path — not by hiding

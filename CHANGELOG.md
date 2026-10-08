@@ -8,6 +8,11 @@ Section numbers such as §5.6 refer to the specification in [`docs/SPEC.md`](doc
 
 ## [Unreleased]
 
+### Added
+
+- The management API's schema is published as GraphQL SDL at `/graphql/schema`, with no sign-in or
+  token needed, so a client can be generated from it (§11.2). Introspection stays off.
+
 ## [1.3.0] - 2026-10-04
 
 ### Added
