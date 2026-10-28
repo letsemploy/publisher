@@ -8,6 +8,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import java.util.Map;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.letsemploy.ojobpub_publisher.TestProfiles;
@@ -71,6 +72,20 @@ class NoEmployerScreensTest {
     @ValueSource(strings = {"/locations", "/tags", "/jobs", "/feeds"})
     void creatingWithoutAnEmployerIsStillNotFound(String list) throws Exception {
         mvc.perform(get(list + "/create")).andExpect(status().isNotFound());
+    }
+
+    /**
+     * The htmx fragment of the job list has no "no employer" guard of its own, so the
+     * query itself must come back empty: no employers is no jobs, never all of them.
+     */
+    @Test
+    void theJobListFragmentShowsNoOtherEmployersJobs() throws Exception {
+        String fragment = mvc.perform(get("/jobs").header("HX-Request", "true"))
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString();
+        assertThat(fragment)
+                .doesNotContain("Senior Backend Engineer")
+                .doesNotContain("href=\"/jobs/8f14e45f-ceea-467a-9b4f-3a1b2c3d4e5f\"");
     }
 
     /** The other direction: a member - an editor, not an admin - is offered the create action. */

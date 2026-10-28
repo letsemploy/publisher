@@ -9,6 +9,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 import org.letsemploy.ojobpub_publisher.TestProfiles;
+import org.letsemploy.ojobpub_publisher.employer.Employer;
+import org.letsemploy.ojobpub_publisher.employer.EmployerRepo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.data.domain.PageRequest;
@@ -34,9 +36,16 @@ class PublicationFilterTest {
     private JobService jobService;
     @Autowired
     private JobRepo jobRepo;
+    @Autowired
+    private EmployerRepo employerRepo;
+
+    /** Every employer's id: the rule is compared on every job in the database. */
+    private List<UUID> allEmployers() {
+        return employerRepo.findAll().stream().map(Employer::getId).toList();
+    }
 
     private List<Job> filteredBy(Publication.Presentation presentation) {
-        return jobService.search(null, null, presentation, null,
+        return jobService.search(allEmployers(), null, presentation, null,
                 PageRequest.of(0, 200, Sort.by("title"))).getContent();
     }
 
@@ -94,7 +103,7 @@ class PublicationFilterTest {
         List<Job> published = filteredBy(Publication.Presentation.PUBLISHED);
         String title = published.get(0).getTitle();
 
-        List<Job> narrowed = jobService.search(null, title, Publication.Presentation.PUBLISHED, null,
+        List<Job> narrowed = jobService.search(allEmployers(), title, Publication.Presentation.PUBLISHED, null,
                 PageRequest.of(0, 200, Sort.by("title"))).getContent();
 
         assertThat(narrowed).isNotEmpty().allSatisfy(j -> assertThat(j.getTitle()).contains(title));

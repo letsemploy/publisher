@@ -70,10 +70,13 @@ public class JobService {
      */
     public Page<Job> search(List<UUID> employerIds, String q, Publication.Presentation presentation,
                             JobType jobType, Pageable pageable) {
-        List<Specification<Job>> filters = new ArrayList<>();
-        if (employerIds != null && !employerIds.isEmpty()) {
-            filters.add((job, query, cb) -> job.get("employer").get("id").in(employerIds));
+        // No employers is no jobs, never all of them: the htmx fragment of the list
+        // renders whatever comes back, with no "no employer" guard of its own.
+        if (employerIds.isEmpty()) {
+            return Page.empty(pageable);
         }
+        List<Specification<Job>> filters = new ArrayList<>();
+        filters.add((job, query, cb) -> job.get("employer").get("id").in(employerIds));
         if (q != null && !q.isBlank()) {
             // Lowered by the database on both sides, as before: SQLite lowers ASCII
             // only, and a pattern lowered in Java would stop matching there (spec 9.3).

@@ -12,6 +12,8 @@ import org.hibernate.stat.Statistics;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.letsemploy.ojobpub_publisher.TestProfiles;
+import org.letsemploy.ojobpub_publisher.employer.Employer;
+import org.letsemploy.ojobpub_publisher.employer.EmployerRepo;
 import org.letsemploy.ojobpub_publisher.web.Views;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -41,11 +43,16 @@ class JobListQueryTest {
     private Views views;
     @Autowired
     private EntityManagerFactory entityManagerFactory;
+    @Autowired
+    private EmployerRepo employerRepo;
 
     private Statistics statistics;
+    /** Every employer, read before counting so the lookup is not among the queries. */
+    private List<UUID> employers;
 
     @BeforeEach
     void setUp() {
+        employers = employerRepo.findAll().stream().map(Employer::getId).toList();
         statistics = entityManagerFactory.unwrap(SessionFactory.class).getStatistics();
         statistics.setStatisticsEnabled(true);
     }
@@ -53,7 +60,7 @@ class JobListQueryTest {
     /** Everything the list screen does for one page, as the controller does it. */
     private long queriesToRenderPage(int pageSize) {
         statistics.clear();
-        Page<Job> page = jobService.search(null, null, null, null,
+        Page<Job> page = jobService.search(employers, null, null, null,
                 PageRequest.of(0, pageSize, Sort.by("title")));
         Map<UUID, Long> feedCounts = jobService.feedCounts(page.getContent());
         LocalDate today = LocalDate.now();
@@ -87,7 +94,7 @@ class JobListQueryTest {
     @Test
     void filteredAndSearchedPagesAreAlsoBounded() {
         statistics.clear();
-        Page<Job> page = jobService.search(null, "e", Publication.Presentation.PUBLISHED, null,
+        Page<Job> page = jobService.search(employers, "e", Publication.Presentation.PUBLISHED, null,
                 PageRequest.of(0, 20, Sort.by("title")));
         Map<UUID, Long> counts = jobService.feedCounts(page.getContent());
         LocalDate today = LocalDate.now();
@@ -99,7 +106,7 @@ class JobListQueryTest {
     /** The page really is a page: asking for one row returns one row. */
     @Test
     void paginationActuallyLimits() {
-        Page<Job> first = jobService.search(null, null, null, null,
+        Page<Job> first = jobService.search(employers, null, null, null,
                 PageRequest.of(0, 1, Sort.by("title")));
         assertThat(first.getContent()).hasSize(1);
         assertThat(first.getTotalElements()).isGreaterThan(1);

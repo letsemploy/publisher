@@ -15,6 +15,12 @@ Section numbers such as §5.6 refer to the specification in [`docs/SPEC.md`](doc
   building from source needs network access to nodejs.org and the npm registry, but still no Node on
   the machine (§9.1).
 
+### Security
+
+- A signed-in user who belonged to no employer could list every employer's jobs (titles, statuses,
+  feed counts) by requesting the job list as an htmx fragment. The list is now empty for them, as the
+  full page already showed (§2.4).
+
 ## [1.4.0] - 2026-10-08
 
 ### Added
