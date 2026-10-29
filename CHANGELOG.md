@@ -14,6 +14,9 @@ Section numbers such as §5.6 refer to the specification in [`docs/SPEC.md`](doc
   Maven build downloads a pinned Node, installs them from `package-lock.json` and packages them, so
   building from source needs network access to nodejs.org and the npm registry, but still no Node on
   the machine (§9.1).
+- On SQLite, every foreign-key column now has an index (migration V18), as MariaDB creates by itself.
+  Deleting a job, tag, location or account, and counting a job's feeds, no longer scan whole tables.
+  On MariaDB the migration changes nothing (§9.3).
 
 ### Security
 
