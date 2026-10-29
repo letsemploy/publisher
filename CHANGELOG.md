@@ -26,6 +26,12 @@ Section numbers such as §5.6 refer to the specification in [`docs/SPEC.md`](doc
 
 ### Fixed
 
+- A feed's `lastUpdated` and `Last-Modified` now move with every change to its document, so a cache
+  revalidating with `If-Modified-Since` is no longer told `304` for a document that changed. Before,
+  adding a job to a feed, removing or deleting one, setting one inactive, a job's dates running out, and
+  renaming or deleting a tag all left the date unchanged or moved it backwards (§5.4).
+- Feeds and permalinks now send the strong `ETag` that §5.4 requires, the hash of the bytes served, and
+  answer a matching `If-None-Match` with `304`.
 - Renaming a feed to the name of another of the employer's feeds is a field error on the form and a
   `userErrors` entry in the API, not a server error.
 - `app.api.rate-limit=0` means unlimited, as `0` does for every other limit, instead of refusing every

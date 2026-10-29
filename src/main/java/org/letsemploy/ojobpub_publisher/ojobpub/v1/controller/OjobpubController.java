@@ -1,7 +1,12 @@
 package org.letsemploy.ojobpub_publisher.ojobpub.v1.controller;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletRequest;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.time.Duration;
+import java.util.HexFormat;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.regex.Matcher;
@@ -51,17 +56,21 @@ public class OjobpubController {
 
     private final FeedService feedService;
     private final PermalinkService permalinkService;
+    /** The mapper {@code OjobpubValidator} checks with, so the badge sees the bytes served. */
+    private final ObjectMapper objectMapper;
 
-    public OjobpubController(FeedService feedService, PermalinkService permalinkService) {
+    public OjobpubController(FeedService feedService, PermalinkService permalinkService,
+                             ObjectMapper objectMapper) {
         this.feedService = feedService;
         this.permalinkService = permalinkService;
+        this.objectMapper = objectMapper;
     }
 
     @GetMapping(value = "/ojobpub/v1/{employerSegment}/{feedSegment}/ojobpub.json",
             produces = MediaType.APPLICATION_JSON_VALUE)
     @CrossOrigin(origins = "*")
     public ResponseEntity<?> publish(@PathVariable String employerSegment,
-                                     @PathVariable String feedSegment) {
+                                     @PathVariable String feedSegment) throws JsonProcessingException {
         Matcher employerMatch = SEGMENT.matcher(employerSegment);
         Matcher feedMatch = SEGMENT.matcher(feedSegment);
         // A malformed segment reveals nothing about what does or does not exist.
@@ -94,7 +103,7 @@ public class OjobpubController {
     @GetMapping(value = "/ojobpub/v1/permalink/{id}/ojobpub.json",
             produces = MediaType.APPLICATION_JSON_VALUE)
     @CrossOrigin(origins = "*")
-    public ResponseEntity<?> permalink(@PathVariable String id) {
+    public ResponseEntity<?> permalink(@PathVariable String id) throws JsonProcessingException {
         if (!PERMALINK.matcher(id).matches()) {
             return notFound();
         }
@@ -110,11 +119,30 @@ public class OjobpubController {
         return ok(permalinkService.publish(found.get()));
     }
 
-    private static ResponseEntity<?> ok(OjobpubDto document) {
+    /**
+     * Serialized here rather than by a message converter, so the strong ETag is
+     * the hash of exactly the bytes sent (spec 5.4). Spring answers a matching
+     * {@code If-None-Match} with 304 and then ignores {@code If-Modified-Since},
+     * so a cache that has both validators sees every change, even one the date
+     * cannot show - and the date of an evaluation day ago is not the same body.
+     */
+    private ResponseEntity<?> ok(OjobpubDto document) throws JsonProcessingException {
+        byte[] body = objectMapper.writeValueAsBytes(document);
         return ResponseEntity.ok()
+                .contentType(MediaType.APPLICATION_JSON)
                 .cacheControl(CacheControl.maxAge(Duration.ofMinutes(5)).cachePublic())
+                .eTag(etag(body))
                 .lastModified(document.lastUpdated())
-                .body(document);
+                .body(body);
+    }
+
+    private static String etag(byte[] body) {
+        try {
+            byte[] digest = MessageDigest.getInstance("SHA-256").digest(body);
+            return "\"" + HexFormat.of().formatHex(digest, 0, 16) + "\"";
+        } catch (NoSuchAlgorithmException e) {
+            throw new IllegalStateException("SHA-256 is required of every JVM", e);
+        }
     }
 
     /** URLs repair themselves: an old link keeps working and is nudged onward. */

@@ -160,6 +160,15 @@ schema at `src/main/resources/ojobpub/v1/ojobpub.schema.json` (upstream:
 `https://raw.githubusercontent.com/letsemploy/schema/refs/heads/main/v1/ojobpub.json`). The feed screen
 shows a validity badge from the same validator.
 
+**Freshness** (§5.4): `OjobpubController` serializes the document itself, with the `ObjectMapper`
+`OjobpubValidator` uses, and sends a strong `ETag` of those bytes; Spring answers `If-None-Match` with
+`304` and then ignores the date. `lastUpdated` (`OjobpubService.lastUpdated`) is the latest of the
+employer, its headquarters, the feed, **every** job in the feed (an excluded one changed the document by
+leaving it), the included jobs' locations, and the day after any job's window closed. A write that
+changes a document without touching one of those records must call `FeedRepo.contentChanged` — job
+deletion and tag rename/delete do, `addJob`/`removeJob` set the feed's date. Miss one and a cache
+revalidating by date keeps the old document; `FeedFreshnessTest` covers each path.
+
 **Permalinks** (`feed/Permalink*`, §3.13, §5.5): `GET /ojobpub/v1/permalink/{uuid}/ojobpub.json` serves
 whichever of its employer's feeds it points at — **served, never redirected** — or, with no feed, a
 valid document with the employer and no jobs (`OjobpubService.generateEmpty`). The point is a URL a

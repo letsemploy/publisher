@@ -18,6 +18,7 @@ import org.letsemploy.ojobpub_publisher.common.exception.NotFoundException;
 import org.letsemploy.ojobpub_publisher.common.exception.ValidationFailure;
 import org.letsemploy.ojobpub_publisher.common.validation.InputValidator;
 import org.letsemploy.ojobpub_publisher.employer.Employer;
+import org.letsemploy.ojobpub_publisher.feed.FeedRepo;
 import org.letsemploy.ojobpub_publisher.location.LocationService;
 import org.letsemploy.ojobpub_publisher.security.Actor;
 import org.letsemploy.ojobpub_publisher.tag.Tag;
@@ -45,6 +46,7 @@ public class JobService {
     private final AuditLog auditLog;
     private final InputValidator inputs;
     private final MessageSource messages;
+    private final FeedRepo feedRepo;
 
     public JobService(JobRepo jobRepo,
                       JobStatusEventRepo eventRepo,
@@ -53,7 +55,8 @@ public class JobService {
                       ResourceLimits limits,
                       AuditLog auditLog,
                       InputValidator inputs,
-                      MessageSource messages) {
+                      MessageSource messages,
+                      FeedRepo feedRepo) {
         this.jobRepo = jobRepo;
         this.eventRepo = eventRepo;
         this.tagService = tagService;
@@ -62,6 +65,7 @@ public class JobService {
         this.auditLog = auditLog;
         this.inputs = inputs;
         this.messages = messages;
+        this.feedRepo = feedRepo;
     }
 
     /**
@@ -264,6 +268,8 @@ public class JobService {
     @Transactional
     public void delete(UUID id, Actor user) {
         Job job = findVisible(id, user);
+        // The database removes it from its feeds; their documents change with it.
+        feedRepo.contentChanged(jobRepo.findFeedIds(id));
         jobRepo.delete(job);
         auditLog.record(AuditEvent.of(AuditAction.JOB_DELETED, user).in(job.getEmployer())
                 .target(job.getId(), job.getTitle()));

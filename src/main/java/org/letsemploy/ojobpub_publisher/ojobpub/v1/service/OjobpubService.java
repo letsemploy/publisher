@@ -2,9 +2,12 @@ package org.letsemploy.ojobpub_publisher.ojobpub.v1.service;
 
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Objects;
 import org.letsemploy.ojobpub_publisher.employer.Employer;
 import org.letsemploy.ojobpub_publisher.feed.Feed;
 import org.letsemploy.ojobpub_publisher.job.Job;
@@ -65,7 +68,8 @@ public class OjobpubService {
         for (Job job : publishable) {
             jobs.add(job(job));
         }
-        OjobpubDto doc = new OjobpubDto(lastUpdated(feed.getEmployer(), feed.getLastModifiedAt(), publishable),
+        OjobpubDto doc = new OjobpubDto(
+                lastUpdated(feed.getEmployer(), feed.getLastModifiedAt(), feed.getJobs(), publishable, today),
                 employer(feed.getEmployer()), jobs);
 
         if (!exclusions.isEmpty()) {
@@ -83,22 +87,47 @@ public class OjobpubService {
      *              itself a change a cache must see (spec 5.4)
      */
     public Result generateEmpty(Employer employer, Instant since) {
-        OjobpubDto doc = new OjobpubDto(lastUpdated(employer, since, List.of()), employer(employer), List.of());
+        OjobpubDto doc = new OjobpubDto(
+                lastUpdated(employer, since, List.of(), List.of(), LocalDate.now()), employer(employer), List.of());
         return new Result(doc, List.of());
     }
 
-    /** Most recent change among the employer, the feed and the included jobs (spec 5.4). */
-    private Instant lastUpdated(Employer employer, Instant source, List<Job> included) {
-        Instant latest = source != null ? source : Instant.EPOCH;
-        if (employer.getLastModifiedAt() != null && employer.getLastModifiedAt().isAfter(latest)) {
-            latest = employer.getLastModifiedAt();
+    /**
+     * The most recent change to anything the document is made of (spec 5.4). A
+     * consumer and a cache revalidating with {@code If-Modified-Since} both read
+     * an unchanged date as an unchanged document, so every way the document can
+     * change must move it:
+     * <ul>
+     *   <li>the employer, its headquarters, and the feed or permalink itself, whose
+     *       date also moves when a job joins or leaves it (spec 3.5);</li>
+     *   <li>every job in the feed, included or not, since a job that stops being
+     *       published changes the document by leaving it;</li>
+     *   <li>the locations of the included jobs;</li>
+     *   <li>the start of the day after a job's window closed: nothing is written
+     *       when it closes (spec 4.4), yet the job leaves the document then.</li>
+     * </ul>
+     */
+    private Instant lastUpdated(Employer employer, Instant source, Collection<Job> inFeed,
+                                List<Job> included, LocalDate today) {
+        List<Instant> changes = new ArrayList<>();
+        changes.add(source);
+        changes.add(employer.getLastModifiedAt());
+        if (employer.getHeadquarters() != null) {
+            changes.add(employer.getHeadquarters().getLastModifiedAt());
         }
-        for (Job job : included) {
-            if (job.getLastModifiedAt() != null && job.getLastModifiedAt().isAfter(latest)) {
-                latest = job.getLastModifiedAt();
+        for (Job job : inFeed) {
+            changes.add(job.getLastModifiedAt());
+            LocalDate lastDay = Publication.lastDay(job);
+            if (lastDay != null && lastDay.isBefore(today)) {
+                changes.add(lastDay.plusDays(1).atStartOfDay(ZoneId.systemDefault()).toInstant());
             }
         }
-        return latest;
+        for (Job job : included) {
+            for (Location location : job.getLocations()) {
+                changes.add(location.getLastModifiedAt());
+            }
+        }
+        return changes.stream().filter(Objects::nonNull).max(Comparator.naturalOrder()).orElse(Instant.EPOCH);
     }
 
     private OjobpubEmployerDto employer(Employer employer) {

@@ -80,8 +80,14 @@ human rather than buried in a log.
 
 ## 5.4 Caching and freshness
 
-- `lastUpdated` is the most recent `lastModifiedAt` among the employer record, the feed record and the
-  jobs included in the document, expressed in UTC.
+- `lastUpdated` is the most recent change to anything the document is made of, expressed in UTC: the
+  employer record and its headquarters, the feed record, every job in the feed — included or not, since
+  a job that stops being published changes the document by leaving it — and the locations of the
+  included jobs. A job's date window closing writes nothing (§4.4), so the start of the day after a
+  job's last day counts as a change too. A change that writes none of these records — a job joining,
+  leaving or being deleted from a feed, a tag renamed or deleted — moves the feed record's date.
+  A consumer, or a cache revalidating with `If-Modified-Since`, reads an unchanged date as an unchanged
+  document, so no change to the document may leave it where it was.
 - The response **must** carry a strong `ETag` derived from the serialized document, and
   `Last-Modified` derived from `lastUpdated`.
 - Conditional requests (`If-None-Match`, `If-Modified-Since`) **must** be honoured with `304`.

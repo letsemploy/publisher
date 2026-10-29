@@ -10,6 +10,7 @@ import org.letsemploy.ojobpub_publisher.common.exception.NotFoundException;
 import org.letsemploy.ojobpub_publisher.common.exception.ValidationFailure;
 import org.letsemploy.ojobpub_publisher.common.validation.InputValidator;
 import org.letsemploy.ojobpub_publisher.employer.Employer;
+import org.letsemploy.ojobpub_publisher.feed.FeedRepo;
 import org.letsemploy.ojobpub_publisher.security.Actor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -25,11 +26,13 @@ public class TagService {
     private final TagRepo tagRepo;
     private final AuditLog auditLog;
     private final InputValidator inputs;
+    private final FeedRepo feedRepo;
 
-    public TagService(TagRepo tagRepo, AuditLog auditLog, InputValidator inputs) {
+    public TagService(TagRepo tagRepo, AuditLog auditLog, InputValidator inputs, FeedRepo feedRepo) {
         this.tagRepo = tagRepo;
         this.auditLog = auditLog;
         this.inputs = inputs;
+        this.feedRepo = feedRepo;
     }
 
     /** The list screen and the job form's picker: the first 20 matching, by name. */
@@ -88,6 +91,8 @@ public class TagService {
         String before = tag.getName();
         Tag saved = store(tag, rawName);
         if (!saved.getName().equals(before)) {
+            // Published documents carry the name, and a tag has no date of its own.
+            feedRepo.contentChanged(feedRepo.findIdsByTag(saved.getId()));
             auditLog.record(AuditEvent.of(AuditAction.TAG_UPDATED, actor).in(saved.getEmployer())
                     .target(saved.getId(), saved.getName()).detail(before + " → " + saved.getName()));
         }
@@ -106,6 +111,7 @@ public class TagService {
     @Transactional
     public void delete(Long id, Actor actor) {
         Tag tag = findVisible(id, actor);
+        feedRepo.contentChanged(feedRepo.findIdsByTag(id));
         tagRepo.delete(tag);
         auditLog.record(AuditEvent.of(AuditAction.TAG_DELETED, actor).in(tag.getEmployer())
                 .target(tag.getId(), tag.getName()));
