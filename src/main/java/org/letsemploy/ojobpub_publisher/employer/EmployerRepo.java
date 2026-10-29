@@ -11,13 +11,13 @@ import org.springframework.data.repository.query.Param;
 
 public interface EmployerRepo extends JpaRepository<Employer, UUID> {
 
-    Page<Employer> findByIdInOrderByNameAsc(List<UUID> ids, Pageable pageable);
+    Page<Employer> findByIdInOrderByNameAscIdAsc(List<UUID> ids, Pageable pageable);
 
-    Page<Employer> findAllByOrderByNameAsc(Pageable pageable);
+    Page<Employer> findAllByOrderByNameAscIdAsc(Pageable pageable);
 
-    List<Employer> findAllByOrderByNameAsc();
+    List<Employer> findAllByOrderByNameAscIdAsc();
 
-    Page<Employer> findByNameContainingIgnoreCaseOrderByNameAsc(String name, Pageable pageable);
+    Page<Employer> findByNameContainingIgnoreCaseOrderByNameAscIdAsc(String name, Pageable pageable);
 
     /**
      * Deletes the row alone and lets the database's foreign keys take the rest:

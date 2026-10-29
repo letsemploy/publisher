@@ -128,7 +128,7 @@ class EmployerDeleteTest {
         entityManager.clear();
 
         assertThat(employerRepo.findById(doomed.getId())).isEmpty();
-        assertThat(locationRepo.findByEmployerIdOrderByCityAsc(doomed.getId())).isEmpty();
+        assertThat(locationRepo.findByEmployerIdOrderByCityAscCountryAsc(doomed.getId())).isEmpty();
         assertThat(feedService.findByEmployer(doomed.getId())).isEmpty();
         // The consumers' URL is gone with it: the price the confirmation named.
         mvc.perform(get(feed)).andExpect(status().isNotFound());

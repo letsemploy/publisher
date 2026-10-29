@@ -15,13 +15,13 @@ public interface LocationRepo extends JpaRepository<Location, UUID> {
 
     /** The list screen, across the employers in scope; the employer is shown per row. */
     @EntityGraph(attributePaths = "employer")
-    List<Location> findByEmployerIdInOrderByCityAsc(Collection<UUID> employerIds);
+    List<Location> findByEmployerIdInOrderByCityAscCountryAsc(Collection<UUID> employerIds);
 
-    List<Location> findByEmployerIdOrderByCityAsc(UUID employerId);
+    List<Location> findByEmployerIdOrderByCityAscCountryAsc(UUID employerId);
 
-    List<Location> findTop20ByEmployerIdOrderByCityAsc(UUID employerId);
+    List<Location> findTop20ByEmployerIdOrderByCityAscCountryAsc(UUID employerId);
 
-    List<Location> findTop20ByEmployerIdAndCityContainingIgnoreCaseOrderByCityAsc(UUID employerId, String city);
+    List<Location> findTop20ByEmployerIdAndCityContainingIgnoreCaseOrderByCityAscCountryAsc(UUID employerId, String city);
 
     Optional<Location> findFirstByEmployerIdAndCityIgnoreCaseAndCountry(UUID employerId, String city,
                                                                        CountryCode country);

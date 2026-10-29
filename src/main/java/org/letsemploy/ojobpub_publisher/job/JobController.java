@@ -104,14 +104,14 @@ public class JobController {
         JobType typeFilter = jobTypeFilter(jobType);
 
         Page<Job> result = jobService.search(scope.employerIds(), q, statusFilter, typeFilter,
-                PageRequest.of(Math.max(page, 0), pageSize, Sort.by(sortField)));
+                PageRequest.of(Math.max(page, 0), pageSize, Sort.by(sortField).and(Sort.by("id"))));
 
         // An out-of-range page clamps to the last available page rather than erroring (spec 8.3).
         int pageNumber = result.getTotalPages() > 0 && page >= result.getTotalPages()
                 ? result.getTotalPages() - 1 : Math.max(page, 0);
         if (pageNumber != page) {
             result = jobService.search(scope.employerIds(), q, statusFilter, typeFilter,
-                    PageRequest.of(pageNumber, pageSize, Sort.by(sortField)));
+                    PageRequest.of(pageNumber, pageSize, Sort.by(sortField).and(Sort.by("id"))));
         }
 
         LocalDate today = LocalDate.now();

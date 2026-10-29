@@ -41,6 +41,10 @@ Section numbers such as §5.6 refer to the specification in [`docs/SPEC.md`](doc
 - Two requests arriving together on someone's very first sign-in (two tabs, or a page and its
   assets right after the provider's callback) no longer fail one of them with a server error. Both
   continue with the one account created.
+- A feed lists its jobs in one order however the database returns them, so a consumer comparing two
+  fetches sees only real changes (§5.2). Before, two jobs with the same date and title, or two
+  locations of one city in different countries, could swap places. The paged lists of jobs, users,
+  employers and activity no longer repeat or skip a row across pages when values tie.
 - Two first clicks of the same job link, on the same day and from the same country, are both counted
   (§5.6). On SQLite the second was lost, and on either database a counter could be reset to one.
 - A feed's `lastUpdated` and `Last-Modified` now move with every change to its document, so a cache

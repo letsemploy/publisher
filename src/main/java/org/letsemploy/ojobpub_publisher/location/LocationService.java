@@ -35,20 +35,20 @@ public class LocationService {
 
     /** The list screen: every location of the employers in scope. */
     public List<Location> visibleTo(Collection<UUID> employerIds) {
-        return employerIds.isEmpty() ? List.of() : locationRepo.findByEmployerIdInOrderByCityAsc(employerIds);
+        return employerIds.isEmpty() ? List.of() : locationRepo.findByEmployerIdInOrderByCityAscCountryAsc(employerIds);
     }
 
     /** One employer's locations, for its headquarters select. */
     public List<Location> ofEmployer(UUID employerId) {
-        return locationRepo.findByEmployerIdOrderByCityAsc(employerId);
+        return locationRepo.findByEmployerIdOrderByCityAscCountryAsc(employerId);
     }
 
     /** The job form's picker: this employer's locations only (spec 3.3, 7.8). */
     public List<Location> search(UUID employerId, String query) {
         if (query == null || query.isBlank()) {
-            return locationRepo.findTop20ByEmployerIdOrderByCityAsc(employerId);
+            return locationRepo.findTop20ByEmployerIdOrderByCityAscCountryAsc(employerId);
         }
-        return locationRepo.findTop20ByEmployerIdAndCityContainingIgnoreCaseOrderByCityAsc(employerId, query.trim());
+        return locationRepo.findTop20ByEmployerIdAndCityContainingIgnoreCaseOrderByCityAscCountryAsc(employerId, query.trim());
     }
 
     /** For a member of its employer, or an admin; anyone else is told it does not exist. */

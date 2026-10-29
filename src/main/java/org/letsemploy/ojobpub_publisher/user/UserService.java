@@ -67,7 +67,7 @@ public class UserService {
     public PageView<UserRow> page(String q, boolean suspendedOnly, int page, Actor actor) {
         requireAdmin(actor);
         Page<UserEntity> users = userRepo.search(q, suspendedOnly,
-                PageRequest.of(Math.max(page, 0), PAGE_SIZE, Sort.by("displayName")));
+                PageRequest.of(Math.max(page, 0), PAGE_SIZE, Sort.by("displayName").and(Sort.by("id"))));
         // One count query for the page, not one per row.
         List<UUID> ids = users.getContent().stream().map(UserEntity::getId).toList();
         Map<UUID, Long> employers = membershipService.countsByUser(ids);

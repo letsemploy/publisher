@@ -167,7 +167,7 @@ class LocationTagScopeTest {
                 .andExpect(status().is3xxRedirection());
         mvc.perform(post("/tags/create").param("name", "fortran")).andExpect(status().is3xxRedirection());
 
-        assertThat(locationRepo.findByEmployerIdOrderByCityAsc(other.getId()))
+        assertThat(locationRepo.findByEmployerIdOrderByCityAscCountryAsc(other.getId()))
                 .extracting(Location::getCity).contains("Genève");
         assertThat(tagRepo.findFirstByEmployerIdAndNameIgnoreCase(other.getId(), "fortran")).isPresent();
         assertThat(tagRepo.findFirstByEmployerIdAndNameIgnoreCase(ACME, "fortran")).isEmpty();
@@ -215,7 +215,7 @@ class LocationTagScopeTest {
         entityManager.flush();
         jdbc.update("DELETE FROM employers WHERE id = ?", other.getId().toString());
         entityManager.clear();
-        assertThat(locationRepo.findByEmployerIdOrderByCityAsc(other.getId())).isEmpty();
+        assertThat(locationRepo.findByEmployerIdOrderByCityAscCountryAsc(other.getId())).isEmpty();
         assertThat(tagRepo.findFirstByEmployerIdAndNameIgnoreCase(other.getId(), "cobol")).isEmpty();
         assertThat(locationRepo.findById(UUID.fromString(BERN))).as("Acme's are untouched").isPresent();
     }

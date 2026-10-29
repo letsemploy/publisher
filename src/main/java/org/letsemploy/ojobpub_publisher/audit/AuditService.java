@@ -79,7 +79,7 @@ public class AuditService {
         if (!actor.isAdmin()) {
             throw new NotFoundException("Not found.");
         }
-        return auditRepo.findAllByOrderByOccurredAtDesc(pageable(page));
+        return auditRepo.findAllByOrderByOccurredAtDescIdDesc(pageable(page));
     }
 
     /** A person's own log: for them, and for platform staff. */

@@ -61,8 +61,10 @@ public class OjobpubService {
         }
 
         // Stable order between fetches, so a consumer diff shows real changes only (spec 5.2).
+        // The id last: two jobs of one date and title would otherwise follow load order.
         publishable.sort(Comparator.comparing(Job::getPublishedAt).reversed()
-                .thenComparing(Job::getTitle));
+                .thenComparing(Job::getTitle)
+                .thenComparing(Job::getId));
 
         List<OjobpubJobDto> jobs = new ArrayList<>();
         for (Job job : publishable) {
@@ -141,7 +143,8 @@ public class OjobpubService {
 
     private OjobpubJobDto job(Job job) {
         List<OjobpubLocationDto> locations = job.getLocations().stream()
-                .sorted(Comparator.comparing(Location::getCity))
+                // A city is unique only with its country (spec 3.2), so both decide the order.
+                .sorted(Comparator.comparing(Location::getCity).thenComparing(Location::getCountryCode))
                 .map(this::location)
                 .toList();
 

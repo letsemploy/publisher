@@ -56,7 +56,7 @@ public class EmployerService {
     /** Editors see only their employers; an admin sees all (spec 2.1). */
     public List<Employer> visibleTo(Actor user) {
         if (user.isAdmin()) {
-            return employerRepo.findAllByOrderByNameAsc();
+            return employerRepo.findAllByOrderByNameAscIdAsc();
         }
         if (user.getEmployerIds().isEmpty()) {
             return List.of();
@@ -69,13 +69,13 @@ public class EmployerService {
     public Page<Employer> pageVisibleTo(Actor user, String query, Pageable pageable) {
         if (user.isAdmin()) {
             return query == null || query.isBlank()
-                    ? employerRepo.findAllByOrderByNameAsc(pageable)
-                    : employerRepo.findByNameContainingIgnoreCaseOrderByNameAsc(query, pageable);
+                    ? employerRepo.findAllByOrderByNameAscIdAsc(pageable)
+                    : employerRepo.findByNameContainingIgnoreCaseOrderByNameAscIdAsc(query, pageable);
         }
         if (user.getEmployerIds().isEmpty()) {
             return Page.empty(pageable);
         }
-        return employerRepo.findByIdInOrderByNameAsc(user.getEmployerIds(), pageable);
+        return employerRepo.findByIdInOrderByNameAscIdAsc(user.getEmployerIds(), pageable);
     }
 
     /**
