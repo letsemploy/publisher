@@ -140,4 +140,50 @@ class ProviderPictureFetcherTest {
             assertThat(ProviderPictureFetcher.isPublic(InetAddress.getByName(address))).as(address).isTrue();
         }
     }
+
+    /**
+     * IPv6 that carries an IPv4 address, or is not global unicast at all. Each of
+     * these once counted as public, since only fc00::/7 and the mapped form were
+     * refused. On a NAT64 network 64:ff9b::/96 reaches whatever IPv4 address it
+     * embeds, so it is judged as that address: a public one is still fetched.
+     */
+    @Test
+    void ipv6IsPublicOnlyAsGlobalUnicast() throws IOException {
+        for (String address : new String[] {
+                "64:ff9b::7f00:1",          // NAT64 of 127.0.0.1
+                "64:ff9b::a00:1",           // NAT64 of 10.0.0.1
+                "64:ff9b::a9fe:a9fe",       // NAT64 of 169.254.169.254
+                "64:ff9b:1::a00:1",         // local-use NAT64
+                "::7f00:1",                 // IPv4-compatible 127.0.0.1
+                "::808:808",                // IPv4-compatible, deprecated even for a public address
+                "2002:7f00:1::1",           // 6to4 of 127.0.0.1
+                "2002:808:808::1",          // 6to4, deprecated
+                "2001:0:4136:e378::1",      // Teredo
+                "2001:2::1",                // benchmarking, in the IETF block 2001::/23
+                "2001:db8::1",              // documentation
+                "3fff::1",                  // documentation
+                "5f00::1",                  // SRv6 SIDs
+                "ff02::1",                  // multicast
+                "100::1"}) {                // discard-only
+            assertThat(ProviderPictureFetcher.isPublic(InetAddress.getByName(address))).as(address).isFalse();
+        }
+        for (String address : new String[] {"64:ff9b::808:808", "2606:4700:4700::1111"}) {
+            assertThat(ProviderPictureFetcher.isPublic(InetAddress.getByName(address))).as(address).isTrue();
+        }
+    }
+
+    @Test
+    void ipv4SpecialRangesAreNotPublic() throws IOException {
+        for (String address : new String[] {"192.0.2.1", "198.51.100.1", "203.0.113.1", "192.88.99.1"}) {
+            assertThat(ProviderPictureFetcher.isPublic(InetAddress.getByName(address))).as(address).isFalse();
+        }
+    }
+
+    /** A picture is on the https port; any other turns the fetch into a probe of that port. */
+    @Test
+    void onlyTheHttpsPort() {
+        assertThat(ProviderPictureFetcher.isPublicHttps(URI.create("https://8.8.8.8:443/a.png"))).isTrue();
+        assertThat(ProviderPictureFetcher.isPublicHttps(URI.create("https://8.8.8.8:22/a.png"))).isFalse();
+        assertThat(ProviderPictureFetcher.isPublicHttps(URI.create("https://8.8.8.8:8443/a.png"))).isFalse();
+    }
 }

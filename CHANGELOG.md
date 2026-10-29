@@ -26,6 +26,12 @@ Section numbers such as §5.6 refer to the specification in [`docs/SPEC.md`](doc
 - The management API's body limit (`app.api.max-request-bytes`) now also applies to a chunked request,
   which declares no length and used to be read whole (§11.6).
 - A service token whose own membership is missing is refused instead of acting as an editor (§2.8).
+- Fetching a provider's picture now refuses more addresses that lead inside a network (§7.27).
+  - **IPv6:** only global unicast addresses are fetched from. Before, NAT64, IPv4-compatible, 6to4 and
+    Teredo addresses counted as public even when the IPv4 address inside them was private or loopback.
+    NAT64 addresses are now judged by the IPv4 address they carry, so public hosts still load on an
+    IPv6-only network.
+  - **Port:** only the standard https port is used.
 
 ### Fixed
 

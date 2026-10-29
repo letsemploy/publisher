@@ -711,7 +711,8 @@ it; the picture is decoration, and hidden from assistive technology.
   the same way. The browser loads every picture from the application, and the policy keeps
   `img-src 'self'` (§9.4).
 - **The provider's address is fenced.** Some providers let a person set it, so the server fetches it
-  only over `https`, only from public addresses, without following redirects, within a time and a size
+  only over `https` on its standard port, only from public addresses — including the IPv4 address an
+  IPv6 one carries — without following redirects, within a time and a size
   limit; anything that does not decode as a picture is dropped. The address is never logged. An
   operator can turn fetching off, leaving initials or an upload.
 - **Accepted:** JPEG, PNG and GIF, up to 5 MB and 10,000 pixels on a side, which is read from the

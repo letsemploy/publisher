@@ -586,10 +586,14 @@ third party who is looking. One row per user, `ON DELETE CASCADE` from `users`.
   `PictureService.providerPictureSeen` only reads and publishes an event, because it may run inside a
   read-only transaction. `ProviderPictureFetcher` downloads `AFTER_COMMIT` on `applicationTaskExecutor`.
 - **The fetch is an SSRF surface:** some IdPs let users set `picture`. So it uses `https` only, every
-  resolved address must be public (`isPublic`), redirects are never followed, the timeout is 5 s, the
+  resolved address must be public (`isPublic`), the port is 443, redirects are never followed, the timeout is 5 s, the
   body is capped with `BodyHandlers.limiting`, and the result goes through the processor. Log the
   user id, **never the URL**. Do not relax any of this to "support" a provider. Tests use the
   package-private constructor that takes the address rule.
+  - **IPv6 is allowed, not refused:** only global unicast `2000::/3` is public, less its special ranges
+    (Teredo and the rest of `2001::/23`, 6to4, documentation, SRv6). The two forms that carry an IPv4
+    address and reach it, mapped `::ffff:0:0/96` and NAT64 `64:ff9b::/96`, are judged as that IPv4
+    address, so a public host is still fetched on an IPv6-only network. A refusal list missed those.
 - **An upload always wins.** `storeProviderPicture`/`dropProviderPicture` leave `UPLOAD` alone.
   Removing deletes the row, so the next session fetches the provider's again.
 - **Who sees one** is decided in `PictureService.find`: oneself, `actor.isAdmin()`, or a member of an
