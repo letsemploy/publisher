@@ -235,16 +235,20 @@ public class ServiceTokenService {
             return Optional.empty();
         }
         ServiceToken token = found.get();
+        // The token's own membership is its role. Without one it has none, and is
+        // refused like any other credential that does not work - never a default.
+        Optional<MembershipRole> role = membershipRepo
+                .findByServiceTokenIdAndEmployerId(token.getId(), token.getEmployer().getId())
+                .map(Membership::getRole);
+        if (role.isEmpty()) {
+            return Optional.empty();
+        }
         // Only a call that actually worked counts as a use: the column answers
         // "when did this last function", and a refusal is not a use.
         token.setLastUsedAt(now);
         tokenRepo.save(token);
 
-        MembershipRole role = membershipRepo
-                .findByServiceTokenIdAndEmployerId(token.getId(), token.getEmployer().getId())
-                .map(Membership::getRole)
-                .orElse(MembershipRole.EDITOR);
         return Optional.of(Actor.serviceToken(token.getId(), token.getLabel(),
-                token.getEmployer().getId(), role, token.getScopes()));
+                token.getEmployer().getId(), role.get(), token.getScopes()));
     }
 }

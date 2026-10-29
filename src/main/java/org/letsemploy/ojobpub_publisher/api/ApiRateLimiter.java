@@ -41,6 +41,10 @@ public class ApiRateLimiter {
 
     public Decision check(UUID tokenId) {
         long now = Instant.now().getEpochSecond();
+        // 0 is unlimited, as for every other limit here (spec 8.4), not "refuse all".
+        if (limit == 0) {
+            return new Decision(true, 0, 0, now + windowSeconds);
+        }
         Window updated = windows.compute(tokenId, (id, current) -> {
             if (current == null || now - current.startEpochSecond() >= windowSeconds) {
                 return new Window(now, 1);

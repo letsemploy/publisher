@@ -20,6 +20,14 @@ Section numbers such as §5.6 refer to the specification in [`docs/SPEC.md`](doc
 - A signed-in user who belonged to no employer could list every employer's jobs (titles, statuses,
   feed counts) by requesting the job list as an htmx fragment. The list is now empty for them, as the
   full page already showed (§2.4).
+- The management API's body limit (`app.api.max-request-bytes`) now also applies to a chunked request,
+  which declares no length and used to be read whole (§11.6).
+- A service token whose own membership is missing is refused instead of acting as an editor (§2.8).
+
+### Fixed
+
+- `app.api.rate-limit=0` means unlimited, as `0` does for every other limit, instead of refusing every
+  API call (§11.6).
 
 ## [1.4.0] - 2026-10-08
 

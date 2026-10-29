@@ -87,6 +87,19 @@ class ServiceTokenExpiryTest {
         assertThat(tokens.authenticate(created.secret())).isEmpty();
     }
 
+    /** A token's role is its own membership; without one it has no role, not a default one. */
+    @Test
+    void aTokenWithoutItsMembershipDoesNotAuthenticate() {
+        var created = mint("orphaned");
+        membershipRepo.delete(membershipRepo
+                .findByServiceTokenIdAndEmployerId(created.token().getId(), acme).orElseThrow());
+        membershipRepo.flush();
+
+        assertThat(tokens.authenticate(created.secret())).isEmpty();
+        assertThat(tokenRepo.findById(created.token().getId()).orElseThrow().getLastUsedAt())
+                .isNull();
+    }
+
     /**
      * last-used answers "when did this last work" — it is the column the register
      * leans on to surface a forgotten integration (spec 7.17). Stamping it on a
