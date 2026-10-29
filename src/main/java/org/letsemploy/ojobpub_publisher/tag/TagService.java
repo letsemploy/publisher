@@ -55,7 +55,7 @@ public class TagService {
     /** For a member of its employer, or an admin; anyone else is told it does not exist. */
     public Tag findVisible(Long id, Actor actor) {
         Tag tag = tagRepo.findById(id).orElseThrow(() -> new NotFoundException("Tag not found: " + id));
-        if (!actor.isAdmin() && !actor.getEmployerIds().contains(tag.getEmployer().getId())) {
+        if (!actor.canActOn(tag.getEmployer().getId())) {
             throw new NotFoundException("Tag not found: " + id);
         }
         return tag;
@@ -77,6 +77,10 @@ public class TagService {
 
     @Transactional
     public Tag create(Employer employer, String rawName, Actor actor) {
+        // Only for an actor who may work on the employer (spec 2.4); anyone else learns nothing of it.
+        if (!actor.canActOn(employer.getId())) {
+            throw new NotFoundException("Employer not found: " + employer.getId());
+        }
         Tag tag = new Tag();
         tag.setEmployer(employer);
         Tag saved = store(tag, rawName);

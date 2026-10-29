@@ -87,6 +87,15 @@ public final class Actor {
     }
 
     /**
+     * May this actor work on the employer's records: a member of it, in any role,
+     * or an admin (spec 2.4)? The one rule behind every findVisible, and behind
+     * creating a record for an employer. Anyone else is answered 404.
+     */
+    public boolean canActOn(UUID employerId) {
+        return isAdmin() || memberships.containsKey(employerId);
+    }
+
+    /**
      * Owner of this employer? False for an admin who is not a member - an admin
      * may administer any employer, but through the platform role, not this one.
      */

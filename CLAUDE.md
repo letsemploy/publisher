@@ -116,7 +116,11 @@ models, error handling), `ojobpub/v1` (the published contract) and `api` (the Gr
 
 Controllers are thin: they resolve the actor, call a service, and put view models on the model.
 **Authorization lives in services, never in controllers or templates** (§2.4) — hiding a button is not
-authorization, and a route that forgets a check would otherwise be exploitable.
+authorization, and a route that forgets a check would otherwise be exploitable. **`Actor.canActOn(employerId)`**
+(member in any role, or admin) is the one rule behind every `findVisible`, and every create that takes
+an `Employer` checks it too rather than trusting the caller (`ServiceWriteScopeTest`). The exception is
+`LocationService.create`: it makes a new employer's headquarters in the request that grants the
+creator ownership, before that request's `Actor` has the membership.
 
 ### Refusals are 404, not 403
 

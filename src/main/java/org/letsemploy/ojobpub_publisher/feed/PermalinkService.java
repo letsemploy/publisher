@@ -65,7 +65,7 @@ public class PermalinkService {
     public Permalink findVisible(UUID id, Actor actor) {
         Permalink permalink = permalinkRepo.findWithFeedById(id)
                 .orElseThrow(() -> new NotFoundException("Permalink not found: " + id));
-        if (!actor.isAdmin() && !actor.getEmployerIds().contains(permalink.getEmployer().getId())) {
+        if (!actor.canActOn(permalink.getEmployer().getId())) {
             throw new NotFoundException("Permalink not found: " + id);
         }
         return permalink;
@@ -102,6 +102,10 @@ public class PermalinkService {
         inputs.check(new NameInput(name));
         Permalink permalink;
         if (id == null) {
+            // Only for an actor who may work on the employer, as for feeds (spec 2.4).
+            if (!actor.canActOn(employer.getId())) {
+                throw new NotFoundException("Employer not found: " + employer.getId());
+            }
             // Before the name check, as for feeds (spec 8.4).
             limits.requireRoomForPermalinks(() -> permalinkRepo.countByEmployerId(employer.getId()));
             if (permalinkRepo.existsByEmployerIdAndNameIgnoreCase(employer.getId(), name.trim())) {

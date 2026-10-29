@@ -85,7 +85,7 @@ public class EmployerService {
     public Employer findVisible(UUID id, Actor user) {
         Employer employer = employerRepo.findById(id)
                 .orElseThrow(() -> new NotFoundException("Employer not found: " + id));
-        if (!user.isAdmin() && !user.getEmployerIds().contains(id)) {
+        if (!user.canActOn(id)) {
             throw new NotFoundException("Employer not found: " + id);
         }
         return employer;

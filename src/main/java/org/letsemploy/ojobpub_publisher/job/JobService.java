@@ -111,7 +111,7 @@ public class JobService {
         Job job = jobRepo.findWithDetailById(id)
                 .orElseThrow(() -> new NotFoundException("Job not found: " + id));
         // A non-member gets 404, never 403 (spec 2.4).
-        if (!user.isAdmin() && !user.getEmployerIds().contains(job.getEmployer().getId())) {
+        if (!user.canActOn(job.getEmployer().getId())) {
             throw new NotFoundException("Job not found: " + id);
         }
         return job;
@@ -146,18 +146,27 @@ public class JobService {
         return jobRepo.findFeedIds(jobId);
     }
 
+    /**
+     * Creates a job for {@code employer}, or updates the job the form names - in
+     * either case only for an actor who may work on that employer's records,
+     * checked here rather than trusted from the caller (spec 2.4). An update is the
+     * job's own employer's, whatever {@code employer} says, since it never changes
+     * (spec 3.3).
+     */
     @Transactional
     public Job save(JobForm form, Employer employer, boolean activate, Actor actor) {
         Job job;
         if (form.getId() == null) {
+            if (!actor.canActOn(employer.getId())) {
+                throw new NotFoundException("Employer not found: " + employer.getId());
+            }
             limits.requireRoomForJobs(() -> jobRepo.countByEmployerId(employer.getId()));
             job = new Job();
             // Set at creation and immutable thereafter (spec 3.3).
             job.setEmployer(employer);
             job.setStatus(JobStatus.DRAFT);
         } else {
-            job = jobRepo.findWithDetailById(form.getId())
-                    .orElseThrow(() -> new NotFoundException("Job not found: " + form.getId()));
+            job = findVisible(form.getId(), actor);
         }
 
         form.trim();
@@ -165,7 +174,7 @@ public class JobService {
         validate(form, job);
         Job saved = jobRepo.save(job);
         auditLog.record(AuditEvent.of(form.getId() == null ? AuditAction.JOB_CREATED : AuditAction.JOB_UPDATED,
-                actor).in(employer).target(saved.getId(), saved.getTitle()));
+                actor).in(saved.getEmployer()).target(saved.getId(), saved.getTitle()));
 
         if (activate && saved.getStatus() != JobStatus.ACTIVE) {
             transition(saved, JobStatus.ACTIVE, actor);
@@ -295,7 +304,7 @@ public class JobService {
      */
     @Transactional(readOnly = true)
     public List<Job> jobsOf(UUID employerId, Actor actor) {
-        if (!actor.isAdmin() && !actor.getEmployerIds().contains(employerId)) {
+        if (!actor.canActOn(employerId)) {
             throw new NotFoundException("Employer not found: " + employerId);
         }
         return jobRepo.findByEmployerIdOrderByTitleAsc(employerId);
@@ -304,7 +313,7 @@ public class JobService {
     /** The ids of the employer's jobs set inactive since an instant (spec 7.28), each once. */
     @Transactional(readOnly = true)
     public Set<UUID> deactivatedSince(UUID employerId, Instant since, Actor actor) {
-        if (!actor.isAdmin() && !actor.getEmployerIds().contains(employerId)) {
+        if (!actor.canActOn(employerId)) {
             throw new NotFoundException("Employer not found: " + employerId);
         }
         return eventRepo.findByJobEmployerIdAndToStatusAndOccurredAtGreaterThanEqual(

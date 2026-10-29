@@ -56,7 +56,7 @@ public class FeedService {
     public Feed findVisible(UUID id, Actor user) {
         Feed feed = feedRepo.findWithJobsById(id)
                 .orElseThrow(() -> new NotFoundException("Feed not found: " + id));
-        if (!user.isAdmin() && !user.getEmployerIds().contains(feed.getEmployer().getId())) {
+        if (!user.canActOn(feed.getEmployer().getId())) {
             throw new NotFoundException("Feed not found: " + id);
         }
         return feed;
@@ -77,6 +77,11 @@ public class FeedService {
         inputs.check(new NameInput(name));
         Feed feed;
         if (id == null) {
+            // Only for an actor who may work on the employer, checked here rather than
+            // trusted from the caller (spec 2.4); anyone else learns nothing of it.
+            if (!actor.canActOn(employer.getId())) {
+                throw new NotFoundException("Employer not found: " + employer.getId());
+            }
             // Before the name check: an employer at its cap should not be told
             // to pick a different name (spec 8.4).
             limits.requireRoomForFeeds(() -> feedRepo.countByEmployerId(employer.getId()));

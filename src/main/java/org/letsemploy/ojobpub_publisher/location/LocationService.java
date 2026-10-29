@@ -55,7 +55,7 @@ public class LocationService {
     public Location findVisible(UUID id, Actor actor) {
         Location location = locationRepo.findById(id)
                 .orElseThrow(() -> new NotFoundException("Location not found: " + id));
-        if (!actor.isAdmin() && !actor.getEmployerIds().contains(location.getEmployer().getId())) {
+        if (!actor.canActOn(location.getEmployer().getId())) {
             throw new NotFoundException("Location not found: " + id);
         }
         return location;
@@ -76,6 +76,14 @@ public class LocationService {
         return locationRepo.countUsages(id);
     }
 
+    /**
+     * A new location of {@code employer}. Not checked against {@code
+     * actor.canActOn} as tags, feeds, jobs and permalinks are: creating an
+     * employer creates its headquarters here, in the request that makes the
+     * creator its owner, and that request's actor was built before the
+     * membership existed. Every caller passes the active employer or the one it
+     * is saving.
+     */
     @Transactional
     public Location create(Employer employer, String city, String countryCode, Actor actor) {
         Location location = new Location();
