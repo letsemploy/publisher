@@ -3,8 +3,8 @@ package org.letsemploy.ojobpub_publisher.api;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.json.JsonMapper;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -45,7 +45,7 @@ class ApiQuotaTest {
     @Autowired private MockMvc mvc;
     @Autowired private org.springframework.jdbc.core.JdbcTemplate jdbc;
     @Autowired private ServiceTokenService tokens;
-    @Autowired private ObjectMapper json;
+    @Autowired private JsonMapper json;
 
     /**
      * Not @Transactional, so the token minted below would otherwise survive the
@@ -82,13 +82,13 @@ class ApiQuotaTest {
         assertThat(payload.path("job").isNull()).isTrue();
 
         JsonNode error = payload.path("userErrors").path(0);
-        assertThat(error.path("code").asText())
+        assertThat(error.path("code").asString())
                 .as("distinct from the API's own LIMIT_EXCEEDED, which is a transport fault")
                 .isEqualTo("QUOTA_REACHED");
         assertThat(error.path("field").isNull())
                 .as("no input argument fixes being at a quota")
                 .isTrue();
-        assertThat(error.path("message").asText())
+        assertThat(error.path("message").asString())
                 .as("resolved through the bundles, not the service's English literal")
                 .isEqualTo("This employer has reached its limit on job postings. "
                         + "Delete one to add another.");

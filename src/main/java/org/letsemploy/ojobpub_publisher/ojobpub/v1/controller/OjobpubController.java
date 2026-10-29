@@ -1,7 +1,5 @@
 package org.letsemploy.ojobpub_publisher.ojobpub.v1.controller;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletRequest;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -16,6 +14,7 @@ import org.letsemploy.ojobpub_publisher.feed.FeedService;
 import org.letsemploy.ojobpub_publisher.feed.Permalink;
 import org.letsemploy.ojobpub_publisher.feed.PermalinkService;
 import org.letsemploy.ojobpub_publisher.ojobpub.v1.dto.OjobpubDto;
+import org.letsemploy.ojobpub_publisher.ojobpub.v1.service.OjobpubJson;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.CacheControl;
@@ -56,21 +55,21 @@ public class OjobpubController {
 
     private final FeedService feedService;
     private final PermalinkService permalinkService;
-    /** The mapper {@code OjobpubValidator} checks with, so the badge sees the bytes served. */
-    private final ObjectMapper objectMapper;
+    /** What {@code OjobpubValidator} checks with too, so the badge sees the bytes served. */
+    private final OjobpubJson json;
 
     public OjobpubController(FeedService feedService, PermalinkService permalinkService,
-                             ObjectMapper objectMapper) {
+                             OjobpubJson json) {
         this.feedService = feedService;
         this.permalinkService = permalinkService;
-        this.objectMapper = objectMapper;
+        this.json = json;
     }
 
     @GetMapping(value = "/ojobpub/v1/{employerSegment}/{feedSegment}/ojobpub.json",
             produces = MediaType.APPLICATION_JSON_VALUE)
     @CrossOrigin(origins = "*")
     public ResponseEntity<?> publish(@PathVariable String employerSegment,
-                                     @PathVariable String feedSegment) throws JsonProcessingException {
+                                     @PathVariable String feedSegment) {
         Matcher employerMatch = SEGMENT.matcher(employerSegment);
         Matcher feedMatch = SEGMENT.matcher(feedSegment);
         // A malformed segment reveals nothing about what does or does not exist.
@@ -103,7 +102,7 @@ public class OjobpubController {
     @GetMapping(value = "/ojobpub/v1/permalink/{id}/ojobpub.json",
             produces = MediaType.APPLICATION_JSON_VALUE)
     @CrossOrigin(origins = "*")
-    public ResponseEntity<?> permalink(@PathVariable String id) throws JsonProcessingException {
+    public ResponseEntity<?> permalink(@PathVariable String id) {
         if (!PERMALINK.matcher(id).matches()) {
             return notFound();
         }
@@ -126,8 +125,8 @@ public class OjobpubController {
      * so a cache that has both validators sees every change, even one the date
      * cannot show - and the date of an evaluation day ago is not the same body.
      */
-    private ResponseEntity<?> ok(OjobpubDto document) throws JsonProcessingException {
-        byte[] body = objectMapper.writeValueAsBytes(document);
+    private ResponseEntity<?> ok(OjobpubDto document) {
+        byte[] body = json.write(document);
         return ResponseEntity.ok()
                 .contentType(MediaType.APPLICATION_JSON)
                 .cacheControl(CacheControl.maxAge(Duration.ofMinutes(5)).cachePublic())

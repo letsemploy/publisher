@@ -164,8 +164,15 @@ schema at `src/main/resources/ojobpub/v1/ojobpub.schema.json` (upstream:
 `https://raw.githubusercontent.com/letsemploy/schema/refs/heads/main/v1/ojobpub.json`). The feed screen
 shows a validity badge from the same validator.
 
-**Freshness** (§5.4): `OjobpubController` serializes the document itself, with the `ObjectMapper`
-`OjobpubValidator` uses, and sends a strong `ETag` of those bytes; Spring answers `If-None-Match` with
+**The document's bytes come from `OjobpubJson`** (§6), a Jackson 3 mapper of its own: the endpoint, its
+ETag, `OjobpubValidator` and the feed screen's preview all use it, so they cannot disagree. Never turn it
+into a `JsonMapper` bean: Boot's auto-configured one would back off, and its `NON_NULL` would reach the
+GraphQL responses, where nulls must be present. Nor make it follow `spring.jackson.*` — the contract
+must not move with a deployment's settings. Jackson 2 is gone from our code; it is on the classpath only
+for GeoIP2.
+
+**Freshness** (§5.4): `OjobpubController` serializes the document itself, with `OjobpubJson`, and
+sends a strong `ETag` of those bytes; Spring answers `If-None-Match` with
 `304` and then ignores the date. `lastUpdated` (`OjobpubService.lastUpdated`) is the latest of the
 employer, its headquarters, the feed, **every** job in the feed (an excluded one changed the document by
 leaving it), the included jobs' locations, and the day after any job's window closed. A write that

@@ -2,10 +2,6 @@ package org.letsemploy.ojobpub_publisher.ojobpub.v1;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.neovisionaries.i18n.CountryCode;
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -19,6 +15,7 @@ import org.letsemploy.ojobpub_publisher.employer.Employer;
 import org.letsemploy.ojobpub_publisher.feed.Feed;
 import org.letsemploy.ojobpub_publisher.job.*;
 import org.letsemploy.ojobpub_publisher.location.Location;
+import org.letsemploy.ojobpub_publisher.ojobpub.v1.service.OjobpubJson;
 import org.letsemploy.ojobpub_publisher.ojobpub.v1.service.OjobpubService;
 import org.letsemploy.ojobpub_publisher.ojobpub.v1.service.OjobpubValidator;
 import org.letsemploy.ojobpub_publisher.tag.Tag;
@@ -33,17 +30,18 @@ import org.letsemploy.ojobpub_publisher.tag.Tag;
 class OjobpubConformanceTest {
 
     private static OjobpubValidator validator;
-    private static ObjectMapper mapper;
+    /** The application's own writer of the document: what is checked is what is served. */
+    private static final OjobpubJson json = new OjobpubJson();
     private final OjobpubService service = new OjobpubService("https://jobs.acme.example/", true);
 
     @BeforeAll
     static void setUp() throws Exception {
-        mapper = new ObjectMapper()
-                .registerModule(new JavaTimeModule())
-                .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
-                .setSerializationInclusion(JsonInclude.Include.NON_NULL);
-        validator = new OjobpubValidator(mapper);
+        validator = new OjobpubValidator(json);
         validator.load();
+    }
+
+    private static String text(Object document) {
+        return new String(json.write(document), java.nio.charset.StandardCharsets.UTF_8);
     }
 
     private Location location(String city, CountryCode country) {
@@ -187,7 +185,7 @@ class OjobpubConformanceTest {
         Employer employer = employer();
         var document = service.generate(feed(employer, minimalJob(employer)),
                 LocalDate.of(2026, 9, 21)).document();
-        assertThat(mapper.writeValueAsString(document))
+        assertThat(text(document))
                 .containsPattern("\"lastUpdated\"\\s*:\\s*\"\\d{4}-\\d{2}-\\d{2}T[\\d:.]+Z\"");
     }
 
@@ -262,7 +260,7 @@ class OjobpubConformanceTest {
         job.setSalaryMin(new BigDecimal("123456.78"));
         job.setSalaryCurrency("CHF");
         job.setSalaryInterval(SalaryInterval.YEARLY);
-        assertThat(mapper.writeValueAsString(
+        assertThat(text(
                 service.generate(feed(employer, job), LocalDate.of(2026, 9, 21)).document()))
                 .contains("123456.78");
     }

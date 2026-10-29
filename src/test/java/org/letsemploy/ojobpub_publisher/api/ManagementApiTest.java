@@ -4,8 +4,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.json.JsonMapper;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -72,7 +72,7 @@ class ManagementApiTest {
     @Autowired
     private EmployerService employers;
     @Autowired
-    private ObjectMapper json;
+    private JsonMapper json;
     @Autowired
     private JdbcTemplate jdbc;
     @Autowired
@@ -112,7 +112,7 @@ class ManagementApiTest {
     }
 
     private static String firstErrorCode(JsonNode response) {
-        return response.path("errors").path(0).path("extensions").path("code").asText();
+        return response.path("errors").path(0).path("extensions").path("code").asString();
     }
 
     // ------------------------------------------------------------ transport
@@ -188,8 +188,8 @@ class ManagementApiTest {
     @Test
     void theEmployerComesFromTheTokenAndNotTheRequest() throws Exception {
         JsonNode response = query(tokenWith(TokenScope.JOBS_READ), "{ employer { id name } }");
-        assertThat(response.path("data").path("employer").path("id").asText()).isEqualTo(EMPLOYER);
-        assertThat(response.path("data").path("employer").path("name").asText()).isEqualTo("Acme AG");
+        assertThat(response.path("data").path("employer").path("id").asString()).isEqualTo(EMPLOYER);
+        assertThat(response.path("data").path("employer").path("name").asString()).isEqualTo("Acme AG");
     }
 
     @Test
@@ -198,7 +198,7 @@ class ManagementApiTest {
                 "{ jobs(size: 50) { totalElements content { id status presentation } } }")
                 .path("data").path("jobs");
         assertThat(jobs.path("totalElements").asInt()).isGreaterThan(0);
-        List<String> presentations = jobs.path("content").findValuesAsText("presentation");
+        List<String> presentations = jobs.path("content").findValuesAsString("presentation");
         // The seed covers all five states; an ACTIVE job with no location presents
         // as INCOMPLETE, which is exactly what a stored status would not tell you.
         assertThat(presentations).contains("PUBLISHED", "INCOMPLETE");
@@ -240,7 +240,7 @@ class ManagementApiTest {
                 Set.of(TokenScope.JOBS_WRITE), devAdmin()).secret();
 
         JsonNode locations = query(foreign, "{ locations { id city } }").path("data").path("locations");
-        assertThat(locations.findValuesAsText("city")).containsExactly("Othertown");
+        assertThat(locations.findValuesAsString("city")).containsExactly("Othertown");
         assertThat(query(foreign, "{ tags { name } }").path("data").path("tags")).isEmpty();
 
         JsonNode refused = query(foreign,
@@ -250,7 +250,7 @@ class ManagementApiTest {
                         + "tagIds: [\"1\"] }) { job { id } userErrors { field code } } }")
                 .path("data").path("createJob");
         assertThat(refused.path("job").isNull()).isTrue();
-        assertThat(refused.path("userErrors").findValuesAsText("field")).containsExactly("locationIds");
+        assertThat(refused.path("userErrors").findValuesAsString("field")).containsExactly("locationIds");
     }
 
     /** A malformed date or tag id is the caller's mistake: data in userErrors, not a fault (spec 11.4). */
@@ -263,13 +263,13 @@ class ManagementApiTest {
         JsonNode badDate = query(secret, "mutation { createJob(input: { " + job
                 + ", startDate: \"next week\" }) { job { id } userErrors { field code } } }");
         assertThat(badDate.path("errors").isMissingNode()).isTrue();
-        assertThat(badDate.path("data").path("createJob").path("userErrors").findValuesAsText("field"))
+        assertThat(badDate.path("data").path("createJob").path("userErrors").findValuesAsString("field"))
                 .containsExactly("startDate");
 
         JsonNode badTag = query(secret, "mutation { createJob(input: { " + job
                 + ", tagIds: [\"java\"] }) { job { id } userErrors { field code } } }");
         assertThat(badTag.path("errors").isMissingNode()).isTrue();
-        assertThat(badTag.path("data").path("createJob").path("userErrors").findValuesAsText("field"))
+        assertThat(badTag.path("data").path("createJob").path("userErrors").findValuesAsString("field"))
                 .containsExactly("tagIds");
     }
 
@@ -277,10 +277,10 @@ class ManagementApiTest {
     void aJobCanBeWrittenFromIdsTheApiItselfHandsOut() throws Exception {
         String secret = tokenWith(TokenScope.JOBS_WRITE);
         String locationId = query(secret, "{ locations(q: \"ber\") { id city } }")
-                .path("data").path("locations").path(0).path("id").asText();
+                .path("data").path("locations").path(0).path("id").asString();
         assertThat(locationId).isNotBlank();
         String tagId = query(secret, "{ tags(q: \"jav\") { id name } }")
-                .path("data").path("tags").path(0).path("id").asText();
+                .path("data").path("tags").path(0).path("id").asString();
         assertThat(tagId).isNotBlank();
 
         JsonNode created = query(secret,
@@ -292,8 +292,8 @@ class ManagementApiTest {
                         + "userErrors { field message } } }")
                 .path("data").path("createJob");
         assertThat(created.path("userErrors")).isEmpty();
-        assertThat(created.path("job").path("presentation").asText()).isEqualTo("DRAFT");
-        assertThat(created.path("job").path("tags").findValuesAsText("")).isNotNull();
+        assertThat(created.path("job").path("presentation").asString()).isEqualTo("DRAFT");
+        assertThat(created.path("job").path("tags").findValuesAsString("")).isNotNull();
         assertThat(created.path("job").path("locations")).isNotEmpty();
     }
 
@@ -335,9 +335,9 @@ class ManagementApiTest {
         assertThat(payload.path("userErrors")).isNotEmpty();
         // The code is stable and the message is the one the readiness panel shows,
         // resolved through the bundles rather than restated here (spec 11.4).
-        assertThat(payload.path("userErrors").findValuesAsText("code")).contains("NOT_READY");
-        assertThat(payload.path("userErrors").findValuesAsText("field")).contains("locationIds");
-        assertThat(payload.path("userErrors").findValuesAsText("message"))
+        assertThat(payload.path("userErrors").findValuesAsString("code")).contains("NOT_READY");
+        assertThat(payload.path("userErrors").findValuesAsString("field")).contains("locationIds");
+        assertThat(payload.path("userErrors").findValuesAsString("message"))
                 .contains("At least one location");
     }
 
@@ -361,7 +361,7 @@ class ManagementApiTest {
                 "mutation { inviteMember(email: \"nobody-" + UUID.randomUUID()
                         + "@example.com\", role: EDITOR) { outcome userErrors { code } } }")
                 .path("data").path("inviteMember");
-        assertThat(unknown.path("outcome").asText()).isEqualTo("SENT");
+        assertThat(unknown.path("outcome").asString()).isEqualTo("SENT");
         assertThat(unknown.path("userErrors")).isEmpty();
     }
 
@@ -370,7 +370,7 @@ class ManagementApiTest {
         JsonNode response = query(tokenWith(TokenScope.PEOPLE_WRITE),
                 "mutation { inviteMember(email: \"member@example.com\", role: EDITOR) "
                         + "{ outcome } }");
-        assertThat(response.path("data").path("inviteMember").path("outcome").asText())
+        assertThat(response.path("data").path("inviteMember").path("outcome").asString())
                 .isEqualTo("ALREADY_MEMBER");
     }
 
@@ -379,7 +379,7 @@ class ManagementApiTest {
     void theMemberListNamesPeopleAndNotTokens() throws Exception {
         JsonNode members = query(tokenWith(TokenScope.PEOPLE_READ), "{ members { email role } }")
                 .path("data").path("members");
-        assertThat(members.findValuesAsText("email")).contains("member@example.com");
+        assertThat(members.findValuesAsString("email")).contains("member@example.com");
         assertThat(members.toString()).doesNotContain("ojp_");
     }
 
@@ -392,16 +392,16 @@ class ManagementApiTest {
                 + "\") { member { role suspended suspendedAt } userErrors { code } } }")
                 .path("data").path("suspendMember");
         assertThat(suspended.path("userErrors")).isEmpty();
-        assertThat(suspended.path("member").path("role").asText()).isEqualTo("EDITOR");
+        assertThat(suspended.path("member").path("role").asString()).isEqualTo("EDITOR");
         assertThat(suspended.path("member").path("suspended").asBoolean()).isTrue();
-        assertThat(suspended.path("member").path("suspendedAt").asText()).isNotBlank();
+        assertThat(suspended.path("member").path("suspendedAt").asString()).isNotBlank();
 
         JsonNode reinstated = query(secret, "mutation { reinstateMember(userId: \"" + MEMBER
                 + "\") { member { role suspended suspendedAt } } }")
                 .path("data").path("reinstateMember").path("member");
         assertThat(reinstated.path("suspended").asBoolean()).isFalse();
         assertThat(reinstated.path("suspendedAt").isNull()).isTrue();
-        assertThat(reinstated.path("role").asText()).isEqualTo("EDITOR");
+        assertThat(reinstated.path("role").asString()).isEqualTo("EDITOR");
     }
 
     /**
@@ -416,7 +416,7 @@ class ManagementApiTest {
                         + "\") { member { suspended } userErrors { code } } }");
         assertThat(response.path("errors").isMissingNode()).isTrue();
         assertThat(response.path("data").path("suspendMember").path("userErrors")
-                .findValuesAsText("code")).containsExactly("LAST_OWNER");
+                .findValuesAsString("code")).containsExactly("LAST_OWNER");
     }
 
     // ----------------------------------------------------------- permalinks
@@ -425,14 +425,14 @@ class ManagementApiTest {
     void permalinksAreReadWithWhatTheyPublish() throws Exception {
         JsonNode permalinks = query(tokenWith(TokenScope.FEEDS_READ),
                 "{ permalinks { id name url feed { name } } }").path("data").path("permalinks");
-        assertThat(permalinks.findValuesAsText("name")).contains("Careers page", "Partner board");
+        assertThat(permalinks.findValuesAsString("name")).contains("Careers page", "Partner board");
         for (JsonNode permalink : permalinks) {
-            assertThat(permalink.path("url").asText())
-                    .endsWith("/ojobpub/v1/permalink/" + permalink.path("id").asText() + "/ojobpub.json");
-            if (permalink.path("name").asText().equals("Careers page")) {
-                assertThat(permalink.path("feed").path("name").asText()).isEqualTo("Engineering");
+            assertThat(permalink.path("url").asString())
+                    .endsWith("/ojobpub/v1/permalink/" + permalink.path("id").asString() + "/ojobpub.json");
+            if (permalink.path("name").asString().equals("Careers page")) {
+                assertThat(permalink.path("feed").path("name").asString()).isEqualTo("Engineering");
             }
-            if (permalink.path("name").asText().equals("Partner board")) {
+            if (permalink.path("name").asString().equals("Partner board")) {
                 assertThat(permalink.path("feed").isNull()).isTrue();
             }
         }
@@ -446,8 +446,8 @@ class ManagementApiTest {
                 + FEED_ALL + "\"}) { permalink { id feed { name } } userErrors { field } } }")
                 .path("data").path("createPermalink");
         assertThat(created.path("userErrors")).isEmpty();
-        assertThat(created.path("permalink").path("feed").path("name").asText()).isEqualTo("All jobs");
-        String id = created.path("permalink").path("id").asText();
+        assertThat(created.path("permalink").path("feed").path("name").asString()).isEqualTo("All jobs");
+        String id = created.path("permalink").path("id").asString();
 
         JsonNode cleared = query(secret, "mutation { setPermalinkFeed(id: \"" + id
                 + "\", feedId: null) { permalink { feed { name } } userErrors { field } } }")
@@ -459,7 +459,7 @@ class ManagementApiTest {
         assertThat(json.readTree(published).path("jobs")).isEmpty();
 
         assertThat(query(secret, "mutation { deletePermalink(id: \"" + id + "\") { deletedId } }")
-                .path("data").path("deletePermalink").path("deletedId").asText()).isEqualTo(id);
+                .path("data").path("deletePermalink").path("deletedId").asString()).isEqualTo(id);
     }
 
     /** Not one of the employer's feeds is a refusal - data, naming the argument (spec 11.4). */
@@ -469,7 +469,7 @@ class ManagementApiTest {
                 + CAREERS + "\", feedId: \"" + UUID.randomUUID() + "\") { permalink { id } userErrors { field } } }");
         assertThat(response.path("errors").isMissingNode()).isTrue();
         assertThat(response.path("data").path("setPermalinkFeed").path("userErrors")
-                .findValuesAsText("field")).containsExactly("feedId");
+                .findValuesAsString("field")).containsExactly("feedId");
     }
 
     @Test

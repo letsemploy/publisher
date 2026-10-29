@@ -1,7 +1,5 @@
 package org.letsemploy.ojobpub_publisher.feed;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.ObjectWriter;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
@@ -12,6 +10,7 @@ import org.letsemploy.ojobpub_publisher.employer.Employer;
 import org.letsemploy.ojobpub_publisher.job.Job;
 import org.letsemploy.ojobpub_publisher.job.JobService;
 import org.letsemploy.ojobpub_publisher.job.Publication;
+import org.letsemploy.ojobpub_publisher.ojobpub.v1.service.OjobpubJson;
 import org.letsemploy.ojobpub_publisher.ojobpub.v1.service.OjobpubService;
 import org.letsemploy.ojobpub_publisher.ojobpub.v1.service.OjobpubValidator;
 import org.letsemploy.ojobpub_publisher.web.view.*;
@@ -39,7 +38,7 @@ public class FeedController {
     private final Scope scope;
     private final Views views;
     private final MessageSource messages;
-    private final ObjectMapper objectMapper;
+    private final OjobpubJson json;
     private final PermalinkService permalinkService;
 
     public FeedController(FeedService feedService,
@@ -48,7 +47,7 @@ public class FeedController {
                           Scope scope,
                           Views views,
                           MessageSource messages,
-                          ObjectMapper objectMapper,
+                          OjobpubJson json,
                           PermalinkService permalinkService) {
         this.feedService = feedService;
         this.jobService = jobService;
@@ -56,7 +55,7 @@ public class FeedController {
         this.scope = scope;
         this.views = views;
         this.messages = messages;
-        this.objectMapper = objectMapper;
+        this.json = json;
         this.permalinkService = permalinkService;
     }
 
@@ -119,8 +118,7 @@ public class FeedController {
     /** The preview shows exactly what the public URL serves (spec 7.12). */
     private String prettyPrint(Object document) {
         try {
-            ObjectWriter writer = objectMapper.writerWithDefaultPrettyPrinter();
-            return writer.writeValueAsString(document);
+            return json.writePretty(document);
         } catch (Exception e) {
             log.error("Could not render the feed preview", e);
             return "{}";

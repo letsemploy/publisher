@@ -82,21 +82,15 @@
 			<artifactId>flyway-mysql</artifactId>
 		</dependency>
 		<dependency>
-			<groupId>com.fasterxml.jackson.core</groupId>
-			<artifactId>jackson-databind</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>com.fasterxml.jackson.datatype</groupId>
-			<artifactId>jackson-datatype-jsr310</artifactId>
-		</dependency>
-		<dependency>
 			<!--// TODO: Change to https://github.com/nv-i18n/nv-i18n?tab=readme-ov-file#maven -->
 			<groupId>com.neovisionaries</groupId>
 			<artifactId>nv-i18n</artifactId>
 			<version>1.29</version>
 		</dependency>
 		<dependency>
-			<!-- The country of a job-link click, from a database the deployment mounts (spec 5.6). -->
+			<!-- The country of a job-link click, from a database the deployment mounts (spec 5.6).
+			     It brings Jackson 2 with it, at the version Boot manages; nothing of ours uses Jackson 2,
+			     which leaves the classpath with it once MaxMind moves to Jackson 3. -->
 			<groupId>com.maxmind.geoip2</groupId>
 			<artifactId>geoip2</artifactId>
 			<version>5.2.0</version>

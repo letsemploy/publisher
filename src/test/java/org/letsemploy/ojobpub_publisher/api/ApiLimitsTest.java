@@ -3,7 +3,7 @@ package org.letsemploy.ojobpub_publisher.api;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -51,7 +51,7 @@ class ApiLimitsTest {
     @Autowired
     private ServiceTokenService tokens;
     @Autowired
-    private ObjectMapper json;
+    private JsonMapper json;
 
     private String secret() {
         Actor devAdmin = Actor.user(UUID.fromString(DEV_ADMIN), "dev@localhost", "dev@localhost",
@@ -71,7 +71,7 @@ class ApiLimitsTest {
     }
 
     private String code(String body) throws Exception {
-        return json.readTree(body).path("errors").path(0).path("extensions").path("code").asText();
+        return json.readTree(body).path("errors").path(0).path("extensions").path("code").asString();
     }
 
     @Test
