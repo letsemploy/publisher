@@ -245,7 +245,7 @@ public class AccountController {
     }
 
     private boolean throttled(HttpServletRequest request, Model model) {
-        String client = request.getRemoteAddr();
+        String client = Throttle.clientKey(request.getRemoteAddr());
         if (mailsPerClient.exhausted(client)) {
             model.addAttribute("errors", List.of(new FieldError("account.throttled", message("account.throttled"))));
             model.addAttribute("fieldErrors", Map.of());

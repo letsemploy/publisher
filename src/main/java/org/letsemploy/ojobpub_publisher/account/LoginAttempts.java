@@ -35,23 +35,23 @@ public class LoginAttempts {
     }
 
     boolean refused(String address, String client) {
-        return perAddress.exhausted(key(address)) || perClient.exhausted(client);
+        return perAddress.exhausted(key(address)) || perClient.exhausted(Throttle.clientKey(client));
     }
 
     /** Whether an attempt for this address, from this client, must carry a solved captcha. */
     boolean captchaRequired(String address, String client) {
         return captchaAfter == 0 || perAddress.count(key(address)) >= captchaAfter
-                || perClient.count(client) >= captchaAfter;
+                || perClient.count(Throttle.clientKey(client)) >= captchaAfter;
     }
 
     /** Whether the sign-in page should show the captcha to this client before any address is typed. */
     public boolean captchaRequired(String client) {
-        return captchaAfter == 0 || perClient.count(client) >= captchaAfter;
+        return captchaAfter == 0 || perClient.count(Throttle.clientKey(client)) >= captchaAfter;
     }
 
     void failed(String address, String client) {
         perAddress.record(key(address));
-        perClient.record(client);
+        perClient.record(Throttle.clientKey(client));
     }
 
     /** A success forgets the address's failures; the client's stay, since it may be trying others. */

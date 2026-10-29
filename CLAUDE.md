@@ -377,7 +377,11 @@ email. `CurrentUserService.identityOf` turns the `LocalUser` principal into an `
   changed it is re-authenticated with a fresh `LocalUser` in `AccountController`.
 - **Throttles** (`Throttle`, in memory, per instance): failed sign-ins per address and per client
   (`LoginAttempts`, a bean the sign-in page and the provider share); the mail-sending forms per
-  client. `app.local-accounts.max-attempts`, `max-mails`, `throttle-window`.
+  client. `app.local-accounts.max-attempts`, `max-mails`, `throttle-window`. A **client is
+  `Throttle.clientKey`**: IPv4 as is, IPv6 by its /64, so one subscriber rotating through its block is
+  one client — pass every client address through it. The map is bounded: ended windows are swept at
+  most every 30 s, and at 100,000 keys a new one evicts an existing one rather than growing the map or
+  refusing newcomers (`ThrottleTest`).
 - **Captcha after failures** (`captcha-after-failures`, only with a captcha configured): the provider
   checks it **before the password** and throws `CaptchaRequiredException`, mapped to `/login?captcha`;
   every other failure stays one `?error`. Counted per address *and* per client, so a distributed guess

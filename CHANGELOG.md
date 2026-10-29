@@ -35,6 +35,10 @@ Section numbers such as §5.6 refer to the specification in [`docs/SPEC.md`](doc
     NAT64 addresses are now judged by the IPv4 address they carry, so public hosts still load on an
     IPv6-only network.
   - **Port:** only the standard https port is used.
+- Sign-in and the forms that send mail now count an IPv6 client by its /64 block, the range one
+  subscriber is usually given (§2.12). Before, a client could start its failed-sign-in and mail limits
+  afresh by switching to another address in its block, and it never reached the captcha. The counters'
+  memory is bounded, and a flood of requests no longer makes each sign-in scan all of them.
 
 ### Fixed
 

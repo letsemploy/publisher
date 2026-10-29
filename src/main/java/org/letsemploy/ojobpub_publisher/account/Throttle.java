@@ -1,8 +1,12 @@
 package org.letsemploy.ojobpub_publisher.account;
 
+import java.net.Inet6Address;
+import java.net.InetAddress;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Arrays;
+import java.util.Iterator;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -10,18 +14,59 @@ import java.util.concurrent.ConcurrentHashMap;
  * API's rate limit (spec 11.6, 12). Enough to make guessing passwords, and
  * mailing strangers, slow (spec 2.12); a shared counter is the open question of
  * spec 12 for both.
+ *
+ * <p>Bounded, since every key is chosen by whoever is asking: windows that ended
+ * are swept at most once per {@link #SWEEP_EVERY}, so a flood costs one pass per
+ * interval rather than one per request, and at {@code maxKeys} a new key takes
+ * the place of an existing one rather than growing the map.
  */
 final class Throttle {
+
+    /** Far above what one instance sees from honest clients; about 20 MB of windows. */
+    static final int MAX_KEYS = 100_000;
+    static final Duration SWEEP_EVERY = Duration.ofSeconds(30);
 
     private final int limit;
     private final Duration window;
     private final Clock clock;
+    private final int maxKeys;
     private final ConcurrentHashMap<String, Window> windows = new ConcurrentHashMap<>();
+    private volatile Instant nextSweep = Instant.MIN;
 
     Throttle(int limit, Duration window, Clock clock) {
+        this(limit, window, clock, MAX_KEYS);
+    }
+
+    /** With another cap: tests reach it without a hundred thousand keys. */
+    Throttle(int limit, Duration window, Clock clock, int maxKeys) {
         this.limit = limit;
         this.window = window;
         this.clock = clock;
+        this.maxKeys = maxKeys;
+    }
+
+    /**
+     * The key for a client's address. IPv6 counts by its /64, the block a single
+     * subscriber is given: per address, one client rotating through its own block
+     * would start afresh with every request, and the per-client limit and captcha
+     * would never be reached. IPv4, and anything that is not an address literal,
+     * stays as it is.
+     */
+    static String clientKey(String remoteAddress) {
+        if (remoteAddress == null) {
+            return "";
+        }
+        try {
+            InetAddress address = InetAddress.ofLiteral(remoteAddress);
+            if (address instanceof Inet6Address) {
+                byte[] prefix = Arrays.copyOf(address.getAddress(), 16);
+                Arrays.fill(prefix, 8, 16, (byte) 0);
+                return InetAddress.getByAddress(prefix).getHostAddress() + "/64";
+            }
+            return address.getHostAddress();
+        } catch (IllegalArgumentException | java.net.UnknownHostException e) {
+            return remoteAddress;
+        }
     }
 
     /** Whether the key has used up its window. 0 means unlimited, as for the quotas. */
@@ -46,13 +91,33 @@ final class Throttle {
 
     void record(String key) {
         Instant now = clock.instant();
-        // Drop windows that ended, so the map holds only the recently active.
-        if (windows.size() > 10_000) {
-            windows.values().removeIf(w -> w.over(now));
+        sweep(now);
+        if (windows.size() >= maxKeys && !windows.containsKey(key)) {
+            // Full of windows still running. Making room loses one key's count,
+            // which beats refusing new keys - that would lock out everyone not yet
+            // counted - or growing without end.
+            Iterator<String> any = windows.keySet().iterator();
+            if (any.hasNext()) {
+                windows.remove(any.next());
+            }
         }
         windows.compute(key, (k, w) -> w == null || w.over(now)
                 ? new Window(now.plus(window), 1)
                 : new Window(w.endsAt(), w.count() + 1));
+    }
+
+    /** Drops the windows that ended, at most once per interval, whatever the request rate. */
+    private void sweep(Instant now) {
+        if (now.isBefore(nextSweep)) {
+            return;
+        }
+        nextSweep = now.plus(SWEEP_EVERY);
+        windows.values().removeIf(w -> w.over(now));
+    }
+
+    /** How many keys are held: for tests of the bound. */
+    int size() {
+        return windows.size();
     }
 
     private record Window(Instant endsAt, int count) {
