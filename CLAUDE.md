@@ -465,6 +465,14 @@ is also the only case People and API tokens render their empty state. Clearing t
 viewing as, deleting the active employer) therefore means "back to the first", and lists never show an
 employer column — only `/activity/all` does.
 
+**A GET resolves its actor once.** `CurrentUserService.realActor()` keeps its answer in a request
+attribute for GET and HEAD, while the `Authentication` and the admin-mode choice are the ones it was
+resolved from, and `Scope.visibleEmployers()` keeps that actor's employers; the top bar reads them
+through `Scope` too. A page went from four lookups of the user and memberships to one
+(`RequestQueryCountTest`). Every other method resolves afresh each time, because a POST may change who
+the actor is mid-request — accepting an invitation, creating an employer. So **a GET handler must never
+change memberships, roles, admin mode or viewing-as**; it would go on seeing the old actor.
+
 ### Management API (`api/`, `token/`)
 
 `POST /graphql` only, authenticated by `Authorization: Bearer <prefix>.<secret>` (§2.8, §11). The

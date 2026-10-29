@@ -1,5 +1,6 @@
 package org.letsemploy.ojobpub_publisher.security;
 
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import java.util.List;
 import java.util.Map;
@@ -51,6 +52,16 @@ public class CurrentUserService {
 
     /** The provider picture address this session last reported (spec 7.27); "" for none. */
     private static final String PICTURE_SEEN = CurrentUserService.class.getName() + ".PICTURE_SEEN";
+    private static final String RESOLVED = CurrentUserService.class.getName() + ".RESOLVED";
+
+    /**
+     * The real actor as resolved for this request, with what it was resolved
+     * from: the same authentication and the same admin-mode choice, or it is
+     * resolved again.
+     */
+    private record Resolved(Authentication authentication, UUID userId, Optional<Boolean> adminMode,
+                            Actor actor) {
+    }
 
     public CurrentUserService(UserRepo userRepo,
                               MembershipService membershipService,
@@ -109,7 +120,35 @@ public class CurrentUserService {
     @Transactional
     public Actor realActor() {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        // A page asks several times - the controller, the scope, the shell - and
+        // each answer cost the user and their memberships again. A GET changes
+        // neither, so its first answer is kept for the rest of the request. Any
+        // other method may (accepting an invitation, creating an employer,
+        // switching admin mode) and is resolved afresh every time.
+        HttpServletRequest request = readOnlyRequest();
+        if (request != null && request.getAttribute(RESOLVED) instanceof Resolved resolved
+                && resolved.authentication() == auth
+                && resolved.adminMode().equals(AdminMode.chosenBy(resolved.userId()))) {
+            return resolved.actor();
+        }
+        Actor actor = resolveRealActor(auth);
+        if (request != null && actor.getId() != null) {
+            request.setAttribute(RESOLVED,
+                    new Resolved(auth, actor.getId(), AdminMode.chosenBy(actor.getId()), actor));
+        }
+        return actor;
+    }
 
+    /** The current request if it is a GET or HEAD, which no handler here writes on; else null. */
+    private static HttpServletRequest readOnlyRequest() {
+        if (RequestContextHolder.getRequestAttributes() instanceof ServletRequestAttributes attributes) {
+            String method = attributes.getRequest().getMethod();
+            return "GET".equals(method) || "HEAD".equals(method) ? attributes.getRequest() : null;
+        }
+        return null;
+    }
+
+    private Actor resolveRealActor(Authentication auth) {
         // Development mode: no identity provider, but a real user record all the same -
         // anything keyed on user identity is otherwise unreachable locally (spec 2.3).
         Identity identity = auth == null ? null : identityOf(auth.getPrincipal());

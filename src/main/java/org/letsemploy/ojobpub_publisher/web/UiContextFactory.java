@@ -5,7 +5,6 @@ import java.util.List;
 import java.util.UUID;
 import org.letsemploy.ojobpub_publisher.config.WebLangConfig;
 import org.letsemploy.ojobpub_publisher.employer.Employer;
-import org.letsemploy.ojobpub_publisher.employer.EmployerService;
 import org.letsemploy.ojobpub_publisher.invitation.InvitationService;
 import org.letsemploy.ojobpub_publisher.membership.MembershipService;
 import org.letsemploy.ojobpub_publisher.security.Actor;
@@ -33,7 +32,7 @@ import org.springframework.stereotype.Component;
 public class UiContextFactory {
 
     private final CurrentUserService currentUserService;
-    private final EmployerService employerService;
+    private final Scope scope;
     private final EmployerContext employerContext;
     private final InvitationService invitationService;
     /** Present when the build wrote META-INF/build-info.properties. */
@@ -44,7 +43,7 @@ public class UiContextFactory {
     private final String projectUrl;
 
     public UiContextFactory(CurrentUserService currentUserService,
-                            EmployerService employerService,
+                            Scope scope,
                             EmployerContext employerContext,
                             InvitationService invitationService,
                             ObjectProvider<BuildProperties> buildProperties,
@@ -52,7 +51,7 @@ public class UiContextFactory {
                             PictureService pictures,
                             @Value("${app.project-url}") String projectUrl) {
         this.currentUserService = currentUserService;
-        this.employerService = employerService;
+        this.scope = scope;
         this.employerContext = employerContext;
         this.invitationService = invitationService;
         this.buildProperties = buildProperties;
@@ -63,7 +62,8 @@ public class UiContextFactory {
 
     public UiContext build(HttpServletRequest request) {
         Actor user = currentUserService.current();
-        List<Employer> employers = employerService.visibleTo(user);
+        // Through the scope, so the shell and the screen read the list once between them.
+        List<Employer> employers = scope.visibleEmployers();
         Ref active = activeEmployer(employers);
 
         String path = request.getRequestURI();
