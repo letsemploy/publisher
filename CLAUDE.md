@@ -239,6 +239,14 @@ auto-configured bean. `OidcLoginTest` and `LockedChainTest` guard both direction
   memberships — and refreshes name and email from the token, writing only when they changed (it runs
   on every request). **Only a verified email is stored** (`email_verified`), because invitations go to
   whoever holds an address; `app.oidc.require-verified-email=false` relaxes it.
+- **A first sign-in races itself** (two tabs, a page and its assets after the callback). The account
+  is created in a `REQUIRES_NEW` transaction and flushed; on failure it is read back in another new
+  one, because MariaDB's repeatable read would keep showing the outer transaction's empty snapshot.
+  `FirstSignInRaceTest` makes the race deterministic with a spied `UserRepo`.
+- **SQLite's unique-key failure is not a `DataIntegrityViolationException`.** The driver gives no SQL
+  state, so it arrives as `JpaSystemException`. Catch `DataAccessException` and let a re-read decide
+  whether it was the race, as `signIn` does. (`JobClickService.record` still catches the narrow type, so
+  on SQLite a raced first click is logged and lost.)
 - **Email is not unique.** Look people up with `UserRepo.findUniqueByEmail`, which answers empty for an
   address held by several accounts — `InvitationService` then answers `SENT`, as for an unknown one.
   There is deliberately no single-result finder: two accounts sharing an address made it throw.

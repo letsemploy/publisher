@@ -20,11 +20,15 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.env.Environment;
+import org.springframework.dao.DataAccessException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.core.oidc.user.OidcUser;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
@@ -49,6 +53,8 @@ public class CurrentUserService {
     private final AuditLog auditLog;
     private final LocalAccountRepo localAccounts;
     private final PictureService pictures;
+    /** A first sign-in's account is created in a transaction of its own (see signIn). */
+    private final TransactionTemplate ownTransaction;
 
     /** The provider picture address this session last reported (spec 7.27); "" for none. */
     private static final String PICTURE_SEEN = CurrentUserService.class.getName() + ".PICTURE_SEEN";
@@ -70,6 +76,7 @@ public class CurrentUserService {
                               AuditLog auditLog,
                               LocalAccountRepo localAccounts,
                               PictureService pictures,
+                              PlatformTransactionManager transactions,
                               @Value("${app.oidc.require-verified-email:true}") boolean requireVerifiedEmail,
                               @Value("${app.admin.start-in-admin-mode:false}") boolean startInAdminMode) {
         this.userRepo = userRepo;
@@ -79,6 +86,8 @@ public class CurrentUserService {
         this.auditLog = auditLog;
         this.localAccounts = localAccounts;
         this.pictures = pictures;
+        this.ownTransaction = new TransactionTemplate(transactions);
+        this.ownTransaction.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
         this.requireVerifiedEmail = requireVerifiedEmail;
         this.startInAdminMode = startInAdminMode;
     }
@@ -349,17 +358,50 @@ public class CurrentUserService {
      * an empty state until it creates an employer or is invited. Name and email
      * are the provider's to change, so they are refreshed from it - and written
      * only when they differ, since this runs on every request.
+     *
+     * <p>A first sign-in usually arrives as several requests at once - two tabs,
+     * or a page and its assets after the provider's callback - and each finds no
+     * account. The account is therefore created in a transaction of its own and
+     * flushed, so the unique (issuer, subject) key refuses every copy but one
+     * there; a refused one reads the account the winner created and goes on as
+     * an ordinary sign-in, instead of failing its request with a 500. Its own
+     * transaction, because a failed statement poisons the one it runs in.
      */
     private UserEntity signIn(Identity identity) {
-        UserEntity user = userRepo.findByIssuerAndSubject(identity.issuer(), identity.subject())
-                .orElseGet(() -> {
-                    UserEntity created = new UserEntity();
-                    created.setIssuer(identity.issuer());
-                    created.setSubject(identity.subject());
-                    created.setRole(UserEntity.Role.USER);
-                    log.info("New account for {} at {}", identity.subject(), identity.issuer());
-                    return created;
-                });
+        Optional<UserEntity> existing = userRepo.findByIssuerAndSubject(identity.issuer(), identity.subject());
+        if (existing.isPresent()) {
+            return settle(existing.get(), identity);
+        }
+        try {
+            return ownTransaction.execute(status -> {
+                UserEntity created = new UserEntity();
+                created.setIssuer(identity.issuer());
+                created.setSubject(identity.subject());
+                created.setRole(UserEntity.Role.USER);
+                log.info("New account for {} at {}", identity.subject(), identity.issuer());
+                return settle(created, identity);
+            });
+        } catch (DataAccessException failed) {
+            // Any failure, not only DataIntegrityViolationException: SQLite's driver
+            // reports a unique key without a SQL state, which arrives as a
+            // JpaSystemException. Whether it was the race is what the read decides -
+            // in a new transaction as well, since this one already looked and found
+            // nothing, and under MariaDB's repeatable read would keep finding nothing.
+            UserEntity winner = ownTransaction.execute(status ->
+                    userRepo.findByIssuerAndSubject(identity.issuer(), identity.subject())
+                            .map(found -> settle(found, identity))
+                            .orElse(null));
+            if (winner == null) {
+                throw failed;
+            }
+            log.debug("Account for {} at {} was created by a concurrent request", identity.subject(),
+                    identity.issuer());
+            return winner;
+        }
+    }
+
+    /** Refreshes a found account from the identity, or completes a new one, and saves what changed. */
+    private UserEntity settle(UserEntity user, Identity identity) {
         // Left exactly as it was: not refreshed from the token, and its role not
         // re-decided, while nobody may act through it (spec 2.11).
         if (user.isSuspended()) {
@@ -389,7 +431,9 @@ public class CurrentUserService {
         user.setEmail(identity.email());
         user.setDisplayName(identity.displayName());
         user.setRole(role);
-        UserEntity saved = userRepo.save(user);
+        // A new account is flushed at once, so a concurrent first sign-in's duplicate
+        // fails here, inside its own transaction, where signIn can catch it.
+        UserEntity saved = created ? userRepo.saveAndFlush(user) : userRepo.save(user);
         // Only what changes an account's standing; a refreshed name is not an
         // event, and signing in is recorded by the identity provider (spec 3.12).
         if (created) {
