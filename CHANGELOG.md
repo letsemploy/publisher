@@ -26,8 +26,12 @@ Section numbers such as §5.6 refer to the specification in [`docs/SPEC.md`](doc
 
 ### Fixed
 
+- Renaming a feed to the name of another of the employer's feeds is a field error on the form and a
+  `userErrors` entry in the API, not a server error.
 - `app.api.rate-limit=0` means unlimited, as `0` does for every other limit, instead of refusing every
   API call (§11.6).
+- An unknown job type in the job list's address is ignored, an unknown status change answers 404, and a
+  forged choice on the job form is a field error. All three were server errors.
 
 ## [1.4.0] - 2026-10-08
 

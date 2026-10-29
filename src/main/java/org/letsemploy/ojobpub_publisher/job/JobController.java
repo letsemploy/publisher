@@ -8,6 +8,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import org.letsemploy.ojobpub_publisher.common.exception.NotFoundException;
 import org.letsemploy.ojobpub_publisher.common.exception.ValidationFailure;
 import org.letsemploy.ojobpub_publisher.employer.Employer;
 import org.letsemploy.ojobpub_publisher.employer.EmployerService;
@@ -100,8 +101,7 @@ public class JobController {
         int pageSize = Math.min(Math.max(size, 1), MAX_PAGE_SIZE);
         String sortField = SORTABLE.contains(sort) ? sort : "title";
         Publication.Presentation statusFilter = presentationFilter(status);
-        JobType typeFilter = jobType == null || jobType.isBlank()
-                ? null : JobType.valueOf(jobType.toUpperCase());
+        JobType typeFilter = jobTypeFilter(jobType);
 
         Page<Job> result = jobService.search(scope.employerIds(), q, statusFilter, typeFilter,
                 PageRequest.of(Math.max(page, 0), pageSize, Sort.by(sortField)));
@@ -159,6 +159,18 @@ public class JobController {
         }
         try {
             return Publication.Presentation.valueOf(presentation.trim().toUpperCase());
+        } catch (IllegalArgumentException e) {
+            return null;
+        }
+    }
+
+    /** An unknown job type is no filter, like an unknown status. */
+    private JobType jobTypeFilter(String jobType) {
+        if (jobType == null || jobType.isBlank()) {
+            return null;
+        }
+        try {
+            return JobType.valueOf(jobType.trim().toUpperCase());
         } catch (IllegalArgumentException e) {
             return null;
         }
@@ -301,8 +313,15 @@ public class JobController {
     @PostMapping("/{id}/status")
     public String changeStatus(@PathVariable UUID id, @RequestParam String to,
                                RedirectAttributes flash) {
+        JobStatus target;
         try {
-            jobService.transition(id, JobStatus.valueOf(to.toUpperCase()), scope.user());
+            target = JobStatus.valueOf(to.trim().toUpperCase());
+        } catch (IllegalArgumentException e) {
+            // No such status to move to: answered like an unknown job, not as a 500.
+            throw new NotFoundException("No job status " + to);
+        }
+        try {
+            jobService.transition(id, target, scope.user());
             flash.addFlashAttribute("successMsg", "msg.success.saved");
         } catch (ValidationFailure e) {
             flash.addFlashAttribute("errorMsg", "job.readiness.blocked");

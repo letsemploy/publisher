@@ -176,16 +176,16 @@ public class JobService {
         job.setLanguageCode(form.getLanguage() == null ? null : form.getLanguage().toLowerCase());
         job.setReferenceId(trim(form.getReferenceId()));
         job.setCategory(trim(form.getCategory()));
-        job.setJobType(enumOf(JobType.class, form.getJobType()));
-        job.setWorkType(enumOf(WorkType.class, form.getWorkType()));
-        job.setExperienceLevel(enumOf(ExperienceLevel.class, form.getExperienceLevel()));
+        job.setJobType(enumOf(JobType.class, form.getJobType(), "jobType"));
+        job.setWorkType(enumOf(WorkType.class, form.getWorkType(), "workType"));
+        job.setExperienceLevel(enumOf(ExperienceLevel.class, form.getExperienceLevel(), "experienceLevel"));
         job.setWorkLoadPercentMin(form.getWorkLoadPercentMin());
         job.setWorkLoadPercentMax(form.getWorkLoadPercentMax());
         job.setSalaryMin(form.getSalaryMin());
         job.setSalaryMax(form.getSalaryMax());
         job.setSalaryCurrency(form.getSalaryCurrency() == null || form.getSalaryCurrency().isBlank()
                 ? null : form.getSalaryCurrency().trim().toUpperCase());
-        job.setSalaryInterval(enumOf(SalaryInterval.class, form.getSalaryInterval()));
+        job.setSalaryInterval(enumOf(SalaryInterval.class, form.getSalaryInterval(), "salaryInterval"));
         job.setStartDate(form.getStartDate());
         job.setEndDate(form.getEndDate());
         job.setApplyBefore(form.getApplyBefore());
@@ -307,11 +307,16 @@ public class JobService {
                 .collect(Collectors.toSet());
     }
 
-    private static <E extends Enum<E>> E enumOf(Class<E> type, String value) {
+    /** A value that is none of the choices is a field error, not a 500: the form offers only those. */
+    private static <E extends Enum<E>> E enumOf(Class<E> type, String value, String field) {
         if (value == null || value.isBlank()) {
             return null;
         }
-        return Enum.valueOf(type, value.trim().toUpperCase());
+        try {
+            return Enum.valueOf(type, value.trim().toUpperCase());
+        } catch (IllegalArgumentException e) {
+            throw new ValidationFailure(field, "Choose one of the listed values.");
+        }
     }
 
     private static String trim(String s) {

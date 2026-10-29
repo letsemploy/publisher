@@ -85,8 +85,13 @@ public class FeedService {
                 throw new ValidationFailure("name", "This employer already has a feed with that name.");
             }
         } else {
-            feed = feedRepo.findById(id)
-                    .orElseThrow(() -> new NotFoundException("Feed not found: " + id));
+            feed = findVisible(id, actor);
+            // A rename onto another feed's name is a field error here, not the
+            // unique key failing at flush (spec 8.2).
+            if (!feed.getName().equalsIgnoreCase(name.trim())
+                    && feedRepo.existsByEmployerIdAndNameIgnoreCase(feed.getEmployer().getId(), name.trim())) {
+                throw new ValidationFailure("name", "This employer already has a feed with that name.");
+            }
         }
         feed.setName(name.trim());
         feed.setSlug(Slugs.slugify(slug == null || slug.isBlank() ? name : slug, "feed"));
