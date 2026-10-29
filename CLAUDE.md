@@ -199,7 +199,10 @@ A published job's `url` is `{app.base-url}/go/{jobId}`, not `Job.url` (`OjobpubS
   `WebLangConfig` excludes `/go/**` and `/ojobpub/**` from the `?lang` interceptor for the same reason.
 - **Counters, not visits:** `job_clicks` is keyed (job, UTC day, country), `ZZ` for unknown. **Never
   store or log the address or user agent** (§10). The upsert is JPQL `UPDATE … +1`, else insert, and
-  on `DataIntegrityViolationException` (a concurrent first click) update again — no native SQL. It runs
+  on a `DataAccessException` (a concurrent first click; see the SQLite note under **Authentication**)
+  update again — no native SQL. `JobClick` is `Persistable`, so a new counter is a plain INSERT: with its
+  assigned key it was merged, and a row a racing click committed in between was overwritten with `1`
+  (`JobClickRaceTest`). It runs
   in its own transaction (`TransactionTemplate`, `REQUIRES_NEW`) because a failed statement poisons the
   transaction it runs in, and **a failed count is logged and never stops the redirect**.
 - **Country** (`ClickCountry`): `app.clicks.country-header`, then the `.mmdb` at
@@ -245,8 +248,7 @@ auto-configured bean. `OidcLoginTest` and `LockedChainTest` guard both direction
   `FirstSignInRaceTest` makes the race deterministic with a spied `UserRepo`.
 - **SQLite's unique-key failure is not a `DataIntegrityViolationException`.** The driver gives no SQL
   state, so it arrives as `JpaSystemException`. Catch `DataAccessException` and let a re-read decide
-  whether it was the race, as `signIn` does. (`JobClickService.record` still catches the narrow type, so
-  on SQLite a raced first click is logged and lost.)
+  whether it was the race, as `signIn` and `JobClickService.record` do.
 - **Email is not unique.** Look people up with `UserRepo.findUniqueByEmail`, which answers empty for an
   address held by several accounts — `InvitationService` then answers `SENT`, as for an unknown one.
   There is deliberately no single-result finder: two accounts sharing an address made it throw.

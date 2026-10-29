@@ -41,6 +41,8 @@ Section numbers such as §5.6 refer to the specification in [`docs/SPEC.md`](doc
 - Two requests arriving together on someone's very first sign-in (two tabs, or a page and its
   assets right after the provider's callback) no longer fail one of them with a server error. Both
   continue with the one account created.
+- Two first clicks of the same job link, on the same day and from the same country, are both counted
+  (§5.6). On SQLite the second was lost, and on either database a counter could be reset to one.
 - A feed's `lastUpdated` and `Last-Modified` now move with every change to its document, so a cache
   revalidating with `If-Modified-Since` is no longer told `304` for a document that changed. Before,
   adding a job to a feed, removing or deleting one, setting one inactive, a job's dates running out, and

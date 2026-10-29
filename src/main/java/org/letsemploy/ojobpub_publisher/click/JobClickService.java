@@ -14,7 +14,7 @@ import java.util.stream.Collectors;
 import org.letsemploy.ojobpub_publisher.job.Job;
 import org.letsemploy.ojobpub_publisher.job.JobRepo;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.dao.DataAccessException;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.PlatformTransactionManager;
@@ -119,8 +119,15 @@ public class JobClickService {
                     clickRepo.saveAndFlush(new JobClick(key, employerId));
                 }
             });
-        } catch (DataIntegrityViolationException raced) {
-            ownTransaction.executeWithoutResult(status -> clickRepo.increment(key));
+        } catch (DataAccessException failed) {
+            // Any failure, not only DataIntegrityViolationException: SQLite's driver
+            // reports a unique key without a SQL state, as a JpaSystemException.
+            // Whether a concurrent first click made the row is what counting again
+            // decides; if there is still no row, it was not the race.
+            Integer counted = ownTransaction.execute(status -> clickRepo.increment(key));
+            if (counted == null || counted == 0) {
+                throw failed;
+            }
         }
     }
 
