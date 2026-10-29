@@ -1,8 +1,12 @@
 package org.letsemploy.ojobpub_publisher.token;
 
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.time.Instant;
 import java.util.Base64;
+import java.util.HexFormat;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -38,6 +42,8 @@ public class ServiceTokenService {
     private static final String PREFIX = "ojp_";
     private static final int PREFIX_RANDOM = 8;
     private static final int SECRET_BYTES = 32;
+    /** The stored form's tag, in the {@code {id}} style of the delegating encoder. */
+    static final String SHA256 = "{sha256}";
 
     private final SecureRandom random = new SecureRandom();
 
@@ -131,7 +137,7 @@ public class ServiceTokenService {
         token.setEmployer(employer);
         token.setName(name.trim());
         token.setPrefix(prefix);
-        token.setSecretHash(passwordEncoder.encode(secretPart));
+        token.setSecretHash(hash(secretPart));
         token.setExpiresAt(TokenLifecycle.expiryFrom(Instant.now(), lifetimeMonths));
         token.setScopes(new java.util.LinkedHashSet<>(scopes));
         token.setCreatedBy(creator);
@@ -207,6 +213,31 @@ public class ServiceTokenService {
         return saved;
     }
 
+    /**
+     * The stored form of a secret: SHA-256, not a password hash. A secret is 32
+     * random bytes, so there is nothing for a slow hash to protect against - no
+     * dictionary, no guessing - and bcrypt cost every API call 50 to 100 ms of
+     * CPU before the rate limit was even reached. {@code account_tokens} make the
+     * same choice for the same reason.
+     */
+    static String hash(String secret) {
+        try {
+            return SHA256 + HexFormat.of().formatHex(
+                    MessageDigest.getInstance("SHA-256").digest(secret.getBytes(StandardCharsets.UTF_8)));
+        } catch (NoSuchAlgorithmException e) {
+            throw new IllegalStateException("SHA-256 is part of every JVM", e);
+        }
+    }
+
+    /** In constant time for a SHA-256 form; a bcrypt one, from before, through the encoder. */
+    private boolean matches(String secret, String stored) {
+        if (stored.startsWith(SHA256)) {
+            return MessageDigest.isEqual(hash(secret).getBytes(StandardCharsets.UTF_8),
+                    stored.getBytes(StandardCharsets.UTF_8));
+        }
+        return passwordEncoder.matches(secret, stored);
+    }
+
     /** URL-safe random text; the source of both the prefix and the secret. */
     private String randomText(int bytes) {
         byte[] buffer = new byte[bytes];
@@ -231,7 +262,7 @@ public class ServiceTokenService {
         // Unknown, revoked, lapsed and wrong-secret are one answer. A caller
         // learns only that this credential does not work (spec 2.8).
         if (found.isEmpty() || found.get().isRevoked() || found.get().isExpired(now)
-                || !passwordEncoder.matches(secret, found.get().getSecretHash())) {
+                || !matches(secret, found.get().getSecretHash())) {
             return Optional.empty();
         }
         ServiceToken token = found.get();
@@ -246,6 +277,11 @@ public class ServiceTokenService {
         // Only a call that actually worked counts as a use: the column answers
         // "when did this last function", and a refusal is not a use.
         token.setLastUsedAt(now);
+        // A hash from before SHA-256 is replaced on its first use: same secret,
+        // so nothing is redeployed, and no request pays for bcrypt again.
+        if (!token.getSecretHash().startsWith(SHA256)) {
+            token.setSecretHash(hash(secret));
+        }
         tokenRepo.save(token);
 
         return Optional.of(Actor.serviceToken(token.getId(), token.getLabel(),

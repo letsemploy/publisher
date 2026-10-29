@@ -17,6 +17,9 @@ Section numbers such as §5.6 refer to the specification in [`docs/SPEC.md`](doc
 - On SQLite, every foreign-key column now has an index (migration V18), as MariaDB creates by itself.
   Deleting a job, tag, location or account, and counting a job's feeds, no longer scan whole tables.
   On MariaDB the migration changes nothing (§9.3).
+- Service token secrets are stored as SHA-256 instead of bcrypt, so a management API call no longer
+  spends 50–100 ms of CPU checking its token. Existing tokens keep working unchanged, and each one's
+  hash is replaced the first time it is used (§2.8).
 
 ### Security
 
