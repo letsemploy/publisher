@@ -6,7 +6,6 @@ import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Arrays;
-import java.util.Iterator;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -17,8 +16,11 @@ import java.util.concurrent.ConcurrentHashMap;
  *
  * <p>Bounded, since every key is chosen by whoever is asking: windows that ended
  * are swept at most once per {@link #SWEEP_EVERY}, so a flood costs one pass per
- * interval rather than one per request, and at {@code maxKeys} a new key takes
- * the place of an existing one rather than growing the map.
+ * interval rather than one per request, and at {@code maxKeys} a new key is not
+ * counted at all. It never takes the place of a running window: a flood could
+ * otherwise push out the very key it is guessing at and start that key afresh.
+ * What is not counted is {@link #uncounted}, and the callers treat it as worse
+ * than counted, never better - a captcha for every try, or a refusal.
  */
 final class Throttle {
 
@@ -93,17 +95,34 @@ final class Throttle {
         Instant now = clock.instant();
         sweep(now);
         if (windows.size() >= maxKeys && !windows.containsKey(key)) {
-            // Full of windows still running. Making room loses one key's count,
-            // which beats refusing new keys - that would lock out everyone not yet
-            // counted - or growing without end.
-            Iterator<String> any = windows.keySet().iterator();
-            if (any.hasNext()) {
-                windows.remove(any.next());
-            }
+            // Full of windows still running: this key goes uncounted, and is
+            // answered as such, rather than evicting a key that is.
+            return;
         }
         windows.compute(key, (k, w) -> w == null || w.over(now)
                 ? new Window(now.plus(window), 1)
                 : new Window(w.endsAt(), w.count() + 1));
+    }
+
+    /**
+     * Whether this key would go uncounted: the map is full of running windows and
+     * the key has none of them. Its count reads zero, which must not be taken to
+     * mean "no failures" - it means "not known".
+     */
+    boolean uncounted(String key) {
+        Instant now = clock.instant();
+        sweep(now);
+        if (windows.size() < maxKeys) {
+            return false;
+        }
+        Window current = windows.get(key);
+        return current == null || current.over(now);
+    }
+
+    /** Whether no new key can be counted now: the map is full of running windows. */
+    boolean full() {
+        sweep(clock.instant());
+        return windows.size() >= maxKeys;
     }
 
     /** Drops the windows that ended, at most once per interval, whatever the request rate. */

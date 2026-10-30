@@ -46,6 +46,12 @@ public final class LocalAuthenticationProvider extends DaoAuthenticationProvider
         if (attempts.refused(address, client)) {
             throw new BadCredentialsException("Throttled");
         }
+        // Throttles full of running windows count nothing new. Uncounted is not
+        // unthrottled: with a captcha every try takes one (captchaRequired says so),
+        // and without one the attempt is refused, the same answer as any failure.
+        if (!captcha.configured() && attempts.uncounted(address, client)) {
+            throw new BadCredentialsException("Throttled");
+        }
         if (captcha.configured() && attempts.captchaRequired(address, client)) {
             String token = authentication.getDetails() instanceof LoginDetails login ? login.getCaptchaToken() : null;
             if (!captcha.solved(token, client)) {

@@ -39,6 +39,10 @@ Section numbers such as §5.6 refer to the specification in [`docs/SPEC.md`](doc
   subscriber is usually given (§2.12). Before, a client could start its failed-sign-in and mail limits
   afresh by switching to another address in its block, and it never reached the captcha. The counters'
   memory is bounded, and a flood of requests no longer makes each sign-in scan all of them.
+- When those counters are full, during a flood of tens of thousands of clients, an attempt they
+  cannot count is treated more strictly, never more leniently. Signing in then takes a captcha on
+  every try, or is refused where no captcha is configured, and the mail-sending forms refuse it
+  without a captcha. Nothing already counted is dropped to make room.
 
 ### Fixed
 

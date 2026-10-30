@@ -246,7 +246,9 @@ public class AccountController {
 
     private boolean throttled(HttpServletRequest request, Model model) {
         String client = Throttle.clientKey(request.getRemoteAddr());
-        if (mailsPerClient.exhausted(client)) {
+        // A client the full throttle cannot count is refused unless every submission
+        // takes a captcha anyway: uncounted must never mean unlimited (spec 2.12).
+        if (mailsPerClient.exhausted(client) || (!captcha.configured() && mailsPerClient.uncounted(client))) {
             model.addAttribute("errors", List.of(new FieldError("account.throttled", message("account.throttled"))));
             model.addAttribute("fieldErrors", Map.of());
             return true;

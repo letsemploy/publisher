@@ -65,8 +65,44 @@ class ThrottleTest {
         for (int i = 0; i < 1_000; i++) {
             throttle.record("key-" + i);
         }
-        assertThat(throttle.size()).isLessThanOrEqualTo(100);
-        assertThat(throttle.count("key-999")).as("the newest key is counted").isEqualTo(1);
+        assertThat(throttle.size()).isEqualTo(100);
+        assertThat(throttle.full()).isTrue();
+    }
+
+    /**
+     * Full, it never pushes out a running window: a flood would otherwise evict the
+     * key it is guessing at and start that key afresh. The newcomer goes uncounted,
+     * which the callers answer more strictly, not less.
+     */
+    @Test
+    void fullItKeepsEveryRunningWindowAndCountsNoNewcomer() {
+        Throttle throttle = new Throttle(3, WINDOW, new Moving(), 100);
+        throttle.record("target");
+        throttle.record("target");
+        for (int i = 0; i < 1_000; i++) {
+            throttle.record("junk-" + i);
+        }
+        throttle.record("target");
+
+        assertThat(throttle.exhausted("target")).as("the target's count survived the flood").isTrue();
+        assertThat(throttle.uncounted("target")).isFalse();
+        assertThat(throttle.count("newcomer")).isZero();
+        assertThat(throttle.uncounted("newcomer")).as("zero here means not known").isTrue();
+    }
+
+    /** Once the windows end, there is room again and nobody is uncounted. */
+    @Test
+    void roomReturnsWhenTheWindowsEnd() {
+        Moving clock = new Moving();
+        Throttle throttle = new Throttle(3, WINDOW, clock, 10);
+        for (int i = 0; i < 10; i++) {
+            throttle.record("key-" + i);
+        }
+        assertThat(throttle.uncounted("later")).isTrue();
+
+        clock.advance(WINDOW.plus(Throttle.SWEEP_EVERY));
+        assertThat(throttle.uncounted("later")).isFalse();
+        assertThat(throttle.full()).isFalse();
     }
 
     /** Ended windows go at the next sweep, not only once the map is large. */

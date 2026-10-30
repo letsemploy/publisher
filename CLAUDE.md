@@ -387,8 +387,12 @@ email. `CurrentUserService.identityOf` turns the `LocalUser` principal into an `
   client. `app.local-accounts.max-attempts`, `max-mails`, `throttle-window`. A **client is
   `Throttle.clientKey`**: IPv4 as is, IPv6 by its /64, so one subscriber rotating through its block is
   one client — pass every client address through it. The map is bounded: ended windows are swept at
-  most every 30 s, and at 100,000 keys a new one evicts an existing one rather than growing the map or
-  refusing newcomers (`ThrottleTest`).
+  most every 30 s, and at 100,000 keys a new key is **not counted, and nothing is evicted** — a flood
+  could otherwise push out the very address it is guessing at. **Uncounted fails closed:**
+  `Throttle.uncounted` means "not known", never "no failures", so such a sign-in needs a captcha on
+  every try, or is refused where none is configured, and the mail forms refuse it without a captcha
+  (`ThrottleTest`, `FullThrottleSignInTest`). Never let an uncounted key off more lightly than a
+  counted one.
 - **Captcha after failures** (`captcha-after-failures`, only with a captcha configured): the provider
   checks it **before the password** and throws `CaptchaRequiredException`, mapped to `/login?captcha`;
   every other failure stays one `?error`. Counted per address *and* per client, so a distributed guess
