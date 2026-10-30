@@ -43,6 +43,8 @@ Section numbers such as §5.6 refer to the specification in [`docs/SPEC.md`](doc
   cannot count is treated more strictly, never more leniently. Signing in then takes a captcha on
   every try, or is refused where no captcha is configured, and the mail-sending forms refuse it
   without a captcha. Nothing already counted is dropped to make room.
+- An IPv6 /48 block is now counted as well, with four clients' allowance, so one rented block can
+  no longer fill those counters on its own and lock out everyone else's first sign-in.
 
 ### Fixed
 

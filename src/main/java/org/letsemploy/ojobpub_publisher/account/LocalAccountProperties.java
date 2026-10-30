@@ -7,12 +7,14 @@ import org.springframework.boot.context.properties.bind.DefaultValue;
 /**
  * {@code app.local-accounts.*} (spec 2.12, 9.5). Off unless configured.
  *
- * @param maxAttempts          failed sign-ins per address, and five times that per client, in one
- *                             window before every further attempt is refused; 0 never refuses
+ * @param maxAttempts          failed sign-ins per address, five times that per client and four
+ *                             times the client's per IPv6 /48, in one window before every further
+ *                             attempt is refused; 0 never refuses
  * @param captchaAfterFailures failed sign-ins per address, or per client, in one window before
  *                             signing in also takes a solved captcha; 0 always takes one. Applies
  *                             only when a captcha is configured
- * @param maxMails             sign-up, resend and forgot requests allowed per client in one window
+ * @param maxMails             sign-up, resend and forgot requests allowed per client, and four
+ *                             times that per IPv6 /48, in one window
  * @param password             what a new password must satisfy
  */
 @ConfigurationProperties("app.local-accounts")

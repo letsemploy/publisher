@@ -499,7 +499,9 @@ configured. It is **off unless configured** (§9.5), and it can be offered alone
   The session that made the change continues.
 - **Attempts are throttled** — sign-in per address and per client, sign-up and the mail-sending forms
   per client — and those forms carry a captcha, because each one sends mail to an address a stranger
-  typed. A throttled sign-in answers like a failed one.
+  typed. A throttled sign-in answers like a failed one. An IPv6 client is its /64, and its /48 is
+  counted too, with four clients' allowance, so that one rented block cannot pass for thousands of
+  clients.
 - **After repeated failed sign-ins, signing in takes a captcha too.** Once an address, or a client,
   has failed a configurable number of times (3) within the window, a sign-in also needs a solved
   captcha — checked before the password, so it says nothing about the password, and counted alike

@@ -27,6 +27,8 @@ final class Throttle {
     /** Far above what one instance sees from honest clients; about 20 MB of windows. */
     static final int MAX_KEYS = 100_000;
     static final Duration SWEEP_EVERY = Duration.ofSeconds(30);
+    /** A network's limit, in clients' limits: a site shares one /48, so more than one. */
+    static final int CLIENTS_PER_NETWORK = 4;
 
     private final int limit;
     private final Duration window;
@@ -55,6 +57,22 @@ final class Throttle {
      * stays as it is.
      */
     static String clientKey(String remoteAddress) {
+        return prefixKey(remoteAddress, 64);
+    }
+
+    /**
+     * The key for the network a client is in: IPv6 by its /48, the block a site is
+     * given and one an attacker can rent. A /48 holds 65,536 /64s, so counted only
+     * per client it could fill the per-client and per-address maps alone and set
+     * everyone else's attempts uncounted. Counted here as well, with
+     * {@link #CLIENTS_PER_NETWORK} clients' worth, one /48 is one budget. IPv4 is the
+     * client key: an address costs what a /48 does.
+     */
+    static String networkKey(String remoteAddress) {
+        return prefixKey(remoteAddress, 48);
+    }
+
+    private static String prefixKey(String remoteAddress, int bits) {
         if (remoteAddress == null) {
             return "";
         }
@@ -62,8 +80,8 @@ final class Throttle {
             InetAddress address = InetAddress.ofLiteral(remoteAddress);
             if (address instanceof Inet6Address) {
                 byte[] prefix = Arrays.copyOf(address.getAddress(), 16);
-                Arrays.fill(prefix, 8, 16, (byte) 0);
-                return InetAddress.getByAddress(prefix).getHostAddress() + "/64";
+                Arrays.fill(prefix, bits / 8, 16, (byte) 0);
+                return InetAddress.getByAddress(prefix).getHostAddress() + "/" + bits;
             }
             return address.getHostAddress();
         } catch (IllegalArgumentException | java.net.UnknownHostException e) {

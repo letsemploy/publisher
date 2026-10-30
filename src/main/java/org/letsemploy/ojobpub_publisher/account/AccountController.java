@@ -47,6 +47,7 @@ public class AccountController {
     private final CurrentUserService currentUserService;
     private final MessageSource messages;
     private final Throttle mailsPerClient;
+    private final Throttle mailsPerNetwork;
     private final PasswordPolicy passwordPolicy;
 
     public AccountController(LocalAccountService service, CaptchaCheck captcha,
@@ -58,6 +59,9 @@ public class AccountController {
         this.currentUserService = currentUserService;
         this.messages = messages;
         this.mailsPerClient = new Throttle(properties.maxMails(), properties.throttleWindow(), Clock.systemUTC());
+        // One /48 is one budget, or rotating through its /64s would fill the map above.
+        this.mailsPerNetwork = new Throttle(properties.maxMails() * Throttle.CLIENTS_PER_NETWORK,
+                properties.throttleWindow(), Clock.systemUTC());
         this.passwordPolicy = passwordPolicy;
     }
 
@@ -246,14 +250,17 @@ public class AccountController {
 
     private boolean throttled(HttpServletRequest request, Model model) {
         String client = Throttle.clientKey(request.getRemoteAddr());
+        String network = Throttle.networkKey(request.getRemoteAddr());
         // A client the full throttle cannot count is refused unless every submission
         // takes a captcha anyway: uncounted must never mean unlimited (spec 2.12).
-        if (mailsPerClient.exhausted(client) || (!captcha.configured() && mailsPerClient.uncounted(client))) {
+        if (mailsPerClient.exhausted(client) || mailsPerNetwork.exhausted(network)
+                || (!captcha.configured() && (mailsPerClient.uncounted(client) || mailsPerNetwork.uncounted(network)))) {
             model.addAttribute("errors", List.of(new FieldError("account.throttled", message("account.throttled"))));
             model.addAttribute("fieldErrors", Map.of());
             return true;
         }
         mailsPerClient.record(client);
+        mailsPerNetwork.record(network);
         return false;
     }
 

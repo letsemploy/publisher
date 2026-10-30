@@ -135,6 +135,16 @@ class ThrottleTest {
         assertThat(Throttle.clientKey(null)).isEmpty();
     }
 
+    /** A /48 is one network, however many /64s of it are used; IPv4 is its own. */
+    @Test
+    void anIpv6NetworkIsItsSlash48() {
+        assertThat(Throttle.networkKey("2001:db8:1:2::1"))
+                .isEqualTo(Throttle.networkKey("2001:db8:1:ffff::1"))
+                .isEqualTo("2001:db8:1:0:0:0:0:0/48");
+        assertThat(Throttle.networkKey("2001:db8:2::1")).isNotEqualTo(Throttle.networkKey("2001:db8:1::1"));
+        assertThat(Throttle.networkKey("203.0.113.7")).isEqualTo("203.0.113.7");
+    }
+
     /** Through LoginAttempts: failures from one /64 add up to the per-client limit. */
     @Test
     void failuresFromOneBlockAddUpPerClient() {

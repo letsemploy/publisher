@@ -303,6 +303,19 @@ class LocalAccountTest {
         assertThat(refused).contains("Too many requests from here");
     }
 
+    /** A fresh /64 for every request starts a new client, but not a new network. */
+    @Test
+    void theFormsThatSendMailAreThrottledPerNetwork() throws Exception {
+        int budget = 3 * Throttle.CLIENTS_PER_NETWORK;
+        for (int i = 0; i < budget; i++) {
+            mvc.perform(from(post("/password/forgot").param("email", address()), "2001:db8:7a5e:" + i + "::1"))
+                    .andExpect(redirectedUrl("/password/sent"));
+        }
+        String refused = mvc.perform(from(post("/password/forgot").param("email", address()), "2001:db8:7a5e:ffff::1"))
+                .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
+        assertThat(refused).contains("Too many requests from here");
+    }
+
     @Test
     void theSignInPageOffersTheFormAndNoProviderButtons() throws Exception {
         String page = mvc.perform(get("/login")).andExpect(status().isOk())

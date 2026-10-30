@@ -94,8 +94,8 @@ app:
   #     required-classes: 0     # how many of lower/upper/digits/symbols to mix, 0-4
   #     min-strength: 3         # zxcvbn score 0-4: 0 unchecked, 2 not guessable, 3 resists offline attack
   #   captcha-after-failures: 3 # failed sign-ins per address or client before a captcha is needed; 0 = always
-  #   max-attempts: 10          # ... and before every attempt is refused (x5 per client); 0 = never
-  #   max-mails: 10             # sign-up/resend/forgot requests per client, per window
+  #   max-attempts: 10          # ... and before every attempt is refused (x5 per client, x20 per IPv6 /48); 0 = never
+  #   max-mails: 10             # sign-up/resend/forgot requests per client (x4 per IPv6 /48), per window
   #   throttle-window: PT15M
 
   # The sender of that mail.

@@ -386,7 +386,10 @@ email. `CurrentUserService.identityOf` turns the `LocalUser` principal into an `
   (`LoginAttempts`, a bean the sign-in page and the provider share); the mail-sending forms per
   client. `app.local-accounts.max-attempts`, `max-mails`, `throttle-window`. A **client is
   `Throttle.clientKey`**: IPv4 as is, IPv6 by its /64, so one subscriber rotating through its block is
-  one client — pass every client address through it. The map is bounded: ended windows are swept at
+  one client — pass every client address through it. **Each client's network is counted too**
+  (`Throttle.networkKey`, IPv6 by its /48, `CLIENTS_PER_NETWORK` = 4 clients' allowance): a /48 holds
+  65,536 /64s, so without it one rented block fills the maps below and turns the fail-closed rule into
+  a lockout for everyone (`NetworkBoundTest`). The map is bounded: ended windows are swept at
   most every 30 s, and at 100,000 keys a new key is **not counted, and nothing is evicted** — a flood
   could otherwise push out the very address it is guessing at. **Uncounted fails closed:**
   `Throttle.uncounted` means "not known", never "no failures", so such a sign-in needs a captcha on
