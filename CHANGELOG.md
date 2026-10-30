@@ -8,6 +8,8 @@ Section numbers such as §5.6 refer to the specification in [`docs/SPEC.md`](doc
 
 ## [Unreleased]
 
+## [1.5.0] - 2026-10-30
+
 ### Changed
 
 - The navigation now separates what belongs to an employer from what does not (§7.3). The sidebar
@@ -302,7 +304,8 @@ Section numbers such as §5.6 refer to the specification in [`docs/SPEC.md`](doc
 - MariaDB, or SQLite for a single instance.
 - English and German.
 
-[Unreleased]: https://github.com/letsemploy/publisher/compare/v1.4.0...HEAD
+[Unreleased]: https://github.com/letsemploy/publisher/compare/v1.5.0...HEAD
+[1.5.0]: https://github.com/letsemploy/publisher/compare/v1.4.0...v1.5.0
 [1.4.0]: https://github.com/letsemploy/publisher/compare/v1.3.0...v1.4.0
 [1.3.0]: https://github.com/letsemploy/publisher/compare/v1.2.0...v1.3.0
 [1.2.0]: https://github.com/letsemploy/publisher/compare/v1.1.0...v1.2.0
