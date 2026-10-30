@@ -180,10 +180,14 @@
     };
 
     // htmx replaces regions wholesale; anything swapped in needs revealing too.
-    document.body.addEventListener('htmx:afterSwap', (event) => {
-        revealEnhancedControls(event.target);
-        armConfirmNames(event.target);
-        drawSparklines(event.target);
+    // htmx 4 fires this on the element that made the request, not the region it
+    // replaced, so the region comes from the request context.
+    document.addEventListener('htmx:after:swap', (event) => {
+        const target = event.detail?.ctx?.target;
+        const root = target?.isConnected ? target : document;
+        revealEnhancedControls(root);
+        armConfirmNames(root);
+        drawSparklines(root);
     });
 
     revealEnhancedControls();

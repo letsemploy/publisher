@@ -1,6 +1,7 @@
 package org.letsemploy.ojobpub_publisher.web;
 
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import java.util.UUID;
 import org.letsemploy.ojobpub_publisher.common.exception.NotFoundException;
 import org.letsemploy.ojobpub_publisher.web.view.PageMeta;
@@ -29,7 +30,9 @@ public class GlobalErrorHandler {
 
     @ExceptionHandler(NotFoundException.class)
     @ResponseStatus(HttpStatus.NOT_FOUND)
-    public String notFound(NotFoundException e, HttpServletRequest request, Model model) {
+    public String notFound(NotFoundException e, HttpServletRequest request, HttpServletResponse response,
+                           Model model) {
+        wholePage(request, response);
         model.addAttribute("ui", uiContextFactory.build(request));
         model.addAttribute("page", PageMeta.of("Not found"));
         model.addAttribute("errorTitle", e.getMessage());
@@ -38,12 +41,25 @@ public class GlobalErrorHandler {
 
     @ExceptionHandler(Exception.class)
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
-    public String unexpected(Exception e, HttpServletRequest request, Model model) {
+    public String unexpected(Exception e, HttpServletRequest request, HttpServletResponse response, Model model) {
+        wholePage(request, response);
         model.addAttribute("ui", uiContextFactory.build(request));
         String correlationId = UUID.randomUUID().toString().substring(0, 8);
         log.error("Unexpected error [{}] handling {}", correlationId, request.getRequestURI(), e);
         model.addAttribute("page", PageMeta.of("Error"));
         model.addAttribute("correlationId", correlationId);
         return "error";
+    }
+
+    /**
+     * htmx 4 swaps an error answer like any other, into whatever the request
+     * targeted. The error page is a whole page, so it replaces the body: a failed
+     * modal or table refresh shows the error instead of nesting a page in a region.
+     */
+    private static void wholePage(HttpServletRequest request, HttpServletResponse response) {
+        if (request.getHeader("HX-Request") != null) {
+            response.setHeader("HX-Retarget", "body");
+            response.setHeader("HX-Reswap", "innerHTML");
+        }
     }
 }

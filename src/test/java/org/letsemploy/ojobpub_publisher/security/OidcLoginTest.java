@@ -222,6 +222,18 @@ class OidcLoginTest {
                 .andExpect(redirectedUrl("/"));
     }
 
+    /**
+     * Every hx-post needs the CSRF token, and htmx 4 passes an attribute down only
+     * when told to. Here, not in the screen tests: the dev chain has no CSRF.
+     */
+    @Test
+    void theCsrfHeaderIsInheritedByEveryHtmxRequest() throws Exception {
+        String page = mvc.perform(get("/settings").with(signedIn("alice-6", "Alice", "alice6@example.com", true)))
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString();
+        assertThat(page).containsPattern("<body[^>]*hx-headers:inherited=\"\\{&quot;X-CSRF-TOKEN&quot;:&quot;[^&]+&quot;\\}\"");
+    }
+
     /** It was missing from the public paths, so no signed-out page could load it. */
     @Test
     void theApplicationScriptIsPublic() throws Exception {

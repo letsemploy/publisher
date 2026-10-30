@@ -8,6 +8,11 @@ Section numbers such as §5.6 refer to the specification in [`docs/SPEC.md`](doc
 
 ## [Unreleased]
 
+### Changed
+
+- The screens run on htmx 4 and Tabler 1.7. A link or action whose answer is an error now shows the
+  error page in place of the page, where before nothing happened.
+
 ## [1.5.0] - 2026-10-30
 
 ### Changed

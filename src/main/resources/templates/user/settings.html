@@ -4,7 +4,8 @@
   so they follow the person into every new session; applied at once on saving.
 
   Not boosted: the language and theme live on <html>, which hx-boost does not
-  swap (see fragments/nav.html), so saving is a whole-page navigation.
+  swap (see fragments/nav.html), so saving is a whole-page navigation. Inherited,
+  so the links inside the form (change password) are not boosted either.
 -->
 <html xmlns:th="http://www.thymeleaf.org"
       xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
@@ -12,7 +13,7 @@
 <head><title th:text="#{settings.title}">Settings</title></head>
 <body>
 <div layout:fragment="content">
-    <form th:action="@{/settings}" method="post" hx-boost="false" novalidate>
+    <form th:action="@{/settings}" method="post" hx-boost:inherited="false" novalidate>
         <div th:replace="~{fragments/form :: errorSummary(${errors})}"></div>
 
         <div class="card mb-3">

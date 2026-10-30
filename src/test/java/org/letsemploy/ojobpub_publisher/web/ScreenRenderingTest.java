@@ -3,6 +3,7 @@ package org.letsemploy.ojobpub_publisher.web;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import java.util.stream.Stream;
@@ -244,7 +245,7 @@ class ScreenRenderingTest {
         int form = html.indexOf("action=\"/settings\"");
         assertThat(form).isPositive();
         assertThat(html.substring(form - 20, form + 120))
-                .as("settings form opts out of boosting").contains("hx-boost=\"false\"");
+                .as("settings form and its links opt out of boosting").contains("hx-boost:inherited=\"false\"");
     }
 
     /** The attribute the theme actually depends on is on <html>, and reflects the session. */
@@ -268,7 +269,7 @@ class ScreenRenderingTest {
     @Test
     void shellIsProgressivelyEnhancedAndAccessible() throws Exception {
         assertThat(html("/jobs"))
-                .contains("hx-boost=\"true\"")
+                .contains("hx-boost:inherited=\"true\"")
                 .contains("skip-link")
                 .contains("aria-current=\"page\"")
                 .contains("aria-live=\"polite\"")
@@ -603,6 +604,23 @@ class ScreenRenderingTest {
     void notFoundRendersTheErrorPage() throws Exception {
         mvc.perform(get("/jobs/11111111-2222-3333-4444-555555555555"))
                 .andExpect(status().isNotFound());
+    }
+
+    /**
+     * htmx 4 swaps an error answer too, into whatever the request targeted, so a
+     * 404 behind a delete modal would nest a whole page in the modal's container.
+     * The error page replaces the body instead; a plain page view sets nothing.
+     */
+    @Test
+    void anHtmxRequestGetsTheErrorPageAsTheWholeBody() throws Exception {
+        String missing = "/jobs/11111111-2222-3333-4444-555555555555/delete";
+        mvc.perform(get(missing).header("HX-Request", "true"))
+                .andExpect(status().isNotFound())
+                .andExpect(header().string("HX-Retarget", "body"))
+                .andExpect(header().string("HX-Reswap", "innerHTML"));
+        mvc.perform(get(missing))
+                .andExpect(status().isNotFound())
+                .andExpect(header().doesNotExist("HX-Retarget"));
     }
 
     /**

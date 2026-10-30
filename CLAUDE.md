@@ -816,7 +816,8 @@ ecosystems auto-merge minor and patch.
 
 **Charts are Tabler's sparkline and tracking**, no chart library (§7.2, §7.10). `tabler.min.js` draws
 sparklines only on page load, so `app.js` draws those an htmx swap brings in (`drawSparklines` on
-`htmx:afterSwap`) — without it a boosted visit to the dashboard shows empty charts. Sizes are classes
+`htmx:after:swap`, which htmx 4 fires on the requesting element, so the region is read from
+`event.detail.ctx.target`) — without it a boosted visit to the dashboard shows empty charts. Sizes are classes
 in `app.css` (`sparkline-wide`), never a `style` attribute (CSP). Icon names passed to
 `fragments/icon` must be **literal** in the template, or the sprite scanner leaves them out;
 `fragments/trend` spells its three out for that reason. The dashboard's figures come from
@@ -891,6 +892,16 @@ Where a screen has an htmx fragment variant, it is a second `@GetMapping` on the
 annotated `@HxRequest(boosted = false)` returning a fragment selector (`"tag/fragments/table :: table"`).
 The `boosted = false` matters: navigation uses `hx-boost`, so a boosted request is an htmx request that
 still wants a whole page.
+
+**htmx 4 inherits nothing by default.** `layout.html` puts `hx-boost:inherited` and
+`th:hx-headers:inherited` (the CSRF header) on `<body>`. Drop the `:inherited` and links stop being
+boosted and every `hx-post` fails CSRF. The dev chain has no CSRF, so only `OidcLoginTest` sees the
+second. To opt a region out, use `hx-boost:inherited="false"` (Settings' form). `th:attr` cannot write a
+name containing a colon, hence the generic `th:` processor. **htmx 4 also swaps 4xx/5xx answers**, so
+`GlobalErrorHandler` sends `HX-Retarget: body` to an htmx request, and the error page replaces the
+page instead of filling a modal's container. A history restore is an htmx request without
+`HX-Boosted`; `@HxRequest` leaves it out by default (`historyRestoreRequest = false`), so Back gets
+the whole page. Keep that default.
 
 i18n: `messages.properties` (English, the original and the fallback) plus one bundle per language in
 `WebLangConfig.LANGUAGES` — en, de, fr, it, es, pt, ja, ru, zh. That list is the only one: Settings, the

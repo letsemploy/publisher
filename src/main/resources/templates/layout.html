@@ -17,8 +17,10 @@
     <script defer th:src="@{/vendor/tabler.min.js}"></script>
     <script defer th:src="@{/js/app.js}"></script>
 </head>
-<body hx-boost="true"
-      th:attr="hx-headers=${_csrf != null} ? '{&quot;' + ${_csrf.headerName} + '&quot;:&quot;' + ${_csrf.token} + '&quot;}' : null">
+<!-- htmx 4 inherits nothing unless told to: :inherited carries boosting and the
+     CSRF header from here to every link, form and hx-post on the page. -->
+<body hx-boost:inherited="true"
+      th:hx-headers:inherited="${_csrf != null} ? '{&quot;' + ${_csrf.headerName} + '&quot;:&quot;' + ${_csrf.token} + '&quot;}' : null">
 
 <a class="visually-hidden-focusable skip-link" th:href="@{#main}" th:text="#{a11y.skipToContent}">Skip to content</a>
 
