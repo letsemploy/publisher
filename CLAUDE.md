@@ -921,7 +921,9 @@ host's locale. Controllers pass message *keys* as flash attributes and templates
   reading its feed or API, would notice adds a line under `## [Unreleased]` in the same commit;
   dependency bumps, CI and refactors do not. `make git-release v=x.y.z` runs
   `scripts/release-changelog.sh`, which dates `[Unreleased]` as that version, moves the compare
-  links on, and refuses an empty `[Unreleased]` or a version already listed. v0.4.0 was never tagged, so its links use the
+  links on, and refuses an empty `[Unreleased]` or a version already listed. The pushed tag then
+  gets its GitHub release from the `release` job in `container.yml`, after the image is pushed, with
+  notes from `scripts/release-notes.sh` (the version's section, the image, the compare link). v0.4.0 was never tagged, so its links use the
   release commit `0ff137f`.
 
 ## Tests
