@@ -31,10 +31,8 @@
 </div>
 
 <!--
-  Sidebar (spec 7.3): brand and the primary destinations.
-
-  Who you are and which employer you are working on live in the top bar
-  (:: topbar), so the sidebar is navigation and nothing else.
+  Sidebar (spec 7.3): the brand, the employer being worked on, and what belongs
+  to it. Everything that exists without an employer is in the top bar.
 -->
 <aside th:fragment="sidebar" class="navbar navbar-vertical navbar-expand-lg d-print-none">
     <div class="container-fluid">
@@ -52,6 +50,24 @@
         </div>
 
         <div class="collapse navbar-collapse" id="sidebar-menu">
+            <!-- The employer switcher heads the list, even with one employer (spec 2.5).
+                 Choosing submits at once; without JavaScript the button does. -->
+            <form class="sidebar-employer" th:if="${ui.activeEmployer != null}"
+                  th:action="@{/context/employer}" method="post">
+                <label class="form-label" for="employer-select" th:text="#{employer.select}">Employer</label>
+                <select class="form-select" id="employer-select" name="employerId" data-auto-submit>
+                    <option th:each="e : ${ui.employers}" th:value="${e.id}" th:text="${e.label}"
+                            th:selected="${ui.activeEmployer.id == e.id}">Acme</option>
+                </select>
+                <button type="submit" class="btn btn-sm w-100 mt-2" data-without-js
+                        th:text="#{employer.switch}">Switch employer</button>
+            </form>
+            <div class="sidebar-employer" th:if="${ui.activeEmployer == null}">
+                <a class="btn btn-primary w-100" th:href="@{/employers/create}">
+                    <svg th:replace="~{fragments/icon :: i('plus','icon')}"></svg>
+                    <span th:text="#{employer.create}">New employer</span>
+                </a>
+            </div>
             <ul class="navbar-nav pt-lg-3">
                 <li class="nav-item" th:each="item : ${ui.navItems}"
                     th:classappend="${item.active} ? 'active'">
@@ -61,10 +77,6 @@
                             <svg th:replace="~{fragments/icon :: i(${item.icon},'icon')}"></svg>
                         </span>
                         <span class="nav-link-title" th:text="#{${item.labelKey}}">Item</span>
-                        <!-- Pending-invitation count; hidden at zero (spec 7.3). -->
-                        <span class="badge bg-red text-white ms-2"
-                              th:if="${item.href == '/invitations' and ui.pendingInvitations > 0}"
-                              th:text="${ui.pendingInvitations}">0</span>
                     </a>
                 </li>
             </ul>
@@ -73,38 +85,32 @@
 </aside>
 
 <!--
-  Top bar (spec 7.3): the employer switcher and the user menu, on the right.
-
-  Both are about context rather than destination - which employer am I working
-  on, who am I, what language and theme - so they sit apart from the navigation
-  and stay in the same place on every screen, including the narrow layout where
-  the sidebar collapses away.
+  Top bar (spec 7.3): on the left, what exists without an employer - the
+  employers, one's invitations, and for admins the users; on the right, who you
+  are. It does not collapse, so on a narrow screen the links shorten to icons.
 -->
-<header th:fragment="topbar" class="navbar navbar-expand-md d-print-none">
+<header th:fragment="topbar" class="navbar navbar-expand d-print-none">
     <div class="container-xl">
-        <div class="navbar-nav flex-row order-md-last ms-auto">
+        <ul class="navbar-nav flex-row">
+            <li class="nav-item" th:each="item : ${ui.topNavItems}"
+                th:classappend="${item.active} ? 'active'">
+                <a class="nav-link" th:href="@{${item.href}}"
+                   th:attr="aria-current=${item.active} ? 'page' : null"
+                   th:aria-label="#{${item.labelKey}}">
+                    <svg th:replace="~{fragments/icon :: i(${item.icon},'icon')}"></svg>
+                    <span class="d-none d-md-inline ms-1" th:text="#{${item.labelKey}}">Item</span>
+                    <!-- Pending-invitation count; hidden at zero (spec 7.3). -->
+                    <span class="badge bg-red text-white ms-1"
+                          th:if="${item.href == '/invitations' and ui.pendingInvitations > 0}"
+                          th:text="${ui.pendingInvitations}">0</span>
+                </a>
+            </li>
+        </ul>
+        <div class="navbar-nav flex-row ms-auto">
 
             <!-- Admin reach is on (spec 2.10): said in words, not only by colour (spec 7.9). -->
             <div class="nav-item me-3" th:if="${ui.admin}">
                 <span class="badge bg-red-lt" th:text="#{adminMode.badge}">Admin mode</span>
-            </div>
-
-            <!-- Employer switcher: one employer is always active; hidden with nothing to switch to (spec 2.5) -->
-            <div class="nav-item dropdown me-3" th:if="${ui.employers.size() > 1 and ui.activeEmployer != null}">
-                <a href="#" class="nav-link d-flex align-items-center text-reset dropdown-toggle"
-                   data-bs-toggle="dropdown" aria-expanded="false" th:title="#{employer.switch}">
-                    <svg th:replace="~{fragments/icon :: i('building','icon me-2')}"></svg>
-                    <span class="text-truncate d-none d-md-inline" style="max-width:12rem"
-                          th:text="${ui.activeEmployer.label}">Acme</span>
-                </a>
-                <div class="dropdown-menu dropdown-menu-end">
-                    <form th:action="@{/context/employer}" method="post" th:each="e : ${ui.employers}">
-                        <input type="hidden" name="employerId" th:value="${e.id}"/>
-                        <button type="submit" class="dropdown-item"
-                                th:classappend="${ui.activeEmployer.id == e.id} ? 'active'"
-                                th:text="${e.label}">Acme</button>
-                    </form>
-                </div>
             </div>
 
             <!-- User menu: identity, language, theme, log out -->

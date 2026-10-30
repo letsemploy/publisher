@@ -95,7 +95,9 @@ class ImpersonationTest {
         String home = page("/");
         assertThat(home).contains("You are viewing as Mara Member").contains("member@example.com");
         String sidebar = home.substring(0, home.indexOf("</aside>"));
-        assertThat(sidebar).doesNotContain("href=\"/users\"").doesNotContain("href=\"/tokens\"");
+        assertThat(sidebar).doesNotContain("href=\"/tokens\"");
+        // Users is in the top bar (spec 7.3), and only for an admin.
+        assertThat(home).doesNotContain("href=\"/users\"");
 
         // The editor's People screen: the list, and none of the owner's controls.
         String people = page("/employers/" + ACME + "/people");
@@ -113,7 +115,8 @@ class ImpersonationTest {
                 .andExpect(flash().attribute("successMsg", "impersonation.stopped"));
         String home = page("/");
         assertThat(home).doesNotContain("You are viewing as");
-        assertThat(home.substring(0, home.indexOf("</aside>"))).contains("href=\"/users\"");
+        assertThat(home.substring(home.indexOf("</aside>"), home.indexOf("page-header")))
+                .as("the top bar").contains("href=\"/users\"");
     }
 
     // ------------------------------------------------------------- read-only

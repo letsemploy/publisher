@@ -194,24 +194,43 @@ class ScreenRenderingTest {
     }
 
     /**
-     * Identity and employer context live in the top bar; the sidebar is navigation
-     * only (spec 7.3). Asserted by position, because both are dropdowns and a
-     * class check alone would not notice one drifting back into the sidebar.
+     * The sidebar holds the employer being worked on and what belongs to it; the
+     * top bar what exists without one, and who you are (spec 7.3). Asserted by
+     * position, because a link drifting from one to the other still renders.
      */
     @Test
-    void userMenuAndEmployerSwitcherLiveInTheTopBar() throws Exception {
+    void theSidebarCoversTheEmployerAndTheTopBarTheRest() throws Exception {
         String html = html("/jobs");
         int sidebarEnd = html.indexOf("</aside>");
-        int userMenu = html.indexOf("/logout");
         assertThat(sidebarEnd).as("sidebar present").isPositive();
-        assertThat(userMenu).as("user menu after the sidebar").isGreaterThan(sidebarEnd);
-        assertThat(html).contains("href=\"/settings\"");
-        // The seed has one employer, so there is nothing to switch to (spec 2.5);
-        // ActiveEmployerTest renders the switcher with two.
-        assertThat(html).doesNotContain("/context/employer");
-        // The sidebar still carries the destinations and the invitation badge.
         String sidebar = html.substring(0, sidebarEnd);
-        assertThat(sidebar).contains("nav-link-title").contains("/invitations");
+        String topBar = html.substring(sidebarEnd, html.indexOf("page-header"));
+
+        // The switcher heads the sidebar even with the seed's one employer (spec 2.5).
+        assertThat(sidebar.indexOf("action=\"/context/employer\"")).isPositive()
+                .isLessThan(sidebar.indexOf("class=\"nav-link\" href=\"/\""));
+        assertThat(sidebar).contains("selected=\"selected\">Acme AG<")
+                .contains("href=\"/jobs\"", "href=\"/feeds\"", "href=\"/people\"", "href=\"/tokens\"",
+                        "href=\"/employers/" + EMPLOYER + "\"", "href=\"/locations\"", "href=\"/tags\"",
+                        "href=\"/activity\"")
+                .doesNotContain("href=\"/employers\"", "href=\"/invitations\"", "href=\"/users\"");
+        // Without JavaScript the switch is a button; app.js hides it.
+        assertThat(sidebar).contains("data-without-js");
+
+        assertThat(topBar).contains("href=\"/employers\"", "href=\"/invitations\"", "href=\"/users\"",
+                "/logout", "href=\"/settings\"");
+        assertThat(topBar).doesNotContain("href=\"/jobs\"");
+    }
+
+    /** The active destination is marked in either bar, from the path (spec 7.3). */
+    @Test
+    void theActiveDestinationIsMarkedInEitherBar() throws Exception {
+        assertThat(html("/employers")).containsPattern("href=\"/employers\"[^>]*aria-current=\"page\"");
+        String profile = html("/employers/" + EMPLOYER);
+        assertThat(profile).containsPattern("href=\"/employers/" + EMPLOYER + "\"[^>]*aria-current=\"page\"")
+                .doesNotContainPattern("href=\"/employers\"[^>]*aria-current");
+        assertThat(html("/employers/" + EMPLOYER + "/people"))
+                .containsPattern("href=\"/people\"[^>]*aria-current=\"page\"");
     }
 
     /**

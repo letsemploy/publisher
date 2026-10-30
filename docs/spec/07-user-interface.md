@@ -78,19 +78,22 @@ A fixed left sidebar, a slim top bar and a content area — the conventional adm
 because the navigation is a flat set of destinations that must stay visible and reachable in one
 click while the user works down a long job list.
 
+The two bars divide by **what belongs to an employer**. The sidebar holds the employer being worked
+on and everything that belongs to it; the top bar holds what exists without one, and who you are.
+Mixed in one list, a user cannot tell which records go with an employer and which outlive it.
+
 ```
 ┌──────────────┬──────────────────────────────────────────────────┐
-│  ojobpub     │                      ▸ Employer ▾   ◻ User ▾     │  ← top bar
-│              ├──────────────────────────────────────────────────┤
+│  ojobpub     │ ◻ Employers ◻ Invitations ② ◻ Users    ◻ User ▾  │  ← top bar
+│ [Acme AG ▾]  ├──────────────────────────────────────────────────┤
 │ ◻ Dashboard  │  [page title]                    [primary action]│
 │ ◻ Jobs       ├──────────────────────────────────────────────────┤
 │ ◻ Feeds      │                                                  │
 │ ◻ People     │   page content                                   │
 │ ◻ Tokens  ⚿  │                                                  │
-│ ◻ Employers  │                                                  │
+│ ◻ Profile    │                                                  │
 │ ◻ Locations  │                                                  │
 │ ◻ Tags       │                                                  │
-│ ◻ Invites ②  │                                                  │
 │ ◻ Activity   │                                                  │
 └──────────────┴──────────────────────────────────────────────────┘
 ```
@@ -103,30 +106,33 @@ License 2.0) and the running version, from the build. The project address is con
 (`app.project-url`), so a fork points at its own repository. Nothing in it needs JavaScript, and it is
 left out when printing.
 
-**Sidebar** — navigation, and nothing else:
+**Sidebar** — the active employer (§2.5) and what belongs to it:
 
 - The product brand, linking to the dashboard.
-- The primary navigation: **Dashboard, Jobs, Feeds, People, API tokens, Employers, Locations, Tags,
-  Invitations, Activity, Users**, each with a Tabler icon and label. *Employers* is visible to everyone but only offers
-  create/delete to admins.
+- The **employer switcher**, first, as a select listing the user's employers — **shown even with only
+  one**, so the employer every screen below covers is always named. There is no "all employers"
+  choice. Choosing one switches at once; without JavaScript a button beside it does. Switching posts
+  to the server, which stores the choice in the session and redirects to the dashboard (§7.10). Not
+  back to the current screen: that may show a record of the employer just left, which the new scope
+  does not cover. A user with no employer at all sees **New employer** in its place.
+- The destinations of the active employer: **Dashboard, Jobs, Feeds, People, API tokens, Profile,
+  Locations, Tags, Activity**, each with a Tabler icon and label. **Profile** is the active employer's
+  own record (§7.13). With no employer the lists stay, showing how to get one; Profile is absent.
 - **People** (§7.18) covers the **active employer** (§2.5), which is why it sits beside Jobs and Feeds
   rather than under Employers: it answers "who am I working with here", the same scope those two
   answer. It is visible to every member, and what it offers depends on the membership role.
-- **API tokens** (§7.17) covers the active employer too, and is one of the **two entries whose
-  visibility depends on the role** — the other is Users (§7.20), for admins: owners and admins only, because holding the list is close to holding the
-  access. It is **absent** for a user with no employer at all, rather than showing an empty state as
-  People does — with no employer there is no ownership question to answer.
+- **API tokens** (§7.17) covers the active employer too, and its visibility **depends on the role**:
+  owners and admins only, because holding the list is close to holding the access. It is **absent**
+  for a user with no employer at all, rather than showing an empty state as People does — with no
+  employer there is no ownership question to answer.
+
+**Top bar** — what exists without an employer on the left, who you are on the right:
+
+- **Employers** (§7.13): every employer the user may see, and creating one.
 - **Invitations** (§7.16) carries a count badge when any are pending. It stays visible when there are
   none: a user with no employer memberships has nothing else to do, and an entry that disappears when
   empty cannot be found by someone who wants to check whether an invitation ever arrived.
-
-**Top bar** — everything about *context* rather than destination, right-aligned:
-
-- The **employer switcher** (§2.5), a dropdown showing the active employer's name and offering the
-  others. Hidden when the user has exactly one employer. There is no "all employers" choice. Switching posts to the
-  server, which stores the choice in the session and redirects to the dashboard (§7.10). Not back to
-  the current screen: that may show a record of the employer just left, which the new scope does not
-  cover.
+- **Users** (§7.20), for admins only — the other entry whose visibility depends on the role.
 - The **user menu**: the current user, shown by their picture or initials (§7.27), with *My activity*
   (§7.22), *Settings* (§7.26) and *Log out*.
   Language and theme are settings, chosen there and nowhere else; the signed-out pages (§7.19, §7.24)
@@ -134,21 +140,16 @@ left out when printing.
   For an admin it also offers *Switch to admin mode* or *Leave admin mode* (§2.10).
 - An **Admin mode** badge while admin mode is on, so it is never on unnoticed.
 
-These belong together and apart from the navigation: which employer am I working on, who am I, and how
-do I want the application presented. Keeping them in the top bar also keeps them in one fixed place on
-every screen, including the narrow layout where the sidebar collapses behind a toggle — a switcher that
-disappears with the navigation is a switcher you cannot reach.
-
-The sidebar **must** mark the active destination with `aria-current="page"` and a visual state, derived
+Both bars **must** mark the active destination with `aria-current="page"` and a visual state, derived
 from the request path on the server — never guessed in the browser.
 
 **Page header** — beneath the top bar, Tabler's `page-header`: the screen title, a breadcrumb where the
 screen is nested (feed → job), and the screen's primary action as a button on the right. Secondary
 actions live in an overflow dropdown, never as a row of competing buttons.
 
-**Responsive** — below the `lg` breakpoint the sidebar collapses behind a hamburger toggle. The top bar
-does not collapse, so the employer switcher and the user menu stay reachable; their labels shorten to
-icons on narrow screens rather than disappearing. Tables reflow per §7.6. The application must be usable
+**Responsive** — below the `lg` breakpoint the sidebar collapses behind a hamburger toggle, and the
+employer switcher with it, one tap away at the head of the menu. The top bar does not collapse; its
+labels shorten to icons on narrow screens rather than disappearing. Tables reflow per §7.6. The application must be usable
 at 360 px width.
 
 **Theme** — Tabler light and dark themes are both supported. The choice is stored server-side with the
@@ -174,7 +175,7 @@ These patterns are exhaustive: a new screen composes them rather than inventing 
 | **Inline add/remove** — feed membership, job tags, job locations | `hx-post`/`hx-delete` targeting the affected region only. |
 | **Tabs** | `hx-get` per tab into the panel region, with `hx-push-url` so a tab is linkable. |
 | **Flash messages** | Rendered by the server into a fixed `aria-live="polite"` region and delivered as an **out-of-band swap**, so any request can raise one without the caller knowing. |
-| **Dependent counters** — sidebar and dashboard badges | Out-of-band swaps on the responses that change them. Never polled. |
+| **Dependent counters** — top-bar and dashboard badges | Out-of-band swaps on the responses that change them. Never polled. |
 | **Confirmation dialogs** | `hx-get` fetches a server-rendered Tabler modal into a shared `#modal` container; the modal contains the real form. `hx-confirm` (the browser's `confirm()`) **must not** be used: it cannot be translated, styled, or made to state consequences. |
 | **Loading feedback** | `hx-indicator` on the affected region; Tabler spinner plus a dimmed region via the `htmx-request` class. No global spinner. |
 | **Validation** | The server re-renders the form fragment with errors. There is no client-side validation beyond native HTML attributes (`required`, `type`, `min`, `max`, `maxlength`), which cost nothing and work without JS. |
@@ -424,6 +425,9 @@ falls back to the first remaining (§2.5).
 
 **People** — §7.18. Reachable from here for any employer, and from the sidebar for the active one.
 
+**Where it is reached** (§7.3): the list from the top bar, since employers exist apart from any one of
+them; the active employer's detail from the sidebar, as **Profile**.
+
 ## 7.14 Locations
 
 The locations of the active employer (§2.5), with list, create, edit and delete, per §7.6 and §7.7.
@@ -578,7 +582,7 @@ form or buttons, and the language choice.
 
 ## 7.20 Users
 
-Everyone who has signed in, for **platform admins only**: a sidebar destination only they are offered,
+Everyone who has signed in, for **platform admins only**: a top-bar destination only they are offered,
 and a `404` for anyone else asking for it (§2.4). It lists each person's name, email, the identity
 provider they sign in with, their platform role, and how many employers they belong to. It is searchable
 by name or email, sorted by name, and paginated (§8.3).
@@ -587,7 +591,7 @@ Each ordinary user's row offers **View as** (§2.9). An admin's row, and the vie
 cannot be viewed as, rather than showing a disabled button.
 
 While viewing as someone, the actor *is* that user, not an admin, so this destination disappears from
-the sidebar. The banner's *Stop viewing* is the way back.
+the top bar. The banner's *Stop viewing* is the way back.
 
 Every row also links to that person's **activity** (§7.22), as they would see it.
 

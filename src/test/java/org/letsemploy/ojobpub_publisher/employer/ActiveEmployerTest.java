@@ -117,11 +117,13 @@ class ActiveEmployerTest {
         assertThat(activeEmployer(fresh)).as("resolved, and kept as the choice").isEqualTo(UUID.fromString(first));
         assertThat(mvc.perform(get("/locations/create").session(fresh))
                 .andReturn().getResponse().getContentAsString()).contains("0 First AG");
-        // The switcher, in the top bar (spec 7.3), offers the employers and nothing else.
-        assertThat(dashboard.indexOf("action=\"/context/employer\""))
-                .as("switcher after the sidebar").isGreaterThan(dashboard.indexOf("</aside>"));
+        // The switcher heads the sidebar (spec 7.3) and offers the employers, nothing else.
+        String sidebar = dashboard.substring(0, dashboard.indexOf("</aside>"));
+        assertThat(sidebar.indexOf("action=\"/context/employer\""))
+                .as("switcher before the destinations").isPositive()
+                .isLessThan(sidebar.indexOf("href=\"/jobs\""));
         assertThat(dashboard)
-                .containsPattern("dropdown-item active\"[^>]*>0 First AG<")
+                .containsPattern("<option value=\"" + first + "\" selected=\"selected\">0 First AG<")
                 .doesNotContain("All employers")
                 .doesNotContain("name=\"employerId\" value=\"\"");
     }
@@ -133,11 +135,13 @@ class ActiveEmployerTest {
         mvc.perform(post("/context/employer").session(session).param("employerId", ACME));
 
         assertThat(activeEmployer(session)).isEqualTo(UUID.fromString(ACME));
-        // The switcher marks it; every other employer is only a choice in the menu.
+        // The switcher selects it; every other employer is only a choice. The
+        // profile entry follows it.
         assertThat(mvc.perform(get("/").session(session))
                 .andReturn().getResponse().getContentAsString())
-                .containsPattern("dropdown-item active\"[^>]*>Acme AG<")
-                .doesNotContainPattern("dropdown-item active\"[^>]*>0 First AG<");
+                .containsPattern("<option value=\"" + ACME + "\" selected=\"selected\">Acme AG<")
+                .doesNotContainPattern("selected=\"selected\">0 First AG<")
+                .contains("href=\"/employers/" + ACME + "\"");
     }
 
     /** A choice the user can no longer see - left, removed, deleted - falls back to the first. */

@@ -67,35 +67,43 @@ public class UiContextFactory {
         Ref active = activeEmployer(employers);
 
         String path = request.getRequestURI();
+        // The sidebar holds what belongs to the active employer, and nothing else
+        // (spec 7.3): the switcher heads it, and every entry covers that employer.
+        String profile = active == null ? null : "/employers/" + active.id();
         List<NavItem> nav = new java.util.ArrayList<>(List.of(
                 new NavItem("layout-dashboard", "nav.dashboard", "/", path.equals("/")),
                 new NavItem("briefcase", "nav.jobs", "/jobs", path.startsWith("/jobs")),
                 new NavItem("rss", "nav.feeds", "/feeds", path.startsWith("/feeds")),
-                // Covers the active employer, like Jobs and Feeds above it, which
-                // is why it sits here and not under Employers (spec 7.3, 7.18).
-                new NavItem("users", "nav.people", "/people", path.startsWith("/people")),
-                new NavItem("building", "nav.employers", "/employers", path.startsWith("/employers")),
-                new NavItem("map-pin", "nav.locations", "/locations", path.startsWith("/locations")),
-                new NavItem("tag", "nav.tags", "/tags", path.startsWith("/tags")),
-                // Stays visible when empty: a user with no memberships has nothing
-                // else to do, and an entry that vanishes cannot be checked (spec 7.3).
-                new NavItem("mail", "nav.invitations", "/invitations",
-                        path.startsWith("/invitations")),
-                // The employers in scope, like the lists above it (spec 7.21); a
-                // person's own log is in the user menu instead.
-                new NavItem("history", "nav.activity", "/activity", path.equals("/activity"))));
-
-        // The one destination whose visibility depends on the role: holding the
+                new NavItem("users", "nav.people", "/people",
+                        path.startsWith("/people") || path.equals(profile + "/people"))));
+        // The one entry whose visibility depends on the membership role: holding the
         // token list is close to holding the access (spec 7.17). An employer is
         // active whenever the user has one; with none there is no role to check.
         if (active != null
                 && membershipService.canAdminister(user, UUID.fromString(active.id()))) {
-            nav.add(4, new NavItem("key", "nav.tokens", "/tokens", path.startsWith("/tokens")));
+            nav.add(new NavItem("key", "nav.tokens", "/tokens", path.startsWith("/tokens")));
         }
+        if (profile != null) {
+            nav.add(new NavItem("building-store", "nav.profile", profile,
+                    onProfile(path, profile)));
+        }
+        nav.add(new NavItem("map-pin", "nav.locations", "/locations", path.startsWith("/locations")));
+        nav.add(new NavItem("tag", "nav.tags", "/tags", path.startsWith("/tags")));
+        // The employer's log (spec 7.21); a person's own is in the user menu instead.
+        nav.add(new NavItem("history", "nav.activity", "/activity", path.equals("/activity")));
+
+        // What exists without an employer goes in the top bar (spec 7.3).
+        List<NavItem> top = new java.util.ArrayList<>(List.of(
+                new NavItem("building", "nav.employers", "/employers",
+                        path.startsWith("/employers") && !onProfile(path, profile)
+                                && !path.equals(profile + "/people")),
+                // Stays visible when empty: a user with no memberships has nothing
+                // else to do, and an entry that vanishes cannot be checked (spec 7.3).
+                new NavItem("mail", "nav.invitations", "/invitations", path.startsWith("/invitations"))));
         // Platform staff only (spec 7.20). While viewing as someone the actor is that
         // user, never an admin, so the entry is gone and the banner is the way back.
         if (user.isAdmin()) {
-            nav.add(new NavItem("user", "nav.users", "/users", path.startsWith("/users")));
+            top.add(new NavItem("user", "nav.users", "/users", path.startsWith("/users")));
         }
         UserEntity viewing = currentUserService.viewedUser().orElse(null);
 
@@ -106,7 +114,7 @@ public class UiContextFactory {
         return new UiContext(user.getDisplayName(), Avatar.of(pictureUrl, user.getDisplayName()), user.isAdmin(),
                 currentUserService.isDevMode(), employerContext.getTheme(),
                 active, employers.stream().map(e -> new Ref(e.getId().toString(), e.getName())).toList(),
-                nav, WebLangConfig.LANGUAGES, invitationService.countPendingFor(user),
+                nav, top, WebLangConfig.LANGUAGES, invitationService.countPendingFor(user),
                 version(), projectUrl,
                 viewing == null ? null : user.getDisplayName(),
                 viewing == null ? null : viewing.getEmail(),
@@ -119,11 +127,13 @@ public class UiContextFactory {
         return build == null ? "development" : build.getVersion();
     }
 
-    /**
-     * With exactly one employer the switcher is hidden and that employer is
-     * selected automatically (spec 2.5).
-     */
-    /** The same employer the screens cover (spec 2.5), so the top bar cannot name another. */
+    /** The active employer's own record and its edit and delete pages, not its People screen. */
+    private static boolean onProfile(String path, String profile) {
+        return profile != null && (path.equals(profile) || path.startsWith(profile + "/"))
+                && !path.equals(profile + "/people");
+    }
+
+    /** The same employer the screens cover (spec 2.5), so the switcher cannot name another. */
     private Ref activeEmployer(List<Employer> employers) {
         return employerContext.resolve(employers)
                 .map(e -> new Ref(e.getId().toString(), e.getName()))

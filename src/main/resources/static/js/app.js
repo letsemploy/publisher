@@ -17,6 +17,8 @@
     /** Reveal controls that only make sense once this module is running. */
     const revealEnhancedControls = (root = document) => {
         root.querySelectorAll('[data-enhanced]').forEach((el) => el.removeAttribute('hidden'));
+        // And the reverse: a fallback that this module makes unnecessary.
+        root.querySelectorAll('[data-without-js]').forEach((el) => el.setAttribute('hidden', ''));
         // Tabs (spec 7.23): until now every pane showed, for a page without JavaScript.
         root.querySelectorAll('[data-tabs]').forEach((el) => el.classList.add('tabs-enhanced'));
     };
@@ -152,6 +154,15 @@
         const tooBig = [...(input.files || [])].some((file) => file.size > Number(input.dataset.maxBytes));
         input.setCustomValidity(tooBig ? input.dataset.tooBig : '');
         input.reportValidity();
+    });
+
+    /**
+     * The employer switcher (spec 2.5, 7.3) switches as soon as one is chosen;
+     * without JavaScript its button does the same.
+     */
+    document.addEventListener('change', (event) => {
+        const select = event.target.closest('select[data-auto-submit]');
+        select?.form?.requestSubmit();
     });
 
     /**

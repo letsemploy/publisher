@@ -490,8 +490,8 @@ reading takes membership via `EmployerService.findVisible`, every write takes `r
 **One employer is always active** (§2.5); there is no "All employers". The session's
 `EmployerContext.activeEmployerId` is only a *choice* (null = none yet), and `EmployerContext.resolve`
 turns it into the active employer: the choice while still visible, else the first visible by name,
-written back so a stale choice heals itself. `Scope.activeEmployer()` and the top bar
-(`UiContextFactory`) both go through it, so they cannot disagree. `employers()`/`employerIds()` are
+written back so a stale choice heals itself. `Scope.activeEmployer()` and the switcher heading the
+sidebar (`UiContextFactory`) both go through it, so they cannot disagree. `employers()`/`employerIds()` are
 that one employer as a list; `requireActiveEmployer()` 404s only for a user with no employers, which
 is also the only case People and API tokens render their empty state. Clearing the choice (admin mode,
 viewing as, deleting the active employer) therefore means "back to the first", and lists never show an
@@ -499,7 +499,7 @@ employer column — only `/activity/all` does.
 
 **A GET resolves its actor once.** `CurrentUserService.realActor()` keeps its answer in a request
 attribute for GET and HEAD, while the `Authentication` and the admin-mode choice are the ones it was
-resolved from, and `Scope.visibleEmployers()` keeps that actor's employers; the top bar reads them
+resolved from, and `Scope.visibleEmployers()` keeps that actor's employers; the shell reads them
 through `Scope` too. A page went from four lookups of the user and memberships to one
 (`RequestQueryCountTest`). Every other method resolves afresh each time, because a POST may change who
 the actor is mid-request — accepting an invitation, creating an employer. So **a GET handler must never
@@ -868,16 +868,24 @@ For the same reason `OjobpubController` has its own `@ExceptionHandler` answerin
 `GlobalErrorHandler`'s HTML page. `FeedStatelessTest` asserts no answer of the feed opens a session;
 it once did on every fetch.
 
-Each controller supplies its own `page` (`PageMeta`); one that forgets it will not render. A new
-sidebar destination is added in `UiContextFactory` — there are eleven: Dashboard, Jobs, Feeds, People,
-API tokens, Employers, Locations, Tags, Invitations, Activity, Users. Its icon name lives in the `NavItem`, which the sprite
-scanner reads too.
+Each controller supplies its own `page` (`PageMeta`); one that forgets it will not render.
+
+**The two bars divide by what belongs to an employer** (§7.3), both built in `UiContextFactory` as
+`NavItem` lists, whose icon names the sprite scanner reads too:
+- **Sidebar** (`navItems`): the employer switcher first — a `<select>` posting to `/context/employer`,
+  shown even with one employer, submitted by `app.js` on change (`data-auto-submit`) and by a button
+  without JavaScript (`data-without-js`, which `app.js` hides) — then Dashboard, Jobs, Feeds, People,
+  API tokens, Profile (`/employers/{active}`), Locations, Tags, Activity. With no employer, "New
+  employer" replaces the switcher and Profile is absent.
+- **Top bar** (`topNavItems`): Employers, Invitations (with the pending badge), Users; the user menu on
+  the right. A new destination goes in whichever bar matches whether it belongs to an employer.
 
 **Two entries are role-conditional.** API tokens is added only when an employer is active *and* the
 actor administers it; Users only when the actor is a platform admin. Two consequences worth knowing: a nav item renders on every
 screen, so a missing `nav.*` key in either bundle fails the unresolved-key assertion for *every* path
 at once; and an unconditional `nav.add` passes every test except
 `PeopleScreenTest.anEditorIsNotOfferedApiTokensInTheSidebar`, which exists for that reason.
+`ScreenRenderingTest.theSidebarCoversTheEmployerAndTheTopBarTheRest` pins which bar each entry is in.
 
 Where a screen has an htmx fragment variant, it is a second `@GetMapping` on the **same** controller
 annotated `@HxRequest(boosted = false)` returning a fragment selector (`"tag/fragments/table :: table"`).

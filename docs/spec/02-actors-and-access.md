@@ -166,7 +166,7 @@ same applies to an action their **membership role** does not permit (§2.1).
 ## 2.5 Employer context
 
 Everyone with at least one employer works in the context of **exactly one active employer** at a time,
-chosen with a switcher in the top bar (§7.3). The active employer scopes every screen and is the
+chosen with a switcher heading the sidebar (§7.3). The active employer scopes every screen and is the
 employer of every record created. There is no "all employers" view; the one view across employers is
 an admin's *All activity* (§7.21), and the Employers list (§7.13) names them all.
 
@@ -179,8 +179,9 @@ an admin's *All activity* (§7.21), and the Employers list (§7.13) names them a
 - **A choice the user can no longer see falls back to the first** — after leaving an employer, being
   removed or suspended, or the employer being deleted elsewhere — rather than leaving every screen
   empty.
-- With a single employer the switcher is hidden. Only a user with no employers at all has no active
-  employer, and the employer-scoped screens then say how to get one.
+- The switcher is shown even with a single employer, so the employer the screens cover is always
+  named. Only a user with no employers at all has no active employer; the switcher then gives way to
+  creating one, and the employer-scoped screens say how to get one.
 - **Creating an employer makes it the active one.** Whoever creates it is about to fill it with
   locations, jobs and feeds, and would otherwise have to find it in the switcher first. Staying on the
   previous employer would also silently attach new rows to the wrong one. Editing an employer
@@ -234,7 +235,7 @@ see — and a silent no-op there would look like a bug.
 
 **Notification**
 
-The invitee sees pending invitations when they next sign in (§7.3 surfaces the count in the sidebar).
+The invitee sees pending invitations when they next sign in (§7.3 surfaces the count in the top bar).
 Where mail is configured (§9.5), they are also **mailed**, as a courtesy rather than the delivery:
 
 - **Once, when an invitation is created** — from the People screen or the API alike. Not when the

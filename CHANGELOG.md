@@ -10,6 +10,10 @@ Section numbers such as §5.6 refer to the specification in [`docs/SPEC.md`](doc
 
 ### Changed
 
+- The navigation now separates what belongs to an employer from what does not (§7.3). The sidebar
+  starts with a selection of the employer being worked on, shown even when there is only one, and
+  lists only that employer's screens, with a new **Profile** entry for the employer's own record.
+  Employers, Invitations and, for admins, Users moved to the top bar.
 - The front-end files (Tabler, htmx, the icon sprite, mCaptcha's glue) are no longer committed. The
   Maven build downloads a pinned Node, installs them from `package-lock.json` and packages them, so
   building from source needs network access to nodejs.org and the npm registry, but still no Node on

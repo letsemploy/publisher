@@ -67,6 +67,23 @@ class NoEmployerScreensTest {
                 .doesNotContain("href=\"" + list + "/create\"");
     }
 
+    /**
+     * With no employer the sidebar offers creating one where the switcher would be
+     * (spec 7.3), and nothing that needs an employer to point at.
+     */
+    @Test
+    void theSidebarOffersCreatingAnEmployerInPlaceOfTheSwitcher() throws Exception {
+        String html = render("/");
+        String sidebar = html.substring(0, html.indexOf("</aside>"));
+        assertThat(sidebar).contains("href=\"/employers/create\"")
+                .doesNotContain("/context/employer")
+                .doesNotContainPattern("href=\"/employers/[0-9a-f-]{36}\"")
+                .doesNotContain("href=\"/tokens\"")
+                .contains("href=\"/jobs\"");
+        // Invitations, the way in for a newcomer, is in the top bar.
+        assertThat(html.substring(html.indexOf("</aside>"))).contains("href=\"/invitations\"");
+    }
+
     /** The refusal itself is unchanged: the screens only stop offering it. */
     @ParameterizedTest
     @ValueSource(strings = {"/locations", "/tags", "/jobs", "/feeds"})

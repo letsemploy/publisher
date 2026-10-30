@@ -13,7 +13,10 @@ public record UiContext(
         String theme,
         Ref activeEmployer,
         List<Ref> employers,
+        /** The sidebar: what belongs to the active employer (spec 7.3). */
         List<NavItem> navItems,
+        /** The top bar: what exists without an employer (spec 7.3). */
+        List<NavItem> topNavItems,
         List<String> languages,
         /** Drives the sidebar badge; 0 hides it (spec 7.3). */
         long pendingInvitations,

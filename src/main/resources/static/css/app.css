@@ -80,6 +80,12 @@
     flex-shrink: 0;
 }
 
+/* The employer switcher heading the sidebar (spec 7.3), above its destinations. */
+.sidebar-employer {
+    width: 100%;
+    padding: 1rem .75rem 0;
+}
+
 /* Webserver configuration for a permalink (spec 7.23): sized by its rows, never wrapped. */
 .webserver-snippet {
     font-size: .8125rem;
