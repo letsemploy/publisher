@@ -292,7 +292,7 @@ public class JobController {
                 .map(e -> new FieldError(e.getKey(), e.getValue())).toList());
         model.addAttribute("tagChips", tagChips);
         model.addAttribute("locationChips", locationChips);
-        model.addAttribute("languages", Map.of("en", "English", "de", "Deutsch", "fr", "Francais"));
+        model.addAttribute("languages", Languages.options(LocaleContextHolder.getLocale()));
         model.addAttribute("jobTypeOptions", options("jobType.", JobType.values()));
         model.addAttribute("workTypeOptions", options("workType.", WorkType.values()));
         model.addAttribute("experienceOptions", options("experienceLevel.", ExperienceLevel.values()));

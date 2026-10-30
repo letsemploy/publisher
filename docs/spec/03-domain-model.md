@@ -67,7 +67,7 @@ A single open position.
 | `title` | string(1..255) | **yes** | |
 | `description` | string(0..1000) | no | plain text; the schema caps this at 1000 characters |
 | `url` | URL | **yes** | absolute `http(s)` URI of the full posting / application page |
-| `languageCode` | ISO 639-1 | **yes** | two lowercase letters, the language of *this posting's* text |
+| `languageCode` | ISO 639-1 | **yes** | two lowercase letters, a code ISO 639-1 assigns (withdrawn ones such as `iw` are refused); the language of *this posting's* text |
 | `referenceId` | string(0..255) | no | the employer's own identifier for the position |
 | `category` | string(0..255) | no | free text, e.g. *Engineering* |
 | `jobType` | enum | **yes** | `PERMANENT`, `CONTRACT`, `TEMPORARY`, `FREELANCE`, `VOLUNTEER`, `APPRENTICESHIP`, `INTERNSHIP` |

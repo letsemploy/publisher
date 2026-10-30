@@ -10,6 +10,9 @@ Section numbers such as §5.6 refer to the specification in [`docs/SPEC.md`](doc
 
 ### Changed
 
+- The job form offers every ISO 639-1 language, named in the reader's language and sorted by name,
+  instead of English, German and French. A code outside that list is refused, on the form and in the
+  management API, as an unknown job type already is (§3.3).
 - The screens run on htmx 4 and Tabler 1.7. A link or action whose answer is an error now shows the
   error page in place of the page, where before nothing happened.
 

@@ -186,7 +186,11 @@ public class JobService {
         job.setTitle(trim(form.getTitle()));
         job.setDescription(trim(form.getDescription()));
         job.setUrl(trim(form.getUrl()));
-        job.setLanguageCode(form.getLanguage() == null ? null : form.getLanguage().toLowerCase());
+        String language = form.getLanguage() == null ? null : form.getLanguage().trim().toLowerCase();
+        if (language != null && !language.isEmpty() && !Languages.isKnown(language)) {
+            throw new ValidationFailure("language", "Choose one of the listed values.");
+        }
+        job.setLanguageCode(language);
         job.setReferenceId(trim(form.getReferenceId()));
         job.setCategory(trim(form.getCategory()));
         job.setJobType(enumOf(JobType.class, form.getJobType(), "jobType"));

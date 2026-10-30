@@ -55,6 +55,35 @@ class JobInputTest {
                 .contains("value=\"Forged\"");
     }
 
+    /** Two letters are not enough: the code must be one ISO 639-1 assigns (spec 3.3). */
+    @Test
+    void anUnassignedLanguageIsAFieldError() throws Exception {
+        String body = mvc.perform(post("/jobs/create")
+                        .param("title", "Forged")
+                        .param("url", "https://www.acme.example/jobs/forged")
+                        .param("language", "zz")
+                        .param("jobType", "full_time"))
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString();
+        assertThat(body)
+                .contains("is-invalid")
+                .contains("Choose one of the listed values.")
+                .contains("value=\"Forged\"");
+    }
+
+    /** The form offers every language, named in the reader's own. */
+    @Test
+    void theFormOffersEveryLanguage() throws Exception {
+        String form = mvc.perform(get("/jobs/create").param("lang", "de"))
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString();
+        assertThat(form)
+                .contains("<option value=\"de\">Deutsch</option>")
+                .contains("<option value=\"zu\">Zulu</option>")
+                .contains("<option value=\"he\">Hebräisch</option>")
+                .doesNotContain("<option value=\"iw\"");
+    }
+
     @Test
     void anUnknownTargetStatusIsNotFound() throws Exception {
         mvc.perform(post("/jobs/" + JOB + "/status").param("to", "nonsense"))
