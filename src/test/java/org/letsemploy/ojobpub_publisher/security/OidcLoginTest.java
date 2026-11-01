@@ -5,6 +5,7 @@ import static org.springframework.security.test.web.servlet.request.SecurityMock
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.oidcLogin;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -250,6 +251,22 @@ class OidcLoginTest {
                 .startsWith(IDP + "/auth")
                 .contains("code_challenge=")
                 .contains("code_challenge_method=S256");
+    }
+
+    /**
+     * The user manual is public, opens no session, and is served under the same strict
+     * policy as every page (spec 7.29, 9.4); the sign-in page offers it in its language.
+     */
+    @Test
+    void theManualIsPublicUnderTheStrictPolicy() throws Exception {
+        var result = mvc.perform(get("/docs/en/index.html"))
+                .andExpect(status().isOk())
+                .andExpect(header().string("Content-Security-Policy",
+                        org.hamcrest.Matchers.containsString("script-src 'self'")))
+                .andReturn();
+        assertThat(result.getRequest().getSession(false)).isNull();
+        assertThat(page("/login")).contains("href=\"/docs?lang=en\"");
+        assertThat(page("/login?lang=de")).contains("href=\"/docs?lang=de\"").contains("Benutzerhandbuch");
     }
 
     /** Machines read the feed; it must never see a login page (spec 2.4). */

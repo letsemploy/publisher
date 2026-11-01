@@ -9,6 +9,7 @@ import org.letsemploy.ojobpub_publisher.common.exception.ValidationFailure;
 import org.letsemploy.ojobpub_publisher.employer.Employer;
 import org.letsemploy.ojobpub_publisher.employer.EmployerService;
 import org.letsemploy.ojobpub_publisher.invitation.InvitationService;
+import org.letsemploy.ojobpub_publisher.manual.ManualTopic;
 import org.letsemploy.ojobpub_publisher.user.PictureService;
 import org.letsemploy.ojobpub_publisher.web.Scope;
 import org.letsemploy.ojobpub_publisher.web.Views;
@@ -67,7 +68,7 @@ public class PeopleController {
     public String activeEmployerPeople(Model model) {
         Optional<Employer> active = scope.activeEmployer();
         if (active.isEmpty()) {
-            model.addAttribute("page", PageMeta.of(message("nav.people")));
+            model.addAttribute("page", PageMeta.of(message("nav.people")).help(ManualTopic.PEOPLE));
             model.addAttribute("people", null);
             return "membership/people";
         }
@@ -97,7 +98,7 @@ public class PeopleController {
         model.addAttribute("page", new PageMeta(message("employer.people.title"), employer.getName(),
                 List.of(new Crumb(message("nav.employers"), "/employers"),
                         new Crumb(employer.getName(), "/employers/" + employerId),
-                        new Crumb(message("employer.people.title"), null))));
+                        new Crumb(message("employer.people.title"), null))).help(ManualTopic.PEOPLE));
         model.addAttribute("people", new PeopleView(employerId.toString(), employer.getName(),
                 members, pending, canAdminister));
         model.addAttribute("email", email);

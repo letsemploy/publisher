@@ -45,7 +45,18 @@
                                 </li>
                             </ol>
                         </nav>
-                        <h1 class="page-title" id="main" tabindex="-1" th:text="${page.title}">Title</h1>
+                        <!-- The help icon opens this screen's section of the user manual (spec 7.29),
+                             in a new tab so a half-filled form is not lost, and not boosted: the
+                             manual is a page of its own. -->
+                        <div class="d-flex align-items-center gap-2">
+                            <h1 class="page-title" id="main" tabindex="-1" th:text="${page.title}">Title</h1>
+                            <a th:if="${page.help != null}" class="text-secondary" hx-boost="false"
+                               target="_blank" rel="noopener"
+                               th:href="@{${page.help.path(#locale)}}"
+                               th:title="#{manual.help}" th:aria-label="#{manual.help}">
+                                <svg th:replace="~{fragments/icon :: i('help','icon')}"></svg>
+                            </a>
+                        </div>
                         <div class="text-secondary mt-1" th:if="${page.subtitle != null}" th:text="${page.subtitle}"></div>
                     </div>
                     <div class="col-auto ms-auto d-print-none">

@@ -761,3 +761,28 @@ that a posting left its feeds. It is **off until chosen**, and sent only where m
   nothing to report, and nothing is claimed while no mail server is configured.
 - **Language.** The person's own (§7.26), else English; dates are calendar dates, and a token's expiry
   is the day in the person's time zone.
+
+## 7.29 User manual
+
+A manual for the people working in the back-office — owners and editors, not operators, whose
+documentation is the configuration examples (§9.5). It explains the screens and the rules behind them
+in the screens' own words, chapter by chapter: getting started, jobs and their states (§4), feeds and
+permalinks (§5.5), people and invitations, locations and tags, API tokens, the dashboard and the log,
+settings.
+
+- **Static, and shipped with the application.** It is built with the application (§9.1), so a
+  version's manual describes that version, and served at `/docs/`, needing nothing at run time.
+- **Public and stateless**, like the feed (§5.1): no sign-in, no session. It holds nothing an
+  installation does not already show its users, and a visitor deciding whether to sign up may read it.
+- **English and German.** `/docs` sends a visitor to the language the page linking to it shows, else
+  the browser's, else English, which stands in for every language the manual lacks. Each page links to
+  its counterpart in the other language, offered as a dropdown that works without JavaScript, and every
+  page exists in both.
+- **Reached from the user menu** (§7.3) and from the sign-in page (§7.19), in the language shown there.
+  It opens as a page of its own, not in the shell, and links back to the application.
+- **A help icon beside each screen's title** opens the manual's section on that screen, in the language
+  shown and in a new tab, so a half-filled form is not lost. Its label says what it opens and that a tab
+  opens. A section keeps its address when its heading is reworded or translated. Screens the manual
+  does not cover, such as the admins' Users, have none.
+- **The same rules as the screens** (§7.2, §9.4): the application's own Tabler styles and theme script,
+  no inline script or style, nothing from another origin, and the same policy.

@@ -5,6 +5,7 @@ import java.util.Map;
 import java.util.UUID;
 import org.letsemploy.ojobpub_publisher.common.exception.ValidationFailure;
 import org.letsemploy.ojobpub_publisher.employer.Employer;
+import org.letsemploy.ojobpub_publisher.manual.ManualTopic;
 import org.letsemploy.ojobpub_publisher.web.Scope;
 import org.letsemploy.ojobpub_publisher.web.view.*;
 import org.letsemploy.ojobpub_publisher.web.Views;
@@ -45,7 +46,7 @@ public class LocationController {
         List<LocationRow> rows = locationService.visibleTo(scope.employerIds()).stream()
                 .map(l -> views.locationRow(l, locationService.usageCount(l.getId())))
                 .toList();
-        model.addAttribute("page", PageMeta.of(message("nav.locations")));
+        model.addAttribute("page", PageMeta.of(message("nav.locations")).help(ManualTopic.LOCATIONS));
         model.addAttribute("locations", rows);
         return "location/list";
     }
@@ -55,7 +56,7 @@ public class LocationController {
         Employer employer = scope.requireActiveEmployer();
         model.addAttribute("page", new PageMeta(message("location.create"), employer.getName(),
                 List.of(new Crumb(message("nav.locations"), "/locations"),
-                        new Crumb(message("location.create"), null))));
+                        new Crumb(message("location.create"), null))).help(ManualTopic.LOCATIONS));
         formModel(model, new LocationFormView(null, null, null), Map.of());
         return "location/form";
     }
@@ -65,7 +66,7 @@ public class LocationController {
         Location location = locationService.findVisible(id, scope.user());
         model.addAttribute("page", new PageMeta(message("location.edit"), location.getEmployer().getName(),
                 List.of(new Crumb(message("nav.locations"), "/locations"),
-                        new Crumb(location.getLabel(), null))));
+                        new Crumb(location.getLabel(), null))).help(ManualTopic.LOCATIONS));
         formModel(model, new LocationFormView(location.getId().toString(), location.getCity(),
                 location.getCountryCode()), Map.of());
         return "location/form";
@@ -86,7 +87,7 @@ public class LocationController {
             return "redirect:/locations";
         } catch (ValidationFailure e) {
             model.addAttribute("page", PageMeta.of(
-                    id == null ? message("location.create") : message("location.edit")));
+                    id == null ? message("location.create") : message("location.edit")).help(ManualTopic.LOCATIONS));
             formModel(model, new LocationFormView(id == null ? null : id.toString(), city, country),
                     e.getFieldErrors());
             return "location/form";

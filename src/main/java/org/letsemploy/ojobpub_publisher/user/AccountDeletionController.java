@@ -4,6 +4,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.letsemploy.ojobpub_publisher.common.exception.NotFoundException;
 import org.letsemploy.ojobpub_publisher.common.exception.ValidationFailure;
+import org.letsemploy.ojobpub_publisher.manual.ManualTopic;
 import org.letsemploy.ojobpub_publisher.security.Actor;
 import org.letsemploy.ojobpub_publisher.security.CurrentUserService;
 import org.letsemploy.ojobpub_publisher.web.view.PageMeta;
@@ -65,7 +66,7 @@ public class AccountDeletionController {
 
     private String page(Actor actor, boolean mismatch, Model model) {
         model.addAttribute("page", PageMeta.of(messages.getMessage("account.delete.title", null,
-                LocaleContextHolder.getLocale())));
+                LocaleContextHolder.getLocale())).help(ManualTopic.ACCOUNT));
         model.addAttribute("deletion", service.preview(actor));
         model.addAttribute("mismatch", mismatch);
         return "user/delete-account";

@@ -11,6 +11,7 @@ import org.letsemploy.ojobpub_publisher.job.JobService;
 import org.letsemploy.ojobpub_publisher.location.Countries;
 import org.letsemploy.ojobpub_publisher.location.Location;
 import org.letsemploy.ojobpub_publisher.location.LocationService;
+import org.letsemploy.ojobpub_publisher.manual.ManualTopic;
 import org.letsemploy.ojobpub_publisher.membership.MembershipService;
 import org.letsemploy.ojobpub_publisher.web.view.*;
 import org.letsemploy.ojobpub_publisher.token.ServiceTokenService;
@@ -73,7 +74,7 @@ public class EmployerController {
                         jobService.findByEmployer(e.getId()).size(),
                         feedService.findByEmployer(e.getId()).size()))
                 .toList();
-        model.addAttribute("page", PageMeta.of(message("nav.employers")));
+        model.addAttribute("page", PageMeta.of(message("nav.employers")).help(ManualTopic.EMPLOYERS));
         model.addAttribute("employers",
                 new PageView<>(rows, result.getNumber(), 20, result.getTotalElements(), "/employers"));
         return "employer/list";
@@ -84,7 +85,7 @@ public class EmployerController {
         Employer employer = employerService.findVisible(id, scope.user());
         model.addAttribute("page", new PageMeta(employer.getName(), null,
                 List.of(new Crumb(message("nav.employers"), "/employers"),
-                        new Crumb(employer.getName(), null))));
+                        new Crumb(employer.getName(), null))).help(ManualTopic.PROFILE));
         model.addAttribute("employer", views.employerRow(employer,
                 jobService.findByEmployer(id).size(), feedService.findByEmployer(id).size()));
         // Owners and admins may edit the record and manage people (spec 2.1).
@@ -96,7 +97,7 @@ public class EmployerController {
     public String createForm(Model model) {
         model.addAttribute("page", new PageMeta(message("employer.create"), null,
                 List.of(new Crumb(message("nav.employers"), "/employers"),
-                        new Crumb(message("employer.create"), null))));
+                        new Crumb(message("employer.create"), null))).help(ManualTopic.EMPLOYERS));
         formModel(model, new EmployerFormView(null, null, null, null, null, null, null, null), Map.of());
         return "employer/form";
     }
@@ -107,7 +108,7 @@ public class EmployerController {
         Employer employer = employerService.findVisible(id, scope.user());
         model.addAttribute("page", new PageMeta(message("employer.edit"), null,
                 List.of(new Crumb(message("nav.employers"), "/employers"),
-                        new Crumb(employer.getName(), "/employers/" + id))));
+                        new Crumb(employer.getName(), "/employers/" + id))).help(ManualTopic.PROFILE));
         formModel(model, new EmployerFormView(employer.getId().toString(), employer.getName(),
                 employer.getSlug(), employer.getUrl(), employer.getIndustry(),
                 employer.getHeadquarters() == null ? null : employer.getHeadquarters().getId().toString(),
@@ -145,7 +146,8 @@ public class EmployerController {
             return "redirect:/employers/" + saved.getId();
         } catch (ValidationFailure e) {
             model.addAttribute("page", PageMeta.of(
-                    id == null ? message("employer.create") : message("employer.edit")));
+                    id == null ? message("employer.create") : message("employer.edit"))
+                    .help(id == null ? ManualTopic.EMPLOYERS : ManualTopic.PROFILE));
             formModel(model, new EmployerFormView(id == null ? null : id.toString(),
                     name, slug, url, industry, headquarters, hqCity, hqCountry), e.getFieldErrors());
             return "employer/form";

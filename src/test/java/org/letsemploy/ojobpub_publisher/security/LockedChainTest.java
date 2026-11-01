@@ -45,5 +45,8 @@ class LockedChainTest {
     void theFeedAndHealthStayAvailable() throws Exception {
         mvc.perform(get(FEED)).andExpect(status().isOk());
         mvc.perform(get("/actuator/health")).andExpect(status().isOk());
+        // The user manual is public (spec 7.29), so it stays readable with nobody able to sign in.
+        mvc.perform(get("/docs/en/index.html")).andExpect(status().isOk());
+        mvc.perform(get("/docs")).andExpect(status().isFound());
     }
 }

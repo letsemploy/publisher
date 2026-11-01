@@ -1,0 +1,19 @@
+{{- /*
+  The language choice, as a dropdown. A <details>, not Tabler's script-driven dropdown, so it opens
+  without JavaScript and the manual loads no script but the theme's. Every page exists in both
+  languages (ManualTest), so each entry is this page's counterpart.
+*/ -}}
+<details class="dropdown lang-menu">
+  <summary class="nav-link dropdown-toggle" aria-label="{{ i18n "language" }}: {{ site.Language.Label }}">
+    {{ site.Language.Label }}
+  </summary>
+  <div class="dropdown-menu dropdown-menu-end">
+    {{ range .AllTranslations }}
+      {{ if eq .Language.Lang $.Language.Lang }}
+        <span class="dropdown-item active" aria-current="true">{{ .Language.Label }}</span>
+      {{ else }}
+        <a class="dropdown-item" href="{{ .RelPermalink }}" hreflang="{{ .Language.Lang }}" lang="{{ .Language.Lang }}">{{ .Language.Label }}</a>
+      {{ end }}
+    {{ end }}
+  </div>
+</details>

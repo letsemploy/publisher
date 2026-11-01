@@ -9,6 +9,7 @@ import org.letsemploy.ojobpub_publisher.common.exception.NotFoundException;
 import org.letsemploy.ojobpub_publisher.common.exception.ValidationFailure;
 import org.letsemploy.ojobpub_publisher.config.WebLangConfig;
 import org.letsemploy.ojobpub_publisher.mail.Mailer;
+import org.letsemploy.ojobpub_publisher.manual.ManualTopic;
 import org.letsemploy.ojobpub_publisher.security.Actor;
 import org.letsemploy.ojobpub_publisher.security.CurrentUserService;
 import org.letsemploy.ojobpub_publisher.security.UserEntity;
@@ -95,7 +96,7 @@ public class SettingsController {
     private String page(Model model, UserEntity user, String language, String theme, String timeZone,
                         boolean mailInvitations, boolean mailSummary, String name,
                         Map<String, String> fieldErrors) {
-        model.addAttribute("page", PageMeta.of(message("settings.title")));
+        model.addAttribute("page", PageMeta.of(message("settings.title")).help(ManualTopic.SETTINGS));
         model.addAttribute("settings", new SettingsView(language, theme == null ? "auto" : theme, timeZone,
                 mailInvitations, mailSummary, name, user.getEmail(),
                 Avatar.of(pictures.urlFor(user.getId()).orElse(null), user.getLabel()),

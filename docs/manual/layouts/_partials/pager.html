@@ -1,0 +1,7 @@
+{{ if .IsPage }}
+<nav class="d-flex justify-content-between mt-3" aria-label="{{ i18n "pager" }}">
+  {{ $pages := site.RegularPages.ByWeight }}
+  <span>{{ with $pages.Prev . }}<a href="{{ .RelPermalink }}">← {{ .Title }}</a>{{ end }}</span>
+  <span>{{ with $pages.Next . }}<a href="{{ .RelPermalink }}">{{ .Title }} →</a>{{ end }}</span>
+</nav>
+{{ end }}

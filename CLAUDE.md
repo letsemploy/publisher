@@ -109,7 +109,8 @@ measure is worth:
 ### Package by feature
 
 `employer`, `job`, `location`, `tag`, `feed`, `invitation`, `membership`, `token`, `user`, `audit`,
-`account` (local accounts), `click` (job links and their counters), `summary` (the weekly mail) — each
+`account` (local accounts), `click` (job links and their counters), `summary` (the weekly mail),
+`manual` (the user manual's `/docs` entry) — each
 owns its entity, repository, service, form objects and controllers. Plus `common` (shared base types, slugs,
 exceptions), `config` (beans), `mail` (outbound mail), `security` (actors, roles, filter chains), `web` (shell context, view
 models, error handling), `ojobpub/v1` (the published contract) and `api` (the GraphQL management API).
@@ -810,6 +811,34 @@ i('name')`) *and* the Java (`new NavItem("name", …)` — the sidebar's icon na
 template). Miss the second source and the nav icons vanish;
 `ScreenRenderingTest.theBuildInstallsTheFrontEndFiles` checks one is there.
 
+### User manual (`docs/manual/`, §7.29)
+
+A Hugo site, English and German, built by the same `frontend-maven-plugin` run: `hugo-extended` is
+pinned in `package.json` (its postinstall fetches the binary, allowed by `allowScripts`), and the
+`build-manual` execution runs `npm run manual -- target/classes/static/docs`. Nothing generated is
+committed. Preview with `npx hugo server --source docs/manual`.
+
+- **Served as static files at `/docs/**`**, public (`SecurityConfig.PUBLIC`) and excluded from the
+  interceptors in `WebLangConfig`, so it opens no session. `/docs` itself is
+  `manual/ManualHandler`, a functional route like `JobLinkHandler`, for the same reason: `?lang=` from
+  the app's links (user menu, sign-in page), else `Accept-Language`, else English.
+- **Pages stay flat at `/docs/{lang}/{page}.html`.** The layout loads the app's own Tabler and
+  `theme.js` as `../../vendor/…`, which holds only at that depth. No sections, no nesting.
+- **`baseURL = "/"`, not `"/docs/"`**: `relativeURLs` counts from the output root, and a path in
+  `baseURL` is counted twice (`../docs/en/…`).
+- **No theme, no inline script or style, no highlighter** (`codeFences = false`: Chroma writes style
+  attributes), because the strict CSP applies. `ManualTest` scans the build output for all of that,
+  follows every link and asset, and requires each page in both languages; a new page needs its
+  counterpart. Use the screens' wording from the bundles (German: Swiss spelling, "Sie").
+- **Help icons** (§7.29): a controller adds `.help(ManualTopic.X)` to its `PageMeta`, and `layout.html`
+  renders the icon beside the title. `ManualTopic` is page + heading id. The ids are written into
+  the Markdown (`## Creating a job {#create}`), **identical in both languages**, so a reworded or
+  translated heading keeps its link. Removing or renaming an id fails
+  `ManualTest.everyHelpTopicExistsInEveryLanguage`. A new screen picks a topic, or a new section
+  gets one.
+- The language choice is a `<details>` dropdown (`manual.css`), so the manual loads no script but
+  `theme.js`.
+
 **Dependabot** groups npm **patches** only and `dependabot-automerge.yml` auto-merges those; an npm
 minor arrives as its own PR for review, since a Tabler minor can change how the screens look. Other
 ecosystems auto-merge minor and patch.
@@ -993,6 +1022,7 @@ TEST_DB=sqlite ./mvnw test                   # all, on SQLite; no server
 ./mvnw test -Dtest=PictureScreenTest         # Settings upload, served from here, People and Users
 ./mvnw test -Dtest=WeeklySummaryTest         # what one employer's summary says, and when it is empty; no Spring
 ./mvnw test -Dtest=WeeklySummaryMailTest     # the weekly mail: who gets one, in which language, once a week
+./mvnw test -Dtest=ManualTest                # the user manual: both languages, strict-CSP markup, links resolve, no session
 make assets                                  # rebuild target/classes/static/vendor (Maven fetches Node)
 ```
 

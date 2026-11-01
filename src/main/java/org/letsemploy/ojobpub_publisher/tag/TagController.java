@@ -4,6 +4,7 @@ import io.github.wimdeblauwe.htmx.spring.boot.mvc.HxRequest;
 import java.util.List;
 import java.util.Map;
 import org.letsemploy.ojobpub_publisher.common.exception.ValidationFailure;
+import org.letsemploy.ojobpub_publisher.manual.ManualTopic;
 import org.letsemploy.ojobpub_publisher.web.view.*;
 import org.letsemploy.ojobpub_publisher.web.Scope;
 import org.letsemploy.ojobpub_publisher.web.Views;
@@ -38,7 +39,7 @@ public class TagController {
     @GetMapping
     public String list(Model model, @RequestParam(required = false) String q) {
         populate(model, q);
-        model.addAttribute("page", PageMeta.of(message("nav.tags")));
+        model.addAttribute("page", PageMeta.of(message("nav.tags")).help(ManualTopic.TAGS));
         return "tag/list";
     }
 
@@ -61,7 +62,7 @@ public class TagController {
     public String createForm(Model model) {
         model.addAttribute("page", new PageMeta(message("tag.create"), scope.requireActiveEmployer().getName(),
                 List.of(new Crumb(message("nav.tags"), "/tags"),
-                        new Crumb(message("tag.create"), null))));
+                        new Crumb(message("tag.create"), null))).help(ManualTopic.TAGS));
         formModel(model, new TagFormView(null, null), Map.of());
         return "tag/form";
     }
@@ -70,7 +71,7 @@ public class TagController {
     public String editForm(@PathVariable Long id, Model model) {
         Tag tag = tagService.findVisible(id, scope.user());
         model.addAttribute("page", new PageMeta(message("tag.edit"), tag.getEmployer().getName(),
-                List.of(new Crumb(message("nav.tags"), "/tags"), new Crumb(tag.getName(), null))));
+                List.of(new Crumb(message("nav.tags"), "/tags"), new Crumb(tag.getName(), null))).help(ManualTopic.TAGS));
         formModel(model, new TagFormView(String.valueOf(tag.getId()), tag.getName()), Map.of());
         return "tag/form";
     }
@@ -88,7 +89,7 @@ public class TagController {
             return "redirect:/tags";
         } catch (ValidationFailure e) {
             model.addAttribute("page", PageMeta.of(
-                    id == null ? message("tag.create") : message("tag.edit")));
+                    id == null ? message("tag.create") : message("tag.edit")).help(ManualTopic.TAGS));
             formModel(model, new TagFormView(id == null ? null : String.valueOf(id), name),
                     e.getFieldErrors());
             return "tag/form";

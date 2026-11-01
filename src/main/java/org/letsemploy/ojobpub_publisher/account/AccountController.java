@@ -10,6 +10,7 @@ import java.util.Map;
 import org.letsemploy.ojobpub_publisher.config.WebLangConfig;
 import org.letsemploy.ojobpub_publisher.common.exception.NotFoundException;
 import org.letsemploy.ojobpub_publisher.common.exception.ValidationFailure;
+import org.letsemploy.ojobpub_publisher.manual.ManualTopic;
 import org.letsemploy.ojobpub_publisher.security.CurrentUserService;
 import org.letsemploy.ojobpub_publisher.web.view.FieldError;
 import org.letsemploy.ojobpub_publisher.web.view.PageMeta;
@@ -191,7 +192,7 @@ public class AccountController {
     @GetMapping("/account/password")
     public String password(Model model) {
         LocalUser user = localUser();
-        model.addAttribute("page", PageMeta.of(message("account.password.title")));
+        model.addAttribute("page", PageMeta.of(message("account.password.title")).help(ManualTopic.ACCOUNT));
         model.addAttribute("email", user.getEmail());
         return "account/password";
     }
@@ -204,7 +205,7 @@ public class AccountController {
         try {
             changed = service.changePassword(user.getId(), form, currentUserService.current());
         } catch (ValidationFailure e) {
-            model.addAttribute("page", PageMeta.of(message("account.password.title")));
+            model.addAttribute("page", PageMeta.of(message("account.password.title")).help(ManualTopic.ACCOUNT));
             model.addAttribute("email", user.getEmail());
             errors(model, e);
             return "account/password";

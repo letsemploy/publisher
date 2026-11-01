@@ -63,7 +63,9 @@ public class SecurityConfig {
 
     private static final String[] PUBLIC = {
             "/ojobpub/**", "/go/**", "/graphql/schema", "/actuator/health/**", "/actuator/info",
-            "/css/**", "/js/**", "/vendor/**", "/images/**", "/favicon.ico", "/error"
+            "/css/**", "/js/**", "/vendor/**", "/images/**", "/favicon.ico", "/error",
+            // The user manual (spec 7.29): static, public, under the same strict policy.
+            "/docs", "/docs/**"
     };
 
     /**

@@ -126,6 +126,11 @@
                 <span th:unless="${it.last}" aria-hidden="true"> · </span>
             </th:block>
         </nav>
+        <!-- The user manual is public (spec 7.29), so it is offered before signing in too. -->
+        <p class="text-center mt-2 mb-0">
+            <a class="text-secondary" hx-boost="false" th:href="@{/docs(lang=${#locale.language})}"
+               th:text="#{manual.link}">User manual</a>
+        </p>
     </main>
 </div>
 </body>

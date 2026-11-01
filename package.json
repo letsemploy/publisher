@@ -2,14 +2,19 @@
   "name": "ojobpub-publisher-assets",
   "version": "0.0.0",
   "private": true,
-  "description": "Front-end dependencies for the ojobpub publisher (spec 7.2, 9.1). The Maven build installs them with a Node it fetches itself and copies the dist files into target/classes/static/vendor; nothing is committed.",
+  "description": "Front-end dependencies for the ojobpub publisher (spec 7.2, 7.29, 9.1). The Maven build installs them with a Node it fetches itself, copies the dist files into target/classes/static/vendor and builds the user manual into target/classes/static/docs; nothing is committed.",
   "scripts": {
-    "vendor": "node scripts/vendor-assets.mjs"
+    "vendor": "node scripts/vendor-assets.mjs",
+    "manual": "hugo --source docs/manual --minify --cleanDestinationDir --destination"
   },
   "dependencies": {
     "@mcaptcha/vanilla-glue": "0.1.0-rc2",
     "@tabler/core": "1.7.3",
     "@tabler/icons": "3.50.0",
-    "htmx.org": "4.0.0"
+    "htmx.org": "4.0.0",
+    "hugo-extended": "0.168.0"
+  },
+  "allowScripts": {
+    "hugo-extended": true
   }
 }

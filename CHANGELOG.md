@@ -8,6 +8,12 @@ Section numbers such as §5.6 refer to the specification in [`docs/SPEC.md`](doc
 
 ## [Unreleased]
 
+### Added
+
+- A user manual, in English and German, at `/docs` (§7.29). It is public, built with the application,
+  and linked from the user menu and the sign-in page. A help icon beside each screen's title opens
+  the manual's section on that screen.
+
 ## [1.6.0] - 2026-10-30
 
 ### Changed

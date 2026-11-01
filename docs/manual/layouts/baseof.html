@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+{{- /*
+  The manual's one page shell (spec 7.29). Every page is at /docs/{lang}/{page}.html, so the
+  application's own files are always ../../ away; nothing is copied into the manual.
+  No inline script, no style attribute, no external URL: the CSP of spec 9.4 applies here too.
+*/ -}}
+<html lang="{{ site.Language.Locale }}" data-bs-theme="auto" data-bs-theme-base="gray">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>{{ if not .IsHome }}{{ .Title }} · {{ end }}{{ i18n "manual" }} · {{ site.Title }}</title>
+  <link rel="icon" type="image/svg+xml" href="../../images/logo.svg">
+  <link rel="stylesheet" href="../../vendor/tabler.min.css">
+  <link rel="stylesheet" href="../../vendor/tabler-themes.min.css">
+  <script src="../../js/theme.js"></script>
+  <link rel="stylesheet" href="../manual.css">
+</head>
+<body>
+<a class="visually-hidden-focusable" href="#content">{{ i18n "skip" }}</a>
+<div class="page">
+  <header class="navbar navbar-expand-md d-print-none">
+    <div class="container-xl">
+      <a class="navbar-brand" href="{{ site.Home.RelPermalink }}">
+        <img src="../../images/logo.svg" width="32" height="32" alt="" class="me-2">
+        {{ site.Title }} <span class="text-secondary ms-1">{{ i18n "manual" }}</span>
+      </a>
+      <div class="navbar-nav flex-row ms-auto align-items-center gap-3">
+        {{ partial "languages.html" . }}
+        <a class="nav-link" href="../../">{{ i18n "toApp" }}</a>
+      </div>
+    </div>
+  </header>
+  <div class="page-wrapper">
+    <div class="container-xl py-4">
+      <div class="row g-4">
+        <nav class="col-md-3" aria-label="{{ i18n "contents" }}">
+          {{ partial "nav.html" . }}
+        </nav>
+        <main class="col-md-9" id="content">
+          <article class="card">
+            <div class="card-body markdown">
+              <h1>{{ .Title }}</h1>
+              {{ block "main" . }}{{ .Content }}{{ end }}
+            </div>
+          </article>
+          {{ partial "pager.html" . }}
+        </main>
+      </div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

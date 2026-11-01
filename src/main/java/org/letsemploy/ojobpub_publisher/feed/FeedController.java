@@ -10,6 +10,7 @@ import org.letsemploy.ojobpub_publisher.employer.Employer;
 import org.letsemploy.ojobpub_publisher.job.Job;
 import org.letsemploy.ojobpub_publisher.job.JobService;
 import org.letsemploy.ojobpub_publisher.job.Publication;
+import org.letsemploy.ojobpub_publisher.manual.ManualTopic;
 import org.letsemploy.ojobpub_publisher.ojobpub.v1.service.OjobpubJson;
 import org.letsemploy.ojobpub_publisher.ojobpub.v1.service.OjobpubService;
 import org.letsemploy.ojobpub_publisher.ojobpub.v1.service.OjobpubValidator;
@@ -76,7 +77,7 @@ public class FeedController {
                 rows.add(views.feedRow(loaded, published, loaded.getJobs().size() - published));
             }
         }
-        model.addAttribute("page", PageMeta.of(message("nav.feeds")));
+        model.addAttribute("page", PageMeta.of(message("nav.feeds")).help(ManualTopic.FEEDS));
         model.addAttribute("feeds", rows);
         model.addAttribute("permalinks", permalinks);
         return "feed/list";
@@ -90,7 +91,7 @@ public class FeedController {
         model.addAttribute("permalinks", permalinkService.pointingAt(id).stream()
                 .map(p -> views.permalinkRow(p, List.of())).toList());
         model.addAttribute("page", new PageMeta(feed.getName(), null,
-                List.of(new Crumb(message("nav.feeds"), "/feeds"), new Crumb(feed.getName(), null))));
+                List.of(new Crumb(message("nav.feeds"), "/feeds"), new Crumb(feed.getName(), null))).help(ManualTopic.FEEDS));
         return "feed/detail";
     }
 
@@ -151,7 +152,7 @@ public class FeedController {
         Employer employer = scope.requireActiveEmployer();
         model.addAttribute("page", new PageMeta(message("feed.create"), null,
                 List.of(new Crumb(message("nav.feeds"), "/feeds"),
-                        new Crumb(message("feed.create"), null))));
+                        new Crumb(message("feed.create"), null))).help(ManualTopic.FEEDS));
         model.addAttribute("form", new FeedFormView(null, null, null, null,
                 views.feedUrl(previewFeed(employer, "new-feed"))));
         model.addAttribute("errors", List.of());
@@ -172,7 +173,7 @@ public class FeedController {
         Feed feed = feedService.findVisible(id, scope.user());
         model.addAttribute("page", new PageMeta(message("feed.edit"), null,
                 List.of(new Crumb(message("nav.feeds"), "/feeds"),
-                        new Crumb(feed.getName(), "/feeds/" + id))));
+                        new Crumb(feed.getName(), "/feeds/" + id))).help(ManualTopic.FEEDS));
         model.addAttribute("form", new FeedFormView(feed.getId().toString(), feed.getName(),
                 feed.getSlug(), feed.getDescription(), views.feedUrl(feed)));
         model.addAttribute("errors", List.of());
@@ -195,7 +196,7 @@ public class FeedController {
             return "redirect:/feeds/" + saved.getId();
         } catch (ValidationFailure e) {
             model.addAttribute("page", PageMeta.of(
-                    id == null ? message("feed.create") : message("feed.edit")));
+                    id == null ? message("feed.create") : message("feed.edit")).help(ManualTopic.FEEDS));
             model.addAttribute("form", new FeedFormView(id == null ? null : id.toString(),
                     name, slug, description, views.feedUrl(previewFeed(employer,
                     org.letsemploy.ojobpub_publisher.common.Slugs.slugify(

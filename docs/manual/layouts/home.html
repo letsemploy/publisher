@@ -1,0 +1,12 @@
+{{ define "main" }}
+{{ .Content }}
+<h2>{{ i18n "contents" }}</h2>
+<div class="list-group">
+  {{ range site.RegularPages.ByWeight }}
+  <a class="list-group-item list-group-item-action" href="{{ .RelPermalink }}">
+    <strong>{{ .Title }}</strong>
+    {{ with .Description }}<div class="text-secondary">{{ . }}</div>{{ end }}
+  </a>
+  {{ end }}
+</div>
+{{ end }}

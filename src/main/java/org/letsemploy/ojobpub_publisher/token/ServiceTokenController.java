@@ -9,6 +9,7 @@ import org.letsemploy.ojobpub_publisher.common.exception.NotFoundException;
 import org.letsemploy.ojobpub_publisher.common.exception.ValidationFailure;
 import org.letsemploy.ojobpub_publisher.employer.Employer;
 import org.letsemploy.ojobpub_publisher.employer.EmployerService;
+import org.letsemploy.ojobpub_publisher.manual.ManualTopic;
 import org.letsemploy.ojobpub_publisher.membership.MembershipRole;
 import org.letsemploy.ojobpub_publisher.membership.MembershipService;
 import org.letsemploy.ojobpub_publisher.web.Scope;
@@ -61,7 +62,7 @@ public class ServiceTokenController {
         java.util.Optional<org.letsemploy.ojobpub_publisher.employer.Employer> active =
                 scope.activeEmployer();
         if (active.isEmpty()) {
-            model.addAttribute("page", PageMeta.of(message("token.title")));
+            model.addAttribute("page", PageMeta.of(message("token.title")).help(ManualTopic.TOKENS));
             model.addAttribute("tokens", null);
             return "token/list";
         }
@@ -84,7 +85,7 @@ public class ServiceTokenController {
         model.addAttribute("page", new PageMeta(message("token.title"), employer.getName(),
                 List.of(new Crumb(message("nav.employers"), "/employers"),
                         new Crumb(employer.getName(), "/employers/" + employerId),
-                        new Crumb(message("token.title"), null))));
+                        new Crumb(message("token.title"), null))).help(ManualTopic.TOKENS));
         model.addAttribute("employerId", employerId.toString());
         model.addAttribute("employerName", employer.getName());
         model.addAttribute("tokens", tokens);

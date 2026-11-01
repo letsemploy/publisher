@@ -20,7 +20,7 @@ public class WebLangConfig implements WebMvcConfigurer {
     /** Neither the public URLs (spec 5.1, 5.6) nor static files are anybody's. */
     private static final String[] UNPERSONAL = {
             "/ojobpub/**", "/go/**", "/css/**", "/js/**", "/vendor/**", "/images/**", "/favicon.ico",
-            "/actuator/**", "/graphql", "/graphql/schema"
+            "/actuator/**", "/graphql", "/graphql/schema", "/docs", "/docs/**"
     };
 
     private final UserPreferencesInterceptor userPreferences;
@@ -49,6 +49,7 @@ public class WebLangConfig implements WebMvcConfigurer {
         // ?lang, which the signed-out pages offer - sign-in and the account screens
         // (spec 7.19, 7.24) - and which lasts the session; the public URLs have none.
         registry.addInterceptor(userPreferences).excludePathPatterns(UNPERSONAL);
-        registry.addInterceptor(localeChangeInterceptor()).excludePathPatterns("/ojobpub/**", "/go/**", "/graphql/schema");
+        registry.addInterceptor(localeChangeInterceptor()).excludePathPatterns(
+                "/ojobpub/**", "/go/**", "/graphql/schema", "/docs", "/docs/**");
     }
 }

@@ -13,6 +13,7 @@ import org.letsemploy.ojobpub_publisher.job.DashboardJobs;
 import org.letsemploy.ojobpub_publisher.job.Job;
 import org.letsemploy.ojobpub_publisher.job.JobService;
 import org.letsemploy.ojobpub_publisher.job.Publication;
+import org.letsemploy.ojobpub_publisher.manual.ManualTopic;
 import org.letsemploy.ojobpub_publisher.security.Actor;
 import org.letsemploy.ojobpub_publisher.web.view.DashboardView;
 import org.letsemploy.ojobpub_publisher.web.view.FeedRow;
@@ -94,7 +95,7 @@ public class IndexController {
         boolean hintEmployer = !actor.isAdmin() && !hasEmployer;
         boolean hintJob = !actor.isAdmin() && hasEmployer && jobs.total() == 0;
 
-        model.addAttribute("page", PageMeta.of(message("nav.dashboard")));
+        model.addAttribute("page", PageMeta.of(message("nav.dashboard")).help(ManualTopic.DASHBOARD));
         // Every figure covers the employers in scope, and the activity is the log
         // the Activity screen would show this actor (spec 7.10, 7.21).
         model.addAttribute("dashboard", new DashboardView(

@@ -132,6 +132,12 @@
                         <svg th:replace="~{fragments/icon :: i('settings','icon dropdown-item-icon')}"></svg>
                         <span th:text="#{account.menu.settings}">Settings</span>
                     </a>
+                    <!-- The static user manual (spec 7.29), in the language shown here. Not boosted:
+                         it is a page of its own, not one to swap into this shell. -->
+                    <a class="dropdown-item" hx-boost="false" th:href="@{/docs(lang=${#locale.language})}">
+                        <svg th:replace="~{fragments/icon :: i('help','icon dropdown-item-icon')}"></svg>
+                        <span th:text="#{manual.link}">User manual</span>
+                    </a>
                     <!-- Only for an admin acting as themselves (spec 2.10); a POST, so the
                          switch is a deliberate act and the audit log can record it. -->
                     <form th:if="${ui.adminModeAvailable}" method="post"

@@ -1,0 +1,9 @@
+/* The manual's only own styles (spec 7.29); everything else is the application's Tabler. */
+.markdown h2 { margin-top: 2rem; }
+.markdown table { width: auto; }
+
+/* The language dropdown is a <details>, so it opens without a script. */
+.lang-menu { position: relative; }
+.lang-menu > summary { list-style: none; cursor: pointer; }
+.lang-menu > summary::-webkit-details-marker { display: none; }
+.lang-menu[open] > .dropdown-menu { display: block; position: absolute; top: 100%; right: 0; left: auto; }

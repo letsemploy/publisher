@@ -5,6 +5,7 @@ import java.util.Optional;
 import java.util.UUID;
 import org.letsemploy.ojobpub_publisher.common.exception.NotFoundException;
 import org.letsemploy.ojobpub_publisher.employer.Employer;
+import org.letsemploy.ojobpub_publisher.manual.ManualTopic;
 import org.letsemploy.ojobpub_publisher.security.Actor;
 import org.letsemploy.ojobpub_publisher.security.UserEntity;
 import org.letsemploy.ojobpub_publisher.security.UserRepo;
@@ -54,7 +55,7 @@ public class ActivityController {
         Actor actor = scope.user();
         Optional<Employer> active = scope.activeEmployer();
         model.addAttribute("page", PageMeta.of(message("nav.activity"),
-                active.map(Employer::getName).orElse(null)));
+                active.map(Employer::getName).orElse(null)).help(ManualTopic.ACTIVITY));
         model.addAttribute("offerEverything", actor.isAdmin());
         // One employer's log names no employer on each row; All activity does.
         return render(model, auditService.forEmployers(scope.employerIds(), actor, page), "/activity",
@@ -71,7 +72,7 @@ public class ActivityController {
         Page<AuditEvent> events = auditService.everything(scope.user(), page);
         model.addAttribute("page", new PageMeta(message("activity.everything"), null,
                 List.of(new Crumb(message("nav.activity"), "/activity"),
-                        new Crumb(message("activity.everything"), null))));
+                        new Crumb(message("activity.everything"), null))).help(ManualTopic.ACTIVITY));
         return render(model, events, "/activity/all", true);
     }
 
@@ -80,7 +81,7 @@ public class ActivityController {
     public String mine(@RequestParam(defaultValue = "0") int page, Model model) {
         Actor actor = scope.user();
         Page<AuditEvent> events = auditService.forPerson(actor.getId(), actor, page);
-        model.addAttribute("page", PageMeta.of(message("activity.mine")));
+        model.addAttribute("page", PageMeta.of(message("activity.mine")).help(ManualTopic.ACTIVITY));
         return render(model, events, "/activity/mine", true);
     }
 
@@ -91,7 +92,7 @@ public class ActivityController {
         Page<AuditEvent> events = auditService.forPerson(id, scope.user(), page);
         UserEntity user = userRepo.findById(id).orElseThrow(() -> new NotFoundException("User not found: " + id));
         model.addAttribute("page", new PageMeta(message("nav.activity"), user.getLabel(),
-                List.of(new Crumb(message("nav.users"), "/users"), new Crumb(user.getLabel(), null))));
+                List.of(new Crumb(message("nav.users"), "/users"), new Crumb(user.getLabel(), null))).help(ManualTopic.ACTIVITY));
         return render(model, events, "/users/" + id + "/activity", true);
     }
 

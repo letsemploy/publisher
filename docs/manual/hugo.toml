@@ -1,0 +1,35 @@
+# The user manual (spec 7.29). Built by `npm run manual -- <dir>` in the Maven build into
+# target/classes/static/docs, and served at /docs/** like any static file: public, no session,
+# under the application's strict CSP. Hence the rules below and in layouts/:
+#
+# - every page is flat at /docs/{lang}/{page}.html, so the shared files are always two levels up
+#   (../../vendor/tabler.min.css). Never nest content in sections;
+# - no inline script, no style attribute, no external URL. ManualTest scans the output for all
+#   three and follows every link.
+# "/" and not "/docs/": relativeURLs counts from the output root, which is served at /docs, and
+# a path in baseURL would be counted twice (../docs/en/jobs.html).
+baseURL = "/"
+title = "oJobPub Publisher"
+relativeURLs = true
+uglyURLs = true
+disableKinds = ["taxonomy", "term", "section", "rss", "sitemap", "robotsTXT", "404"]
+defaultContentLanguage = "en"
+defaultContentLanguageInSubdir = true
+disableDefaultLanguageRedirect = true
+enableGitInfo = false
+
+[languages.en]
+  label = "English"
+  weight = 1
+  contentDir = "content/en"
+[languages.de]
+  label = "Deutsch"
+  weight = 2
+  contentDir = "content/de"
+
+[markup.goldmark.renderer]
+  # Raw HTML in Markdown is dropped: the CSP forbids inline script and style anyway.
+  unsafe = false
+[markup.highlight]
+  # Chroma writes style attributes, which the CSP refuses; code stays a plain <pre>.
+  codeFences = false

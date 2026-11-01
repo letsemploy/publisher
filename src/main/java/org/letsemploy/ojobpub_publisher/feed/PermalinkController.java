@@ -6,6 +6,7 @@ import java.util.Map;
 import java.util.UUID;
 import org.letsemploy.ojobpub_publisher.common.exception.ValidationFailure;
 import org.letsemploy.ojobpub_publisher.employer.Employer;
+import org.letsemploy.ojobpub_publisher.manual.ManualTopic;
 import org.letsemploy.ojobpub_publisher.web.Scope;
 import org.letsemploy.ojobpub_publisher.web.Views;
 import org.letsemploy.ojobpub_publisher.web.view.Crumb;
@@ -123,7 +124,7 @@ public class PermalinkController {
                         Map<String, List<WebserverSnippet>> webserver, Map<String, String> fieldErrors) {
         String title = message(form.id() == null ? "permalink.create" : "permalink.edit");
         model.addAttribute("page", new PageMeta(title, null,
-                List.of(new Crumb(message("nav.feeds"), "/feeds"), new Crumb(title, null))));
+                List.of(new Crumb(message("nav.feeds"), "/feeds"), new Crumb(title, null))).help(ManualTopic.PERMALINKS));
         model.addAttribute("form", form);
         model.addAttribute("webserver", webserver);
         Map<String, String> options = new LinkedHashMap<>();

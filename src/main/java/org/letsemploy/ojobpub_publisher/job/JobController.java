@@ -16,6 +16,7 @@ import org.letsemploy.ojobpub_publisher.feed.Feed;
 import org.letsemploy.ojobpub_publisher.feed.FeedService;
 import org.letsemploy.ojobpub_publisher.location.Location;
 import org.letsemploy.ojobpub_publisher.location.LocationService;
+import org.letsemploy.ojobpub_publisher.manual.ManualTopic;
 import org.letsemploy.ojobpub_publisher.tag.Tag;
 import org.letsemploy.ojobpub_publisher.tag.TagService;
 import org.letsemploy.ojobpub_publisher.web.view.*;
@@ -78,7 +79,7 @@ public class JobController {
                        @RequestParam(defaultValue = "20") int size,
                        @RequestParam(defaultValue = "title") String sort) {
         populateList(model, q, status, jobType, page, size, sort);
-        model.addAttribute("page", PageMeta.of(message("nav.jobs")));
+        model.addAttribute("page", PageMeta.of(message("nav.jobs")).help(ManualTopic.JOBS));
         return "job/list";
     }
 
@@ -192,7 +193,7 @@ public class JobController {
         }
 
         model.addAttribute("page", new PageMeta(job.getTitle(), null,
-                List.of(new Crumb(message("nav.jobs"), "/jobs"), new Crumb(job.getTitle(), null))));
+                List.of(new Crumb(message("nav.jobs"), "/jobs"), new Crumb(job.getTitle(), null))).help(ManualTopic.JOB));
         model.addAttribute("job",
                 views.jobDetail(job, memberships, jobService.history(id), today));
         return "job/detail";
@@ -204,7 +205,7 @@ public class JobController {
     public String createForm(Model model) {
         model.addAttribute("page", new PageMeta(message("job.create"), null,
                 List.of(new Crumb(message("nav.jobs"), "/jobs"),
-                        new Crumb(message("job.create"), null))));
+                        new Crumb(message("job.create"), null))).help(ManualTopic.JOB_FORM));
         JobForm form = new JobForm();
         form.setLanguage("en");
         form.setJobType("permanent");
@@ -217,7 +218,7 @@ public class JobController {
         Job job = jobService.findVisible(id, scope.user());
         model.addAttribute("page", new PageMeta(message("job.edit"), null,
                 List.of(new Crumb(message("nav.jobs"), "/jobs"),
-                        new Crumb(job.getTitle(), "/jobs/" + id))));
+                        new Crumb(job.getTitle(), "/jobs/" + id))).help(ManualTopic.JOB_FORM));
         formModel(model, JobForm.of(job), Map.of(),
                 job.getTags().stream().map(t -> new Ref(String.valueOf(t.getId()), t.getName())).toList(),
                 job.getLocations().stream()
@@ -243,7 +244,7 @@ public class JobController {
         } catch (ValidationFailure e) {
             // Re-render with every entered value preserved (spec 7.7).
             model.addAttribute("page", new PageMeta(
-                    id == null ? message("job.create") : message("job.edit"), null, List.of()));
+                    id == null ? message("job.create") : message("job.edit"), null, List.of()).help(ManualTopic.JOB_FORM));
             formModel(model, form, e.getFieldErrors(), refsForTags(form, employer),
                     refsForLocations(form, employer), employer);
             return "job/form";

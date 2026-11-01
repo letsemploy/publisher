@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.UUID;
 import org.letsemploy.ojobpub_publisher.common.exception.ValidationFailure;
 import org.letsemploy.ojobpub_publisher.employer.Employer;
+import org.letsemploy.ojobpub_publisher.manual.ManualTopic;
 import org.letsemploy.ojobpub_publisher.web.EmployerContext;
 import org.letsemploy.ojobpub_publisher.web.Scope;
 import org.letsemploy.ojobpub_publisher.web.Views;
@@ -50,7 +51,7 @@ public class InvitationController {
         List<InvitationRow> rows = invitationService.pendingFor(scope.user()).stream()
                 .map(views::invitationRow)
                 .toList();
-        model.addAttribute("page", PageMeta.of(message("nav.invitations")));
+        model.addAttribute("page", PageMeta.of(message("nav.invitations")).help(ManualTopic.INVITATIONS));
         model.addAttribute("invitations", rows);
         return "invitation/list";
     }

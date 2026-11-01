@@ -232,7 +232,8 @@
 			</plugin>
 			<!-- The front-end files the browser loads (spec 7.2, 9.1): a pinned Node, npm ci from
 			     the lockfile, then scripts/vendor-assets.mjs copies the dist files and builds the
-			     icon sprite into target/classes/static/vendor. Nothing of it is committed. -->
+			     icon sprite into target/classes/static/vendor, and Hugo builds the user manual into
+			     target/classes/static/docs. Nothing of it is committed. -->
 			<plugin>
 				<groupId>com.github.eirslett</groupId>
 				<artifactId>frontend-maven-plugin</artifactId>
@@ -264,6 +265,17 @@
 						</goals>
 						<configuration>
 							<arguments>run vendor -- ${project.build.outputDirectory}/static/vendor</arguments>
+						</configuration>
+					</execution>
+					<!-- The user manual (spec 7.29): Hugo, pinned in package.json, builds docs/manual
+					     into static/docs, served next to the vendored files. -->
+					<execution>
+						<id>build-manual</id>
+						<goals>
+							<goal>npm</goal>
+						</goals>
+						<configuration>
+							<arguments>run manual -- ${project.build.outputDirectory}/static/docs</arguments>
 						</configuration>
 					</execution>
 				</executions>
