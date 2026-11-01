@@ -8,6 +8,8 @@ Section numbers such as §5.6 refer to the specification in [`docs/SPEC.md`](doc
 
 ## [Unreleased]
 
+## [1.7.0] - 2026-11-01
+
 ### Added
 
 - A user manual, in English and German, at `/docs` (§7.29). It is public, built with the application,
@@ -323,7 +325,8 @@ Section numbers such as §5.6 refer to the specification in [`docs/SPEC.md`](doc
 - MariaDB, or SQLite for a single instance.
 - English and German.
 
-[Unreleased]: https://github.com/letsemploy/publisher/compare/v1.6.0...HEAD
+[Unreleased]: https://github.com/letsemploy/publisher/compare/v1.7.0...HEAD
+[1.7.0]: https://github.com/letsemploy/publisher/compare/v1.6.0...v1.7.0
 [1.6.0]: https://github.com/letsemploy/publisher/compare/v1.5.0...v1.6.0
 [1.5.0]: https://github.com/letsemploy/publisher/compare/v1.4.0...v1.5.0
 [1.4.0]: https://github.com/letsemploy/publisher/compare/v1.3.0...v1.4.0
