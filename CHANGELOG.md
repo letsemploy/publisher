@@ -8,6 +8,11 @@ Section numbers such as §5.6 refer to the specification in [`docs/SPEC.md`](doc
 
 ## [Unreleased]
 
+### Fixed
+
+- Status badges are readable again in both themes (§7.6): *Expired* and *Incomplete* were pale yellow
+  on near-white, and *Inactive* dark on dark.
+
 ## [1.7.0] - 2026-11-01
 
 ### Added

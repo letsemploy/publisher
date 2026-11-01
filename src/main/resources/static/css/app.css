@@ -111,3 +111,19 @@
     object-fit: cover;
     border-radius: inherit;
 }
+
+/* Readable light badges (spec 7.6). Tabler writes a "-lt" badge in its full colour on a
+   10% tint of it: yellow on near-white in the light theme, and --tblr-dark, which the
+   dark theme does not lighten, on a dark surface. Mixing the colour with the body text
+   colour darkens it in the light theme and lightens it in the dark one. */
+.badge.bg-green-lt     { color: color-mix(in oklab, var(--tblr-green) 55%, var(--tblr-body-color)) !important; }
+.badge.bg-yellow-lt    { color: color-mix(in oklab, var(--tblr-yellow) 45%, var(--tblr-body-color)) !important; }
+.badge.bg-red-lt       { color: color-mix(in oklab, var(--tblr-red) 60%, var(--tblr-body-color)) !important; }
+.badge.bg-azure-lt     { color: color-mix(in oklab, var(--tblr-azure) 55%, var(--tblr-body-color)) !important; }
+.badge.bg-blue-lt      { color: color-mix(in oklab, var(--tblr-blue) 60%, var(--tblr-body-color)) !important; }
+.badge.bg-secondary-lt { color: color-mix(in oklab, var(--tblr-secondary) 50%, var(--tblr-body-color)) !important; }
+.badge.bg-dark-lt {
+    color: var(--tblr-body-color) !important;
+    background-color: color-mix(in oklab, var(--tblr-body-color) 14%, transparent) !important;
+    border-color: color-mix(in oklab, var(--tblr-body-color) 25%, transparent) !important;
+}
