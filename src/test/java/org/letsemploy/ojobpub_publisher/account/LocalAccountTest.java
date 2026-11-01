@@ -91,7 +91,7 @@ class LocalAccountTest {
                 .andExpect(redirectedUrl("/login?verified"));
 
         MockHttpSession session = signIn(email, PASSWORD);
-        mvc.perform(get("/").session(session)).andExpect(status().isOk());
+        mvc.perform(get("/").session(session)).andExpect(redirectedUrl("/welcome")); // created the account (spec 7.30)
 
         UserEntity user = users.findAll().stream().filter(u -> email.equals(u.getEmail())).findFirst().orElseThrow();
         assertThat(user.getIssuer()).isEqualTo(LocalAccount.ISSUER);
@@ -220,7 +220,7 @@ class LocalAccountTest {
         String email = verifiedAccount("Ada");
         MockHttpSession here = signIn(email, PASSWORD);
         MockHttpSession elsewhere = signIn(email, PASSWORD);
-        mvc.perform(get("/").session(elsewhere)).andExpect(status().isOk());
+        mvc.perform(get("/").session(elsewhere)).andExpect(redirectedUrl("/welcome")); // created the account (spec 7.30)
 
         mvc.perform(from(post("/settings").session(here).param("name", "Ada Lovelace")
                         .param("mailInvitations", "true")))
@@ -284,7 +284,7 @@ class LocalAccountTest {
     void aSuspendedLocalAccountIsSignedOut() throws Exception {
         String email = verifiedAccount("Ada");
         MockHttpSession session = signIn(email, PASSWORD);
-        mvc.perform(get("/").session(session)).andExpect(status().isOk());
+        mvc.perform(get("/").session(session)).andExpect(redirectedUrl("/welcome")); // created the account (spec 7.30)
         UserEntity user = users.findAll().stream().filter(u -> email.equals(u.getEmail())).findFirst().orElseThrow();
         user.setSuspendedAt(Instant.now());
         users.save(user);

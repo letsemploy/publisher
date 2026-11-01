@@ -101,6 +101,7 @@ the text such as §2.6 means the same thing: find the chapter below, then the se
   - [7.27 Account pictures](spec/07-user-interface.md#727-account-pictures)
   - [7.28 Weekly summary](spec/07-user-interface.md#728-weekly-summary)
   - [7.29 User manual](spec/07-user-interface.md#729-user-manual)
+  - [7.30 Welcome](spec/07-user-interface.md#730-welcome)
 - **[8. Cross-cutting behaviour](spec/08-cross-cutting.md)**
   - [8.1 Internationalization](spec/08-cross-cutting.md#81-internationalization)
   - [8.2 Validation and errors](spec/08-cross-cutting.md#82-validation-and-errors)

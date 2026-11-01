@@ -11,6 +11,7 @@ import java.util.Locale;
  */
 public enum ManualTopic {
 
+    WELCOME("getting-started", "navigation"),
     DASHBOARD("dashboard-activity", "dashboard"),
     ACTIVITY("dashboard-activity", "activity"),
     JOBS("jobs", "shown-as"),

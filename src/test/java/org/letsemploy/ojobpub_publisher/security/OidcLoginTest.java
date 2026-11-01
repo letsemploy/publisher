@@ -285,7 +285,7 @@ class OidcLoginTest {
     @Test
     void theFirstSignInCreatesAnAccountWithNoStanding() throws Exception {
         mvc.perform(get("/").with(signedIn("alice-1", "Alice Anders", "alice@example.com", true)))
-                .andExpect(status().isOk());
+                .andExpect(redirectedUrl("/welcome")); // created the account (spec 7.30)
 
         UserEntity alice = account("alice-1");
         assertThat(alice.getRole()).isEqualTo(UserEntity.Role.USER);
@@ -347,7 +347,7 @@ class OidcLoginTest {
     @Test
     void anUnverifiedEmailIsNotKeptAndCannotBeInvited() throws Exception {
         mvc.perform(get("/").with(signedIn("mallory-1", "Mallory", "victim@example.com", false)))
-                .andExpect(status().isOk());
+                .andExpect(redirectedUrl("/welcome")); // created the account (spec 7.30)
 
         UserEntity mallory = account("mallory-1");
         assertThat(mallory.getEmail()).isNull();
@@ -395,7 +395,7 @@ class OidcLoginTest {
     @Test
     void aSuspendedAccountIsSignedOutAndToldWhy() throws Exception {
         mvc.perform(get("/").with(signedIn("sam-1", "Sam", "sam1@example.com", true)))
-                .andExpect(status().isOk());
+                .andExpect(redirectedUrl("/welcome")); // created the account (spec 7.30)
         suspend("sam-1");
 
         mvc.perform(get("/jobs").with(signedIn("sam-1", "Sam", "sam1@example.com", true)))

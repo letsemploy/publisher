@@ -3,6 +3,7 @@ package org.letsemploy.ojobpub_publisher.security;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.oauth2Login;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import java.util.HashMap;
@@ -177,7 +178,7 @@ class LoginProvidersTest {
     @Test
     void signingInWithGitHubCreatesAnAccountKeyedByTheNumericId() throws Exception {
         mvc.perform(get("/").with(viaGitHub(583231, "octocat", "The Octocat", "octo@example.com")))
-                .andExpect(status().isOk());
+                .andExpect(redirectedUrl("/welcome")); // created the account (spec 7.30)
 
         UserEntity octo = userRepo.findByIssuerAndSubject(GITHUB, "583231").orElseThrow();
         assertThat(octo.getDisplayName()).isEqualTo("The Octocat");
@@ -206,7 +207,7 @@ class LoginProvidersTest {
      */
     @Test
     void aGitHubUserWithoutAVerifiedAddressCannotBeInvited() throws Exception {
-        mvc.perform(get("/").with(viaGitHub(7, "nomail", "No Mail", null))).andExpect(status().isOk());
+        mvc.perform(get("/").with(viaGitHub(7, "nomail", "No Mail", null))).andExpect(redirectedUrl("/welcome")); // created the account (spec 7.30)
         UserEntity user = userRepo.findByIssuerAndSubject(GITHUB, "7").orElseThrow();
         assertThat(user.getEmail()).isNull();
 

@@ -110,7 +110,7 @@ measure is worth:
 
 `employer`, `job`, `location`, `tag`, `feed`, `invitation`, `membership`, `token`, `user`, `audit`,
 `account` (local accounts), `click` (job links and their counters), `summary` (the weekly mail),
-`manual` (the user manual's `/docs` entry) — each
+`manual` (the user manual's `/docs` entry), `welcome` (the introduction, §7.30) — each
 owns its entity, repository, service, form objects and controllers. Plus `common` (shared base types, slugs,
 exceptions), `config` (beans), `mail` (outbound mail), `security` (actors, roles, filter chains), `web` (shell context, view
 models, error handling), `ojobpub/v1` (the published contract) and `api` (the GraphQL management API).
@@ -587,6 +587,16 @@ person's own: `signIn` never touches them. Null means "not chosen".
 - `WebLangConfig.LANGUAGES` is the one list of languages; the menu, the account screens and Settings
   read it.
 
+### Welcome (`welcome/`, §7.30)
+
+One server-rendered page at `/welcome`, every step on it: no tour library, no overlay, no carousel.
+**Nothing is stored.** `CurrentUserService.signIn` marks the request whose sign-in *created* the
+account (a request attribute, set only by the request that won a first-sign-in race), and
+`IndexController` sends that one request to `/welcome`. That works because every sign-in lands on
+`/` (`defaultSuccessUrl("/", true)`); if a saved request ever wins there, the mark must move with
+it. Steps link to a screen only where the person may reach it (no employer → step 1; API tokens only
+for `canAdminister`), checked by `WelcomeTest` and `PeopleScreenTest`.
+
 ### Weekly summary (`summary/`, §7.28)
 
 Opt-in from Settings (`users.mail_summary`, V17), one mail per person covering every employer they are
@@ -1023,6 +1033,7 @@ TEST_DB=sqlite ./mvnw test                   # all, on SQLite; no server
 ./mvnw test -Dtest=WeeklySummaryTest         # what one employer's summary says, and when it is empty; no Spring
 ./mvnw test -Dtest=WeeklySummaryMailTest     # the weekly mail: who gets one, in which language, once a week
 ./mvnw test -Dtest=ManualTest                # the user manual: both languages, strict-CSP markup, links resolve, no session
+./mvnw test -Dtest=WelcomeTest               # the first sign-in lands on the Welcome, later ones do not; links follow reach
 make assets                                  # rebuild target/classes/static/vendor (Maven fetches Node)
 ```
 

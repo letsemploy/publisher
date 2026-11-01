@@ -13,6 +13,9 @@ Section numbers such as §5.6 refer to the specification in [`docs/SPEC.md`](doc
 - A user manual, in English and German, at `/docs` (§7.29). It is public, built with the application,
   and linked from the user menu and the sign-in page. A help icon beside each screen's title opens
   the manual's section on that screen.
+- A Welcome page introducing the publisher in five steps (§7.30). The first sign-in of a new account
+  lands there instead of on the dashboard; after that it is in the user menu, and the dashboard's
+  *Getting started* messages link to it.
 
 ## [1.6.0] - 2026-10-30
 

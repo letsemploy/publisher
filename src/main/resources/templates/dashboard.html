@@ -13,7 +13,8 @@
 <div layout:fragment="content">
     <!--
       Getting started (spec 7.10): what a newcomer has yet to create, each with the
-      way to do it. Shown while it applies, outside admin mode; nothing to dismiss.
+      way to do it, and the Welcome page (spec 7.30). Shown while it applies, outside admin
+      mode; nothing to dismiss.
     -->
     <div class="alert alert-info" role="status" th:if="${dashboard.hintEmployer}" id="hint-employer">
         <svg th:replace="~{fragments/icon :: i('info-circle','icon alert-icon flex-shrink-0')}"></svg>
@@ -25,6 +26,8 @@
                    th:text="#{dashboard.hint.employer.action}">Create an employer</a>
                 <a class="btn btn-sm" th:href="@{/invitations}"
                    th:text="#{dashboard.hint.employer.invitations}">See your invitations</a>
+                <a class="btn btn-sm btn-ghost-secondary" th:href="@{/welcome}"
+                   th:text="#{dashboard.hint.welcome}">New here? Read the introduction</a>
             </div>
         </div>
     </div>
@@ -36,6 +39,8 @@
             <div class="btn-list mt-2">
                 <a class="btn btn-primary btn-sm" th:href="@{/jobs/create}"
                    th:text="#{dashboard.hint.job.action}">Create a job</a>
+                <a class="btn btn-sm btn-ghost-secondary" th:href="@{/welcome}"
+                   th:text="#{dashboard.hint.welcome}">New here? Read the introduction</a>
             </div>
         </div>
     </div>

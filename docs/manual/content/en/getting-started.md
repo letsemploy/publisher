@@ -32,7 +32,7 @@ get access to one in either of two ways:
   **Jobs**, **Feeds**, **People**, **API tokens** (owners only), **Profile**, **Locations**, **Tags** and
   **Activity**, all covering that employer.
 - **The top bar** holds what is not about one employer: **Employers**, **Invitations** with the number
-  still waiting, and your user menu with **My activity**, **Settings**, this manual and signing out.
+  still waiting, and your user menu with **My activity**, **Settings**, **Welcome** (the short introduction you saw after your first sign-in), this manual and signing out.
 
 ## Roles {#roles}
 

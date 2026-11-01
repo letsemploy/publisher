@@ -132,6 +132,11 @@
                         <svg th:replace="~{fragments/icon :: i('settings','icon dropdown-item-icon')}"></svg>
                         <span th:text="#{account.menu.settings}">Settings</span>
                     </a>
+                    <!-- The introduction (spec 7.30), shown once after the first sign-in and here after that. -->
+                    <a class="dropdown-item" th:href="@{/welcome}">
+                        <svg th:replace="~{fragments/icon :: i('compass','icon dropdown-item-icon')}"></svg>
+                        <span th:text="#{welcome.menu}">Welcome</span>
+                    </a>
                     <!-- The static user manual (spec 7.29), in the language shown here. Not boosted:
                          it is a page of its own, not one to swap into this shell. -->
                     <a class="dropdown-item" hx-boost="false" th:href="@{/docs(lang=${#locale.language})}">

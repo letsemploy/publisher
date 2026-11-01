@@ -134,7 +134,7 @@ left out when printing.
   empty cannot be found by someone who wants to check whether an invitation ever arrived.
 - **Users** (§7.20), for admins only — the other entry whose visibility depends on the role.
 - The **user menu**: the current user, shown by their picture or initials (§7.27), with *My activity*
-  (§7.22), *Settings* (§7.26) and *Log out*.
+  (§7.22), *Settings* (§7.26), *Welcome* (§7.30) and *Log out*.
   Language and theme are settings, chosen there and nowhere else; the signed-out pages (§7.19, §7.24)
   keep a language switch of their own, which lasts the session.
   For an admin it also offers *Switch to admin mode* or *Leave admin mode* (§2.10).
@@ -336,7 +336,7 @@ each thing a newcomer has yet to create, with the way to do it:
 - **No job yet** — for an active employer without any job: create the first one.
 
 Each is shown on every visit while it applies and disappears once the gap is filled; there is nothing
-to dismiss and nothing stored. There is no location message: every employer has its headquarters
+to dismiss and nothing stored. Each also links to the Welcome page (§7.30). There is no location message: every employer has its headquarters
 (§3.1).
 
 **Charts are hints.** They are Tabler's own sparkline and tracking components (§7.2); every figure they
@@ -786,3 +786,38 @@ settings.
   does not cover, such as the admins' Users, have none.
 - **The same rules as the screens** (§7.2, §9.4): the application's own Tabler styles and theme script,
   no inline script or style, nothing from another origin, and the same policy.
+
+## 7.30 Welcome
+
+A page that walks a newcomer through the publisher in one sitting: what an employer is, how a job gets
+into a feed, and where to find help. It is an **introduction, not a checklist** — what a person has yet
+to create is the dashboard's to say (§7.10), and this page tracks nothing.
+
+- **One page, every step on it.** An ordered list of short steps, each a heading, two or three
+  sentences and its links: no carousel, no *Next* button, no overlay pointing at parts of other
+  screens. A step hidden behind another cannot be read ahead or found again, and a pointer at a
+  screen's markup breaks unnoticed when that screen changes. It is rendered on the server, inside the
+  shell, and works without JavaScript (§7.1).
+- **The steps:**
+  1. **Employer** — the company whose jobs are published; every screen in the sidebar works on the
+     active one (§2.5). Create one, or accept an invitation (§7.16).
+  2. **Jobs** — written as drafts and published when ready and within their dates (§4.3, §4.4); the
+     readiness panel says what is missing.
+  3. **Feeds and permalinks** — what a website or job board reads (§5). A permalink is the one address
+     to configure, since the feed behind it can be switched (§5.5).
+  4. **People** — owners invite members and decide their role (§2.1, §7.18); API tokens let another
+     system do the same work (§2.8).
+  5. **Help** — the manual (§7.29) and the help icon beside each screen's title; Settings (§7.26) for
+     language, theme and the weekly summary.
+- **Links follow what the person may reach.** A step links to its screen only where that screen
+  exists for them: with no employer yet, steps 2–4 explain and point at step 1 instead; for an
+  editor, step 4 describes what owners do rather than linking to API tokens (§7.3). Each step also
+  links to its section of the manual, in the language shown when the manual has it, else English.
+- **Shown once, then on request.** Every sign-in lands on the dashboard; the one that created the
+  account (§2.2, §2.12) lands on the Welcome instead. Nothing is stored: a person who leaves at once
+  finds it again under *Welcome* in the user menu (§7.3), and the dashboard's *Getting started*
+  messages (§7.10) link to it. An account that existed before this page did is never sent to it.
+- **For everyone signed in as themselves.** It reads the same for an admin, in either mode (§2.10),
+  and while viewing as someone (§2.9) it is simply shown, since it changes nothing. A token has none.
+- **Its words are the screens' words**, from the same bundles, in every language offered (§8.1), so a
+  step never names a destination differently than the sidebar does.

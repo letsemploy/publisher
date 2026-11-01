@@ -110,6 +110,16 @@ class PeopleScreenTest {
         assertThat(sidebar).doesNotContain("/tokens");
     }
 
+    /** The Welcome tells an editor what owners do with tokens, and links nowhere they lack (spec 7.30). */
+    @Test
+    void theWelcomeTellsAnEditorAboutApiTokensWithoutLinkingThem() throws Exception {
+        String body = people("/welcome");
+        String step = body.substring(body.indexOf("id=\"step-people\""), body.indexOf("id=\"step-help\""));
+        assertThat(step).contains("href=\"/people\"")
+                .contains("also manage its API tokens")
+                .doesNotContain("href=\"/tokens\"");
+    }
+
     /** And hiding it is presentation only - the service still refuses. */
     @Test
     void anEditorCannotReachTheTokensScreen() throws Exception {

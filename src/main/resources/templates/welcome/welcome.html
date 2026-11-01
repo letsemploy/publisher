@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<!--
+  The Welcome page (spec 7.30): every step on one page, in order, rendered here
+  and working without JavaScript. No carousel and no overlay pointing at other
+  screens. A step links to its screen only where the person may reach it.
+
+  Links to the manual are not boosted: it is a site of its own, not a page to swap
+  into this shell (spec 7.29).
+-->
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout}">
+<head><title th:text="#{welcome.title}">Welcome</title></head>
+<body>
+<div layout:fragment="content">
+    <p class="text-secondary mb-4" th:text="#{welcome.intro}">Five steps from a new account to jobs on a website.</p>
+
+    <ol class="list-unstyled">
+        <li class="card mb-3" id="step-employer">
+            <div class="card-body d-flex gap-3">
+                <span class="avatar avatar-sm bg-primary-lt flex-shrink-0" aria-hidden="true">1</span>
+                <div class="flex-fill">
+                    <h2 class="card-title" th:text="#{welcome.employer.title}">Your employer</h2>
+                    <p class="text-secondary" th:text="#{welcome.employer.text}">Everything belongs to an employer.</p>
+                    <div class="btn-list">
+                        <a class="btn btn-primary btn-sm" th:href="@{/employers/create}"
+                           th:text="#{dashboard.hint.employer.action}">Create an employer</a>
+                        <a class="btn btn-sm" th:href="@{/invitations}" th:text="#{nav.invitations}">Invitations</a>
+                        <a class="btn btn-sm btn-ghost-secondary" hx-boost="false" th:href="@{${welcome.employerHelp}}"
+                           th:text="#{welcome.manual}">Read more in the manual</a>
+                    </div>
+                </div>
+            </div>
+        </li>
+        <li class="card mb-3" id="step-jobs">
+            <div class="card-body d-flex gap-3">
+                <span class="avatar avatar-sm bg-primary-lt flex-shrink-0" aria-hidden="true">2</span>
+                <div class="flex-fill">
+                    <h2 class="card-title" th:text="#{welcome.jobs.title}">Jobs</h2>
+                    <p class="text-secondary" th:text="#{welcome.jobs.text}">A job starts as a draft.</p>
+                    <div class="btn-list">
+                        <a th:if="${welcome.hasEmployer}" class="btn btn-sm" th:href="@{/jobs}" th:text="#{nav.jobs}">Jobs</a>
+                        <a th:unless="${welcome.hasEmployer}" class="btn btn-sm" href="#step-employer"
+                           th:text="#{welcome.needsEmployer}">Available once you have an employer</a>
+                        <a class="btn btn-sm btn-ghost-secondary" hx-boost="false" th:href="@{${welcome.jobsHelp}}"
+                           th:text="#{welcome.manual}">Read more in the manual</a>
+                    </div>
+                </div>
+            </div>
+        </li>
+        <li class="card mb-3" id="step-feeds">
+            <div class="card-body d-flex gap-3">
+                <span class="avatar avatar-sm bg-primary-lt flex-shrink-0" aria-hidden="true">3</span>
+                <div class="flex-fill">
+                    <h2 class="card-title" th:text="#{welcome.feeds.title}">Feeds and permalinks</h2>
+                    <p class="text-secondary" th:text="#{welcome.feeds.text}">A feed is what a website reads.</p>
+                    <div class="btn-list">
+                        <a th:if="${welcome.hasEmployer}" class="btn btn-sm" th:href="@{/feeds}" th:text="#{nav.feeds}">Feeds</a>
+                        <a th:unless="${welcome.hasEmployer}" class="btn btn-sm" href="#step-employer"
+                           th:text="#{welcome.needsEmployer}">Available once you have an employer</a>
+                        <a class="btn btn-sm btn-ghost-secondary" hx-boost="false" th:href="@{${welcome.feedsHelp}}"
+                           th:text="#{welcome.manual}">Read more in the manual</a>
+                    </div>
+                </div>
+            </div>
+        </li>
+        <li class="card mb-3" id="step-people">
+            <div class="card-body d-flex gap-3">
+                <span class="avatar avatar-sm bg-primary-lt flex-shrink-0" aria-hidden="true">4</span>
+                <div class="flex-fill">
+                    <h2 class="card-title" th:text="#{welcome.people.title}">People</h2>
+                    <p class="text-secondary" th:text="#{welcome.people.text}">Owners invite others.</p>
+                    <!-- An editor is told what owners do, never sent to a screen they lack (spec 7.17). -->
+                    <p class="text-secondary" th:text="${welcome.administers} ? #{welcome.people.tokens} : #{welcome.people.ownersOnly}">
+                        API tokens let another system do the same work.</p>
+                    <div class="btn-list">
+                        <a th:if="${welcome.hasEmployer}" class="btn btn-sm" th:href="@{/people}" th:text="#{nav.people}">People</a>
+                        <a th:if="${welcome.administers}" class="btn btn-sm" th:href="@{/tokens}" th:text="#{nav.tokens}">API tokens</a>
+                        <a th:unless="${welcome.hasEmployer}" class="btn btn-sm" href="#step-employer"
+                           th:text="#{welcome.needsEmployer}">Available once you have an employer</a>
+                        <a class="btn btn-sm btn-ghost-secondary" hx-boost="false" th:href="@{${welcome.peopleHelp}}"
+                           th:text="#{welcome.manual}">Read more in the manual</a>
+                    </div>
+                </div>
+            </div>
+        </li>
+        <li class="card mb-3" id="step-help">
+            <div class="card-body d-flex gap-3">
+                <span class="avatar avatar-sm bg-primary-lt flex-shrink-0" aria-hidden="true">5</span>
+                <div class="flex-fill">
+                    <h2 class="card-title" th:text="#{welcome.help.title}">Help</h2>
+                    <p class="text-secondary" th:text="#{welcome.help.text}">The help icon opens the manual.</p>
+                    <div class="btn-list">
+                        <a class="btn btn-sm" hx-boost="false" th:href="@{/docs(lang=${#locale.language})}"
+                           th:text="#{manual.link}">User manual</a>
+                        <a th:if="${welcome.settings}" class="btn btn-sm" th:href="@{/settings}"
+                           th:text="#{account.menu.settings}">Settings</a>
+                    </div>
+                </div>
+            </div>
+        </li>
+    </ol>
+
+    <a class="btn btn-primary" th:href="@{/}" th:text="#{welcome.done}">Go to the dashboard</a>
+</div>
+</body>
+</html>

@@ -34,8 +34,9 @@ Schlagwörter und Personen. Zugang erhalten Sie auf einem von zwei Wegen:
   **Übersicht**, **Stellen**, **Feeds**, **Personen**, **API-Token** (nur für Eigentümer), **Profil**,
   **Standorte**, **Schlagwörter** und **Aktivität**, alle für diesen Arbeitgeber.
 - **Die obere Leiste** enthält, was nicht zu einem einzelnen Arbeitgeber gehört: **Arbeitgeber**,
-  **Einladungen** mit der Zahl der offenen und Ihr Benutzermenü mit **Meine Aktivität**,
-  **Einstellungen**, diesem Handbuch und der Abmeldung.
+  **Einladungen** mit der Zahl der offenen und Ihr Benutzermenü mit **Meine Aktivität**, **Willkommen**
+  (der kurzen Einführung nach Ihrer ersten Anmeldung), **Einstellungen**, diesem Handbuch und der
+  Abmeldung.
 
 ## Rollen {#roles}
 

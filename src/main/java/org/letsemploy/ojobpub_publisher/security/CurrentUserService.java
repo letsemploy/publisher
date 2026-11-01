@@ -59,6 +59,8 @@ public class CurrentUserService {
     /** The provider picture address this session last reported (spec 7.27); "" for none. */
     private static final String PICTURE_SEEN = CurrentUserService.class.getName() + ".PICTURE_SEEN";
     private static final String RESOLVED = CurrentUserService.class.getName() + ".RESOLVED";
+    /** Set on the request whose sign-in created the account (spec 7.30). */
+    private static final String CREATED = CurrentUserService.class.getName() + ".CREATED";
 
     /**
      * The real actor as resolved for this request, with what it was resolved
@@ -146,6 +148,18 @@ public class CurrentUserService {
                     new Resolved(auth, actor.getId(), AdminMode.chosenBy(actor.getId()), actor));
         }
         return actor;
+    }
+
+    /**
+     * Whether this request's sign-in created the account - the first page after
+     * a first sign-in, which is the Welcome (spec 7.30). Nothing is stored: the
+     * mark lives on the request and is gone with it. Resolves the actor, so it
+     * holds whichever caller asks first.
+     */
+    public boolean accountCreatedNow() {
+        realActor();
+        return RequestContextHolder.getRequestAttributes() instanceof ServletRequestAttributes attributes
+                && Boolean.TRUE.equals(attributes.getRequest().getAttribute(CREATED));
     }
 
     /** The current request if it is a GET or HEAD, which no handler here writes on; else null. */
@@ -373,14 +387,20 @@ public class CurrentUserService {
             return settle(existing.get(), identity);
         }
         try {
-            return ownTransaction.execute(status -> {
-                UserEntity created = new UserEntity();
-                created.setIssuer(identity.issuer());
-                created.setSubject(identity.subject());
-                created.setRole(UserEntity.Role.USER);
+            UserEntity created = ownTransaction.execute(status -> {
+                UserEntity account = new UserEntity();
+                account.setIssuer(identity.issuer());
+                account.setSubject(identity.subject());
+                account.setRole(UserEntity.Role.USER);
                 log.info("New account for {} at {}", identity.subject(), identity.issuer());
-                return settle(created, identity);
+                return settle(account, identity);
             });
+            // Only the request that won the race: one that lost found the account
+            // already there, as at any later sign-in.
+            if (RequestContextHolder.getRequestAttributes() instanceof ServletRequestAttributes attributes) {
+                attributes.getRequest().setAttribute(CREATED, Boolean.TRUE);
+            }
+            return created;
         } catch (DataAccessException failed) {
             // Any failure, not only DataIntegrityViolationException: SQLite's driver
             // reports a unique key without a SQL state, which arrives as a

@@ -15,6 +15,7 @@ import org.letsemploy.ojobpub_publisher.job.JobService;
 import org.letsemploy.ojobpub_publisher.job.Publication;
 import org.letsemploy.ojobpub_publisher.manual.ManualTopic;
 import org.letsemploy.ojobpub_publisher.security.Actor;
+import org.letsemploy.ojobpub_publisher.security.CurrentUserService;
 import org.letsemploy.ojobpub_publisher.web.view.DashboardView;
 import org.letsemploy.ojobpub_publisher.web.view.FeedRow;
 import org.letsemploy.ojobpub_publisher.web.view.PageMeta;
@@ -43,6 +44,7 @@ public class IndexController {
     private final AuditService auditService;
     private final Views views;
     private final MessageSource messages;
+    private final CurrentUserService currentUserService;
 
     public IndexController(Scope scope,
                            JobService jobService,
@@ -51,8 +53,10 @@ public class IndexController {
                            JobClickService jobClickService,
                            AuditService auditService,
                            Views views,
-                           MessageSource messages) {
+                           MessageSource messages,
+                           CurrentUserService currentUserService) {
         this.scope = scope;
+        this.currentUserService = currentUserService;
         this.jobService = jobService;
         this.feedService = feedService;
         this.permalinkService = permalinkService;
@@ -64,6 +68,11 @@ public class IndexController {
 
     @GetMapping("/")
     public String index(Model model) {
+        // Every sign-in lands here; the one that created the account lands on the
+        // Welcome instead (spec 7.30). Nothing is stored, so it happens once.
+        if (currentUserService.accountCreatedNow()) {
+            return "redirect:/welcome";
+        }
         LocalDate today = LocalDate.now();
         DashboardJobs jobs = jobService.dashboard(scope.employerIds());
 
