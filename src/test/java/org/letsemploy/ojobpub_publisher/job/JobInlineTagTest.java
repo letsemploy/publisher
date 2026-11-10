@@ -111,6 +111,10 @@ class JobInlineTagTest {
         assertThatThrownBy(() -> jobService.save(form("Job", names), acme(), false, editor))
                 .isInstanceOf(ValidationFailure.class)
                 .satisfies(e -> assertThat(((ValidationFailure) e).fields()).contains("tags"));
+        // Refused before any was created, not only rolled back afterwards.
+        for (String name : names) {
+            assertThat(acmeHas(name)).as(name).isFalse();
+        }
     }
 
     /** Outside the test's transaction, so the save's own rollback is what is observed. */

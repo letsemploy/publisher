@@ -221,8 +221,15 @@ public class JobService {
         // Tags named in the form's tag search, created now (spec 7.8): in this
         // transaction, so a refused save leaves none behind. A name the employer
         // already has is the existing tag (spec 3.4).
-        for (String name : new LinkedHashSet<>(form.getNewTags().stream()
-                .map(Tag::normalize).filter(n -> n != null && !n.isEmpty()).toList())) {
+        Set<String> newNames = new LinkedHashSet<>(form.getNewTags().stream()
+                .map(Tag::normalize).filter(n -> n != null && !n.isEmpty()).toList());
+        // The per-job cap before anything is created, so a crafted request cannot
+        // make the database insert thousands of rows only to roll them back.
+        if (job.getTags().size() + newNames.size() > Tag.MAX_PER_JOB) {
+            throw new ValidationFailure("tags", messages.getMessage("validation.tags.tooMany",
+                    new Object[]{Tag.MAX_PER_JOB}, LocaleContextHolder.getLocale()));
+        }
+        for (String name : newNames) {
             try {
                 job.getTags().add(tagService.findOrCreate(job.getEmployer(), name, actor));
             } catch (ValidationFailure e) {
