@@ -161,12 +161,15 @@
     });
 
     /**
-     * The employer switcher (spec 2.5, 7.3) switches as soon as one is chosen;
-     * without JavaScript its button does the same.
+     * Controls that submit their form as soon as something is chosen: the
+     * employer switcher (spec 2.5, 7.3) and the picture on Settings (spec 7.26).
+     * Without JavaScript a button beside each does the same. A file over the
+     * limit was refused by the listener above, and requestSubmit validates, so
+     * it is not sent.
      */
     document.addEventListener('change', (event) => {
-        const select = event.target.closest('select[data-auto-submit]');
-        select?.form?.requestSubmit();
+        const control = event.target.closest('select[data-auto-submit], input[type="file"][data-auto-submit]');
+        control?.form?.requestSubmit();
     });
 
     /**

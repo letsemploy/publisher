@@ -222,8 +222,7 @@ class LocalAccountTest {
         MockHttpSession elsewhere = signIn(email, PASSWORD);
         mvc.perform(get("/").session(elsewhere)).andExpect(redirectedUrl("/welcome")); // created the account (spec 7.30)
 
-        mvc.perform(from(post("/settings").session(here).param("name", "Ada Lovelace")
-                        .param("mailInvitations", "true")))
+        mvc.perform(from(post("/settings").session(here).param("name", "Ada Lovelace")))
                 .andExpect(redirectedUrl("/settings"));
         assertThat(mvc.perform(get("/").session(elsewhere)).andReturn().getResponse().getContentAsString())
                 .contains("Ada Lovelace");

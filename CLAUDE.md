@@ -578,11 +578,17 @@ person's own: `signIn` never touches them. Null means "not chosen".
   more, and `POST /context/theme` is gone. `?lang=` remains for the signed-out pages (sign-in, account
   screens) and lasts the session only. While viewing as someone nothing is applied: the admin keeps
   their own.
+- **Sections, each saving only its own columns** (Tabler's settings layout): Profile `/settings`
+  (picture, name), Display `/settings/display` (language, theme, zone — the only one that calls
+  `UserPreferences.apply`), Notifications `/settings/notifications` (the two mail flags), plus
+  `/account/password` and `/account/delete` in the same shell, `user/settings/shell.html`, which needs
+  `settingsLocal` in the model. `SettingsService.saveProfile`/`saveDisplay`/`saveNotifications` each
+  write their own columns: an unticked switch on one page must never turn off a setting on another.
 - **Timestamps** go through `Views.timestamp`, in `LocaleContextHolder.getTimeZone()`, which falls back
   to the JVM zone. `TokenLifecycle` keeps the server zone: that is a rule, not a display.
 - **A local account's name** is read by `CurrentUserService.identityOf` from the `local_accounts` row,
   not the session's `LocalUser`: `signIn` writes the name to `users` on every request, so another open
-  session would otherwise put the old name back. `SettingsService.save` renames both rows; a provider's
+  session would otherwise put the old name back. `SettingsService.saveProfile` renames both rows; a provider's
   account cannot be renamed (404), since the provider renames it at the next sign-in.
 - `WebLangConfig.LANGUAGES` is the one list of languages; the menu, the account screens and Settings
   read it.

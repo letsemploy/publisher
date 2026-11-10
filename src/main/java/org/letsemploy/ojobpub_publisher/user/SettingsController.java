@@ -59,54 +59,119 @@ public class SettingsController {
         this.pictures = pictures;
     }
 
+    // ------------------------------------------------------------- profile
+
     @GetMapping("/settings")
-    public String settings(Model model) {
+    public String profile(Model model) {
         UserEntity user = settings.self(self());
-        return page(model, user, user.getLanguage(), user.getTheme(), user.getTimeZone(),
-                user.isMailInvitations(), user.isMailSummary(), user.getDisplayName(), Map.of());
+        return page(model, "profile", user, values(user), Map.of());
     }
 
+    /** A local account's name; a provider's account has nothing here to save (404). */
     @PostMapping("/settings")
-    public String save(@RequestParam(required = false) String language,
-                       @RequestParam(required = false) String theme,
-                       @RequestParam(required = false) String timeZone,
-                       @RequestParam(defaultValue = "false") boolean mailInvitations,
-                       @RequestParam(defaultValue = "false") boolean mailSummary,
-                       @RequestParam(required = false) String name,
-                       HttpServletRequest request, HttpServletResponse response,
-                       Model model, RedirectAttributes flash) {
+    public String saveProfile(@RequestParam(required = false) String name,
+                              Model model, RedirectAttributes flash) {
         Actor actor = self();
-        UserEntity saved;
         try {
-            saved = settings.save(actor, language, theme, timeZone, mailInvitations, mailSummary, name);
+            settings.saveProfile(actor, name);
         } catch (ValidationFailure e) {
-            Map<String, String> errors = new LinkedHashMap<>();
-            // A select offers only what may be chosen, so only a name is ever
-            // refused for something the person typed; its message is localized.
-            e.getFieldErrors().forEach((field, message) ->
-                    errors.put(field, field.equals("name") ? message : message("settings.invalid")));
-            return page(model, settings.self(actor), language, theme, timeZone, mailInvitations, mailSummary, name,
-                    errors);
+            UserEntity user = settings.self(actor);
+            return page(model, "profile", user, values(user).withName(name), localized(e));
         }
-        preferences.apply(request, response, saved, true);
         flash.addFlashAttribute("successMsg", "settings.saved");
         return "redirect:/settings";
     }
 
-    private String page(Model model, UserEntity user, String language, String theme, String timeZone,
-                        boolean mailInvitations, boolean mailSummary, String name,
+    // ------------------------------------------------------------- display
+
+    @GetMapping("/settings/display")
+    public String display(Model model) {
+        UserEntity user = settings.self(self());
+        return page(model, "display", user, values(user), Map.of());
+    }
+
+    /** Applied to the session at once, so the page that comes back is in the new language and theme. */
+    @PostMapping("/settings/display")
+    public String saveDisplay(@RequestParam(required = false) String language,
+                              @RequestParam(required = false) String theme,
+                              @RequestParam(required = false) String timeZone,
+                              HttpServletRequest request, HttpServletResponse response,
+                              Model model, RedirectAttributes flash) {
+        Actor actor = self();
+        UserEntity saved;
+        try {
+            saved = settings.saveDisplay(actor, language, theme, timeZone);
+        } catch (ValidationFailure e) {
+            UserEntity user = settings.self(actor);
+            return page(model, "display", user, values(user).withDisplay(language, theme, timeZone), localized(e));
+        }
+        preferences.apply(request, response, saved, true);
+        flash.addFlashAttribute("successMsg", "settings.saved");
+        return "redirect:/settings/display";
+    }
+
+    // ------------------------------------------------------- notifications
+
+    @GetMapping("/settings/notifications")
+    public String notifications(Model model) {
+        UserEntity user = settings.self(self());
+        return page(model, "notifications", user, values(user), Map.of());
+    }
+
+    @PostMapping("/settings/notifications")
+    public String saveNotifications(@RequestParam(defaultValue = "false") boolean mailInvitations,
+                                    @RequestParam(defaultValue = "false") boolean mailSummary,
+                                    RedirectAttributes flash) {
+        settings.saveNotifications(self(), mailInvitations, mailSummary);
+        flash.addFlashAttribute("successMsg", "settings.saved");
+        return "redirect:/settings/notifications";
+    }
+
+    // -------------------------------------------------------------- shared
+
+    /** What the person has saved, or what they typed when a save was refused. */
+    private record Values(String language, String theme, String timeZone,
+                          boolean mailInvitations, boolean mailSummary, String name) {
+        Values withName(String typed) {
+            return new Values(language, theme, timeZone, mailInvitations, mailSummary, typed);
+        }
+
+        Values withDisplay(String lang, String look, String zone) {
+            return new Values(lang, look, zone, mailInvitations, mailSummary, name);
+        }
+    }
+
+    private static Values values(UserEntity user) {
+        return new Values(user.getLanguage(), user.getTheme(), user.getTimeZone(),
+                user.isMailInvitations(), user.isMailSummary(), user.getDisplayName());
+    }
+
+    /**
+     * A select offers only what may be chosen, so only a name is ever refused for
+     * something the person typed; its message is localized already.
+     */
+    private Map<String, String> localized(ValidationFailure e) {
+        Map<String, String> errors = new LinkedHashMap<>();
+        e.getFieldErrors().forEach((field, message) ->
+                errors.put(field, field.equals("name") ? message : message("settings.invalid")));
+        return errors;
+    }
+
+    private String page(Model model, String section, UserEntity user, Values v,
                         Map<String, String> fieldErrors) {
-        model.addAttribute("page", PageMeta.of(message("settings.title")).help(ManualTopic.SETTINGS));
-        model.addAttribute("settings", new SettingsView(language, theme == null ? "auto" : theme, timeZone,
-                mailInvitations, mailSummary, name, user.getEmail(),
+        model.addAttribute("page", PageMeta.of(message("settings.nav." + section), message("settings.title"))
+                .help(ManualTopic.SETTINGS));
+        model.addAttribute("settings", new SettingsView(v.language(), v.theme() == null ? "auto" : v.theme(),
+                v.timeZone(), v.mailInvitations(), v.mailSummary(), v.name(), user.getEmail(),
                 Avatar.of(pictures.urlFor(user.getId()).orElse(null), user.getLabel()),
-                pictures.hasUpload(user.getId()), PictureProcessor.MAX_BYTES, SettingsService.isLocal(user), mailer.configured(),
-                WebLangConfig.LANGUAGES, SettingsService.THEMES, SettingsService.ZONES,
+                pictures.hasUpload(user.getId()), PictureProcessor.MAX_BYTES, SettingsService.isLocal(user),
+                mailer.configured(), WebLangConfig.LANGUAGES, SettingsService.THEMES, SettingsService.ZONES,
                 ZoneId.systemDefault().getId()));
+        model.addAttribute("settingsLocal", SettingsService.isLocal(user));
         model.addAttribute("fieldErrors", fieldErrors);
         model.addAttribute("errors", fieldErrors.entrySet().stream()
                 .map(e -> new FieldError(e.getKey(), e.getValue())).toList());
-        return "user/settings";
+        return "user/settings/" + section;
     }
 
     private Actor self() {

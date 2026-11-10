@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<!--
+  The Settings shell (spec 7.26): Tabler's settings layout, a navigation of the
+  sections on the left and the chosen one on the right, each saving only its own
+  fields. Password and Delete account (spec 7.24, 7.25) keep their own URLs and
+  sit in the same shell.
+
+  Parameters:
+    active   profile | display | notifications | password | delete
+    section  the section's content: card-body, and card-footer where it saves
+
+  Needs settingsLocal: only a local account has a password here (spec 2.12).
+-->
+<div th:fragment="shell(active, section)" class="card">
+    <div class="row g-0">
+        <div class="col-12 col-md-3 border-end">
+            <div class="card-body">
+                <nav class="list-group list-group-transparent" th:aria-label="#{settings.title}">
+                    <a class="list-group-item list-group-item-action d-flex align-items-center"
+                       th:href="@{/settings}" th:classappend="${active == 'profile'} ? 'active'"
+                       th:attr="aria-current=${active == 'profile'} ? 'page' : null">
+                        <svg th:replace="~{fragments/icon :: i('user','icon me-2')}"></svg>
+                        <span th:text="#{settings.nav.profile}">Profile</span>
+                    </a>
+                    <a class="list-group-item list-group-item-action d-flex align-items-center"
+                       th:href="@{/settings/display}" th:classappend="${active == 'display'} ? 'active'"
+                       th:attr="aria-current=${active == 'display'} ? 'page' : null">
+                        <svg th:replace="~{fragments/icon :: i('palette','icon me-2')}"></svg>
+                        <span th:text="#{settings.nav.display}">Display</span>
+                    </a>
+                    <a class="list-group-item list-group-item-action d-flex align-items-center"
+                       th:href="@{/settings/notifications}" th:classappend="${active == 'notifications'} ? 'active'"
+                       th:attr="aria-current=${active == 'notifications'} ? 'page' : null">
+                        <svg th:replace="~{fragments/icon :: i('bell','icon me-2')}"></svg>
+                        <span th:text="#{settings.nav.notifications}">Notifications</span>
+                    </a>
+                    <a class="list-group-item list-group-item-action d-flex align-items-center"
+                       th:if="${settingsLocal}"
+                       th:href="@{/account/password}" th:classappend="${active == 'password'} ? 'active'"
+                       th:attr="aria-current=${active == 'password'} ? 'page' : null">
+                        <svg th:replace="~{fragments/icon :: i('lock','icon me-2')}"></svg>
+                        <span th:text="#{settings.nav.password}">Password</span>
+                    </a>
+                </nav>
+                <!-- Set apart from the rest, never beside a save (spec 7.7). -->
+                <hr class="my-3"/>
+                <nav class="list-group list-group-transparent" th:aria-label="#{account.menu.delete}">
+                    <a class="list-group-item list-group-item-action d-flex align-items-center text-danger"
+                       th:href="@{/account/delete}" th:classappend="${active == 'delete'} ? 'active'"
+                       th:attr="aria-current=${active == 'delete'} ? 'page' : null">
+                        <svg th:replace="~{fragments/icon :: i('user-x','icon me-2')}"></svg>
+                        <span th:text="#{account.menu.delete}">Delete account</span>
+                    </a>
+                </nav>
+            </div>
+        </div>
+        <div class="col-12 col-md-9 d-flex flex-column">
+            <th:block th:replace="${section}"></th:block>
+        </div>
+    </div>
+</div>
+</body>
+</html>

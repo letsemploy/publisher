@@ -70,18 +70,26 @@ public class SettingsService {
     }
 
     /**
-     * Save the settings form, all of it or none. A blank language or zone means
-     * "not chosen", and so does the System theme: each is stored as null, and the
-     * browser's or the server's default applies. {@code name} is null when the
-     * form has no name field - every account but a local one.
+     * The profile page (spec 7.26): a local account's name, its own to change
+     * (spec 2.12). A provider's account is named by its provider, so this is a
+     * 404 for it, as the page offers no name field there.
      */
     @Transactional
-    public UserEntity save(Actor actor, String language, String theme, String timeZone, boolean mailInvitations,
-                           boolean mailSummary, String name) {
+    public UserEntity saveProfile(Actor actor, String name) {
         UserEntity user = self(actor);
-        if (name != null) {
-            rename(user, name);
-        }
+        rename(user, name == null ? "" : name);
+        return userRepo.save(user);
+    }
+
+    /**
+     * The display page (spec 7.26): language, theme and time zone, all of them or
+     * none. A blank language or zone means "not chosen", and so does the System
+     * theme: each is stored as null, and the browser's or the server's default
+     * applies.
+     */
+    @Transactional
+    public UserEntity saveDisplay(Actor actor, String language, String theme, String timeZone) {
+        UserEntity user = self(actor);
         String lang = blankToNull(language);
         String zone = blankToNull(timeZone);
         String look = blankToNull(theme);
@@ -97,6 +105,16 @@ public class SettingsService {
         user.setLanguage(lang);
         user.setTheme("auto".equals(look) ? null : look);
         user.setTimeZone(zone);
+        return userRepo.save(user);
+    }
+
+    /**
+     * The notifications page (spec 7.26): which mail the person gets. Only these
+     * two columns - an unticked box on another page never turns one off.
+     */
+    @Transactional
+    public UserEntity saveNotifications(Actor actor, boolean mailInvitations, boolean mailSummary) {
+        UserEntity user = self(actor);
         user.setMailInvitations(mailInvitations);
         user.setMailSummary(mailSummary);
         return userRepo.save(user);

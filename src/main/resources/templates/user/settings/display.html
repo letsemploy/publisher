@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<!--
+  Settings: how the back-office looks to this person (spec 7.26) - language,
+  theme and time zone. Saved with the account and applied at once.
+
+  Not boosted: the language and theme live on <html>, which hx-boost does not
+  swap (see fragments/nav.html), so saving is a whole-page navigation.
+-->
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout}">
+<head><title th:text="#{settings.nav.display}">Display</title></head>
+<body>
+<div layout:fragment="content">
+    <div th:replace="~{user/settings/shell :: shell('display', ~{user/settings/display :: section})}"></div>
+</div>
+
+<th:block th:fragment="section">
+    <form class="d-flex flex-column flex-fill" th:action="@{/settings/display}" method="post"
+          hx-boost:inherited="false" novalidate>
+        <div class="card-body flex-fill">
+            <div th:replace="~{fragments/form :: errorSummary(${errors})}"></div>
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label class="form-label" for="language" th:text="#{label.language}">Language</label>
+                    <select class="form-select" id="language" name="language"
+                            th:classappend="${fieldErrors.get('language') != null} ? 'is-invalid'">
+                        <option value="" th:text="#{settings.language.browser}">As my browser</option>
+                        <option th:each="l : ${settings.languages}" th:value="${l}" th:text="#{'lang.' + ${l}}"
+                                th:selected="${l == settings.language}">English</option>
+                    </select>
+                    <div class="invalid-feedback" th:if="${fieldErrors.get('language') != null}"
+                         th:text="${fieldErrors.get('language')}"></div>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="form-label" for="theme" th:text="#{label.theme}">Theme</label>
+                    <select class="form-select" id="theme" name="theme"
+                            th:classappend="${fieldErrors.get('theme') != null} ? 'is-invalid'">
+                        <option th:each="t : ${settings.themes}" th:value="${t}" th:text="#{'theme.' + ${t}}"
+                                th:selected="${t == settings.theme}">System</option>
+                    </select>
+                    <div class="invalid-feedback" th:if="${fieldErrors.get('theme') != null}"
+                         th:text="${fieldErrors.get('theme')}"></div>
+                </div>
+            </div>
+            <div>
+                <label class="form-label" for="timeZone" th:text="#{settings.timeZone}">Time zone</label>
+                <select class="form-select" id="timeZone" name="timeZone"
+                        th:classappend="${fieldErrors.get('timeZone') != null} ? 'is-invalid'"
+                        aria-describedby="timeZone-hint">
+                    <option value="" th:text="#{settings.timeZone.server(${settings.serverZone})}">As the server</option>
+                    <option th:each="z : ${settings.zones}" th:value="${z}" th:text="${z}"
+                            th:selected="${z == settings.timeZone}">Europe/Zurich</option>
+                </select>
+                <small class="form-hint" id="timeZone-hint" th:text="#{settings.timeZone.hint}">For every date and time shown.</small>
+                <div class="invalid-feedback" th:if="${fieldErrors.get('timeZone') != null}"
+                     th:text="${fieldErrors.get('timeZone')}"></div>
+            </div>
+        </div>
+        <div th:replace="~{fragments/form :: actions('settings.submit', @{/})}"></div>
+    </form>
+</th:block>
+</body>
+</html>

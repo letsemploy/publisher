@@ -674,16 +674,16 @@ accounts are enabled; otherwise they do not exist.
   whatever happened.
 - **Reset password** — reached from the mail: the new password twice. Afterwards sign-in, saying the
   password changed.
-- **Change password** — for a signed-in local account, from Settings (§7.26): the current password and
-  the new one twice. Accounts from a provider are not offered it; their password is the provider's.
+- **Change password** — for a signed-in local account, a section of Settings (§7.26), in its shell and
+  navigation rather than standalone: the current password and the new one twice. Accounts from a provider are not offered it; their password is the provider's.
 - Every form says its password rule before it is broken, and keeps what was typed except passwords
   when it refuses.
 
 ## 7.25 Deleting one's account
 
-For every signed-in person, from Settings (§7.26), inside the shell (§7.3) — not standalone like the
-account screens (§7.24), because it is reached while signed in, whatever the way in. The rules are
-§2.13.
+For every signed-in person, the last entry of the Settings navigation (§7.26), set apart from the
+others, inside the shell (§7.3) — not standalone like the account screens (§7.24), because it is
+reached while signed in, whatever the way in. The rules are §2.13.
 
 - **What goes, what stays:** the employers deleted with the account, by name, and those the person
   only leaves. A warning that it cannot be undone, and — when an employer goes — that its public feed
@@ -700,6 +700,21 @@ A person's own settings, from the user menu, inside the shell. Saved with the ac
 follow the person into every new session and onto every device; applied at once on saving. Not while
 viewing as someone (§2.9), and a token has none.
 
+**Laid out as Tabler's settings page:** one card, a navigation of the sections on its left and the
+chosen section on its right, across the full width of the content area. Each section is a page of its
+own that saves **only its own fields** — an unticked switch on one page never turns off a setting kept
+on another — with *Cancel* and *Save* in its footer (§7.7):
+
+| Section | URL | Holds |
+|---|---|---|
+| Profile | `/settings` | picture, name, email |
+| Display | `/settings/display` | language, theme, time zone |
+| Notifications | `/settings/notifications` | invitation mail, weekly summary, as switches |
+| Password | `/account/password` | local accounts only (§7.24) |
+| Delete account | `/account/delete` | set apart at the foot of the navigation (§7.25) |
+
+On a narrow screen the navigation sits above the section.
+
 - **Language** — one of those offered, or the browser's. Mail meant for the person — an invitation
   (§2.6), a password reset (§2.12) — is in it too once chosen.
 - **Theme** — System, Light or Dark (§7.3).
@@ -712,7 +727,8 @@ viewing as someone (§2.9), and a token has none.
 - **Account** — the name, editable by a local account only (§2.12): a provider names its accounts and
   renames them at the next sign-in (§2.2), so for those it is shown with that reason. The email, read
   only (§12). *Change password* for a local account (§7.24) and *Delete account* (§7.25).
-- **Picture** — upload or remove one's own (§7.27), in a form of its own beside the others.
+- **Picture** — upload or remove one's own (§7.27), on Profile, in forms of their own: choosing a file
+  uploads it at once, and without JavaScript an *Upload* button does.
 
 The selects offer only what may be chosen, and the server checks it all the same.
 

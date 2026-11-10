@@ -84,20 +84,55 @@ class SettingsTest {
     @Test
     void theChoicesAreSavedAndShownAtOnce() throws Exception {
         MockHttpSession session = new MockHttpSession();
-        mvc.perform(post("/settings").session(session).param("language", "de").param("theme", "dark")
+        mvc.perform(post("/settings/display").session(session).param("language", "de").param("theme", "dark")
                         .param("timeZone", "America/New_York"))
-                .andExpect(redirectedUrl("/settings"));
+                .andExpect(redirectedUrl("/settings/display"));
 
         UserEntity saved = reloaded();
         assertThat(saved.getLanguage()).isEqualTo("de");
         assertThat(saved.getTheme()).isEqualTo("dark");
         assertThat(saved.getTimeZone()).isEqualTo("America/New_York");
-        // The checkboxes were not sent: unticked.
+
+        assertThat(render("/settings/display", session))
+                .contains("lang=\"de\"").contains("data-bs-theme=\"dark\"").contains("Einstellungen");
+    }
+
+    /**
+     * Each page saves only its own fields (spec 7.26): the display page sends no
+     * mail switches, and must not read their absence as "off" - nor the other way.
+     */
+    @Test
+    void eachPageSavesOnlyItsOwnFields() throws Exception {
+        person.setMailInvitations(true);
+        person.setMailSummary(true);
+        person.setLanguage("fr");
+        userRepo.save(person);
+
+        mvc.perform(post("/settings/display").param("language", "de").param("theme", "auto").param("timeZone", ""))
+                .andExpect(redirectedUrl("/settings/display"));
+        assertThat(reloaded().isMailInvitations()).isTrue();
+        assertThat(reloaded().isMailSummary()).isTrue();
+
+        mvc.perform(post("/settings/notifications"))
+                .andExpect(redirectedUrl("/settings/notifications"));
+        UserEntity saved = reloaded();
         assertThat(saved.isMailInvitations()).isFalse();
         assertThat(saved.isMailSummary()).isFalse();
+        assertThat(saved.getLanguage()).isEqualTo("de");
+    }
 
-        assertThat(render("/settings", session))
-                .contains("lang=\"de\"").contains("data-bs-theme=\"dark\"").contains("Einstellungen");
+    /** One navigation for every section, the current one marked (spec 7.26, 7.9). */
+    @Test
+    void everySectionHasTheNavigation() throws Exception {
+        for (String path : java.util.List.of("/settings", "/settings/display", "/settings/notifications",
+                "/account/delete")) {
+            assertThat(render(path, new MockHttpSession()))
+                    .as(path)
+                    .contains("href=\"/settings/display\"").contains("href=\"/settings/notifications\"")
+                    .contains("href=\"/account/delete\"").contains("aria-current=\"page\"")
+                    // A provider's account has no password here (spec 2.12).
+                    .doesNotContain("href=\"/account/password\"");
+        }
     }
 
     /** What makes them settings rather than session state: the next sign-in has them. */
@@ -120,9 +155,10 @@ class SettingsTest {
         person.setTheme("dark");
         person.setTimeZone("Asia/Tokyo");
         userRepo.save(person);
-        mvc.perform(post("/settings").param("language", "").param("theme", "auto").param("timeZone", "")
-                        .param("mailInvitations", "true").param("mailSummary", "true"))
-                .andExpect(redirectedUrl("/settings"));
+        mvc.perform(post("/settings/display").param("language", "").param("theme", "auto").param("timeZone", ""))
+                .andExpect(redirectedUrl("/settings/display"));
+        mvc.perform(post("/settings/notifications").param("mailInvitations", "true").param("mailSummary", "true"))
+                .andExpect(redirectedUrl("/settings/notifications"));
 
         UserEntity saved = reloaded();
         // The weekly summary is asked for (spec 7.28).
@@ -135,7 +171,7 @@ class SettingsTest {
 
     @Test
     void onlyWhatIsOfferedIsSaved() throws Exception {
-        assertThat(mvc.perform(post("/settings").param("language", "de").param("timeZone", "Mars/Olympus"))
+        assertThat(mvc.perform(post("/settings/display").param("language", "de").param("timeZone", "Mars/Olympus"))
                 .andExpect(status().isOk()).andReturn().getResponse().getContentAsString())
                 .contains("Choose one of the options offered.");
         assertThat(reloaded().getLanguage()).isNull();
@@ -162,7 +198,9 @@ class SettingsTest {
         MockHttpSession session = new MockHttpSession();
         session.setAttribute(Impersonation.class.getName(), new Impersonation.State(UUID.randomUUID(), person.getId()));
 
-        mvc.perform(get("/settings").session(session)).andExpect(status().isNotFound());
+        for (String path : java.util.List.of("/settings", "/settings/display", "/settings/notifications")) {
+            mvc.perform(get(path).session(session)).andExpect(status().isNotFound());
+        }
         assertThat(render("/", session)).contains("lang=\"en\"");
     }
 

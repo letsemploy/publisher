@@ -73,7 +73,7 @@ class ScreenRenderingTest {
                 "/invitations", "/people", "/tokens", "/users", "/users?q=mara", "/users?suspended=true",
                 "/users/" + MEMBER + "/suspend",
                 // The seeded admin is the only one: this renders the refusal (spec 2.13).
-                "/account/delete", "/settings", "/welcome",
+                "/account/delete", "/settings", "/settings/display", "/settings/notifications", "/welcome",
                 "/activity", "/activity/all", "/activity/mine", "/users/44444444-4444-4444-8444-444444444444/activity",
                 "/employers/" + EMPLOYER + "/people",
                 "/employers/" + EMPLOYER + "/people/members/" + MEMBER + "/remove",
@@ -241,8 +241,9 @@ class ScreenRenderingTest {
      */
     @Test
     void savingSettingsForcesAFullNavigation() throws Exception {
-        String html = html("/settings");
-        int form = html.indexOf("action=\"/settings\"");
+        // Language and theme are on the display page (spec 7.26).
+        String html = html("/settings/display");
+        int form = html.indexOf("action=\"/settings/display\"");
         assertThat(form).isPositive();
         assertThat(html.substring(form - 20, form + 120))
                 .as("settings form and its links opt out of boosting").contains("hx-boost:inherited=\"false\"");

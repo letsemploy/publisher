@@ -13,21 +13,22 @@
       layout:decorate="~{layout}">
 <head><title th:text="#{account.delete.title}">Delete account</title></head>
 <body>
+<!-- In the Settings shell (spec 7.26), set apart at the foot of its navigation. -->
 <div layout:fragment="content">
+    <div th:replace="~{user/settings/shell :: shell('delete', ~{user/delete-account :: section})}"></div>
+</div>
 
+<th:block th:fragment="section">
     <!-- The only admin: nothing to confirm, only what to do first. -->
-    <div class="card" th:if="${deletion.onlyAdmin}">
-        <div class="card-body">
-            <div class="alert alert-warning mb-0" role="alert" id="only-admin">
-                <svg th:replace="~{fragments/icon :: i('alert-triangle','icon alert-icon flex-shrink-0')}"></svg>
-                <div th:text="#{account.delete.onlyAdmin}">You are the only admin. Make someone else an admin first.</div>
-            </div>
+    <div class="card-body flex-fill" th:if="${deletion.onlyAdmin}">
+        <div class="alert alert-warning mb-0" role="alert" id="only-admin">
+            <svg th:replace="~{fragments/icon :: i('alert-triangle','icon alert-icon flex-shrink-0')}"></svg>
+            <div th:text="#{account.delete.onlyAdmin}">You are the only admin. Make someone else an admin first.</div>
         </div>
     </div>
 
-    <form class="card" th:unless="${deletion.onlyAdmin}" th:action="@{/account/delete}" method="post">
-        <div class="card-status-top bg-danger"></div>
-        <div class="card-body">
+    <form class="d-flex flex-column flex-fill" th:unless="${deletion.onlyAdmin}" th:action="@{/account/delete}" method="post">
+        <div class="card-body flex-fill">
             <p th:text="#{account.delete.lead}">Your account is removed permanently: your memberships end, and your
                 pending invitations go.</p>
 
@@ -71,6 +72,6 @@
             <button type="submit" class="btn btn-danger" th:text="#{account.delete.submit}">Delete my account</button>
         </div>
     </form>
-</div>
+</th:block>
 </body>
 </html>

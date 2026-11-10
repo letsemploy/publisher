@@ -192,8 +192,10 @@ public class AccountController {
     @GetMapping("/account/password")
     public String password(Model model) {
         LocalUser user = localUser();
-        model.addAttribute("page", PageMeta.of(message("account.password.title")).help(ManualTopic.ACCOUNT));
+        model.addAttribute("page", PageMeta.of(message("account.password.title"), message("settings.title")).help(ManualTopic.ACCOUNT));
         model.addAttribute("email", user.getEmail());
+        // In the Settings navigation (spec 7.26), where only a local account has this page.
+        model.addAttribute("settingsLocal", true);
         return "account/password";
     }
 
@@ -205,8 +207,10 @@ public class AccountController {
         try {
             changed = service.changePassword(user.getId(), form, currentUserService.current());
         } catch (ValidationFailure e) {
-            model.addAttribute("page", PageMeta.of(message("account.password.title")).help(ManualTopic.ACCOUNT));
+            model.addAttribute("page", PageMeta.of(message("account.password.title"), message("settings.title")).help(ManualTopic.ACCOUNT));
             model.addAttribute("email", user.getEmail());
+        // In the Settings navigation (spec 7.26), where only a local account has this page.
+        model.addAttribute("settingsLocal", true);
             errors(model, e);
             return "account/password";
         }

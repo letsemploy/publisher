@@ -33,13 +33,16 @@ public class AccountDeletionController {
 
     private final AccountDeletionService service;
     private final CurrentUserService currentUserService;
+    private final SettingsService settings;
     private final MessageSource messages;
 
     public AccountDeletionController(AccountDeletionService service,
                                      CurrentUserService currentUserService,
+                                     SettingsService settings,
                                      MessageSource messages) {
         this.service = service;
         this.currentUserService = currentUserService;
+        this.settings = settings;
         this.messages = messages;
     }
 
@@ -65,10 +68,14 @@ public class AccountDeletionController {
     }
 
     private String page(Actor actor, boolean mismatch, Model model) {
-        model.addAttribute("page", PageMeta.of(messages.getMessage("account.delete.title", null,
-                LocaleContextHolder.getLocale())).help(ManualTopic.ACCOUNT));
+        model.addAttribute("page", PageMeta.of(
+                messages.getMessage("account.delete.title", null, LocaleContextHolder.getLocale()),
+                messages.getMessage("settings.title", null, LocaleContextHolder.getLocale()))
+                .help(ManualTopic.ACCOUNT));
         model.addAttribute("deletion", service.preview(actor));
         model.addAttribute("mismatch", mismatch);
+        // In the Settings navigation (spec 7.26), which offers Password to a local account only.
+        model.addAttribute("settingsLocal", SettingsService.isLocal(settings.self(actor)));
         return "user/delete-account";
     }
 

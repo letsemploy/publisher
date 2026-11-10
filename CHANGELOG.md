@@ -20,6 +20,9 @@ Section numbers such as §5.6 refer to the specification in [`docs/SPEC.md`](doc
   rule, *Cancel* on the left and the save action on the right. A form's URL still opens it as a page.
   The API tokens list now takes the full width; *Create a token* is a button above it, and a refused
   form keeps the chosen role and scopes.
+- Settings are laid out as sections with a navigation on the left — Profile, Display, Notifications,
+  Password (email and password accounts) and, set apart, Delete account — each saving only its own
+  fields. Choosing a picture uploads it at once.
 
 ## [1.7.1] - 2026-11-01
 

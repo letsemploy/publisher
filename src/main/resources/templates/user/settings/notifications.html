@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<!--
+  Settings: which mail this person gets (spec 7.26, 2.6, 7.28). Saving here
+  touches only these two; where no mail is sent at all, each says so.
+-->
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout}">
+<head><title th:text="#{settings.nav.notifications}">Notifications</title></head>
+<body>
+<div layout:fragment="content">
+    <div th:replace="~{user/settings/shell :: shell('notifications', ~{user/settings/notifications :: section})}"></div>
+</div>
+
+<th:block th:fragment="section">
+    <form class="d-flex flex-column flex-fill" th:action="@{/settings/notifications}" method="post"
+          hx-boost:inherited="false" novalidate>
+        <div class="card-body flex-fill">
+            <div class="mb-3">
+                <label class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox" id="mailInvitations" name="mailInvitations"
+                           value="true" th:checked="${settings.mailInvitations}" aria-describedby="mailInvitations-hint"/>
+                    <span class="form-check-label" th:text="#{settings.mailInvitations}">Mail me when I am invited to an employer</span>
+                </label>
+                <small class="form-hint" id="mailInvitations-hint"
+                       th:text="${settings.mailConfigured} ? #{settings.mailInvitations.hint} : #{settings.mailInvitations.noMail}">
+                    The invitation also waits for you here.</small>
+            </div>
+            <div>
+                <label class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox" id="mailSummary" name="mailSummary"
+                           value="true" th:checked="${settings.mailSummary}" aria-describedby="mailSummary-hint"/>
+                    <span class="form-check-label" th:text="#{settings.mailSummary}">Mail me a weekly summary of my employers</span>
+                </label>
+                <small class="form-hint" id="mailSummary-hint"
+                       th:text="${settings.mailConfigured} ? #{settings.mailSummary.hint} : #{settings.mailSummary.noMail}">
+                    Clicks, jobs that ended and what needs attention.</small>
+            </div>
+        </div>
+        <div th:replace="~{fragments/form :: actions('settings.submit', @{/})}"></div>
+    </form>
+</th:block>
+</body>
+</html>

@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<!--
+  Settings: the profile (spec 7.26) - picture, name and email.
+
+  The picture has forms of its own (spec 7.27): a file goes as multipart, and
+  choosing one uploads it at once (app.js); without the script an Upload button
+  does. The name is a local account's own to change (spec 2.12); its form is the
+  card's footer button, tied to it by the form attribute, so no form is nested.
+
+  Not boosted: a whole-page navigation like the other settings pages.
+-->
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout}">
+<head><title th:text="#{settings.nav.profile}">Profile</title></head>
+<body>
+<div layout:fragment="content">
+    <div th:replace="~{user/settings/shell :: shell('profile', ~{user/settings/profile :: section})}"></div>
+</div>
+
+<th:block th:fragment="section">
+    <div class="card-body flex-fill" hx-boost:inherited="false">
+        <div th:replace="~{fragments/form :: errorSummary(${errors})}"></div>
+
+        <h3 class="card-title" id="picture" th:text="#{settings.picture}">Picture</h3>
+        <div class="row g-3 align-items-center mb-4">
+            <div class="col-auto">
+                <span th:replace="~{fragments/avatar :: avatar(${settings.avatar}, 'avatar-xl')}"></span>
+            </div>
+            <div class="col">
+                <p class="text-secondary mb-2"
+                   th:text="${settings.local} ? #{settings.picture.hint.local} : #{settings.picture.hint.provider}">
+                    Shown beside your name to the people you work with.</p>
+                <form th:action="@{/settings/picture}" method="post" enctype="multipart/form-data">
+                    <label class="form-label" for="picture-file" th:text="#{settings.picture.choose}">Choose a picture</label>
+                    <input class="form-control" type="file" id="picture-file" name="picture" required
+                           accept="image/jpeg,image/png,image/gif" aria-describedby="picture-hint" data-auto-submit
+                           th:attr="data-max-bytes=${settings.pictureMaxBytes},data-too-big=#{validation.picture.fileTooBig}"/>
+                    <small class="form-hint" id="picture-hint" th:text="#{settings.picture.formats}">
+                        JPEG, PNG or GIF, up to 5 MB.</small>
+                    <!-- Choosing a file uploads it; this is for a browser without the script. -->
+                    <button type="submit" class="btn btn-primary mt-2" data-without-js
+                            th:text="#{settings.picture.upload}">Upload</button>
+                </form>
+                <form th:if="${settings.pictureUploaded}" th:action="@{/settings/picture/remove}" method="post"
+                      class="mt-2">
+                    <button type="submit" class="btn btn-sm btn-ghost-danger" th:text="#{settings.picture.remove}">Remove picture</button>
+                </form>
+            </div>
+        </div>
+
+        <h3 class="card-title" th:text="#{settings.account}">Account</h3>
+        <!-- A local account names itself (spec 2.12); a provider names its own. -->
+        <form id="profile-form" th:if="${settings.local}" th:action="@{/settings}" method="post" novalidate>
+            <div class="mb-3">
+                <label class="form-label required" for="name" th:text="#{label.name}">Name</label>
+                <input class="form-control" id="name" name="name" type="text" required maxlength="255"
+                       autocomplete="name" th:value="${settings.name}"
+                       th:classappend="${fieldErrors.get('name') != null} ? 'is-invalid'"
+                       th:attr="aria-invalid=${fieldErrors.get('name') != null} ? 'true' : null"/>
+                <div class="invalid-feedback" th:if="${fieldErrors.get('name') != null}"
+                     th:text="${fieldErrors.get('name')}"></div>
+            </div>
+        </form>
+        <div class="mb-3" th:unless="${settings.local}">
+            <div class="form-label" th:text="#{label.name}">Name</div>
+            <div id="name-readonly" th:text="${settings.name}">Ada</div>
+            <small class="form-hint" th:text="#{settings.name.provider}">Your sign-in provider sets your name.</small>
+        </div>
+        <div>
+            <div class="form-label" th:text="#{label.email}">Email</div>
+            <div th:text="${settings.email ?: #messages.msg('settings.email.none')}">ada@example.com</div>
+        </div>
+    </div>
+    <!-- Only a local account has something here to save: its name. -->
+    <div class="card-footer d-flex align-items-center" th:if="${settings.local}">
+        <a th:href="@{/}" class="btn btn-link" th:text="#{label.cancel}">Cancel</a>
+        <button type="submit" form="profile-form" class="btn btn-primary ms-auto"
+                th:text="#{settings.submit}">Save settings</button>
+    </div>
+</th:block>
+</body>
+</html>
