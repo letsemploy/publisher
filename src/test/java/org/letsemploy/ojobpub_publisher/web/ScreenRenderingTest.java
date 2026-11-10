@@ -77,7 +77,7 @@ class ScreenRenderingTest {
                 "/activity", "/activity/all", "/activity/mine", "/users/44444444-4444-4444-8444-444444444444/activity",
                 "/employers/" + EMPLOYER + "/people",
                 "/employers/" + EMPLOYER + "/people/members/" + MEMBER + "/remove",
-                "/employers/" + EMPLOYER + "/tokens",
+                "/employers/" + EMPLOYER + "/tokens", "/employers/" + EMPLOYER + "/tokens/create",
                 "/employers/" + EMPLOYER + "/tokens/" + TOKEN + "/revoke");
     }
 
@@ -494,9 +494,15 @@ class ScreenRenderingTest {
                 .contains("legacy-export")
                 .contains("expired")
                 .contains("Reactivate")
-                .contains("Manage people lets whatever holds this token")
                 .doesNotContain("secret_hash")
                 .doesNotContain("$2a$");
+    }
+
+    /** The create form explains people:write in plain words (spec 7.17). */
+    @Test
+    void tokenFormWarnsAboutManagingPeople() throws Exception {
+        assertThat(html("/employers/" + EMPLOYER + "/tokens/create"))
+                .contains("Manage people lets whatever holds this token");
     }
 
     /**

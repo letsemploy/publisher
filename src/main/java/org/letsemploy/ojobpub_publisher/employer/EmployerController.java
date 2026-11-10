@@ -13,6 +13,7 @@ import org.letsemploy.ojobpub_publisher.location.Location;
 import org.letsemploy.ojobpub_publisher.location.LocationService;
 import org.letsemploy.ojobpub_publisher.manual.ManualTopic;
 import org.letsemploy.ojobpub_publisher.membership.MembershipService;
+import org.letsemploy.ojobpub_publisher.web.FormViews;
 import org.letsemploy.ojobpub_publisher.web.view.*;
 import org.letsemploy.ojobpub_publisher.token.ServiceTokenService;
 import org.letsemploy.ojobpub_publisher.web.EmployerContext;
@@ -99,7 +100,7 @@ public class EmployerController {
                 List.of(new Crumb(message("nav.employers"), "/employers"),
                         new Crumb(message("employer.create"), null))).help(ManualTopic.EMPLOYERS));
         formModel(model, new EmployerFormView(null, null, null, null, null, null, null, null), Map.of());
-        return "employer/form";
+        return FormViews.view("employer/form");
     }
 
     @GetMapping("/{id}/update")
@@ -113,7 +114,7 @@ public class EmployerController {
                 employer.getSlug(), employer.getUrl(), employer.getIndustry(),
                 employer.getHeadquarters() == null ? null : employer.getHeadquarters().getId().toString(),
                 null, null), Map.of());
-        return "employer/form";
+        return FormViews.view("employer/form");
     }
 
     @PostMapping({"/create", "/{id}/update"})
@@ -143,14 +144,14 @@ public class EmployerController {
                 employerContext.setActiveEmployerId(saved.getId());
             }
             flash.addFlashAttribute("successMsg", "msg.success.saved");
-            return "redirect:/employers/" + saved.getId();
+            return FormViews.redirect("/employers/" + saved.getId());
         } catch (ValidationFailure e) {
             model.addAttribute("page", PageMeta.of(
                     id == null ? message("employer.create") : message("employer.edit"))
                     .help(id == null ? ManualTopic.EMPLOYERS : ManualTopic.PROFILE));
             formModel(model, new EmployerFormView(id == null ? null : id.toString(),
                     name, slug, url, industry, headquarters, hqCity, hqCountry), e.getFieldErrors());
-            return "employer/form";
+            return FormViews.view("employer/form");
         }
     }
 

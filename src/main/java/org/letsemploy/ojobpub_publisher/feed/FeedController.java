@@ -14,6 +14,7 @@ import org.letsemploy.ojobpub_publisher.manual.ManualTopic;
 import org.letsemploy.ojobpub_publisher.ojobpub.v1.service.OjobpubJson;
 import org.letsemploy.ojobpub_publisher.ojobpub.v1.service.OjobpubService;
 import org.letsemploy.ojobpub_publisher.ojobpub.v1.service.OjobpubValidator;
+import org.letsemploy.ojobpub_publisher.web.FormViews;
 import org.letsemploy.ojobpub_publisher.web.view.*;
 import org.letsemploy.ojobpub_publisher.web.Scope;
 import org.letsemploy.ojobpub_publisher.web.Views;
@@ -157,7 +158,7 @@ public class FeedController {
                 views.feedUrl(previewFeed(employer, "new-feed"))));
         model.addAttribute("errors", List.of());
         model.addAttribute("fieldErrors", Map.of());
-        return "feed/form";
+        return FormViews.view("feed/form");
     }
 
     /** A throwaway instance purely to render the resulting URL live on the form. */
@@ -178,7 +179,7 @@ public class FeedController {
                 feed.getSlug(), feed.getDescription(), views.feedUrl(feed)));
         model.addAttribute("errors", List.of());
         model.addAttribute("fieldErrors", Map.of());
-        return "feed/form";
+        return FormViews.view("feed/form");
     }
 
     @PostMapping({"/create", "/{id}/update"})
@@ -193,7 +194,7 @@ public class FeedController {
         try {
             Feed saved = feedService.save(id, employer, name, slug, description, scope.user());
             flash.addFlashAttribute("successMsg", "msg.success.saved");
-            return "redirect:/feeds/" + saved.getId();
+            return FormViews.redirect("/feeds/" + saved.getId());
         } catch (ValidationFailure e) {
             model.addAttribute("page", PageMeta.of(
                     id == null ? message("feed.create") : message("feed.edit")).help(ManualTopic.FEEDS));
@@ -204,7 +205,7 @@ public class FeedController {
             model.addAttribute("fieldErrors", e.getFieldErrors());
             model.addAttribute("errors", e.getFieldErrors().entrySet().stream()
                     .map(en -> new FieldError(en.getKey(), en.getValue())).toList());
-            return "feed/form";
+            return FormViews.view("feed/form");
         }
     }
 

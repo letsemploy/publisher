@@ -6,7 +6,7 @@ weight: 20
 
 ## Creating a job {#create}
 
-**New job** opens the form, grouped as *Basics* (title, description, URL, language, reference ID,
+**New job** opens the form in a dialog, grouped as *Basics* (title, description, URL, language, reference ID,
 category), *Classification* (type, mode, level, tags), *Workload and salary*, *Dates* and
 *Locations*. The URL is where applicants should go — your careers page or your
 applicant tracking system.

@@ -7,6 +7,7 @@ import org.letsemploy.ojobpub_publisher.common.exception.ValidationFailure;
 import org.letsemploy.ojobpub_publisher.manual.ManualTopic;
 import org.letsemploy.ojobpub_publisher.web.view.*;
 import org.letsemploy.ojobpub_publisher.web.Scope;
+import org.letsemploy.ojobpub_publisher.web.FormViews;
 import org.letsemploy.ojobpub_publisher.web.Views;
 import org.springframework.context.MessageSource;
 import org.springframework.context.i18n.LocaleContextHolder;
@@ -64,7 +65,7 @@ public class TagController {
                 List.of(new Crumb(message("nav.tags"), "/tags"),
                         new Crumb(message("tag.create"), null))).help(ManualTopic.TAGS));
         formModel(model, new TagFormView(null, null), Map.of());
-        return "tag/form";
+        return FormViews.view("tag/form");
     }
 
     @GetMapping("/{id}/update")
@@ -73,7 +74,7 @@ public class TagController {
         model.addAttribute("page", new PageMeta(message("tag.edit"), tag.getEmployer().getName(),
                 List.of(new Crumb(message("nav.tags"), "/tags"), new Crumb(tag.getName(), null))).help(ManualTopic.TAGS));
         formModel(model, new TagFormView(String.valueOf(tag.getId()), tag.getName()), Map.of());
-        return "tag/form";
+        return FormViews.view("tag/form");
     }
 
     @PostMapping({"/create", "/{id}/update"})
@@ -86,13 +87,13 @@ public class TagController {
                 tagService.update(id, name, scope.user());
             }
             flash.addFlashAttribute("successMsg", "msg.success.saved");
-            return "redirect:/tags";
+            return FormViews.redirect("/tags");
         } catch (ValidationFailure e) {
             model.addAttribute("page", PageMeta.of(
                     id == null ? message("tag.create") : message("tag.edit")).help(ManualTopic.TAGS));
             formModel(model, new TagFormView(id == null ? null : String.valueOf(id), name),
                     e.getFieldErrors());
-            return "tag/form";
+            return FormViews.view("tag/form");
         }
     }
 

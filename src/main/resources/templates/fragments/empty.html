@@ -9,7 +9,9 @@
     <p class="empty-title" th:text="#{${titleKey}}">Nothing here</p>
     <p class="empty-subtitle text-secondary" th:if="${subtitleKey != null}" th:text="#{${subtitleKey}}"></p>
     <div class="empty-action" th:if="${actionHref != null}">
-        <a class="btn btn-primary" th:href="${actionHref}">
+        <!-- Every action here creates something, and its form opens as a modal (spec 7.4). -->
+        <a class="btn btn-primary" th:href="${actionHref}"
+           th:attr="hx-get=@{${actionHref}},hx-target='#modal-container'">
             <svg th:replace="~{fragments/icon :: i('plus','icon')}"></svg>
             <span th:text="#{${actionKey}}">Create</span>
         </a>

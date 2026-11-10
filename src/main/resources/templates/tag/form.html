@@ -4,20 +4,17 @@
       layout:decorate="~{layout}">
 <head><title th:text="${form.id != null} ? #{tag.edit} : #{tag.create}">Tag</title></head>
 <body>
+<!-- One form, as a page or a modal (fragments/dialog, spec 7.7). -->
 <div layout:fragment="content">
-    <div class="row justify-content-center">
-        <div class="col-lg-6">
-            <form th:action="${form.id != null} ? @{'/tags/' + ${form.id} + '/update'} : @{/tags/create}" method="post">
-                <div th:replace="~{fragments/form :: errorSummary(${errors})}"></div>
-                <div class="card">
-                    <div class="card-body">
-                        <div th:replace="~{fragments/form :: input('name','label.name',${form.name},'text',true,'tag.name.hint',${fieldErrors['name']},28)}"></div>
-                    </div>
-                    <div th:replace="~{fragments/form :: actions('label.save','/tags')}"></div>
-                </div>
-            </form>
-        </div>
-    </div>
+    <div th:replace="~{fragments/dialog :: page(${form.id != null} ? @{'/tags/' + ${form.id} + '/update'} : @{/tags/create}, @{/tags}, ~{tag/form :: fields}, ~{fragments/dialog :: save}, null)}"></div>
 </div>
+
+<th:block th:fragment="modal">
+    <div th:replace="~{fragments/dialog :: modal(${page.title}, ${form.id != null} ? @{'/tags/' + ${form.id} + '/update'} : @{/tags/create}, ~{tag/form :: fields}, ~{fragments/dialog :: save}, null)}"></div>
+</th:block>
+
+<th:block th:fragment="fields">
+    <div th:replace="~{fragments/form :: input('name','label.name',${form.name},'text',true,'tag.name.hint',${fieldErrors['name']},28)}"></div>
+</th:block>
 </body>
 </html>

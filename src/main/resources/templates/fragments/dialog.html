@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<!--
+  The one shell of every create and edit form (spec 7.7). A form template
+  defines its fields once and hands them to both: page() when the URL is asked
+  for directly, modal() when a button opens it (web/FormViews decides). So the
+  forms look alike wherever they are, and the page and the modal cannot drift.
+
+  Parameters:
+    action      the form's action URL
+    cancelHref  where Cancel goes on the page; in the modal Cancel just closes it
+    fields      the form's fields, as a fragment
+    submit      the submit button(s), right-aligned; fragments/dialog :: save for one
+    after       optional, below the form - not part of it (the permalink's snippets)
+-->
+
+<div th:fragment="page(action, cancelHref, fields, submit, after)" class="row justify-content-center">
+    <div class="col-lg-8">
+        <form th:action="${action}" method="post">
+            <div th:replace="~{fragments/form :: errorSummary(${errors})}"></div>
+            <div class="card">
+                <div class="card-body">
+                    <th:block th:replace="${fields}"></th:block>
+                </div>
+                <div class="card-footer d-flex align-items-center">
+                    <a th:href="${cancelHref}" class="btn btn-link" th:text="#{label.cancel}">Cancel</a>
+                    <div class="btn-list ms-auto">
+                        <th:block th:replace="${submit}"></th:block>
+                    </div>
+                </div>
+            </div>
+        </form>
+        <th:block th:if="${after != null}">
+            <div class="mt-3"><th:block th:replace="${after}"></th:block></div>
+        </th:block>
+    </div>
+</div>
+
+<!--
+  The same form in a modal, fetched into #modal-container. It posts with htmx
+  into the same container: a refusal comes back as this modal with its errors
+  and every value kept, a success as HX-Redirect to the next page. Pressing
+  Escape or the close button discards it (app.js); clicking beside it does not,
+  so a half-filled form is not lost to a stray click.
+-->
+<div th:fragment="modal(title, action, fields, submit, after)"
+     class="modal modal-blur fade show d-block" tabindex="-1" role="dialog" aria-modal="true"
+     aria-labelledby="form-modal-title">
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable" role="document">
+        <form class="modal-content" th:action="${action}" method="post"
+              th:attr="hx-post=${action},hx-target='#modal-container'">
+            <div class="modal-header">
+                <h5 class="modal-title" id="form-modal-title" th:text="${title}">Form</h5>
+                <button type="button" class="btn-close" th:aria-label="#{label.close}"
+                        data-action="dismiss-modal"></button>
+            </div>
+            <div class="modal-body">
+                <div th:replace="~{fragments/form :: errorSummary(${errors})}"></div>
+                <th:block th:replace="${fields}"></th:block>
+                <th:block th:if="${after != null}">
+                    <div class="mt-4"><th:block th:replace="${after}"></th:block></div>
+                </th:block>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-link link-secondary me-auto"
+                        data-action="dismiss-modal" th:text="#{label.cancel}">Cancel</button>
+                <div class="btn-list">
+                    <th:block th:replace="${submit}"></th:block>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+<!-- The submit button of every form with one. -->
+<th:block th:fragment="save">
+    <button type="submit" class="btn btn-primary" th:text="#{label.save}">Save</button>
+</th:block>
+
+</body>
+</html>

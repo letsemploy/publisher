@@ -125,6 +125,11 @@ class PeopleScreenTest {
     void anEditorCannotReachTheTokensScreen() throws Exception {
         mvc.perform(get("/employers/" + EMPLOYER + "/tokens"))
                 .andExpect(status().isNotFound());
+        // Nor its create form, as a page or as the modal (spec 7.17).
+        mvc.perform(get("/employers/" + EMPLOYER + "/tokens/create"))
+                .andExpect(status().isNotFound());
+        mvc.perform(get("/employers/" + EMPLOYER + "/tokens/create").header("HX-Request", "true"))
+                .andExpect(status().isNotFound());
     }
 
     /**

@@ -13,6 +13,14 @@ Section numbers such as §5.6 refer to the specification in [`docs/SPEC.md`](doc
 - Tags can be created from the job form (§7.8): a tag search for a name the employer does not have
   yet offers **Create tag “…”**, and the tag is created when the job is saved.
 
+### Changed
+
+- Every create and edit form (jobs, feeds, permalinks, employers, tags, locations, API tokens) opens as a dialog
+  over the list it came from, and looks the same everywhere: one width, field groups divided by a
+  rule, *Cancel* on the left and the save action on the right. A form's URL still opens it as a page.
+  The API tokens list now takes the full width; *Create a token* is a button above it, and a refused
+  form keeps the chosen role and scopes.
+
 ## [1.7.1] - 2026-11-01
 
 ### Fixed

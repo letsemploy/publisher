@@ -21,7 +21,7 @@
                         <td th:text="${t.jobCount}">0</td>
                         <td>
                             <div class="btn-list flex-nowrap">
-                                <a class="btn btn-sm" th:href="@{'/tags/' + ${t.id} + '/update'}" th:text="#{label.edit}">Edit</a>
+                                <a class="btn btn-sm" th:href="@{'/tags/' + ${t.id} + '/update'}" th:attr="hx-get=@{'/tags/' + ${t.id} + '/update'},hx-target='#modal-container'" th:text="#{label.edit}">Edit</a>
                                 <button class="btn btn-sm btn-ghost-danger"
                                         th:attr="hx-get=@{'/tags/' + ${t.id} + '/delete'},hx-target='#modal-container'"
                                         th:text="#{label.delete}">Delete</button>

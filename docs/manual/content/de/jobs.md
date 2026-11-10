@@ -6,7 +6,7 @@ weight: 20
 
 ## Eine Stelle erfassen {#create}
 
-**Neue Stelle** öffnet das Formular, gegliedert in *Grunddaten* (Titel, Beschreibung, URL, Sprache,
+**Neue Stelle** öffnet das Formular in einem Dialog, gegliedert in *Grunddaten* (Titel, Beschreibung, URL, Sprache,
 Referenznummer, Kategorie), *Einordnung* (Art, Modus, Erfahrungsstufe, Schlagwörter),
 *Pensum und Lohn*, *Daten* und *Standorte*. Die URL ist das Ziel für Bewerbende — Ihre
 Karriereseite oder Ihr Bewerbermanagement.

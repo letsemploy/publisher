@@ -6,7 +6,7 @@
 <body>
 <div layout:fragment="page-actions">
     <div class="btn-list">
-        <a class="btn" th:href="@{'/feeds/' + ${feed.id} + '/update'}">
+        <a class="btn" th:href="@{'/feeds/' + ${feed.id} + '/update'}" th:attr="hx-get=@{'/feeds/' + ${feed.id} + '/update'},hx-target='#modal-container'">
             <svg th:replace="~{fragments/icon :: i('pencil','icon')}"></svg>
             <span th:text="#{label.edit}">Edit</span>
         </a>
@@ -29,7 +29,7 @@
         </div>
         <div class="card-body" th:if="${permalinks.isEmpty()}">
             <p class="text-secondary mb-2" th:text="#{feed.noPermalink}">No permalink publishes this feed.</p>
-            <a class="btn btn-sm" th:href="@{/feeds/permalinks/create}">
+            <a class="btn btn-sm" th:href="@{/feeds/permalinks/create}" th:attr="hx-get=@{/feeds/permalinks/create},hx-target='#modal-container'">
                 <svg th:replace="~{fragments/icon :: i('plus','icon')}"></svg>
                 <span th:text="#{permalink.create}">New permalink</span>
             </a>

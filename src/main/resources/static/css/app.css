@@ -127,3 +127,21 @@
     background-color: color-mix(in oklab, var(--tblr-body-color) 14%, transparent) !important;
     border-color: color-mix(in oklab, var(--tblr-body-color) 25%, transparent) !important;
 }
+
+/* Field groups of a form (spec 7.7): one fieldset each, in the page's card or the modal
+   alike, divided by a rule rather than by cards of their own. */
+.form-section + .form-section {
+    margin-top: 1.5rem;
+    padding-top: 1.5rem;
+    border-top: var(--tblr-border-width) solid var(--tblr-border-color);
+}
+.form-section-title {
+    margin-bottom: 1rem;
+}
+
+/* A modal fetched into #modal-container (spec 7.4) has no Bootstrap backdrop element:
+   the modal itself dims and blurs the page behind it. */
+#modal-container > .modal {
+    background-color: rgba(24, 36, 51, 0.24);
+    backdrop-filter: blur(4px);
+}

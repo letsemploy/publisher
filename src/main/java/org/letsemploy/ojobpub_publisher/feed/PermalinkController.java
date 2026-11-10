@@ -7,6 +7,7 @@ import java.util.UUID;
 import org.letsemploy.ojobpub_publisher.common.exception.ValidationFailure;
 import org.letsemploy.ojobpub_publisher.employer.Employer;
 import org.letsemploy.ojobpub_publisher.manual.ManualTopic;
+import org.letsemploy.ojobpub_publisher.web.FormViews;
 import org.letsemploy.ojobpub_publisher.web.Scope;
 import org.letsemploy.ojobpub_publisher.web.Views;
 import org.letsemploy.ojobpub_publisher.web.view.Crumb;
@@ -80,7 +81,7 @@ public class PermalinkController {
         try {
             permalinkService.save(id, employer, name, description, feedId(feed), scope.user());
             flash.addFlashAttribute("successMsg", "msg.success.saved");
-            return "redirect:/feeds";
+            return FormViews.redirect("/feeds");
         } catch (ValidationFailure e) {
             // Back to the form with what was typed (spec 7.7).
             return form(model, employer, new PermalinkFormView(id == null ? null : id.toString(), name,
@@ -133,7 +134,7 @@ public class PermalinkController {
         model.addAttribute("fieldErrors", fieldErrors);
         model.addAttribute("errors", fieldErrors.entrySet().stream()
                 .map(en -> new FieldError(en.getKey(), en.getValue())).toList());
-        return "feed/permalink_form";
+        return FormViews.view("feed/permalink_form");
     }
 
     /** Empty for none; anything that is not an id is refused like a stranger's feed. */

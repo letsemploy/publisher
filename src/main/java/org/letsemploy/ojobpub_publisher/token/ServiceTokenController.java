@@ -12,6 +12,7 @@ import org.letsemploy.ojobpub_publisher.employer.EmployerService;
 import org.letsemploy.ojobpub_publisher.manual.ManualTopic;
 import org.letsemploy.ojobpub_publisher.membership.MembershipRole;
 import org.letsemploy.ojobpub_publisher.membership.MembershipService;
+import org.letsemploy.ojobpub_publisher.web.FormViews;
 import org.letsemploy.ojobpub_publisher.web.Scope;
 import org.letsemploy.ojobpub_publisher.web.Views;
 import org.letsemploy.ojobpub_publisher.web.view.*;
@@ -71,12 +72,11 @@ public class ServiceTokenController {
 
     @GetMapping("/employers/{employerId}/tokens")
     public String list(@PathVariable UUID employerId, Model model) {
-        populate(employerId, model, Map.of(), null);
+        populate(employerId, model);
         return "token/list";
     }
 
-    private void populate(UUID employerId, Model model, Map<String, String> fieldErrors,
-                          String name) {
+    private void populate(UUID employerId, Model model) {
         Employer employer = employerService.findVisible(employerId, scope.user());
         java.time.Instant now = java.time.Instant.now();
         List<TokenRow> tokens = tokenService.forEmployer(employerId, scope.user()).stream()
@@ -89,8 +89,32 @@ public class ServiceTokenController {
         model.addAttribute("employerId", employerId.toString());
         model.addAttribute("employerName", employer.getName());
         model.addAttribute("tokens", tokens);
+    }
+
+    /**
+     * The create form (spec 7.17), a modal from the list's button and a page by
+     * its URL (spec 7.4). Owners only, like the token list: anyone else gets the
+     * 404 every refusal is.
+     */
+    @GetMapping("/employers/{employerId}/tokens/create")
+    public String createForm(@PathVariable UUID employerId, Model model) {
+        formModel(employerId, model, Map.of(), null, MembershipRole.EDITOR.name(), Set.of());
+        return FormViews.view("token/form");
+    }
+
+    private void formModel(UUID employerId, Model model, Map<String, String> fieldErrors,
+                           String name, String role, Set<String> chosenScopes) {
+        membershipService.requireOwner(scope.user(), employerId);
+        Employer employer = employerService.findVisible(employerId, scope.user());
+        model.addAttribute("page", new PageMeta(message("token.create"), employer.getName(),
+                List.of(new Crumb(message("token.title"), tokensPath(employerId)),
+                        new Crumb(message("token.create"), null))).help(ManualTopic.TOKENS));
+        model.addAttribute("employerId", employerId.toString());
         model.addAttribute("scopes", List.of(TokenScope.values()));
+        // Every value comes back on a refusal (spec 7.7), the role and scopes too.
         model.addAttribute("name", name);
+        model.addAttribute("role", role);
+        model.addAttribute("chosenScopes", chosenScopes);
         model.addAttribute("fieldErrors", fieldErrors);
         model.addAttribute("errors", fieldErrors.entrySet().stream()
                 .map(e -> new FieldError(e.getKey(), e.getValue())).toList());
@@ -113,10 +137,12 @@ public class ServiceTokenController {
                     parseScopes(scopes), scope.user());
             flash.addFlashAttribute("createdSecret", created.secret());
             flash.addFlashAttribute("createdName", created.token().getName());
-            return redirectToTokens(employerId);
+            return FormViews.redirect(tokensPath(employerId));
         } catch (ValidationFailure e) {
-            populate(employerId, model, e.getFieldErrors(), name);
-            return "token/list";
+            Set<String> chosen = scopes == null ? Set.of() : Set.copyOf(scopes.stream()
+                    .map(String::toUpperCase).toList());
+            formModel(employerId, model, e.getFieldErrors(), name, role.toUpperCase(), chosen);
+            return FormViews.view("token/form");
         }
     }
 
@@ -179,10 +205,14 @@ public class ServiceTokenController {
 
     /** Back to whichever of the two routes the user is on (spec 7.17). */
     private String redirectToTokens(UUID employerId) {
+        return "redirect:" + tokensPath(employerId);
+    }
+
+    private String tokensPath(UUID employerId) {
         return scope.activeEmployer()
                 .filter(e -> e.getId().equals(employerId))
-                .map(e -> "redirect:/tokens")
-                .orElse("redirect:/employers/" + employerId + "/tokens");
+                .map(e -> "/tokens")
+                .orElse("/employers/" + employerId + "/tokens");
     }
 
     private String message(String key) {

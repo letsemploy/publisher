@@ -6,7 +6,7 @@
 <body>
 <div layout:fragment="page-actions">
     <!-- Nothing to create into without an employer (spec 2.5): the content says how to get one. -->
-    <a class="btn btn-primary" th:href="@{/locations/create}" th:if="${ui.activeEmployer != null}">
+    <a class="btn btn-primary" th:href="@{/locations/create}" th:attr="hx-get=@{/locations/create},hx-target='#modal-container'" th:if="${ui.activeEmployer != null}">
         <svg th:replace="~{fragments/icon :: i('plus','icon')}"></svg>
         <span th:text="#{location.create}">New location</span>
     </a>
@@ -50,7 +50,7 @@
                         </td>
                         <td>
                             <div class="btn-list flex-nowrap">
-                                <a class="btn btn-sm" th:href="@{'/locations/' + ${l.id} + '/update'}" th:text="#{label.edit}">Edit</a>
+                                <a class="btn btn-sm" th:href="@{'/locations/' + ${l.id} + '/update'}" th:attr="hx-get=@{'/locations/' + ${l.id} + '/update'},hx-target='#modal-container'" th:text="#{label.edit}">Edit</a>
                                 <!-- A location in use cannot be deleted; the UI says what references it (spec 7.14) -->
                                 <button class="btn btn-sm btn-ghost-danger" th:if="${l.deletable}"
                                         th:attr="hx-get=@{'/locations/' + ${l.id} + '/delete'},hx-target='#modal-container'"

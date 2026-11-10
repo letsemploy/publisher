@@ -867,8 +867,24 @@ so it survives htmx swaps, covering modal dismissal, chip removal and copy-to-cl
 gone, so the CSP carries **neither `unsafe-inline` nor `unsafe-eval`**.
 
 Controls that only work with JavaScript are rendered `hidden` with `data-enhanced` and revealed by the
-module, so no screen offers a dead button — progressive enhancement is still mandatory (§7.1).
+module, so no screen offers a dead button. JavaScript may be assumed where it serves (§7.1), but the
+public URLs still work without it, and every back-office URL still answers a whole page.
 `static/css/app.css` is the only custom stylesheet.
+
+**Every create and edit form is one template, a modal and a page** (§7.4, §7.7). Job, feed, permalink,
+employer, tag, location and API-token forms define `fields` (and `submit` where it is not the plain Save) once
+and hand them to `fragments/dialog :: page(...)` inside `layout:fragment="content"`, and to
+`fragments/dialog :: modal(...)` in a `modal` fragment. The controller returns
+`FormViews.view("x/form")` and, on success, `FormViews.redirect(path)`:
+- a non-boosted htmx request (the form's button: `href` plus `hx-get` into `#modal-container`) gets
+  `x/form :: modal`; the modal `hx-post`s back into the container, so a refusal re-renders it with
+  its errors, and a success is `redirect:htmx:` — `HX-Redirect`, flash kept;
+- anything else gets the page and a plain redirect, as before. Links to one of a form's fields (the
+  job's readiness checklist) stay page links.
+- `redirect:htmx:` needs `config/HtmxViewConfig`: the library registers its view resolver only
+  `@ConditionalOnBean(View.class)`, which this app never has, and without it Thymeleaf's resolver
+  sent a 302 to `htmx:/tags`. `FormModalTest` covers both halves for every form.
+- A new form follows the same pattern, and a new button that opens one gets the `hx-get`.
 
 The dark palette comes from `data-bs-theme-base="gray"` on `<html>` in `layout.html` **and**
 `login.html`, with the vendored `tabler-themes.min.css`. It matches the other letsemploy apps
@@ -1006,6 +1022,7 @@ TEST_DB=sqlite ./mvnw test                   # all, on SQLite; no server
 ./mvnw test -Dtest=AdminSyncTest             # admins promoted and demoted through real sign-ins
 ./mvnw test -Dtest=LocationTagScopeTest      # another employer's locations and tags: 404, refused on a job
 ./mvnw test -Dtest=JobInlineTagTest          # tags created from the job form: offered, made on save, never by a refused one
+./mvnw test -Dtest=FormModalTest             # every form: a modal from its button, a page by its URL, saved from either
 ./mvnw test -Dtest=MigrationV7Test           # V7 divides shared rows correctly, on MariaDB and SQLite
 ./mvnw test -Dtest=EmployerDeleteTest        # owners and admins delete; editors, strangers and tokens cannot
 ./mvnw test -Dtest=ImpersonationTest         # view-as: the user's view, read-only, never on admins

@@ -6,7 +6,7 @@
 <body>
 <div layout:fragment="page-actions">
     <div class="btn-list">
-        <a class="btn" th:href="@{'/jobs/' + ${job.id} + '/update'}">
+        <a class="btn" th:href="@{'/jobs/' + ${job.id} + '/update'}" th:attr="hx-get=@{'/jobs/' + ${job.id} + '/update'},hx-target='#modal-container'">
             <svg th:replace="~{fragments/icon :: i('pencil','icon')}"></svg>
             <span th:text="#{label.edit}">Edit</span>
         </a>

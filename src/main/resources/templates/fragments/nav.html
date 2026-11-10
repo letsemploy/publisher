@@ -63,7 +63,7 @@
                         th:text="#{employer.switch}">Switch employer</button>
             </form>
             <div class="sidebar-employer" th:if="${ui.activeEmployer == null}">
-                <a class="btn btn-primary w-100" th:href="@{/employers/create}">
+                <a class="btn btn-primary w-100" th:href="@{/employers/create}" th:attr="hx-get=@{/employers/create},hx-target='#modal-container'">
                     <svg th:replace="~{fragments/icon :: i('plus','icon')}"></svg>
                     <span th:text="#{employer.create}">New employer</span>
                 </a>

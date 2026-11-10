@@ -4,22 +4,19 @@
       layout:decorate="~{layout}">
 <head><title th:text="${form.id != null} ? #{location.edit} : #{location.create}">Location</title></head>
 <body>
+<!-- One form, as a page or a modal (fragments/dialog, spec 7.7). -->
 <div layout:fragment="content">
-    <div class="row justify-content-center">
-        <div class="col-lg-6">
-            <form th:action="${form.id != null} ? @{'/locations/' + ${form.id} + '/update'} : @{/locations/create}" method="post">
-                <div th:replace="~{fragments/form :: errorSummary(${errors})}"></div>
-                <div class="card">
-                    <div class="card-body">
-                        <div th:replace="~{fragments/form :: input('city','label.city',${form.city},'text',true,null,${fieldErrors['city']},255)}"></div>
-                        <!-- Native select: browsers already provide type-ahead, so no library (spec 7.8) -->
-                        <div th:replace="~{fragments/form :: select('country','label.country',${form.country},${countryOptions},true,'label.pleaseChoose',${fieldErrors['country']})}"></div>
-                    </div>
-                    <div th:replace="~{fragments/form :: actions('label.save','/locations')}"></div>
-                </div>
-            </form>
-        </div>
-    </div>
+    <div th:replace="~{fragments/dialog :: page(${form.id != null} ? @{'/locations/' + ${form.id} + '/update'} : @{/locations/create}, @{/locations}, ~{location/form :: fields}, ~{fragments/dialog :: save}, null)}"></div>
 </div>
+
+<th:block th:fragment="modal">
+    <div th:replace="~{fragments/dialog :: modal(${page.title}, ${form.id != null} ? @{'/locations/' + ${form.id} + '/update'} : @{/locations/create}, ~{location/form :: fields}, ~{fragments/dialog :: save}, null)}"></div>
+</th:block>
+
+<th:block th:fragment="fields">
+    <div th:replace="~{fragments/form :: input('city','label.city',${form.city},'text',true,null,${fieldErrors['city']},255)}"></div>
+    <!-- Native select: browsers already provide type-ahead, so no library (spec 7.8) -->
+    <div th:replace="~{fragments/form :: select('country','label.country',${form.country},${countryOptions},true,'label.pleaseChoose',${fieldErrors['country']})}"></div>
+</th:block>
 </body>
 </html>

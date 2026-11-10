@@ -22,7 +22,7 @@
             <h4 class="alert-title" th:text="#{dashboard.hint.employer.title}">No employer yet</h4>
             <div class="text-secondary" th:text="#{dashboard.hint.employer.text}">Create one, or accept an invitation.</div>
             <div class="btn-list mt-2">
-                <a class="btn btn-primary btn-sm" th:href="@{/employers/create}"
+                <a class="btn btn-primary btn-sm" th:href="@{/employers/create}" th:attr="hx-get=@{/employers/create},hx-target='#modal-container'"
                    th:text="#{dashboard.hint.employer.action}">Create an employer</a>
                 <a class="btn btn-sm" th:href="@{/invitations}"
                    th:text="#{dashboard.hint.employer.invitations}">See your invitations</a>
@@ -37,7 +37,7 @@
             <h4 class="alert-title" th:text="#{dashboard.hint.job.title}">No job yet</h4>
             <div class="text-secondary" th:text="#{dashboard.hint.job.text}">Create the first job.</div>
             <div class="btn-list mt-2">
-                <a class="btn btn-primary btn-sm" th:href="@{/jobs/create}"
+                <a class="btn btn-primary btn-sm" th:href="@{/jobs/create}" th:attr="hx-get=@{/jobs/create},hx-target='#modal-container'"
                    th:text="#{dashboard.hint.job.action}">Create a job</a>
                 <a class="btn btn-sm btn-ghost-secondary" th:href="@{/welcome}"
                    th:text="#{dashboard.hint.welcome}">New here? Read the introduction</a>
@@ -287,7 +287,7 @@
         <div class="card-header">
             <h3 class="card-title" th:text="#{permalink.title}">Permalinks</h3>
             <div class="card-actions">
-                <a class="btn btn-sm" th:href="@{/feeds/permalinks/create}">
+                <a class="btn btn-sm" th:href="@{/feeds/permalinks/create}" th:attr="hx-get=@{/feeds/permalinks/create},hx-target='#modal-container'">
                     <svg th:replace="~{fragments/icon :: i('plus','icon')}"></svg>
                     <span th:text="#{permalink.create}">New permalink</span>
                 </a>

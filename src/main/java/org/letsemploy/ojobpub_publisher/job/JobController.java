@@ -19,6 +19,7 @@ import org.letsemploy.ojobpub_publisher.location.LocationService;
 import org.letsemploy.ojobpub_publisher.manual.ManualTopic;
 import org.letsemploy.ojobpub_publisher.tag.Tag;
 import org.letsemploy.ojobpub_publisher.tag.TagService;
+import org.letsemploy.ojobpub_publisher.web.FormViews;
 import org.letsemploy.ojobpub_publisher.web.view.*;
 import org.letsemploy.ojobpub_publisher.web.Scope;
 import org.letsemploy.ojobpub_publisher.web.Views;
@@ -210,7 +211,7 @@ public class JobController {
         form.setLanguage("en");
         form.setJobType("permanent");
         formModel(model, form, Map.of(), List.of(), List.of(), scope.requireActiveEmployer());
-        return "job/form";
+        return FormViews.view("job/form");
     }
 
     @GetMapping("/{id}/update")
@@ -224,7 +225,7 @@ public class JobController {
                 job.getLocations().stream()
                         .map(l -> new Ref(l.getId().toString(), l.getLabel())).toList(),
                 job.getEmployer());
-        return "job/form";
+        return FormViews.view("job/form");
     }
 
     @PostMapping({"/create", "/{id}/update"})
@@ -240,14 +241,14 @@ public class JobController {
         try {
             Job saved = jobService.save(form, employer, "activate".equals(action), scope.user());
             flash.addFlashAttribute("successMsg", "msg.success.saved");
-            return "redirect:/jobs/" + saved.getId();
+            return FormViews.redirect("/jobs/" + saved.getId());
         } catch (ValidationFailure e) {
             // Re-render with every entered value preserved (spec 7.7).
             model.addAttribute("page", new PageMeta(
                     id == null ? message("job.create") : message("job.edit"), null, List.of()).help(ManualTopic.JOB_FORM));
             formModel(model, form, e.getFieldErrors(), refsForTags(form, employer),
                     refsForLocations(form, employer), employer);
-            return "job/form";
+            return FormViews.view("job/form");
         }
     }
 

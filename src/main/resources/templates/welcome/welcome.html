@@ -23,7 +23,7 @@
                     <h2 class="card-title" th:text="#{welcome.employer.title}">Your employer</h2>
                     <p class="text-secondary" th:text="#{welcome.employer.text}">Everything belongs to an employer.</p>
                     <div class="btn-list">
-                        <a class="btn btn-primary btn-sm" th:href="@{/employers/create}"
+                        <a class="btn btn-primary btn-sm" th:href="@{/employers/create}" th:attr="hx-get=@{/employers/create},hx-target='#modal-container'"
                            th:text="#{dashboard.hint.employer.action}">Create an employer</a>
                         <a class="btn btn-sm" th:href="@{/invitations}" th:text="#{nav.invitations}">Invitations</a>
                         <a class="btn btn-sm btn-ghost-secondary" hx-boost="false" th:href="@{${welcome.employerHelp}}"

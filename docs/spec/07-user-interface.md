@@ -12,10 +12,15 @@ client application.
 1. **The server owns the state and the markup.** Every screen and every fragment is rendered by
    Thymeleaf. The browser never assembles a view from data; there is no client-side template, store or
    router.
-2. **Progressive enhancement is mandatory.** Every screen **must** work with JavaScript disabled:
-   real `<a>` links, real `<form>` posts, real full-page responses. htmx makes those interactions
-   partial and fast; it is never the only way to perform an action. This is both an accessibility
-   guarantee and the cheapest possible insurance against a broken asset.
+2. **JavaScript may be assumed where it serves.** The back-office is used in a current browser, and
+   htmx and `app.js` may carry an interaction rather than only speed it up: forms open as modals
+   (§7.4, §7.7), pickers assemble their chips in the browser (§7.8). Two things still hold without
+   it. **The public URLs** — the feed and permalink documents (§5), `/go` (§5.6), the manual (§7.29)
+   and the sign-in and account pages (§7.19, §2.12) — work with JavaScript disabled, and all but
+   the last open no session. **Every back-office URL answers a whole page** when asked for
+   directly: a form's URL is its page as well as its modal, so a bookmark, a reload or a link to
+   one of its fields still lands on it. A control that only works with JavaScript is rendered `hidden` and revealed by
+   `app.js`, so a broken asset leaves no dead button behind.
 3. **A JavaScript budget, not a prohibition** (§7.2). Some behaviour is genuinely better in the
    browser, and a few lines there beat a contrived server round trip. What is budgeted is *dependencies
    and complexity*, not lines: reach for a server round trip first, and when the browser is the right
@@ -176,6 +181,7 @@ These patterns are exhaustive: a new screen composes them rather than inventing 
 | **Tabs** | `hx-get` per tab into the panel region, with `hx-push-url` so a tab is linkable. |
 | **Flash messages** | Rendered by the server into a fixed `aria-live="polite"` region and delivered as an **out-of-band swap**, so any request can raise one without the caller knowing. |
 | **Dependent counters** — top-bar and dashboard badges | Out-of-band swaps on the responses that change them. Never polled. |
+| **Forms** | Every create and edit form opens as a modal: its button keeps the form's URL as `href` and fetches it with `hx-get` into `#modal-container`, and the server answers the template's modal fragment for a non-boosted htmx request. The modal posts with `hx-post` into the same container: a refusal re-renders it with its errors and every value, a success answers `HX-Redirect` to the next page, with its flash message. The same URL asked for directly is the form as a page (§7.1). Page and modal are one template in one shell (§7.7). |
 | **Confirmation dialogs** | `hx-get` fetches a server-rendered Tabler modal into a shared `#modal` container; the modal contains the real form. `hx-confirm` (the browser's `confirm()`) **must not** be used: it cannot be translated, styled, or made to state consequences. |
 | **Loading feedback** | `hx-indicator` on the affected region; Tabler spinner plus a dimmed region via the `htmx-request` class. No global spinner. |
 | **Validation** | The server re-renders the form fragment with errors. There is no client-side validation beyond native HTML attributes (`required`, `type`, `min`, `max`, `maxlength`), which cost nothing and work without JS. |
@@ -240,15 +246,21 @@ Status badge mapping, used identically in every list, detail and picker:
 
 ## 7.7 Forms
 
-- One `card` per field group, fields in Tabler's grid, related fields on one row where they belong
-  together (salary min / max / currency / interval).
+- **One shell for every form**, as a modal or as a page (§7.4): the page is one `card`, centred at the
+  same width for every form, with the actions in its footer; the modal is `modal-lg` with the actions
+  in its footer. A form defines its fields once and both render them, so no two forms differ in
+  layout.
+- One `fieldset` with a heading per field group, divided by a rule, fields in Tabler's grid, related
+  fields on one row where they belong together (salary min / max / currency / interval).
 - Required fields are marked in the label, not only enforced on submit.
 - Errors render beside their field with `is-invalid` + `invalid-feedback`, and a summary alert at the
   top of the form lists them with in-page links. **Every entered value is preserved** on a validation
   error.
 - Guidance goes in `form-hint` beneath the field — for example that a slug change is safe (§5.1).
-- Actions are pinned at the end of the form: primary on the left, *Cancel* as a link, destructive
-  actions separated and never adjacent to the primary button.
+- Actions are pinned at the end of the form: *Cancel* on the left, the primary action on the right.
+  Where there are two submit actions the safer one comes first in the markup, since Enter in a field
+  submits with the first (*Save draft* before *Save and activate*). Destructive actions are separated
+  and never adjacent to the primary button.
 - Conditional requirements are rendered by the server: entering a salary amount re-renders the salary
   group with currency and interval marked required (§3.3).
 - Character counters appear on every field the schema caps: `title` 255, `description` 1000, tags 16
@@ -278,11 +290,10 @@ of an autocomplete library, both use one pattern:
    transaction, so a refused save leaves no tag behind and a name another member created meanwhile
    becomes that tag. The Tags screen (§7.15) remains where tags are renamed and deleted.
 
-**The one exception to §7.1.** Assembling a chip in the browser departs from point 1, and point 2 does
-not hold here: without JavaScript the chips still render and post, so saving keeps the selection, but
-it cannot be changed. The remove buttons are hidden, and the results only ever arrive through htmx.
-Changing locations and tags therefore needs JavaScript. A round trip per chosen item was judged a
-contrived way to append one element (§7.1, point 3).
+**Assembled in the browser.** Building a chip in the browser departs from §7.1, point 1: a round trip
+per chosen item was judged a contrived way to append one element (§7.1, point 3). Without JavaScript
+the chips still render and post, so saving keeps the selection, but it cannot be changed (§7.1,
+point 2).
 
 The country field on a location is a plain `<select>` over the ISO 3166-1 list showing localized names —
 browsers already provide type-ahead on a native select, so no library is warranted.
@@ -487,8 +498,9 @@ is the one to revoke. Each row shows its state — active, expiring soon, expire
 before a change freeze should not be told to come back later. On a lapsed token the same control reads
 **Reactivate**. It needs no confirmation: it is additive and reversible, unlike revoking.
 
-**Create** — a name, a role (§2.1) and a set of scopes, with the scopes explained in terms of what they
-let a caller *do* rather than by their identifiers. `people:write` **must** carry a plain warning that
+**Create** — a form opened from the list as a modal (§7.4, §7.7): a name, a role (§2.1) and a set of
+scopes, with the scopes explained in terms of what they let a caller *do* rather than by their
+identifiers. On success it returns to the list, which shows the secret once. `people:write` **must** carry a plain warning that
 it allows inviting and removing colleagues.
 
 **The secret is shown exactly once**, on the screen that follows creation, with an unmistakable notice

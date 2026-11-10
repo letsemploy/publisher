@@ -50,8 +50,8 @@ Because navigation uses `hx-boost` (§7.4), the discriminator **must** be "an ht
 boosted". A boosted navigation is an htmx request but still wants the whole page: routing it to the
 fragment controller would return a bare fragment with no layout. Fragment controllers therefore match
 only non-boosted htmx requests, and every fragment endpoint must also render correctly as a full page
-when requested directly, which is what makes the progressive-enhancement guarantee of §7.1 real rather
-than aspirational.
+when requested directly, which is what makes the guarantee of §7.1 real rather than aspirational: a
+form's URL is its modal for its button and its page for everyone else.
 
 ## 9.3 Persistence
 

@@ -5,9 +5,10 @@
  * listener is delegated from the document, so it keeps working after an htmx
  * swap replaces part of the page.
  *
- * Nothing here is load-bearing. Each control is marked `hidden` in the markup and
- * revealed by this module, so a browser without JavaScript shows no dead
- * controls - progressive enhancement is mandatory (spec 7.1).
+ * Controls that need this module are marked `hidden` in the markup and revealed
+ * by it, so no screen offers a dead button. JavaScript may be assumed where it
+ * serves (spec 7.1): forms open as modals (spec 7.4), and their URLs still answer
+ * the whole page.
  *
  * No eval, no building markup from strings: the CSP forbids both (spec 9.4).
  */
@@ -115,7 +116,7 @@
         }
     });
 
-    // Escape closes a confirmation modal, as the dialog conventions require (spec 7.9).
+    // Escape closes a modal - a confirmation or a form - as the dialog conventions require (spec 7.9).
     document.addEventListener('keydown', (event) => {
         if (event.key === 'Escape') {
             document.querySelector('#modal-container .modal')?.remove();
@@ -182,6 +183,17 @@
             .forEach((el) => sparkline.getOrCreateInstance(el));
     };
 
+    /**
+     * A form opened as a modal (spec 7.4, 7.7) starts at its first field, or at
+     * the first one in error when a refusal brought it back.
+     */
+    const focusModalForm = (root) => {
+        const modal = root.closest?.('#modal-container') ? root.querySelector('.modal') : null;
+        const field = modal?.querySelector('.is-invalid')
+            ?? modal?.querySelector('form.modal-content .modal-body :is(input, select, textarea):not([type="hidden"])');
+        field?.focus();
+    };
+
     // htmx replaces regions wholesale; anything swapped in needs revealing too.
     // htmx 4 fires this on the element that made the request, not the region it
     // replaced, so the region comes from the request context.
@@ -191,6 +203,7 @@
         revealEnhancedControls(root);
         armConfirmNames(root);
         drawSparklines(root);
+        focusModalForm(root);
     });
 
     revealEnhancedControls();

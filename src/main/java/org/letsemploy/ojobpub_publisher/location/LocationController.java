@@ -6,6 +6,7 @@ import java.util.UUID;
 import org.letsemploy.ojobpub_publisher.common.exception.ValidationFailure;
 import org.letsemploy.ojobpub_publisher.employer.Employer;
 import org.letsemploy.ojobpub_publisher.manual.ManualTopic;
+import org.letsemploy.ojobpub_publisher.web.FormViews;
 import org.letsemploy.ojobpub_publisher.web.Scope;
 import org.letsemploy.ojobpub_publisher.web.view.*;
 import org.letsemploy.ojobpub_publisher.web.Views;
@@ -58,7 +59,7 @@ public class LocationController {
                 List.of(new Crumb(message("nav.locations"), "/locations"),
                         new Crumb(message("location.create"), null))).help(ManualTopic.LOCATIONS));
         formModel(model, new LocationFormView(null, null, null), Map.of());
-        return "location/form";
+        return FormViews.view("location/form");
     }
 
     @GetMapping("/{id}/update")
@@ -69,7 +70,7 @@ public class LocationController {
                         new Crumb(location.getLabel(), null))).help(ManualTopic.LOCATIONS));
         formModel(model, new LocationFormView(location.getId().toString(), location.getCity(),
                 location.getCountryCode()), Map.of());
-        return "location/form";
+        return FormViews.view("location/form");
     }
 
     @PostMapping({"/create", "/{id}/update"})
@@ -84,13 +85,13 @@ public class LocationController {
                 locationService.update(id, city, country, scope.user());
             }
             flash.addFlashAttribute("successMsg", "msg.success.saved");
-            return "redirect:/locations";
+            return FormViews.redirect("/locations");
         } catch (ValidationFailure e) {
             model.addAttribute("page", PageMeta.of(
                     id == null ? message("location.create") : message("location.edit")).help(ManualTopic.LOCATIONS));
             formModel(model, new LocationFormView(id == null ? null : id.toString(), city, country),
                     e.getFieldErrors());
-            return "location/form";
+            return FormViews.view("location/form");
         }
     }
 
