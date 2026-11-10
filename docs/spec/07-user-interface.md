@@ -270,8 +270,13 @@ of an autocomplete library, both use one pattern:
 4. **Results are not form fields.** Only chips post, so what is listed but not chosen is never
    submitted. The server still checks every id against the job's employer (§3.3); the picker only
    limits what is offered.
-5. **New tags and locations are not created here.** They are made on the Tags and Locations screens
-   (§7.14, §7.15), and a search matching nothing says so.
+5. **New locations are not created here, new tags are.** Locations are made on the Locations screen
+   (§7.14), and a location search matching nothing says so. A tag search for a name the employer does
+   not have yet (normalized, within the length cap of §3.4) also offers **Create tag “…”**. Choosing it
+   adds a chip like any result, but its hidden input posts the *name* (`newTags`), not an id. Nothing
+   is created then: the job's save creates it with find-or-create (§3.4), in the save's own
+   transaction, so a refused save leaves no tag behind and a name another member created meanwhile
+   becomes that tag. The Tags screen (§7.15) remains where tags are renamed and deleted.
 
 **The one exception to §7.1.** Assembling a chip in the browser departs from point 1, and point 2 does
 not hold here: without JavaScript the chips still render and post, so saving keeps the selection, but

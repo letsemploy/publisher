@@ -6,7 +6,15 @@
   Chips are backed by hidden inputs, so the selection posts with a plain form
   and the screen still works with JavaScript disabled.
 -->
-<div th:fragment="chips(name, items, removable)" class="mb-2"
+<div th:fragment="chips(name, items, removable)" th:remove="tag">
+    <div th:replace="~{fragments/picker :: chipsWithPending(${name}, ${items}, null, null, ${removable})}"></div>
+</div>
+
+<!--
+  The same, plus chips for items that do not exist yet (spec 7.8): a tag named in
+  the search, posted by name under pendingName and created when the job saves.
+-->
+<div th:fragment="chipsWithPending(name, items, pendingName, pending, removable)" class="mb-2"
      th:attr="data-chips=${name},data-remove-label=#{label.remove}">
     <span th:each="it : ${items}" class="badge bg-blue-lt me-1 mb-1" data-chip>
         <input type="hidden" th:name="${name}" th:value="${it.id}"/>
@@ -17,7 +25,14 @@
                 th:aria-label="#{label.remove}"
                 data-action="remove-chip" data-enhanced hidden></button>
     </span>
-    <span th:if="${items.isEmpty()}" class="text-secondary" th:text="#{picker.none}"
+    <span th:each="it : ${pending}" class="badge bg-green-lt me-1 mb-1" data-chip>
+        <input type="hidden" th:name="${pendingName}" th:value="${it.id}"/>
+        <span th:text="${it.label}">item</span>
+        <button th:if="${removable}" type="button" class="btn-close btn-close-white ms-1"
+                th:aria-label="#{label.remove}"
+                data-action="remove-chip" data-enhanced hidden></button>
+    </span>
+    <span th:if="${items.isEmpty() and (pending == null or pending.isEmpty())}" class="text-secondary" th:text="#{picker.none}"
           data-chips-empty>None selected</span>
 </div>
 
@@ -44,7 +59,12 @@
     <button type="button" class="list-group-item list-group-item-action" th:each="r : ${results}"
             data-action="pick" th:attr="data-target=${targetName},data-value=${r.id},data-label=${r.label}"
             th:text="${r.label}">label</button>
-    <div class="list-group-item text-secondary" th:if="${results.isEmpty()}"
+    <!-- A tag the employer does not have yet: chosen like a result, its chip
+         posts the name under createName, and the job's save creates it (spec 7.8). -->
+    <button type="button" class="list-group-item list-group-item-action" th:if="${create != null}"
+            data-action="pick" th:attr="data-target=${targetName},data-name=${createName},data-value=${create.id},data-label=${create.label}"
+            th:text="#{tag.createInline(${create.label})}">Create tag</button>
+    <div class="list-group-item text-secondary" th:if="${results.isEmpty() and create == null}"
          th:text="#{picker.noResults}">No matches.</div>
 </div>
 </body>

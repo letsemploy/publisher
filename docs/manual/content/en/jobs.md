@@ -11,6 +11,9 @@ category), *Classification* (type, mode, level, tags), *Workload and salary*, *D
 *Locations*. The URL is where applicants should go — your careers page or your
 applicant tracking system.
 
+Tags and locations are chosen by searching. If the tag you want does not exist yet, type its name and
+choose **Create tag “…”**: it is created when the job is saved, and not at all if the save fails.
+
 A new job is saved as a **draft**. **Save draft** keeps it that way; **Save and activate** also tries to
 make it active, and if something is missing it saves the draft and lists exactly what.
 

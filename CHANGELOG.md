@@ -8,6 +8,11 @@ Section numbers such as §5.6 refer to the specification in [`docs/SPEC.md`](doc
 
 ## [Unreleased]
 
+### Added
+
+- Tags can be created from the job form (§7.8): a tag search for a name the employer does not have
+  yet offers **Create tag “…”**, and the tag is created when the job is saved.
+
 ## [1.7.1] - 2026-11-01
 
 ### Fixed

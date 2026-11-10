@@ -71,6 +71,12 @@ public class TagService {
                 .orElseThrow(() -> new ValidationFailure(field, "Choose one of this employer's tags."));
     }
 
+    /** Whether this employer has a tag of that name, after normalizing (spec 3.4). */
+    public boolean exists(UUID employerId, String rawName) {
+        String name = Tag.normalize(rawName);
+        return name != null && tagRepo.findFirstByEmployerIdAndNameIgnoreCase(employerId, name).isPresent();
+    }
+
     public long jobCount(Long id) {
         return tagRepo.countJobs(id);
     }

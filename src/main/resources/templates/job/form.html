@@ -45,7 +45,7 @@
                             </div>
                         </div>
                         <label class="form-label" th:text="#{label.tags}">Tags</label>
-                        <div id="tags-chips"><div th:replace="~{fragments/picker :: chips('tags', ${tagChips}, true)}"></div></div>
+                        <div id="tags-chips"><div th:replace="~{fragments/picker :: chipsWithPending('tags', ${tagChips}, 'newTags', ${newTagChips}, true)}"></div></div>
                         <div th:replace="~{fragments/picker :: search('tagSearch',${tagSearchUrl},'tag-results','tag.search.placeholder')}"></div>
                         <small class="form-hint" th:text="#{job.tags.hint}">At most 16 tags.</small>
                     </div>

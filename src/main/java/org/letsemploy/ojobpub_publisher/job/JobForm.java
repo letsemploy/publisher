@@ -59,6 +59,12 @@ public class JobForm {
     private List<Long> tags = new ArrayList<>();
     private List<UUID> locations = new ArrayList<>();
 
+    /**
+     * Names of tags the employer does not have yet, chosen from the tag search's
+     * create option (spec 7.8). They are created only when the job saves.
+     */
+    private List<String> newTags = new ArrayList<>();
+
     /** Trims what is stored trimmed, so the constraints see what would be saved. */
     public void trim() {
         title = trimmed(title);

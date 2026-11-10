@@ -56,18 +56,21 @@
      */
     const pick = (result) => {
         const { target, value, label } = result.dataset;
+        // A tag still to be created posts its name under a field of its own (spec 7.8).
+        const name = result.dataset.name ?? target;
         const chips = document.querySelector(`[data-chips="${CSS.escape(target)}"]`);
         if (!chips) {
             return;
         }
-        const chosen = [...chips.querySelectorAll('input[type="hidden"]')].some((input) => input.value === value);
+        const chosen = [...chips.querySelectorAll('input[type="hidden"]')]
+            .some((input) => input.name === name && input.value === value);
         if (!chosen) {
             const chip = document.createElement('span');
-            chip.className = 'badge bg-blue-lt me-1 mb-1';
+            chip.className = name === target ? 'badge bg-blue-lt me-1 mb-1' : 'badge bg-green-lt me-1 mb-1';
             chip.dataset.chip = '';
             const input = document.createElement('input');
             input.type = 'hidden';
-            input.name = target;
+            input.name = name;
             input.value = value;
             const text = document.createElement('span');
             text.textContent = label;

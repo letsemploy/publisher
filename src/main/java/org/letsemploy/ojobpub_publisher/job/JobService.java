@@ -170,7 +170,7 @@ public class JobService {
         }
 
         form.trim();
-        apply(form, job);
+        apply(form, job, actor);
         validate(form, job);
         Job saved = jobRepo.save(job);
         auditLog.record(AuditEvent.of(form.getId() == null ? AuditAction.JOB_CREATED : AuditAction.JOB_UPDATED,
@@ -182,7 +182,7 @@ public class JobService {
         return saved;
     }
 
-    private void apply(JobForm form, Job job) {
+    private void apply(JobForm form, Job job, Actor actor) {
         job.setTitle(trim(form.getTitle()));
         job.setDescription(trim(form.getDescription()));
         job.setUrl(trim(form.getUrl()));
@@ -217,6 +217,18 @@ public class JobService {
         job.getTags().clear();
         for (Long tagId : new LinkedHashSet<>(form.getTags())) {
             job.getTags().add(tagService.requireOwn(tagId, job.getEmployer(), "tags"));
+        }
+        // Tags named in the form's tag search, created now (spec 7.8): in this
+        // transaction, so a refused save leaves none behind. A name the employer
+        // already has is the existing tag (spec 3.4).
+        for (String name : new LinkedHashSet<>(form.getNewTags().stream()
+                .map(Tag::normalize).filter(n -> n != null && !n.isEmpty()).toList())) {
+            try {
+                job.getTags().add(tagService.findOrCreate(job.getEmployer(), name, actor));
+            } catch (ValidationFailure e) {
+                throw new ValidationFailure("tags", e.getFieldErrors().values().stream()
+                        .findFirst().orElse(e.getMessage()));
+            }
         }
     }
 

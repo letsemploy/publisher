@@ -1005,6 +1005,7 @@ TEST_DB=sqlite ./mvnw test                   # all, on SQLite; no server
 ./mvnw test -Dtest=AdminPolicyTest           # admin rules: issuer scope, verified email, claims; no Spring
 ./mvnw test -Dtest=AdminSyncTest             # admins promoted and demoted through real sign-ins
 ./mvnw test -Dtest=LocationTagScopeTest      # another employer's locations and tags: 404, refused on a job
+./mvnw test -Dtest=JobInlineTagTest          # tags created from the job form: offered, made on save, never by a refused one
 ./mvnw test -Dtest=MigrationV7Test           # V7 divides shared rows correctly, on MariaDB and SQLite
 ./mvnw test -Dtest=EmployerDeleteTest        # owners and admins delete; editors, strangers and tokens cannot
 ./mvnw test -Dtest=ImpersonationTest         # view-as: the user's view, read-only, never on admins

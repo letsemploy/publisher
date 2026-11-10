@@ -282,6 +282,19 @@ public class JobController {
         return refs;
     }
 
+    /**
+     * The chips of tags still to be created, after a refused save: by name, as
+     * they post (spec 7.8). Nothing was created, so they are still new.
+     */
+    private static List<Ref> newTagChips(JobForm form) {
+        return form.getNewTags().stream()
+                .map(Tag::normalize)
+                .filter(n -> n != null && !n.isEmpty())
+                .distinct()
+                .map(n -> new Ref(n, n))
+                .toList();
+    }
+
     private void formModel(Model model, JobForm form, Map<String, String> fieldErrors,
                            List<Ref> tagChips, List<Ref> locationChips, Employer employer) {
         // The pickers search the job's employer, and only it (spec 3.3, 7.8).
@@ -292,6 +305,7 @@ public class JobController {
         model.addAttribute("errors", fieldErrors.entrySet().stream()
                 .map(e -> new FieldError(e.getKey(), e.getValue())).toList());
         model.addAttribute("tagChips", tagChips);
+        model.addAttribute("newTagChips", newTagChips(form));
         model.addAttribute("locationChips", locationChips);
         model.addAttribute("languages", Languages.options(LocaleContextHolder.getLocale()));
         model.addAttribute("jobTypeOptions", options("jobType.", JobType.values()));
@@ -358,6 +372,14 @@ public class JobController {
                 .map(t -> new Ref(String.valueOf(t.getId()), t.getName())).toList());
         model.addAttribute("query", q);
         model.addAttribute("targetName", "tags");
+        // A name the employer does not have yet is offered for creation; the tag
+        // is created when the job saves (spec 7.8).
+        String name = Tag.normalize(q);
+        if (name != null && !name.isEmpty() && name.length() <= Tag.MAX_LENGTH
+                && !tagService.exists(employer, name)) {
+            model.addAttribute("create", new Ref(name, name));
+            model.addAttribute("createName", "newTags");
+        }
         return "fragments/picker :: results";
     }
 

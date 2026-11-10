@@ -11,6 +11,10 @@ Referenznummer, Kategorie), *Einordnung* (Art, Modus, Erfahrungsstufe, Schlagwö
 *Pensum und Lohn*, *Daten* und *Standorte*. Die URL ist das Ziel für Bewerbende — Ihre
 Karriereseite oder Ihr Bewerbermanagement.
 
+Schlagwörter und Standorte wählen Sie über die Suche. Gibt es das gewünschte Schlagwort noch nicht,
+tippen Sie seinen Namen und wählen **Schlagwort «…» erstellen**: Es wird beim Speichern der Stelle
+angelegt, und gar nicht, wenn das Speichern scheitert.
+
 Eine neue Stelle wird als **Entwurf** gespeichert. **Entwurf speichern** belässt sie so; **Speichern und
 aktivieren** versucht zusätzlich, sie zu aktivieren, und speichert bei fehlenden Angaben den Entwurf
 und zählt genau auf, was fehlt.
