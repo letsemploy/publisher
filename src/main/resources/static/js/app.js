@@ -84,6 +84,9 @@
             chips.querySelector('[data-chips-empty]')?.remove();
             chips.append(chip);
         }
+        // Back to the search before the result goes, so a keyboard pick does not
+        // lose the focus and with it the list.
+        result.closest('[data-picker]')?.querySelector('input[type="search"]')?.focus();
         result.remove();
     };
 
@@ -116,11 +119,42 @@
         }
     });
 
-    // Escape closes a modal - a confirmation or a form - as the dialog conventions require (spec 7.9).
-    document.addEventListener('keydown', (event) => {
-        if (event.key === 'Escape') {
-            document.querySelector('#modal-container .modal')?.remove();
+    /**
+     * A picker's results close on Escape and when focus leaves the picker
+     * (spec 7.8); typing in the search opens them again.
+     */
+    const closeResults = (picker) => {
+        picker?.querySelector('[data-picker-results]')?.replaceChildren();
+    };
+    document.addEventListener('focusout', (event) => {
+        const picker = event.target.closest('[data-picker]');
+        if (picker && !picker.contains(event.relatedTarget)) {
+            closeResults(picker);
         }
+    });
+    // Choosing a result keeps the focus in the search, so the list is not closed
+    // under the click and the next result can be picked at once.
+    document.addEventListener('mousedown', (event) => {
+        if (event.target.closest('[data-picker-results] [data-action="pick"]')) {
+            event.preventDefault();
+        }
+    });
+
+    // Escape closes a modal - a confirmation or a form - as the dialog conventions require (spec 7.9).
+    // Inside an open picker it closes only the picker's results.
+    document.addEventListener('keydown', (event) => {
+        if (event.key !== 'Escape') {
+            return;
+        }
+        const picker = event.target.closest?.('[data-picker]');
+        const results = picker?.querySelector('[data-picker-results]');
+        if (results?.hasChildNodes()) {
+            // Not the browser's own Escape either, which would clear the search.
+            event.preventDefault();
+            closeResults(picker);
+            return;
+        }
+        document.querySelector('#modal-container .modal')?.remove();
     });
 
     /**

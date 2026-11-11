@@ -36,13 +36,14 @@
           data-chips-empty>None selected</span>
 </div>
 
-<div th:fragment="search(id, searchUrl, targetId, placeholderKey)" class="mb-2">
+<!-- Escape or leaving the picker closes its results (app.js); typing opens them again. -->
+<div th:fragment="search(id, searchUrl, targetId, placeholderKey)" class="mb-2" data-picker>
     <label class="form-label visually-hidden" th:for="${id}" th:text="#{${placeholderKey}}"></label>
     <input class="form-control" type="search" th:id="${id}" name="q"
            th:placeholder="#{${placeholderKey}}"
            th:attr="hx-get=@{${searchUrl}},hx-target='#' + ${targetId},
                     hx-trigger='input changed delay:300ms, search'"/>
-    <div th:id="${targetId}" class="list-group mt-1"></div>
+    <div th:id="${targetId}" class="list-group mt-1" data-picker-results></div>
 </div>
 
 <!--

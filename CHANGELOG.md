@@ -8,6 +8,11 @@ Section numbers such as §5.6 refer to the specification in [`docs/SPEC.md`](doc
 
 ## [Unreleased]
 
+### Fixed
+
+- The search results of the location and tag pickers close on Escape and when the focus leaves the
+  picker, instead of staying open (§7.8).
+
 ## [1.8.0] - 2026-11-10
 
 ### Added

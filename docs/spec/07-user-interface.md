@@ -275,6 +275,8 @@ of an autocomplete library, both use one pattern:
    form. Each chip has a remove button; removing it removes its input.
 2. **A search input** issues `hx-get` on `input changed delay:300ms` and on `search`, and swaps a
    server-rendered result list below it. The search covers the job's own employer only (§3.3).
+   The list closes on Escape, which then closes only the list and not a modal around it, and when
+   the focus leaves the picker; typing opens it again. Choosing a result keeps the focus in the search.
 3. **Choosing a result adds a chip in the browser**, with no request: `app.js` builds the chip from
    the id and label the result carries as data. It uses `createElement` and `textContent`, never a
    string of markup, so the CSP needs neither `unsafe-inline` nor `unsafe-eval` (§7.2). Choosing an
