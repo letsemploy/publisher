@@ -13,6 +13,7 @@ import java.util.Locale;
 import java.util.Set;
 import javax.imageio.IIOImage;
 import javax.imageio.ImageIO;
+import javax.imageio.ImageReadParam;
 import javax.imageio.ImageReader;
 import javax.imageio.ImageWriteParam;
 import javax.imageio.ImageWriter;
@@ -95,7 +96,7 @@ public final class PictureProcessor {
         return encode(square(decode(input)));
     }
 
-    private static BufferedImage decode(byte[] input) {
+    static BufferedImage decode(byte[] input) {
         try (ImageInputStream in = ImageIO.createImageInputStream(new ByteArrayInputStream(input))) {
             Iterator<ImageReader> readers = in == null ? null : ImageIO.getImageReaders(in);
             if (readers == null || !readers.hasNext()) {
@@ -116,7 +117,13 @@ public final class PictureProcessor {
                 if (width > MAX_EDGE || height > MAX_EDGE) {
                     throw new Rejected(Reason.TOO_MANY_PIXELS);
                 }
-                BufferedImage image = reader.read(0);
+                // Read every n-th pixel, keeping the short edge at least twice SIZE:
+                // a 10,000 px square of one colour is a few hundred KB of PNG but
+                // 400 MB decoded, more than the whole heap of a small container.
+                ImageReadParam param = reader.getDefaultReadParam();
+                int step = Math.max(1, Math.min(width, height) / (SIZE * 2));
+                param.setSourceSubsampling(step, step, 0, 0);
+                BufferedImage image = reader.read(0, param);
                 if (image == null) {
                     throw new Rejected(Reason.UNREADABLE);
                 }

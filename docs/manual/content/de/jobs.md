@@ -8,7 +8,7 @@ weight: 20
 
 **Neue Stelle** öffnet das Formular in einem Dialog, gegliedert in *Grunddaten* (Titel, Beschreibung, URL, Sprache,
 Referenznummer, Kategorie), *Einordnung* (Art, Modus, Erfahrungsstufe, Schlagwörter),
-*Pensum und Lohn*, *Daten* und *Standorte*. Die URL ist das Ziel für Bewerbende — Ihre
+*Pensum und Lohn*, *Daten*, *Standorte* und *Feeds*. Die URL ist das Ziel für Bewerbende — Ihre
 Karriereseite oder Ihr Bewerbermanagement.
 
 Schlagwörter und Standorte wählen Sie über die Suche. Gibt es das gewünschte Schlagwort noch nicht,
@@ -18,6 +18,9 @@ angelegt, und gar nicht, wenn das Speichern scheitert.
 Eine neue Stelle wird als **Entwurf** gespeichert. **Entwurf speichern** belässt sie so; **Speichern und
 aktivieren** versucht zusätzlich, sie zu aktivieren, und speichert bei fehlenden Angaben den Entwurf
 und zählt genau auf, was fehlt.
+
+**Eine Stelle wird nur in den Feeds veröffentlicht, in denen sie ist.** Unter *Feeds* kreuzen Sie diese
+an; eine neue Stelle ist zunächst im Feed *All jobs*. Auch eine über die API erfasste Stelle kommt dorthin.
 
 ## Status {#states}
 
@@ -61,8 +64,9 @@ Die Liste und die Seite einer Stelle zeigen, wie sie gerade dasteht:
 | **Entwurf** | Ein Entwurf. |
 | **Inaktiv** | Deaktiviert. |
 
-Nur **veröffentlichte** Stellen erscheinen in einem Feed. Die Seite einer Stelle zeigt auch ihre Feeds
-und ihren **Statusverlauf**: wer den Status wann von was zu was geändert hat.
+Nur **veröffentlichte** Stellen erscheinen in einem Feed. Die Seite einer Stelle zeigt auch ihre Feeds,
+mit einem Feld, um sie einem weiteren hinzuzufügen, und warnt, wenn eine veröffentlichungsbereite Stelle
+in gar keinem Feed ist. Dazu kommt ihr **Statusverlauf**: wer den Status wann von was zu was geändert hat.
 
 ## Stellenlinks und Klicks {#clicks}
 

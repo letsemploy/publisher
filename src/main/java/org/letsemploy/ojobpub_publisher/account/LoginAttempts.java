@@ -61,8 +61,14 @@ public class LoginAttempts {
                 || perNetwork.uncounted(Throttle.networkKey(client));
     }
 
-    boolean refused(String address, String client) {
-        return perAddress.exhausted(key(address)) || perClient.exhausted(Throttle.clientKey(client))
+    /**
+     * Whether this attempt is refused outright. The address's own limit applies only
+     * without a captcha (spec 2.12): with one, a stranger's failures must not lock the
+     * owner out, and the captcha already slows the guessing.
+     */
+    boolean refused(String address, String client, boolean captchaConfigured) {
+        return (!captchaConfigured && perAddress.exhausted(key(address)))
+                || perClient.exhausted(Throttle.clientKey(client))
                 || perNetwork.exhausted(Throttle.networkKey(client));
     }
 

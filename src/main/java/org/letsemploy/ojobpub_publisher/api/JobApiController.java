@@ -1,5 +1,7 @@
 package org.letsemploy.ojobpub_publisher.api;
 
+import org.letsemploy.ojobpub_publisher.job.Publication;
+
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
@@ -66,7 +68,7 @@ public class JobApiController {
                 presentation == null ? null : Publication.Presentation.valueOf(presentation),
                 jobType == null ? null : JobType.valueOf(jobType),
                 PageRequest.of(Math.max(page, 0), pageSize, Sort.by("title").and(Sort.by("id"))));
-        return new JobPageDto(mapper.jobs(result.getContent(), LocalDate.now()),
+        return new JobPageDto(mapper.jobs(result.getContent(), Publication.today()),
                 result.getNumber(), result.getSize(), result.getTotalElements(),
                 result.getTotalPages());
     }
@@ -75,7 +77,7 @@ public class JobApiController {
     @Transactional(readOnly = true)
     public JobDto job(@Argument String id) {
         Actor actor = api.requireScope(TokenScope.JOBS_READ);
-        return mapper.job(jobService.findVisible(uuid(id, "job"), actor), LocalDate.now());
+        return mapper.job(jobService.findVisible(uuid(id, "job"), actor), Publication.today());
     }
 
     // -------------------------------------------------------------- mutations
@@ -101,7 +103,7 @@ public class JobApiController {
             JobForm form = JobInputs.toForm(input);
             form.setId(id);
             // Never activated as a side effect of a write: that is its own act below.
-            Job saved = jobService.save(form, employer, false, actor);
+            Job saved = jobService.save(form, employer, actor);
             return JobPayload.ok(mapper.readJob(saved.getId(), actor));
         } catch (ValidationFailure e) {
             return new JobPayload(null, errors.from(e));

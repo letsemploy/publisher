@@ -68,17 +68,17 @@ public class ApiMapper {
 
     @Transactional(readOnly = true)
     public JobDto readJob(UUID id, Actor actor) {
-        return job(jobService.findVisible(id, actor), LocalDate.now());
+        return job(jobService.findVisible(id, actor), Publication.today());
     }
 
     @Transactional(readOnly = true)
     public FeedDto readFeed(UUID id, Actor actor) {
-        return feed(feedService.findVisible(id, actor), LocalDate.now());
+        return feed(feedService.findVisible(id, actor), Publication.today());
     }
 
     @Transactional(readOnly = true)
     public PermalinkDto readPermalink(UUID id, Actor actor) {
-        return permalink(permalinkService.findVisible(id, actor), LocalDate.now());
+        return permalink(permalinkService.findVisible(id, actor), Publication.today());
     }
 
     @Transactional(readOnly = true)

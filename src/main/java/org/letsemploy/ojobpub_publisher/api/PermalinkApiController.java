@@ -1,5 +1,7 @@
 package org.letsemploy.ojobpub_publisher.api;
 
+import org.letsemploy.ojobpub_publisher.job.Publication;
+
 import static org.letsemploy.ojobpub_publisher.api.JobApiController.uuid;
 
 import java.time.LocalDate;
@@ -49,7 +51,7 @@ public class PermalinkApiController {
     @Transactional(readOnly = true)
     public List<PermalinkDto> permalinks() {
         api.requireScope(TokenScope.FEEDS_READ);
-        LocalDate today = LocalDate.now();
+        LocalDate today = Publication.today();
         return permalinkService.findByEmployer(api.employerId()).stream()
                 .map(permalink -> mapper.permalink(permalink, today))
                 .toList();

@@ -3,6 +3,7 @@ package org.letsemploy.ojobpub_publisher.job;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -52,6 +53,10 @@ public interface JobRepo extends JpaRepository<Job, UUID>, JpaSpecificationExecu
 
     @Query("SELECT f.id FROM Feed f JOIN f.jobs j WHERE j.id = :jobId")
     List<UUID> findFeedIds(@Param("jobId") UUID jobId);
+
+    /** Every job of these employers that is in at least one feed, for the dashboard (spec 7.10). */
+    @Query("SELECT DISTINCT j.id FROM Feed f JOIN f.jobs j WHERE f.employer.id IN :employerIds")
+    Set<UUID> findIdsInAnyFeed(@Param("employerIds") Collection<UUID> employerIds);
 
     long countByEmployerIdAndStatus(UUID employerId, JobStatus status);
 

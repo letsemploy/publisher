@@ -2,7 +2,6 @@ package org.letsemploy.ojobpub_publisher.ojobpub.v1.service;
 
 import java.time.Instant;
 import java.time.LocalDate;
-import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
@@ -90,7 +89,7 @@ public class OjobpubService {
      */
     public Result generateEmpty(Employer employer, Instant since) {
         OjobpubDto doc = new OjobpubDto(
-                lastUpdated(employer, since, List.of(), List.of(), LocalDate.now()), employer(employer), List.of());
+                lastUpdated(employer, since, List.of(), List.of(), Publication.today()), employer(employer), List.of());
         return new Result(doc, List.of());
     }
 
@@ -121,7 +120,7 @@ public class OjobpubService {
             changes.add(job.getLastModifiedAt());
             LocalDate lastDay = Publication.lastDay(job);
             if (lastDay != null && lastDay.isBefore(today)) {
-                changes.add(lastDay.plusDays(1).atStartOfDay(ZoneId.systemDefault()).toInstant());
+                changes.add(lastDay.plusDays(1).atStartOfDay(Publication.zone()).toInstant());
             }
         }
         for (Job job : included) {

@@ -74,7 +74,7 @@ class JobInlineTagTest {
     @Test
     void aNewNameIsCreatedForTheJobsEmployerAndCarried() {
         String name = "inline-" + UUID.randomUUID().toString().substring(0, 8);
-        Job job = jobService.save(form("Rust developer", "  " + name.toUpperCase() + " "), acme(), false, editor);
+        Job job = jobService.save(form("Rust developer", "  " + name.toUpperCase() + " "), acme(), editor);
 
         assertThat(job.getTags()).extracting(Tag::getName).containsExactly(name);
         Tag created = tagRepo.findFirstByEmployerIdAndNameIgnoreCase(ACME, name).orElseThrow();
@@ -87,7 +87,7 @@ class JobInlineTagTest {
         JobForm form = form("Java developer", "Java", "java");
         form.setTags(List.of(java.getId()));
 
-        Job job = jobService.save(form, acme(), false, editor);
+        Job job = jobService.save(form, acme(), editor);
 
         assertThat(job.getTags()).extracting(Tag::getId).containsExactly(java.getId());
         assertThat(tagRepo.findByEmployerIdOrderByNameAsc(ACME))
@@ -96,7 +96,7 @@ class JobInlineTagTest {
 
     @Test
     void aTooLongNameIsAnErrorOnTheTagsField() {
-        assertThatThrownBy(() -> jobService.save(form("Job", "x".repeat(Tag.MAX_LENGTH + 1)), acme(), false, editor))
+        assertThatThrownBy(() -> jobService.save(form("Job", "x".repeat(Tag.MAX_LENGTH + 1)), acme(), editor))
                 .isInstanceOf(ValidationFailure.class)
                 .satisfies(e -> assertThat(((ValidationFailure) e).fields()).containsExactly("tags"));
     }
@@ -108,7 +108,7 @@ class JobInlineTagTest {
         for (int i = 0; i < names.length; i++) {
             names[i] = "many-" + run + "-" + i;
         }
-        assertThatThrownBy(() -> jobService.save(form("Job", names), acme(), false, editor))
+        assertThatThrownBy(() -> jobService.save(form("Job", names), acme(), editor))
                 .isInstanceOf(ValidationFailure.class)
                 .satisfies(e -> assertThat(((ValidationFailure) e).fields()).contains("tags"));
         // Refused before any was created, not only rolled back afterwards.
@@ -122,7 +122,7 @@ class JobInlineTagTest {
     @Transactional(propagation = Propagation.NOT_SUPPORTED)
     void aRefusedSaveCreatesNoTag() {
         String name = "refused-" + UUID.randomUUID().toString().substring(0, 8);
-        assertThatThrownBy(() -> jobService.save(form("", name), acme(), false, editor))
+        assertThatThrownBy(() -> jobService.save(form("", name), acme(), editor))
                 .isInstanceOf(ValidationFailure.class);
         assertThat(acmeHas(name)).isFalse();
     }

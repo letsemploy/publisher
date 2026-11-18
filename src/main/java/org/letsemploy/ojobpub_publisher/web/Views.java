@@ -261,7 +261,7 @@ public class Views {
     /** The dashboard's "needs attention" card (spec 7.10). */
     public AttentionView attention(DashboardJobs jobs, int shown) {
         Locale locale = LocaleContextHolder.getLocale();
-        LocalDate today = LocalDate.now();
+        LocalDate today = Publication.today();
         List<AttentionView.Row> closing = jobs.closingSoon().stream().limit(shown)
                 .map(c -> row(c.job(), closes(ChronoUnit.DAYS.between(today, c.lastDay()), locale)))
                 .toList();
@@ -273,10 +273,14 @@ public class Views {
                 .map(j -> row(j, messages.getMessage("dashboard.attention.stale.note",
                         new Object[]{Duration.between(j.getLastModifiedAt(), now).toDays()}, locale)))
                 .toList();
+        List<AttentionView.Row> unlisted = jobs.unlisted().stream().limit(shown)
+                .map(j -> row(j, messages.getMessage("dashboard.attention.unlisted.note", null, locale)))
+                .toList();
         return new AttentionView(
                 new AttentionView.Group(closing, jobs.closingSoon().size() - closing.size(), "/jobs?status=published"),
                 new AttentionView.Group(incomplete, jobs.incomplete().size() - incomplete.size(), "/jobs?status=incomplete"),
-                new AttentionView.Group(stale, jobs.staleDrafts().size() - stale.size(), "/jobs?status=draft"));
+                new AttentionView.Group(stale, jobs.staleDrafts().size() - stale.size(), "/jobs?status=draft"),
+                new AttentionView.Group(unlisted, jobs.unlisted().size() - unlisted.size(), "/jobs?status=published"));
     }
 
     private String closes(long days, Locale locale) {

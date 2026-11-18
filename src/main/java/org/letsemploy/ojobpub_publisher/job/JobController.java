@@ -116,7 +116,7 @@ public class JobController {
                     PageRequest.of(pageNumber, pageSize, Sort.by(sortField).and(Sort.by("id"))));
         }
 
-        LocalDate today = LocalDate.now();
+        LocalDate today = Publication.today();
         // One query for the whole page, not one per row (spec 10).
         Map<UUID, Long> feedCounts = jobService.feedCounts(result.getContent());
         List<JobRow> rows = result.getContent().stream()
@@ -183,7 +183,7 @@ public class JobController {
     @GetMapping("/{id}")
     public String detail(@PathVariable UUID id, Model model) {
         Job job = jobService.findVisible(id, scope.user());
-        LocalDate today = LocalDate.now();
+        LocalDate today = Publication.today();
 
         PublicationStatus presented = views.status(job, today);
         String reason = Publication.presentation(job, today).reasonKey();
@@ -197,7 +197,19 @@ public class JobController {
                 List.of(new Crumb(message("nav.jobs"), "/jobs"), new Crumb(job.getTitle(), null))).help(ManualTopic.JOB));
         model.addAttribute("job",
                 views.jobDetail(job, memberships, jobService.history(id), today));
+        List<String> current = memberships.stream().map(FeedMembership::feedId).toList();
+        model.addAttribute("addableFeeds", feedService.findByEmployer(job.getEmployer().getId()).stream()
+                .filter(f -> !current.contains(f.getId().toString()))
+                .map(f -> new Ref(f.getId().toString(), f.getName())).toList());
         return "job/detail";
+    }
+
+    /** Adds the job to a feed from its own screen (spec 7.11); the feed checks the rest. */
+    @PostMapping("/{id}/feeds")
+    public String addToFeed(@PathVariable UUID id, @RequestParam UUID feed, RedirectAttributes flash) {
+        feedService.addJob(feed, id, scope.user());
+        flash.addFlashAttribute("successMsg", "msg.success.saved");
+        return "redirect:/jobs/" + id;
     }
 
     // ------------------------------------------------------------------ form
@@ -239,8 +251,17 @@ public class JobController {
                 ? scope.requireActiveEmployer()
                 : jobService.findVisible(id, scope.user()).getEmployer();
         try {
-            Job saved = jobService.save(form, employer, "activate".equals(action), scope.user());
+            Job saved = jobService.save(form, employer, scope.user());
             flash.addFlashAttribute("successMsg", "msg.success.saved");
+            // Activated in a call of its own, so a refusal keeps the saved draft
+            // and its page lists what is missing (spec 7.11).
+            if ("activate".equals(action) && saved.getStatus() != JobStatus.ACTIVE) {
+                try {
+                    jobService.transition(saved.getId(), JobStatus.ACTIVE, scope.user());
+                } catch (ValidationFailure e) {
+                    flash.addFlashAttribute("errorMsg", "job.readiness.blocked");
+                }
+            }
             return FormViews.redirect("/jobs/" + saved.getId());
         } catch (ValidationFailure e) {
             // Re-render with every entered value preserved (spec 7.7).
@@ -301,6 +322,16 @@ public class JobController {
         // The pickers search the job's employer, and only it (spec 3.3, 7.8).
         model.addAttribute("tagSearchUrl", "/jobs/tags/search?employer=" + employer.getId());
         model.addAttribute("locationSearchUrl", "/jobs/locations/search?employer=" + employer.getId());
+        // Only jobs in a feed are published (spec 7.11): a new job starts in the
+        // employer's all feed, an existing one shows where it is.
+        List<Feed> feeds = feedService.findByEmployer(employer.getId());
+        if (form.getFeeds() == null) {
+            form.setFeeds(form.getId() == null
+                    ? feeds.stream().filter(f -> "all".equals(f.getSlug())).limit(1).map(Feed::getId).toList()
+                    : jobService.feedIdsOf(form.getId()));
+        }
+        model.addAttribute("feedOptions", feeds.stream().map(f -> new Ref(f.getId().toString(), f.getName())).toList());
+        model.addAttribute("selectedFeeds", form.getFeeds().stream().map(UUID::toString).toList());
         model.addAttribute("form", form);
         model.addAttribute("fieldErrors", fieldErrors);
         model.addAttribute("errors", fieldErrors.entrySet().stream()

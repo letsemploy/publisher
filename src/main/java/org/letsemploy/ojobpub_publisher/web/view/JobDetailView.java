@@ -31,6 +31,11 @@ public record JobDetailView(
         return readiness.stream().allMatch(ReadinessCheck::satisfied);
     }
 
+    /** Ready to be published, but in no feed, so published nowhere (spec 7.11). */
+    public boolean isUnlisted() {
+        return isPublishable() && feeds.isEmpty();
+    }
+
     public long getUnmetCount() {
         return readiness.stream().filter(c -> !c.satisfied()).count();
     }

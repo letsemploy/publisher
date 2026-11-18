@@ -46,6 +46,9 @@ spring:
 
 # Used only when TEST_DB=sqlite adds the sqlite profile (see TestProfiles).
 app:
+  # The server's zone, as the tests' own LocalDate.now() is: Europe/Zurich would
+  # disagree with it for an hour or two around midnight.
+  zone:
   sqlite:
     path: target/publisher_test.db
   # Every back-office test acts as the seeded admin, and was written when an admin

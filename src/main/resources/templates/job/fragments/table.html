@@ -32,7 +32,12 @@
                 <td><span th:replace="~{fragments/status :: badge(${job.status})}"></span></td>
                 <td class="text-secondary" th:text="${#strings.listJoin(job.locations, ', ')}">Bern</td>
                 <td th:text="#{'jobType.' + ${job.jobType}}">Permanent</td>
-                <td><span class="badge bg-blue-lt" th:text="${job.feedCount}">0</span></td>
+                <td>
+                    <span th:if="${job.feedCount > 0}" class="badge bg-blue-lt" th:text="${job.feedCount}">1</span>
+                    <!-- In no feed means published nowhere (spec 7.11): said in words, not only in colour. -->
+                    <span th:if="${job.feedCount == 0}" class="badge bg-yellow-lt" th:title="#{job.feeds.none}"
+                          th:text="#{job.list.noFeed}">none</span>
+                </td>
                 <td>
                     <div class="dropdown">
                         <a href="#" class="btn btn-sm btn-ghost-secondary" data-bs-toggle="dropdown"

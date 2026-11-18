@@ -5,6 +5,7 @@ import jakarta.persistence.criteria.Path;
 import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -18,7 +19,28 @@ import org.springframework.data.jpa.domain.Specification;
  */
 public final class Publication {
 
+    /**
+     * The zone "today" is taken in (spec 4.4): when a date window opens and closes,
+     * and the day a job is published. Set once at startup from {@code app.zone}
+     * ({@code config/PublicationZoneConfig}); the server's own until then.
+     */
+    private static volatile ZoneId zone = ZoneId.systemDefault();
+
     private Publication() {
+    }
+
+    /** Static like the rules it serves: one zone per application, set at startup. */
+    public static void useZone(ZoneId configured) {
+        zone = configured;
+    }
+
+    public static ZoneId zone() {
+        return zone;
+    }
+
+    /** Today in the publication zone. Every "today" of the publication rules comes from here. */
+    public static LocalDate today() {
+        return LocalDate.now(zone);
     }
 
     /** One requirement, its message key and the form anchor that fixes it. */
@@ -33,7 +55,7 @@ public final class Publication {
         out.add(new Requirement("readiness.required", hasRequiredFields(job), "#basics"));
         out.add(new Requirement("readiness.locations", !job.getLocations().isEmpty(), "#locations"));
         out.add(new Requirement("readiness.salary", salaryIsInterpretable(job), "#salary"));
-        out.add(new Requirement("readiness.window", withinDateWindow(job, LocalDate.now()), "#dates"));
+        out.add(new Requirement("readiness.window", withinDateWindow(job, today()), "#dates"));
         return out;
     }
 

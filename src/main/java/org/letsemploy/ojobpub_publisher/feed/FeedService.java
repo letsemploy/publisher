@@ -1,6 +1,7 @@
 package org.letsemploy.ojobpub_publisher.feed;
 
-import java.time.Instant;
+import org.letsemploy.ojobpub_publisher.job.Publication;
+
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
@@ -68,7 +69,7 @@ public class FeedService {
     }
 
     public OjobpubService.Result publish(Feed feed) {
-        return ojobpubService.generate(feed, LocalDate.now());
+        return ojobpubService.generate(feed, Publication.today());
     }
 
     @Transactional
@@ -135,10 +136,7 @@ public class FeedService {
         if (!job.getEmployer().getId().equals(feed.getEmployer().getId())) {
             throw new ValidationFailure("job", "That job belongs to a different employer.");
         }
-        if (feed.getJobs().add(job)) {
-            // The join table alone leaves the feed's row as it was, so its date
-            // would not move although its document did (spec 5.4).
-            feed.setLastModifiedAt(Instant.now());
+        if (feed.include(job)) {
             auditLog.record(AuditEvent.of(AuditAction.FEED_JOB_ADDED, user).in(feed.getEmployer())
                     .target(job.getId(), job.getTitle()).detail(feed.getName()));
         }
@@ -149,8 +147,7 @@ public class FeedService {
     public Feed removeJob(UUID feedId, UUID jobId, Actor user) {
         Feed feed = findVisible(feedId, user);
         feed.getJobs().stream().filter(j -> j.getId().equals(jobId)).findFirst().ifPresent(job -> {
-            feed.getJobs().remove(job);
-            feed.setLastModifiedAt(Instant.now());
+            feed.exclude(jobId);
             auditLog.record(AuditEvent.of(AuditAction.FEED_JOB_REMOVED, user).in(feed.getEmployer())
                     .target(job.getId(), job.getTitle()).detail(feed.getName()));
         });

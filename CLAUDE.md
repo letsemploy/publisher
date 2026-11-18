@@ -135,7 +135,10 @@ carries field errors back to a form; `NotFoundException` is unchecked and handle
   window, and what a job *presents* as (`PUBLISHED`, `EXPIRED`, `INCOMPLETE`, `DRAFT`, `INACTIVE`). Both
   the feed serving path and the back-office readiness panel read it, so a screen and a published
   document cannot disagree. Add publication logic here, not in a controller. The job list filters on
-  the same rule in the database through `presenting`, its Criteria twin. A change to one needs the
+  the same rule in the database through `presenting`, its Criteria twin. **"Today" is
+  `Publication.today()`**, in `app.zone` (default `Europe/Zurich`, §4.4; empty = the server's, which
+  the test profile uses) — never `LocalDate.now()`. Not the JVM default zone: without
+  `hibernate.jdbc.time_zone`, moving that would shift how stored instants read back. A change to one needs the
   other, and `PublicationFilterTest` fails if they disagree on any job.
 - `membership/MembershipService.java` — who belongs to an employer and with what role, including the
   last-owner rule.
@@ -448,7 +451,11 @@ nothing. Token memberships are written directly by `ServiceTokenService` and nev
 which is what keeps a credential out of the per-person counts — do not "tidy" that into `grant`.
 
 **Every employer must keep at least one active owner** (§2.7). `MembershipService` guards demotion,
-removal and suspension, and the People screen renders the reason rather than greying the control out.
+removal and suspension, and the People screen renders the reason rather than greying the control out. The
+count is a **locking read** (`MembershipRepo.lockActiveOwners`, `FOR UPDATE`), taken as the
+transaction's **first** read: a plain count let two owners demote each other at once, and a lock taken
+after another read fails on MariaDB 11.6+'s snapshot isolation ("Record has changed since last read")
+instead of refusing. `LastOwnerRaceTest` (MariaDB only) covers it.
 
 **Suspension** (§2.7) sets `Membership.suspendedAt`; the row, its role and its quota slot all stay. It is
 enforced in exactly one place: `CurrentUserService` builds the `Actor` from

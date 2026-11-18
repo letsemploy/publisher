@@ -96,6 +96,19 @@
         <div th:replace="~{fragments/picker :: search('locationSearch',${locationSearchUrl},'location-results','location.search.placeholder')}"></div>
         <small class="form-hint" th:text="#{job.locations.hint}">At least one location is required to publish.</small>
     </fieldset>
+    <!-- Only jobs in a feed are published (spec 7.11); _feeds makes "none ticked" an empty list. -->
+    <fieldset class="form-section" id="feeds">
+        <h3 class="form-section-title" th:text="#{job.feeds.title}">Feeds</h3>
+        <input type="hidden" name="_feeds" value="on"/>
+        <label class="form-check" th:each="f : ${feedOptions}">
+            <input class="form-check-input" type="checkbox" name="feeds" th:value="${f.id}"
+                   th:checked="${#lists.contains(selectedFeeds, f.id)}"
+                   th:classappend="${fieldErrors['feeds'] != null} ? 'is-invalid' : ''"/>
+            <span class="form-check-label" th:text="${f.label}">All jobs</span>
+        </label>
+        <div class="invalid-feedback d-block" th:if="${fieldErrors['feeds'] != null}" th:text="${fieldErrors['feeds']}">error</div>
+        <small class="form-hint" th:text="#{job.feeds.hint}">Only jobs in a feed are published.</small>
+    </fieldset>
     <p class="form-hint mb-0" th:text="#{job.save.hint}">A new job is saved as a draft.</p>
 </th:block>
 

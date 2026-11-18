@@ -124,4 +124,17 @@ class DashboardJobsTest {
         assertThat(jobs.needsAttention()).isFalse();
         assertThat(jobs.publishedShare()).isZero();
     }
+
+    @Test
+    void aPublishedJobInNoFeedIsUnlisted() {
+        Job inFeed = published("In feed");
+        Job alone = published("Alone");
+        Job draft = job("Draft", JobStatus.DRAFT);
+        DashboardJobs jobs = DashboardJobs.of(List.of(inFeed, alone, draft), java.util.Set.of(inFeed.getId()), TODAY, NOW);
+
+        assertThat(jobs.unlisted()).containsExactly(alone);
+        assertThat(jobs.needsAttention()).isTrue();
+        // Without membership known, nothing is claimed.
+        assertThat(DashboardJobs.of(List.of(alone), TODAY, NOW).unlisted()).isEmpty();
+    }
 }

@@ -82,6 +82,20 @@ class PictureProcessorTest {
     }
 
     @Test
+    void aLargePictureUnderTheEdgeLimitIsDecodedSmall() throws IOException {
+        // One colour, so a few KB of PNG that would be 400 MB decoded in full.
+        BufferedImage huge = new BufferedImage(PictureProcessor.MAX_EDGE, PictureProcessor.MAX_EDGE,
+                BufferedImage.TYPE_BYTE_BINARY);
+        ByteArrayOutputStream png = new ByteArrayOutputStream();
+        ImageIO.write(huge, "png", png);
+
+        BufferedImage decoded = PictureProcessor.decode(png.toByteArray());
+
+        assertThat(decoded.getWidth()).isLessThan(PictureProcessor.SIZE * 4);
+        assertThat(read(PictureProcessor.process(png.toByteArray())).getWidth()).isEqualTo(PictureProcessor.SIZE);
+    }
+
+    @Test
     void otherFormatsAreRefused() throws IOException {
         assertRefused(encode(new BufferedImage(10, 10, BufferedImage.TYPE_INT_RGB), "bmp"),
                 PictureProcessor.Reason.UNSUPPORTED);

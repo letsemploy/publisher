@@ -51,6 +51,10 @@ app:
   # built from it, so it must be right behind a reverse proxy (spec 9.5).
   base-url: ${APP_BASE_URL}
 
+  # The zone "today" is taken in for publication (spec 4.4): when a job's date
+  # window opens and closes. Empty means the server's - UTC in the image.
+  zone: Europe/Zurich
+
   # Job links (spec 5.6). A published job's URL is <base-url>/go/<id>: it counts
   # the click and redirects, and stops leading anywhere once the job leaves the
   # feed. enabled: false publishes the job's own page and counts nothing.

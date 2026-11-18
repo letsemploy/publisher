@@ -1,5 +1,7 @@
 package org.letsemploy.ojobpub_publisher.summary;
 
+import org.letsemploy.ojobpub_publisher.job.Publication;
+
 import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -128,7 +130,7 @@ public class SummaryService {
         }
         Actor actor = Actor.user(user.getId(), user.getLabel(), user.getEmail(), false, roles);
         ZoneId zone = user.getTimeZone() != null ? ZoneId.of(user.getTimeZone()) : ZoneId.systemDefault();
-        LocalDate today = LocalDate.ofInstant(now, ZoneId.systemDefault());
+        LocalDate today = LocalDate.ofInstant(now, Publication.zone());
         Instant weekAgo = now.minus(Duration.ofDays(WeeklySummary.DAYS));
 
         List<WeeklySummary> summaries = new ArrayList<>();

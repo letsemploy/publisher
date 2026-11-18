@@ -106,6 +106,15 @@ class LoginCaptchaTest {
         mvc.perform(login(unknown, PASSWORD, client(), "solved")).andExpect(redirectedUrl("/login?error"));
     }
 
+    /** With a captcha, a stranger's failures never lock the owner out (spec 2.12). */
+    @Test
+    void theOwnerStillGetsInAfterTheHardLimit() throws Exception {
+        for (int i = 0; i < 12; i++) {
+            fail(email, client());
+        }
+        mvc.perform(login(email, PASSWORD, client(), "solved")).andExpect(redirectedUrl("/"));
+    }
+
     @Test
     void aSuccessClearsTheAddressFailures() throws Exception {
         String client = client();

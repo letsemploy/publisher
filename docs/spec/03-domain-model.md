@@ -133,6 +133,11 @@ created. It behaves like any other feed and may be edited or deleted; it exists 
 has a working URL immediately. It is created **regardless of the feed limit** (§8.4) — an employer
 without a working URL is a broken employer — though it counts towards the limit thereafter.
 
+**A new job joins the `all` feed** unless whoever creates it chooses its feeds: the job form does
+(§7.11), with `all` ticked to begin with; the API does not, so `createJob` puts the job there (§11).
+Without it, a job is published nowhere until someone thinks to add it to a feed, which newcomers did
+not. An employer that deleted its `all` feed gets nothing in its place.
+
 ## 3.6 Slugs
 
 Employers and feeds both carry a slug whose only purpose is to make the public URL (§5.1) readable.

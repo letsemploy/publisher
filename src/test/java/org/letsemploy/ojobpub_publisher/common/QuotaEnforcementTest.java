@@ -119,7 +119,7 @@ class QuotaEnforcementTest {
     @Test
     void aSeventhJobIsRefused() {
         assertThat(jobRepo.countByEmployerId(acme.getId())).isEqualTo(6);
-        assertThatThrownBy(() -> jobService.save(jobForm("Seventh"), acme, false, admin))
+        assertThatThrownBy(() -> jobService.save(jobForm("Seventh"), acme, admin))
                 .isInstanceOf(ValidationFailure.class)
                 .hasMessageContaining("limit.jobs");
         assertThat(jobRepo.countByEmployerId(acme.getId())).isEqualTo(6);
@@ -129,7 +129,7 @@ class QuotaEnforcementTest {
     void deletingAJobMakesRoomAgain() {
         UUID victim = jobRepo.findByEmployerIdOrderByTitleAsc(acme.getId()).get(0).getId();
         jobService.delete(victim, admin);
-        assertThatCode(() -> jobService.save(jobForm("Replacement"), acme, false, admin))
+        assertThatCode(() -> jobService.save(jobForm("Replacement"), acme, admin))
                 .doesNotThrowAnyException();
     }
 
@@ -139,7 +139,7 @@ class QuotaEnforcementTest {
         var existing = jobRepo.findByEmployerIdOrderByTitleAsc(acme.getId()).get(0);
         JobForm form = JobForm.of(existing);
         form.setTitle(existing.getTitle() + " (edited)");
-        assertThatCode(() -> jobService.save(form, acme, false, admin))
+        assertThatCode(() -> jobService.save(form, acme, admin))
                 .doesNotThrowAnyException();
     }
 

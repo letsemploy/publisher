@@ -94,6 +94,10 @@
                     <h3 class="card-title" th:text="#{job.readiness.title}">Publication readiness</h3>
                 </div>
                 <div class="card-body">
+                    <div class="alert alert-warning" role="alert" th:if="${job.unlisted}">
+                        <svg th:replace="~{fragments/icon :: i('alert-triangle','icon alert-icon flex-shrink-0')}"></svg>
+                        <div th:text="#{job.feeds.unlisted}">Ready, but in no feed, so it is not published anywhere.</div>
+                    </div>
                     <p class="text-secondary" th:if="${job.publishable}" th:text="#{job.readiness.ok}">Ready.</p>
                     <p class="text-secondary" th:unless="${job.publishable}"
                        th:text="#{job.readiness.unmet(${job.unmetCount})}">Not ready.</p>
@@ -127,6 +131,15 @@
                 </div>
                 <div class="card-body text-secondary" th:if="${job.feeds.isEmpty()}" th:text="#{job.feeds.none}">
                     In no feed.
+                </div>
+                <div class="card-footer" th:if="${!addableFeeds.isEmpty()}">
+                    <form th:action="@{'/jobs/' + ${job.id} + '/feeds'}" method="post" class="d-flex gap-2">
+                        <label class="visually-hidden" for="add-feed" th:text="#{job.feeds.choose}">Feed</label>
+                        <select class="form-select" id="add-feed" name="feed">
+                            <option th:each="f : ${addableFeeds}" th:value="${f.id}" th:text="${f.label}">All jobs</option>
+                        </select>
+                        <button type="submit" class="btn" th:text="#{job.feeds.add}">Add</button>
+                    </form>
                 </div>
             </div>
         </div>

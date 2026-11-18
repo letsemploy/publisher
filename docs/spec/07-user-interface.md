@@ -332,7 +332,8 @@ bottom:
   - published jobs whose last day — the earlier of the apply-by and end dates (§4.4) — is within 14
     days, soonest first;
   - active jobs that cannot be published (§4.3);
-  - drafts nobody has changed for 30 days.
+  - drafts nobody has changed for 30 days;
+  - jobs that present as published but are in no feed, so are published nowhere (§7.11).
   - With none of these, it says that nothing needs attention.
 - **Most clicked jobs** over the window, most first, each linking to its job and with its employer when
   Each row has a bar chart of its last 14 days, and a trend against the
@@ -369,7 +370,8 @@ name the omitted jobs and why (§7.12). A job that has since left the feed keeps
 
 **List** — the primary working screen, per §7.6. Searchable by title and reference id; filterable by
 status, job type, work type, experience level, tag and location; sortable by title, publication date and
-last modification. Columns: title, status badge (§7.6), locations, job type, feed membership count.
+last modification. Columns: title, status badge (§7.6), locations, job type, feed membership count. A
+job in no feed says *no feed* in words there, since it is published nowhere.
 
 **Detail** — the posting in full, with:
 
@@ -377,12 +379,15 @@ last modification. Columns: title, status badge (§7.6), locations, job type, fe
   buttons, each confirming through a modal when it changes what the public sees;
 - a **publication readiness panel** — a checklist of the §4.3 requirements with each unmet one linked to
   the field that fixes it. Why a job is or is not in a feed must be answerable here, without guessing;
-- its feed memberships, each with the resulting publication status;
+- its feed memberships, each with the resulting publication status, and a select of the employer's
+  other feeds to add it to one from here. A job that meets every requirement but is in no feed gets a
+  warning in the readiness panel: being ready is not being published;
 - the transition history (§10 auditability): who changed the status, from what, to what, and when.
 
 **Create / edit** — one form per §7.7, grouped as *Basics* (title, description, url, language, reference
 id, category), *Classification* (job type, work type, experience level, tags), *Workload & salary*,
-*Dates*, *Locations*. Locations and tags use the §7.8 picker, which searches the job's own employer only. A new job is created as `DRAFT`; the form
+*Dates*, *Locations*, *Feeds*. *Feeds* is a checkbox per feed of the employer, setting exactly the
+job's memberships; a new job starts with `all` ticked (§3.5). Locations and tags use the §7.8 picker, which searches the job's own employer only. A new job is created as `DRAFT`; the form
 offers *Save draft* and *Save and activate*, the latter running the §4.3 checks and, on failure, saving
 the draft and listing precisely what is missing.
 

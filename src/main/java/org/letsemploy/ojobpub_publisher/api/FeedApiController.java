@@ -1,5 +1,7 @@
 package org.letsemploy.ojobpub_publisher.api;
 
+import org.letsemploy.ojobpub_publisher.job.Publication;
+
 import static org.letsemploy.ojobpub_publisher.api.JobApiController.uuid;
 
 import java.time.LocalDate;
@@ -45,7 +47,7 @@ public class FeedApiController {
     @Transactional(readOnly = true)
     public List<FeedDto> feeds() {
         api.requireScope(TokenScope.FEEDS_READ);
-        LocalDate today = LocalDate.now();
+        LocalDate today = Publication.today();
         return feedService.findByEmployer(api.employerId()).stream()
                 .map(feed -> mapper.feed(feed, today))
                 .toList();

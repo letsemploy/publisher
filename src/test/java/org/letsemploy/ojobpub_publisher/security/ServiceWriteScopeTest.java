@@ -65,7 +65,7 @@ class ServiceWriteScopeTest {
 
     @Test
     void aStrangerCannotCreateAJobForAnEmployer() {
-        assertThatThrownBy(() -> jobService.save(newJob(), acme, false, stranger))
+        assertThatThrownBy(() -> jobService.save(newJob(), acme, stranger))
                 .isInstanceOf(NotFoundException.class);
     }
 
@@ -73,7 +73,7 @@ class ServiceWriteScopeTest {
     void aStrangerCannotUpdateAJob() {
         JobForm form = newJob();
         form.setId(JOB);
-        assertThatThrownBy(() -> jobService.save(form, acme, false, stranger))
+        assertThatThrownBy(() -> jobService.save(form, acme, stranger))
                 .isInstanceOf(NotFoundException.class);
     }
 
@@ -90,7 +90,7 @@ class ServiceWriteScopeTest {
     /** The other direction: an editor, not an admin, writes all four. */
     @Test
     void aMemberWritesThemAll() {
-        assertThat(jobService.save(newJob(), acme, false, editor).getEmployer().getId()).isEqualTo(ACME);
+        assertThat(jobService.save(newJob(), acme, editor).getEmployer().getId()).isEqualTo(ACME);
         assertThat(feedService.save(null, acme, "Ours", null, null, editor).getId()).isNotNull();
         assertThat(tagService.create(acme, "ours", editor).getId()).isNotNull();
         assertThat(permalinkService.save(null, acme, "Ours", null, null, editor).getId()).isNotNull();

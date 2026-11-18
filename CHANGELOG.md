@@ -8,6 +8,32 @@ Section numbers such as §5.6 refer to the specification in [`docs/SPEC.md`](doc
 
 ## [Unreleased]
 
+### Added
+
+- The job form has a *Feeds* section to choose which feeds a job is in, and the job's page can add
+  it to a feed. Until now this was possible only from the feed's screen (§7.11).
+- A job that is ready to publish but in no feed is pointed out: a warning on its page, *no feed* in
+  the job list, and a group of its own under *Needs attention* on the dashboard (§7.10, §7.11).
+
+### Changed
+
+- A new job is put in the employer's `all` feed: ticked in the form to begin with, and always when
+  it is created through the API's `createJob` (§3.5, §11).
+
+### Fixed
+
+- A job's date window opens and closes by the day in `app.zone`, `Europe/Zurich` by default, as §4.4
+  says, not by the server's zone. In the container that was UTC, so a job stayed published up to two
+  hours past its last day.
+- Two owners demoting, removing or suspending each other at the same moment can no longer leave an
+  employer without an active owner (§2.7).
+- *Save and activate* keeps the job as a draft when it cannot be activated yet, as §7.11 says; the
+  whole save used to be lost.
+- A large picture is decoded at a reduced size: a 10,000-pixel square could exhaust the memory of a
+  small container (§7.27).
+- With a captcha configured, failed sign-ins for an address no longer lock its owner out after the
+  hard limit; that refusal is only for installations without a captcha (§2.12).
+
 ## [1.8.1] - 2026-11-11
 
 ### Fixed

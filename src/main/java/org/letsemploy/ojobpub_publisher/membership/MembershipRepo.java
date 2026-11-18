@@ -1,10 +1,12 @@
 package org.letsemploy.ojobpub_publisher.membership;
 
+import jakarta.persistence.LockModeType;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -32,6 +34,17 @@ public interface MembershipRepo extends JpaRepository<Membership, UUID> {
                                                                       MembershipRole role);
 
     /** How many employers this person belongs to; a token's rows have no user. */
+    /**
+     * The employer's active owners, locked for the rest of the transaction: the
+     * last-owner rule must count them as a locking read, or two owners demoting
+     * each other at once both see two and both succeed (spec 2.7). Take it as the
+     * transaction's first read - see {@code MembershipService.lockActiveOwners}.
+     */
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT m FROM Membership m WHERE m.employer.id = :employerId AND m.role = :role"
+            + " AND m.user IS NOT NULL AND m.suspendedAt IS NULL ORDER BY m.id")
+    List<Membership> lockActiveOwners(@Param("employerId") UUID employerId, @Param("role") MembershipRole role);
+
     long countByUserId(UUID userId);
 
     /**

@@ -143,13 +143,14 @@ public class MembershipService {
     @Transactional
     public void changeRole(UUID employerId, UUID userId, MembershipRole target, Actor actor) {
         requireOwner(actor, employerId);
+        List<Membership> owners = lockActiveOwners(employerId);
         Membership membership = membershipRepo.findByUserIdAndEmployerId(userId, employerId)
                 .orElseThrow(() -> new NotFoundException("Membership not found."));
         if (membership.getRole() == target) {
             return;
         }
         if (target == MembershipRole.EDITOR) {
-            refuseIfLastOwner(employerId, membership, "role");
+            refuseIfLastOwner(owners, membership, "role");
         }
         MembershipRole before = membership.getRole();
         membership.setRole(target);
@@ -162,9 +163,10 @@ public class MembershipService {
     @Transactional
     public void remove(UUID employerId, UUID userId, Actor actor) {
         requireOwner(actor, employerId);
+        List<Membership> owners = lockActiveOwners(employerId);
         Membership membership = membershipRepo.findByUserIdAndEmployerId(userId, employerId)
                 .orElseThrow(() -> new NotFoundException("Membership not found."));
-        refuseIfLastOwner(employerId, membership, "member");
+        refuseIfLastOwner(owners, membership, "member");
         membershipRepo.delete(membership);
         record(AuditAction.MEMBER_REMOVED, membership, actor, null);
         log.info("User {} removed user {} from employer {}", actor.getId(), userId, employerId);
@@ -181,6 +183,7 @@ public class MembershipService {
     @Transactional
     public void suspend(UUID employerId, UUID userId, Actor actor) {
         requireOwner(actor, employerId);
+        List<Membership> owners = lockActiveOwners(employerId);
         Membership membership = membershipRepo.findByUserIdAndEmployerId(userId, employerId)
                 .orElseThrow(() -> new NotFoundException("Membership not found."));
         if (membership.isSuspended()) {
@@ -189,7 +192,7 @@ public class MembershipService {
         if (userId.equals(actor.getId())) {
             throw new ValidationFailure("self", "You cannot suspend yourself.");
         }
-        refuseIfLastOwner(employerId, membership, "member");
+        refuseIfLastOwner(owners, membership, "member");
         membership.setSuspendedAt(Instant.now());
         membershipRepo.save(membership);
         record(AuditAction.MEMBER_SUSPENDED, membership, actor, null);
@@ -222,12 +225,23 @@ public class MembershipService {
     }
 
     /**
+     * Locks the employer's active owners until the transaction ends, so two owners
+     * demoting each other at once cannot both see two (spec 2.7). It must be the
+     * transaction's first read: MariaDB's snapshot isolation refuses a locking read
+     * of a row changed since the transaction's snapshot began, which would turn the
+     * loser's refusal into an error page.
+     */
+    private List<Membership> lockActiveOwners(UUID employerId) {
+        return membershipRepo.lockActiveOwners(employerId, MembershipRole.OWNER);
+    }
+
+    /**
      * The one rule protecting against a state nobody can repair from inside the
      * employer (spec 2.7). The message must say what to do about it — a refusal
      * with no route forward is worse than the button being missing.
      */
-    private void refuseIfLastOwner(UUID employerId, Membership membership, String field) {
-        if (isLastOwner(employerId, membership)) {
+    private void refuseIfLastOwner(List<Membership> activeOwners, Membership membership, String field) {
+        if (membership.getRole().isOwner() && !membership.isSuspended() && activeOwners.size() <= 1) {
             throw new ValidationFailure(field,
                     "This is the only active owner. Make someone else an owner first.");
         }

@@ -65,6 +65,13 @@ public class JobForm {
      */
     private List<String> newTags = new ArrayList<>();
 
+    /**
+     * The feeds the job is in (spec 7.11). Null leaves the memberships alone, and on
+     * a new job means the employer's {@code all} feed (spec 3.5); the form always
+     * sends a list, empty when nothing is ticked.
+     */
+    private List<UUID> feeds;
+
     /** Trims what is stored trimmed, so the constraints see what would be saved. */
     public void trim() {
         title = trimmed(title);

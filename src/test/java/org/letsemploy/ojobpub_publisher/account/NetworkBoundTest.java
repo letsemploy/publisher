@@ -30,13 +30,13 @@ class NetworkBoundTest {
     @Test
     void aNetworkIsRefusedAfterItsBudgetWhateverClientItUses() {
         int tried = 0;
-        while (!attempts.refused("victim-" + tried + "@example.com", client(tried))) {
+        while (!attempts.refused("victim-" + tried + "@example.com", client(tried), false)) {
             attempts.failed("victim-" + tried + "@example.com", client(tried));
             tried++;
             assertThat(tried).as("refused before the maps fill").isLessThan(CAP);
         }
         assertThat(tried).isEqualTo(PER_NETWORK);
-        assertThat(attempts.refused("anyone@example.com", client(60_000))).isTrue();
+        assertThat(attempts.refused("anyone@example.com", client(60_000), false)).isTrue();
     }
 
     @Test
@@ -45,7 +45,7 @@ class NetworkBoundTest {
             attempts.failed("victim-" + i + "@example.com", client(i));
         }
         String elsewhere = "2001:db8:2::1";
-        assertThat(attempts.refused("owner@example.com", elsewhere)).isFalse();
+        assertThat(attempts.refused("owner@example.com", elsewhere, false)).isFalse();
         assertThat(attempts.uncounted("owner@example.com", elsewhere)).isFalse();
         assertThat(attempts.captchaRequired("owner@example.com", elsewhere)).isFalse();
     }

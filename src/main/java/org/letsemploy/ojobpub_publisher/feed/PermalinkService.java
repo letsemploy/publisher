@@ -1,5 +1,7 @@
 package org.letsemploy.ojobpub_publisher.feed;
 
+import org.letsemploy.ojobpub_publisher.job.Publication;
+
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
@@ -89,7 +91,7 @@ public class PermalinkService {
         if (permalink.getFeed() == null) {
             return ojobpubService.generateEmpty(permalink.getEmployer(), since).document();
         }
-        OjobpubDto document = ojobpubService.generate(permalink.getFeed(), LocalDate.now()).document();
+        OjobpubDto document = ojobpubService.generate(permalink.getFeed(), Publication.today()).document();
         if (since != null && since.isAfter(document.lastUpdated())) {
             return document.withLastUpdated(since);
         }

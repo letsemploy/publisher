@@ -73,7 +73,7 @@ public class IndexController {
         if (currentUserService.accountCreatedNow()) {
             return "redirect:/welcome";
         }
-        LocalDate today = LocalDate.now();
+        LocalDate today = Publication.today();
         DashboardJobs jobs = jobService.dashboard(scope.employerIds());
 
         List<FeedRow> feedRows = new ArrayList<>();

@@ -4,10 +4,11 @@ import java.util.List;
 
 /**
  * The dashboard's "needs attention" card (spec 7.10): published jobs about to
- * close, active jobs that cannot be published, and forgotten drafts. Each group
+ * close, active jobs that cannot be published, forgotten drafts, and jobs that
+ * would be published but are in no feed. Each group
  * shows its first few rows and says how many more there are.
  */
-public record AttentionView(Group closing, Group incomplete, Group stale) {
+public record AttentionView(Group closing, Group incomplete, Group stale, Group unlisted) {
 
     /**
      * @param more how many rows beyond {@code rows}, listed at {@code listUrl}
@@ -24,6 +25,6 @@ public record AttentionView(Group closing, Group incomplete, Group stale) {
     }
 
     public boolean isEmpty() {
-        return closing.isEmpty() && incomplete.isEmpty() && stale.isEmpty();
+        return closing.isEmpty() && incomplete.isEmpty() && stale.isEmpty() && unlisted.isEmpty();
     }
 }

@@ -15,6 +15,9 @@ public interface FeedRepo extends JpaRepository<Feed, UUID> {
 
     List<Feed> findByEmployerIdOrderByNameAsc(UUID employerId);
 
+    /** The employer's {@code all} feed (spec 3.5); slugs are not unique, so the oldest. */
+    Optional<Feed> findFirstByEmployerIdAndSlugOrderByCreatedAtAsc(UUID employerId, String slug);
+
     List<Feed> findAllByOrderByNameAsc();
 
     boolean existsByEmployerIdAndNameIgnoreCase(UUID employerId, String name);

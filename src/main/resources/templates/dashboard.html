@@ -127,7 +127,8 @@
                     <th:block th:each="g : ${ {
                             {'closing', dashboard.attention.closing},
                             {'incomplete', dashboard.attention.incomplete},
-                            {'stale', dashboard.attention.stale} } }">
+                            {'stale', dashboard.attention.stale},
+                            {'unlisted', dashboard.attention.unlisted} } }">
                         <th:block th:unless="${g[1].empty}">
                             <div class="list-group-header small" th:text="#{'dashboard.attention.' + ${g[0]}}">Closing soon</div>
                             <a class="list-group-item list-group-item-action d-flex align-items-center"
@@ -136,6 +137,7 @@
                                 <th:block th:if="${g[0] == 'closing'}"><svg th:replace="~{fragments/icon :: i('clock','icon me-2 text-yellow')}"></svg></th:block>
                                 <th:block th:if="${g[0] == 'incomplete'}"><svg th:replace="~{fragments/icon :: i('alert-triangle','icon me-2 text-red')}"></svg></th:block>
                                 <th:block th:if="${g[0] == 'stale'}"><svg th:replace="~{fragments/icon :: i('pencil','icon me-2 text-secondary')}"></svg></th:block>
+                                <th:block th:if="${g[0] == 'unlisted'}"><svg th:replace="~{fragments/icon :: i('alert-triangle','icon me-2 text-yellow')}"></svg></th:block>
                                 <span class="text-truncate">
                                     <span th:text="${r.title}">Senior Backend Engineer</span>
                                     <span class="text-secondary small d-block">

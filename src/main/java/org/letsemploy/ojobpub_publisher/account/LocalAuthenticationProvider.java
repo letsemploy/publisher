@@ -43,7 +43,7 @@ public final class LocalAuthenticationProvider extends DaoAuthenticationProvider
         String address = authentication.getName() == null ? "" : authentication.getName();
         String client = authentication.getDetails() instanceof WebAuthenticationDetails web
                 ? web.getRemoteAddress() : "unknown";
-        if (attempts.refused(address, client)) {
+        if (attempts.refused(address, client, captcha.configured())) {
             throw new BadCredentialsException("Throttled");
         }
         // Throttles full of running windows count nothing new. Uncounted is not

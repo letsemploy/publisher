@@ -63,7 +63,7 @@ public class FeedController {
 
     @GetMapping
     public String list(Model model) {
-        LocalDate today = LocalDate.now();
+        LocalDate today = Publication.today();
         List<FeedRow> rows = new ArrayList<>();
         List<PermalinkRow> permalinks = new ArrayList<>();
         for (Employer employer : scope.employers()) {
@@ -98,7 +98,7 @@ public class FeedController {
 
     private FeedDetailView detailView(UUID id, String query) {
         Feed feed = feedService.findVisible(id, scope.user());
-        LocalDate today = LocalDate.now();
+        LocalDate today = Publication.today();
         OjobpubService.Result result = feedService.publish(feed);
 
         List<JobRow> members = feed.getJobs().stream()

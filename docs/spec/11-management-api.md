@@ -47,7 +47,9 @@ wrong layer.
   `reinstateMember`, `removeMember`, `createPermalink`, `updatePermalink`, `setPermalinkFeed`,
   `deletePermalink`. Activation
   is not `updateJob(status: ACTIVE)`; it is a transition with its own rules (§4.1), and naming it so
-  keeps the API honest about that.
+  keeps the API honest about that. `createJob` puts the new job in the employer's `all` feed, if it
+  still has one (§3.5); `updateJob` leaves a job's feeds alone, which `addJobToFeed` and
+  `removeJobFromFeed` change.
 - **Every mutation returns a payload**, never a bare entity: the result, and a list of `userErrors`
   each carrying a `field`, a `message` and a stable `code`.
 - `inviteMember` is the one payload that returns an **outcome** rather than the record it created.

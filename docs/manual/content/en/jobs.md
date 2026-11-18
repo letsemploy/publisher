@@ -8,7 +8,7 @@ weight: 20
 
 **New job** opens the form in a dialog, grouped as *Basics* (title, description, URL, language, reference ID,
 category), *Classification* (type, mode, level, tags), *Workload and salary*, *Dates* and
-*Locations*. The URL is where applicants should go — your careers page or your
+*Locations* and *Feeds*. The URL is where applicants should go — your careers page or your
 applicant tracking system.
 
 Tags and locations are chosen by searching. If the tag you want does not exist yet, type its name and
@@ -16,6 +16,9 @@ choose **Create tag “…”**: it is created when the job is saved, and not at
 
 A new job is saved as a **draft**. **Save draft** keeps it that way; **Save and activate** also tries to
 make it active, and if something is missing it saves the draft and lists exactly what.
+
+**A job is only published in the feeds it is in.** Under *Feeds* you tick which ones; a new job starts
+in the *All jobs* feed. A job created through the API goes there too.
 
 ## States {#states}
 
@@ -58,7 +61,8 @@ The list and the job's page show what the job currently presents as:
 | **Draft** | A draft. |
 | **Inactive** | Deactivated. |
 
-Only **published** jobs appear in a feed. The job's page also lists its feeds and its **status history**: who
+Only **published** jobs appear in a feed. The job's page also lists its feeds, with a field to add it to
+another, and warns when a job ready to publish is in no feed at all. It also shows its **status history**: who
 changed its status, from what to what, and when.
 
 ## Job links and clicks {#clicks}

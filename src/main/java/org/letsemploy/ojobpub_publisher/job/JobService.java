@@ -18,6 +18,7 @@ import org.letsemploy.ojobpub_publisher.common.exception.NotFoundException;
 import org.letsemploy.ojobpub_publisher.common.exception.ValidationFailure;
 import org.letsemploy.ojobpub_publisher.common.validation.InputValidator;
 import org.letsemploy.ojobpub_publisher.employer.Employer;
+import org.letsemploy.ojobpub_publisher.feed.Feed;
 import org.letsemploy.ojobpub_publisher.feed.FeedRepo;
 import org.letsemploy.ojobpub_publisher.location.LocationService;
 import org.letsemploy.ojobpub_publisher.security.Actor;
@@ -93,7 +94,7 @@ public class JobService {
             filters.add((job, query, cb) -> cb.equal(job.get("jobType"), jobType));
         }
         if (presentation != null) {
-            filters.add(Publication.presenting(presentation, LocalDate.now()));
+            filters.add(Publication.presenting(presentation, Publication.today()));
         }
         return jobRepo.findAll(Specification.allOf(filters), pageable);
     }
@@ -154,7 +155,7 @@ public class JobService {
      * (spec 3.3).
      */
     @Transactional
-    public Job save(JobForm form, Employer employer, boolean activate, Actor actor) {
+    public Job save(JobForm form, Employer employer, Actor actor) {
         Job job;
         if (form.getId() == null) {
             if (!actor.canActOn(employer.getId())) {
@@ -175,10 +176,7 @@ public class JobService {
         Job saved = jobRepo.save(job);
         auditLog.record(AuditEvent.of(form.getId() == null ? AuditAction.JOB_CREATED : AuditAction.JOB_UPDATED,
                 actor).in(saved.getEmployer()).target(saved.getId(), saved.getTitle()));
-
-        if (activate && saved.getStatus() != JobStatus.ACTIVE) {
-            transition(saved, JobStatus.ACTIVE, actor);
-        }
+        syncFeeds(saved, form.getFeeds(), form.getId() == null, actor);
         return saved;
     }
 
@@ -240,6 +238,45 @@ public class JobService {
     }
 
     /**
+     * Puts the job in exactly the feeds asked for (spec 7.11), or, asked for none on
+     * a new job, in its employer's {@code all} feed (spec 3.5) - so a job never sits
+     * outside every feed only because nobody knew it had to be added. Another
+     * employer's feed is refused like an unknown one.
+     */
+    private void syncFeeds(Job job, List<UUID> requested, boolean isNew, Actor actor) {
+        if (requested == null) {
+            if (isNew) {
+                feedRepo.findFirstByEmployerIdAndSlugOrderByCreatedAtAsc(job.getEmployer().getId(), "all")
+                        .ifPresent(feed -> include(feed, job, actor));
+            }
+            return;
+        }
+        Set<UUID> wanted = new LinkedHashSet<>(requested);
+        List<Feed> chosen = new ArrayList<>();
+        for (UUID feedId : wanted) {
+            Feed feed = feedRepo.findById(feedId)
+                    .filter(f -> f.getEmployer().getId().equals(job.getEmployer().getId()))
+                    .orElseThrow(() -> new ValidationFailure("feeds", "Choose one of this employer's feeds."));
+            chosen.add(feed);
+        }
+        for (UUID feedId : jobRepo.findFeedIds(job.getId())) {
+            if (!wanted.contains(feedId)) {
+                feedRepo.findById(feedId).filter(feed -> feed.exclude(job.getId())).ifPresent(feed ->
+                        auditLog.record(AuditEvent.of(AuditAction.FEED_JOB_REMOVED, actor).in(feed.getEmployer())
+                                .target(job.getId(), job.getTitle()).detail(feed.getName())));
+            }
+        }
+        chosen.forEach(feed -> include(feed, job, actor));
+    }
+
+    private void include(Feed feed, Job job, Actor actor) {
+        if (feed.include(job)) {
+            auditLog.record(AuditEvent.of(AuditAction.FEED_JOB_ADDED, actor).in(feed.getEmployer())
+                    .target(job.getId(), job.getTitle()).detail(feed.getName()));
+        }
+    }
+
+    /**
      * The form's shape (spec 9.6), after {@link #apply}: another employer's
      * location or tag is refused there first, as the API's field names expect.
      * The tag count stays here, because it counts what survived de-duplication
@@ -279,7 +316,7 @@ public class JobService {
             }
             // Stamped once, on first activation, and never moved afterwards (spec 4.2).
             if (job.getPublishedAt() == null) {
-                job.setPublishedAt(LocalDate.now());
+                job.setPublishedAt(Publication.today());
             }
         }
         JobStatus from = job.getStatus();
@@ -318,7 +355,8 @@ public class JobService {
         for (UUID employerId : employerIds) {
             jobs.addAll(jobRepo.findByEmployerIdOrderByTitleAsc(employerId));
         }
-        return DashboardJobs.of(jobs, LocalDate.now(), Instant.now());
+        return DashboardJobs.of(jobs, employerIds.isEmpty() ? Set.of() : jobRepo.findIdsInAnyFeed(employerIds),
+                Publication.today(), Instant.now());
     }
 
     /**

@@ -99,7 +99,7 @@ public class JobLinkHandler {
 
         // The link is the employer's control: once the job leaves the feed, a copy
         // of the feed held anywhere no longer leads to it (spec 5.6).
-        if (!Publication.isPublishable(job, LocalDate.now())) {
+        if (!Publication.isPublishable(job, Publication.today())) {
             return page(request, HttpStatus.GONE, job.getEmployer());
         }
         if (!isWebAddress(job.getUrl())) {

@@ -6,6 +6,8 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Set;
+import java.util.UUID;
 
 /**
  * What the dashboard says about the jobs in scope (spec 7.10): how many present
@@ -19,6 +21,7 @@ import java.util.List;
  * @param closingSoon  published jobs whose last day falls within {@link #CLOSING_DAYS}, soonest first
  * @param incomplete   active jobs that cannot be published (spec 4.3), by title
  * @param staleDrafts  drafts nobody has touched for {@link #STALE_DAYS}, oldest first
+ * @param unlisted     jobs that would be published but are in no feed, by title
  */
 public record DashboardJobs(
         int published,
@@ -29,7 +32,8 @@ public record DashboardJobs(
         int newRecently,
         List<Closing> closingSoon,
         List<Job> incomplete,
-        List<Job> staleDrafts) {
+        List<Job> staleDrafts,
+        List<Job> unlisted) {
 
     public static final int RECENT_DAYS = 30;
     public static final int CLOSING_DAYS = 14;
@@ -39,7 +43,13 @@ public record DashboardJobs(
     public record Closing(Job job, LocalDate lastDay) {
     }
 
+    /** Without feed membership: {@link #unlisted} stays empty. */
     public static DashboardJobs of(List<Job> jobs, LocalDate today, Instant now) {
+        return of(jobs, null, today, now);
+    }
+
+    /** @param inAnyFeed the ids of the jobs in at least one feed, or null when not known */
+    public static DashboardJobs of(List<Job> jobs, Set<UUID> inAnyFeed, LocalDate today, Instant now) {
         int published = 0;
         int draft = 0;
         int expired = 0;
@@ -48,6 +58,7 @@ public record DashboardJobs(
         List<Closing> closing = new ArrayList<>();
         List<Job> incomplete = new ArrayList<>();
         List<Job> stale = new ArrayList<>();
+        List<Job> unlisted = new ArrayList<>();
         Instant staleBefore = now.minus(Duration.ofDays(STALE_DAYS));
 
         for (Job job : jobs) {
@@ -67,6 +78,9 @@ public record DashboardJobs(
                 if (lastDay != null && !lastDay.isAfter(today.plusDays(CLOSING_DAYS))) {
                     closing.add(new Closing(job, lastDay));
                 }
+                if (inAnyFeed != null && !inAnyFeed.contains(job.getId())) {
+                    unlisted.add(job);
+                }
             }
             if (presentation == Publication.Presentation.INCOMPLETE) {
                 incomplete.add(job);
@@ -79,8 +93,9 @@ public record DashboardJobs(
         closing.sort(Comparator.comparing(Closing::lastDay).thenComparing(c -> c.job().getTitle()));
         incomplete.sort(Comparator.comparing(Job::getTitle));
         stale.sort(Comparator.comparing(Job::getLastModifiedAt));
+        unlisted.sort(Comparator.comparing(Job::getTitle));
         return new DashboardJobs(published, draft, expired, inactive, jobs.size(), recent,
-                List.copyOf(closing), List.copyOf(incomplete), List.copyOf(stale));
+                List.copyOf(closing), List.copyOf(incomplete), List.copyOf(stale), List.copyOf(unlisted));
     }
 
     /** Published jobs as a share of all jobs, 0-100, for the KPI ring. */
@@ -89,6 +104,6 @@ public record DashboardJobs(
     }
 
     public boolean needsAttention() {
-        return !closingSoon.isEmpty() || !incomplete.isEmpty() || !staleDrafts.isEmpty();
+        return !closingSoon.isEmpty() || !incomplete.isEmpty() || !staleDrafts.isEmpty() || !unlisted.isEmpty();
     }
 }
