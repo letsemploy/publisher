@@ -46,6 +46,10 @@ Section numbers such as §5.6 refer to the specification in [`docs/SPEC.md`](doc
   `javascript:` link used to be published in its feeds.
 - Deleting one's account ends its sessions on other devices too (§2.13); one signed in through a
   provider used to create the account anew at its next request.
+- A new employer's `all` feed is created in the same transaction as the employer (§3.5); a failure
+  in between used to leave an employer without it.
+- A malformed id or value in a URL or form (`/jobs/foo`, an unknown role) answers 404 instead of
+  500, and no longer writes a stack trace to the log.
 
 ## [1.8.1] - 2026-11-11
 

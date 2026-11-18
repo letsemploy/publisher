@@ -12,6 +12,7 @@ import org.letsemploy.ojobpub_publisher.common.exception.NotFoundException;
 import org.letsemploy.ojobpub_publisher.common.exception.ValidationFailure;
 import org.letsemploy.ojobpub_publisher.common.validation.InputValidator;
 import org.letsemploy.ojobpub_publisher.common.validation.NameInput;
+import org.letsemploy.ojobpub_publisher.feed.FeedService;
 import org.letsemploy.ojobpub_publisher.common.validation.UrlInput;
 import org.letsemploy.ojobpub_publisher.location.LocationService;
 import org.letsemploy.ojobpub_publisher.membership.MembershipService;
@@ -37,6 +38,7 @@ public class EmployerService {
     private final UserRepo userRepo;
     private final AuditLog auditLog;
     private final InputValidator inputs;
+    private final FeedService feedService;
 
     public EmployerService(EmployerRepo employerRepo,
                            LocationService locationService,
@@ -44,7 +46,8 @@ public class EmployerService {
                            ResourceLimits limits,
                            UserRepo userRepo,
                            AuditLog auditLog,
-                           InputValidator inputs) {
+                           InputValidator inputs,
+                           FeedService feedService) {
         this.employerRepo = employerRepo;
         this.locationService = locationService;
         this.membershipService = membershipService;
@@ -52,6 +55,7 @@ public class EmployerService {
         this.userRepo = userRepo;
         this.auditLog = auditLog;
         this.inputs = inputs;
+        this.feedService = feedService;
     }
 
     /** Editors see only their employers; an admin sees all (spec 2.1). */
@@ -149,6 +153,9 @@ public class EmployerService {
             UserEntity creator = userRepo.findById(actor.getId())
                     .orElseThrow(() -> new NotFoundException("User not found: " + actor.getId()));
             membershipService.createOwner(creator, saved);
+            // Every employer gets a working URL the moment it exists (spec 3.5), in
+            // this transaction: committed apart, a failure left one without it.
+            feedService.createDefaultFeed(saved);
         }
         auditLog.record(AuditEvent.of(creating ? AuditAction.EMPLOYER_CREATED : AuditAction.EMPLOYER_UPDATED,
                 actor).in(saved).target(saved.getId(), saved.getName()));

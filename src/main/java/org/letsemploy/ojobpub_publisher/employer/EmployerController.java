@@ -134,9 +134,7 @@ public class EmployerController {
                     ? null : UUID.fromString(headquarters);
             Employer saved = employerService.save(id, name, slug, url, industry,
                     new Headquarters(locationId, hqCity, hqCountry), scope.user());
-            // Every employer gets a working URL the moment it exists (spec 3.5).
             if (id == null) {
-                feedService.createDefaultFeed(saved);
                 // Whoever creates an employer is about to work on it: its locations,
                 // jobs and feeds. Switching to it spares them finding it in the
                 // switcher first, and keeps new rows from landing on the employer

@@ -613,6 +613,15 @@ class ScreenRenderingTest {
                 .andExpect(status().isNotFound());
     }
 
+    /** A malformed id or value names nothing either: 404, not 500 with a stack trace. */
+    @Test
+    void malformedInputIsNotFound() throws Exception {
+        mvc.perform(get("/jobs/not-a-uuid")).andExpect(status().isNotFound());
+        mvc.perform(post("/employers/003d6aec-021b-11f1-aefa-f649a5d91690/people/invite")
+                        .param("email", "x@example.com").param("role", "foo"))
+                .andExpect(status().isNotFound());
+    }
+
     /**
      * htmx 4 swaps an error answer too, into whatever the request targeted, so a
      * 404 behind a delete modal would nest a whole page in the modal's container.

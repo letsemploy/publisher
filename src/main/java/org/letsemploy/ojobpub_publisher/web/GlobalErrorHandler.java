@@ -11,6 +11,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.bind.annotation.ResponseStatus;
 
 /**
@@ -37,6 +38,18 @@ public class GlobalErrorHandler {
         model.addAttribute("page", PageMeta.of("Not found"));
         model.addAttribute("errorTitle", e.getMessage());
         return "error";
+    }
+
+    /**
+     * A malformed id or value in the URL or a form ({@code /jobs/foo}, {@code role=foo})
+     * names nothing that exists: 404, like an unknown one, and no stack trace for a
+     * bot trying URLs. The message is not shown, since it describes our parsing.
+     */
+    @ExceptionHandler({MethodArgumentTypeMismatchException.class, IllegalArgumentException.class})
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    public String malformed(Exception e, HttpServletRequest request, HttpServletResponse response, Model model) {
+        log.debug("Malformed input handling {}: {}", request.getRequestURI(), e.getMessage());
+        return notFound(new NotFoundException("Not found"), request, response, model);
     }
 
     @ExceptionHandler(Exception.class)

@@ -162,6 +162,8 @@ class QuotaEnforcementTest {
     void theDefaultFeedIsNeverRefused() {
         Employer fresh = employerService.save(null, "Quota Co " + UUID.randomUUID(), null, null,
                 null, Headquarters.newLocation("Quotaville", "CH"), admin);
+        // Made with the employer; removed here so the quota fills before it comes back.
+        feedRepo.deleteAll(feedService.findByEmployer(fresh.getId()));
         feedService.save(null, fresh, "One", null, null, admin);
         feedService.save(null, fresh, "Two", null, null, admin);
         assertThatThrownBy(() -> feedService.save(null, fresh, "Three", null, null, admin))

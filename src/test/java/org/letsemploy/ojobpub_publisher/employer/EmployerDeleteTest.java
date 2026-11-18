@@ -83,7 +83,6 @@ class EmployerDeleteTest {
         doomed = employerService.save(null, "Doomed Ltd", null, null, null,
                 Headquarters.newLocation("Winterthur", "CH"),
                 Actor.user(user.getId(), "Owen Owner", null, false, Map.of()));
-        feedService.createDefaultFeed(doomed);
         owner = Actor.user(user.getId(), "Owen Owner", null, false,
                 Map.of(doomed.getId(), MembershipRole.OWNER));
         actAs(owner);

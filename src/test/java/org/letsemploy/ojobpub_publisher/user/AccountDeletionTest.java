@@ -119,7 +119,6 @@ class AccountDeletionTest {
 
         solo = employerService.save(null, "Solo Ltd", null, null, null,
                 Headquarters.newLocation("Winterthur", "CH"), plain(leaver));
-        feedService.createDefaultFeed(solo);
         shared = employerService.save(null, "Shared Ltd", null, null, null,
                 Headquarters.newLocation("Basel", "CH"), plain(stayer));
         membershipService.grant(leaver, shared, MembershipRole.OWNER);
