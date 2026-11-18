@@ -144,7 +144,17 @@ server:
   # http://internal-host address and refuses it. Only safe when the application
   # is reachable through the proxy alone: anyone who can reach it directly can
   # forge those headers. Remove this line if nothing sits in front of it.
-  forward-headers-strategy: framework
+  #
+  # native, not framework: the client's address feeds the sign-in throttles
+  # (spec 2.12), and a proxy that appends to X-Forwarded-For (nginx's usual
+  # $proxy_add_x_forwarded_for) leaves the client's own entry leftmost, which
+  # framework takes. native takes the rightmost address that is not a trusted
+  # proxy. Tomcat trusts private, loopback and link-local addresses by default;
+  # a proxy on a public address must be named in internal-proxies (a regex).
+  forward-headers-strategy: native
+  # tomcat:
+  #   remoteip:
+  #     internal-proxies: '203\.0\.113\.10'
   servlet:
     session:
       timeout: 8h

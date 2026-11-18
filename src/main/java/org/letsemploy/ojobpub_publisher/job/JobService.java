@@ -183,7 +183,7 @@ public class JobService {
         Job saved = jobRepo.save(job);
         auditLog.record(AuditEvent.of(form.getId() == null ? AuditAction.JOB_CREATED : AuditAction.JOB_UPDATED,
                 actor).in(saved.getEmployer()).target(saved.getId(), saved.getTitle()));
-        syncFeeds(saved, form.getFeeds(), form.getId() == null, actor);
+        syncFeeds(saved, form.getFeeds(), form.getFeedsBefore(), form.getId() == null, actor);
         return saved;
     }
 
@@ -256,7 +256,7 @@ public class JobService {
      * outside every feed only because nobody knew it had to be added. Another
      * employer's feed is refused like an unknown one.
      */
-    private void syncFeeds(Job job, List<UUID> requested, boolean isNew, Actor actor) {
+    private void syncFeeds(Job job, List<UUID> requested, List<UUID> before, boolean isNew, Actor actor) {
         if (requested == null) {
             if (isNew) {
                 feedRepo.findFirstByEmployerIdAndSlugOrderByCreatedAtAsc(job.getEmployer().getId(), "all")
@@ -273,7 +273,8 @@ public class JobService {
             chosen.add(feed);
         }
         for (UUID feedId : jobRepo.findFeedIds(job.getId())) {
-            if (!wanted.contains(feedId)) {
+            // Unticked, not added by someone else while the form was open.
+            if (!wanted.contains(feedId) && (before == null || before.contains(feedId))) {
                 feedRepo.findById(feedId).filter(feed -> feed.exclude(job.getId())).ifPresent(feed ->
                         auditLog.record(AuditEvent.of(AuditAction.FEED_JOB_REMOVED, actor).in(feed.getEmployer())
                                 .target(job.getId(), job.getTitle()).detail(feed.getName())));

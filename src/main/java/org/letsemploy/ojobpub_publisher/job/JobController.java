@@ -329,6 +329,7 @@ public class JobController {
             form.setFeeds(form.getId() == null
                     ? feeds.stream().filter(f -> "all".equals(f.getSlug())).limit(1).map(Feed::getId).toList()
                     : jobService.feedIdsOf(form.getId()));
+            form.setFeedsBefore(form.getId() == null ? List.of() : form.getFeeds());
         }
         model.addAttribute("feedOptions", feeds.stream().map(f -> new Ref(f.getId().toString(), f.getName())).toList());
         model.addAttribute("selectedFeeds", form.getFeeds().stream().map(UUID::toString).toList());

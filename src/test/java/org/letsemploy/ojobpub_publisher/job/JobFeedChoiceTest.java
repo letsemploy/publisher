@@ -112,6 +112,20 @@ class JobFeedChoiceTest {
         assertThat(feedRepo.findById(ENGINEERING).orElseThrow().getLastModifiedAt()).isAfter(before);
     }
 
+    /** Someone adds the job to a feed while the form is open: saving it keeps that. */
+    @Test
+    void aFeedAddedWhileTheFormWasOpenIsKept() {
+        Job job = jobService.save(form(List.of(ALL)), acme(), editor);
+        JobForm edit = JobForm.of(job);
+        edit.setFeeds(new ArrayList<>(List.of(ALL)));
+        edit.setFeedsBefore(new ArrayList<>(List.of(ALL)));
+
+        feedService.addJob(ENGINEERING, job.getId(), editor);
+        jobService.save(edit, acme(), editor);
+
+        assertThat(jobRepo.findFeedIds(job.getId())).containsExactlyInAnyOrder(ALL, ENGINEERING);
+    }
+
     @Test
     void anEditWithoutAChoiceLeavesTheFeedsAlone() {
         Job job = jobService.save(form(List.of(ENGINEERING)), acme(), editor);

@@ -173,7 +173,8 @@ click's country is `app.clicks.country-header`, the header a proxy or CDN sets (
 `app.clicks.geoip-database`, the path to a GeoIP country database in MaxMind's `.mmdb` format — GeoLite2
 or DB-IP Lite — which the deployment supplies and refreshes; a configured path that cannot be read stops
 the application at startup. Behind a reverse proxy the database needs the client's address, so
-`server.forward-headers-strategy` must be set, and both sources are only as trustworthy as the proxy is
+`server.forward-headers-strategy` must be set — `native`, which takes the rightmost address that is
+not a trusted proxy, never `framework`, which takes the leftmost one the client wrote — and both sources are only as trustworthy as the proxy is
 the only way in. `app.clicks.ignore-user-agents` lists the user-agent substrings that are machines, and
 `app.clicks.dashboard-days` (30) and `app.clicks.top-jobs` (10) shape the dashboard card.
 

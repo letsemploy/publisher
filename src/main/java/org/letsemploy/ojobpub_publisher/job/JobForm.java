@@ -72,6 +72,13 @@ public class JobForm {
      */
     private List<UUID> feeds;
 
+    /**
+     * The feeds the job was in when the form opened. Only those may be left by
+     * unticking, so a feed someone added meanwhile is kept; null removes any not
+     * ticked.
+     */
+    private List<UUID> feedsBefore;
+
     /** Trims what is stored trimmed, so the constraints see what would be saved. */
     public void trim() {
         title = trimmed(title);

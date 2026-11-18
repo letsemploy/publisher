@@ -19,6 +19,11 @@ Section numbers such as §5.6 refer to the specification in [`docs/SPEC.md`](doc
 
 - A new job is put in the employer's `all` feed: ticked in the form to begin with, and always when
   it is created through the API's `createJob` (§3.5, §11).
+- The example `application-prod.yml` uses `server.forward-headers-strategy: native`. With
+  `framework`, a proxy appending to `X-Forwarded-For` left the client's own entry leftmost, so a
+  client could pick its address and step round the sign-in throttles (§2.12). A deployment copied
+  from the example should change it too; a proxy on a public address then needs
+  `server.tomcat.remoteip.internal-proxies`.
 
 ### Fixed
 
