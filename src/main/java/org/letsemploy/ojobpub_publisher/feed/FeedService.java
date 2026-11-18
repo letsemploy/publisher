@@ -2,8 +2,10 @@ package org.letsemploy.ojobpub_publisher.feed;
 
 import org.letsemploy.ojobpub_publisher.job.Publication;
 
+import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 import org.letsemploy.ojobpub_publisher.audit.AuditAction;
@@ -100,12 +102,16 @@ public class FeedService {
                 throw new ValidationFailure("name", "This employer already has a feed with that name.");
             }
         }
+        Instant before = feed.getLastModifiedAt();
         feed.setName(name.trim());
         feed.setSlug(Slugs.slugify(slug == null || slug.isBlank() ? name : slug, "feed"));
         feed.setDescription(description == null || description.isBlank() ? null : description.trim());
-        Feed saved = feedRepo.save(feed);
-        auditLog.record(AuditEvent.of(id == null ? AuditAction.FEED_CREATED : AuditAction.FEED_UPDATED, actor)
-                .in(saved.getEmployer()).target(saved.getId(), saved.getName()));
+        // Flushed so @PreUpdate has run: the date moves only when something changed.
+        Feed saved = feedRepo.saveAndFlush(feed);
+        if (id == null || !Objects.equals(before, saved.getLastModifiedAt())) {
+            auditLog.record(AuditEvent.of(id == null ? AuditAction.FEED_CREATED : AuditAction.FEED_UPDATED, actor)
+                    .in(saved.getEmployer()).target(saved.getId(), saved.getName()));
+        }
         return saved;
     }
 

@@ -375,10 +375,6 @@ public class Views {
         return user.getEmail() != null ? user.getEmail() : user.getSubject();
     }
 
-    public Ref ref(Employer employer) {
-        return new Ref(employer.getId().toString(), employer.getName());
-    }
-
     private String text(LocalDate date) {
         return date == null ? null : date.toString();
     }

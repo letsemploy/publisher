@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
@@ -172,6 +173,7 @@ public class JobService {
         }
 
         form.trim();
+        Instant before = job.getLastModifiedAt();
         List<Object> linksBefore = links(job);
         apply(form, job, actor);
         if (!links(job).equals(linksBefore)) {
@@ -180,9 +182,12 @@ public class JobService {
             job.setLastModifiedAt(Instant.now());
         }
         validate(form, job);
-        Job saved = jobRepo.save(job);
-        auditLog.record(AuditEvent.of(form.getId() == null ? AuditAction.JOB_CREATED : AuditAction.JOB_UPDATED,
-                actor).in(saved.getEmployer()).target(saved.getId(), saved.getTitle()));
+        // Flushed so @PreUpdate has run: the date moves only when something changed.
+        Job saved = jobRepo.saveAndFlush(job);
+        if (form.getId() == null || !Objects.equals(before, saved.getLastModifiedAt())) {
+            auditLog.record(AuditEvent.of(form.getId() == null ? AuditAction.JOB_CREATED : AuditAction.JOB_UPDATED,
+                    actor).in(saved.getEmployer()).target(saved.getId(), saved.getTitle()));
+        }
         syncFeeds(saved, form.getFeeds(), form.getFeedsBefore(), form.getId() == null, actor);
         return saved;
     }

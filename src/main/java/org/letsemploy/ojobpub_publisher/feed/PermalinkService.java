@@ -5,6 +5,7 @@ import org.letsemploy.ojobpub_publisher.job.Publication;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 import org.letsemploy.ojobpub_publisher.audit.AuditAction;
@@ -123,13 +124,19 @@ public class PermalinkService {
             }
         }
         Feed before = permalink.getFeed();
+        String nameBefore = permalink.getName();
+        String descriptionBefore = permalink.getDescription();
         permalink.setName(name.trim());
         permalink.setDescription(description == null || description.isBlank() ? null : description.trim());
         permalink.setFeed(ownFeed(feedId, permalink.getEmployer()));
         Permalink saved = permalinkRepo.save(permalink);
-        auditLog.record(AuditEvent.of(id == null ? AuditAction.PERMALINK_CREATED : AuditAction.PERMALINK_UPDATED,
-                actor).in(saved.getEmployer()).target(saved.getId(), saved.getName())
-                .detail(id == null ? label(saved.getFeed()) : null));
+        // A new target is recorded as a retarget below; this row is for the rest.
+        if (id == null || !Objects.equals(nameBefore, saved.getName())
+                || !Objects.equals(descriptionBefore, saved.getDescription())) {
+            auditLog.record(AuditEvent.of(id == null ? AuditAction.PERMALINK_CREATED : AuditAction.PERMALINK_UPDATED,
+                    actor).in(saved.getEmployer()).target(saved.getId(), saved.getName())
+                    .detail(id == null ? label(saved.getFeed()) : null));
+        }
         if (id != null && !sameFeed(before, saved.getFeed())) {
             recordRetarget(saved, before, saved.getFeed(), actor);
         }

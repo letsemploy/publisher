@@ -1,7 +1,9 @@
 package org.letsemploy.ojobpub_publisher.employer;
 
 import com.neovisionaries.i18n.CountryCode;
+import java.time.Instant;
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
 import org.letsemploy.ojobpub_publisher.audit.AuditAction;
 import org.letsemploy.ojobpub_publisher.audit.AuditEvent;
@@ -135,6 +137,7 @@ public class EmployerService {
             employer = employerRepo.findById(id)
                     .orElseThrow(() -> new NotFoundException("Employer not found: " + id));
         }
+        Instant before = employer.getLastModifiedAt();
         employer.setName(name.trim());
         employer.setSlug(Slugs.slugify(slug == null || slug.isBlank() ? name : slug, "employer"));
         employer.setUrl(blankToNull(url));
@@ -146,7 +149,8 @@ public class EmployerService {
         saved.setHeadquarters(headquarters.isNew()
                 ? locationService.findOrCreate(saved, headquarters.newCity(), headquarters.newCountry(), actor)
                 : locationService.requireOwn(headquarters.locationId(), saved, "headquarters"));
-        saved = employerRepo.save(saved);
+        // Flushed so @PreUpdate has run: the date moves only when something changed.
+        saved = employerRepo.saveAndFlush(saved);
 
         if (creating) {
             // No employer ever exists without someone responsible for it (spec 2.7).
@@ -157,13 +161,11 @@ public class EmployerService {
             // this transaction: committed apart, a failure left one without it.
             feedService.createDefaultFeed(saved);
         }
-        auditLog.record(AuditEvent.of(creating ? AuditAction.EMPLOYER_CREATED : AuditAction.EMPLOYER_UPDATED,
-                actor).in(saved).target(saved.getId(), saved.getName()));
+        if (creating || !Objects.equals(before, saved.getLastModifiedAt())) {
+            auditLog.record(AuditEvent.of(creating ? AuditAction.EMPLOYER_CREATED : AuditAction.EMPLOYER_UPDATED,
+                    actor).in(saved).target(saved.getId(), saved.getName()));
+        }
         return saved;
-    }
-
-    public long count() {
-        return employerRepo.count();
     }
 
     private String blankToNull(String s) {

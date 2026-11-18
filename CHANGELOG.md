@@ -53,6 +53,8 @@ Section numbers such as §5.6 refer to the specification in [`docs/SPEC.md`](doc
   in between used to leave an employer without it.
 - A malformed id or value in a URL or form (`/jobs/foo`, an unknown role) answers 404 instead of
   500, and no longer writes a stack trace to the log.
+- Saving an employer, feed, permalink or job without changing anything no longer adds an
+  *updated* row to the activity log (§3.12).
 
 ## [1.8.1] - 2026-11-11
 

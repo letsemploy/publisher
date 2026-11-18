@@ -682,7 +682,8 @@ the employer's log and the member's — so the two logs cannot disagree.
   `Propagation.MANDATORY`: it must run inside the change's transaction, so a rollback leaves no row and
   a refusal, which throws first, is never recorded. **Record after the write and only on a real
   change** — the early returns for a no-op (`changeRole` to the same role, re-suspending, renaming a
-  tag to its own name) come before it. A new write path in a service needs its `record` call;
+  tag to its own name) come before it. A form's save tells by `saveAndFlush` and whether
+  `lastModifiedAt` moved, since `@PreUpdate` runs only for a dirty entity (`NoOpSaveAuditTest`). A new write path in a service needs its `record` call;
   `AuditLogTest` covers the scopes, not every call site.
 - **Who reads what is `AuditAction`'s audience** — `MEMBERS`, `OWNERS`, `PERSONAL` — applied in the
   query (`AuditRepo.findForEmployers`), so pages stay full. Invitations and tokens are `OWNERS` because
