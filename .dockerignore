@@ -2,4 +2,6 @@
 target/
 node_modules/
 data/
+# Nothing in the build reads the history, and every commit would change the context.
+.git/
 *.db

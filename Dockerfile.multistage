@@ -1,4 +1,7 @@
-FROM docker.io/maven:3-eclipse-temurin-26 AS build
+# The jar is plain Java and the same for every platform, so it is built once, on
+# the builder's own platform: under QEMU the arm64 build took 333 s against 43 s
+# native. Only the package stage below is per platform, and it runs nothing.
+FROM --platform=$BUILDPLATFORM docker.io/maven:3-eclipse-temurin-26 AS build
 
 WORKDIR /home/app/
 COPY . .
@@ -8,6 +11,8 @@ RUN mv ./target/*.jar /app.jar
 #
 # Package stage
 #
+# No RUN here: the workflow sets up no QEMU, so a command in this stage would
+# fail for the platform that is not the runner's.
 FROM docker.io/eclipse-temurin:25-jre-alpine
 COPY --from=build /app.jar /opt/app/
 # Memory defaults for a small instance, measured in 512 MB and 1 GB containers
