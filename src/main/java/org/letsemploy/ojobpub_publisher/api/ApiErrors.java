@@ -48,6 +48,7 @@ public class ApiErrors {
             case "locations" -> "locationIds";
             case "tags" -> "tagIds";
             case "feed" -> "feedId";
+            case "headquarters" -> "headquartersId";
             case "readiness.salary" -> "salaryCurrency";
             // "Title, URL, language and job type are present" is about four fields
             // at once, so naming one of them would be a guess.

@@ -81,8 +81,10 @@ public class AccountDeletionService {
      */
     @Transactional
     public void delete(Actor actor, String typed) {
+        // Locked first, before any other read (see UserRepo.lockByRoleAndSuspendedAtIsNull).
+        List<UserEntity> admins = userRepo.lockByRoleAndSuspendedAtIsNull(UserEntity.Role.ADMIN);
         UserEntity user = self(actor);
-        if (isOnlyAdmin(user)) {
+        if (user.getRole() == UserEntity.Role.ADMIN && admins.size() <= 1) {
             throw new ValidationFailure("admin",
                     "You are the only admin. Make someone else an admin first.");
         }

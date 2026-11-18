@@ -69,7 +69,8 @@ public class EmployerService {
             return List.of();
         }
         return employerRepo.findAllById(user.getEmployerIds()).stream()
-                .sorted(java.util.Comparator.comparing(Employer::getName))
+                // As the database orders them for an admin: case does not count.
+                .sorted(java.util.Comparator.comparing(Employer::getName, String.CASE_INSENSITIVE_ORDER))
                 .toList();
     }
 

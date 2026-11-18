@@ -101,7 +101,13 @@ public class InvitationService {
      */
     @Transactional
     public Employer accept(UUID invitationId, Actor user) {
-        Invitation invitation = ownPending(invitationId, user);
+        Invitation invitation = own(invitationId, user);
+        // A double submit: the first click joined, so the second lands there too
+        // instead of failing on the membership's unique key.
+        if (invitation.getStatus() == InvitationStatus.ACCEPTED) {
+            return invitation.getEmployer();
+        }
+        requirePending(invitation);
         UserEntity invitee = invitation.getInvitee();
         membershipService.grant(invitee, invitation.getEmployer(), invitation.getRole());
         invitation.resolve(InvitationStatus.ACCEPTED);
@@ -126,13 +132,25 @@ public class InvitationService {
 
     /** Responding to someone else's invitation is a 404, never a 403 (spec 7.16). */
     private Invitation ownPending(UUID invitationId, Actor user) {
-        Invitation invitation = invitationRepo.findById(invitationId)
+        return requirePending(own(invitationId, user));
+    }
+
+    /**
+     * Locked, as the transaction's first read: a second click waits for the first
+     * to commit and then sees it resolved, rather than both answering it.
+     */
+    private Invitation own(UUID invitationId, Actor user) {
+        Invitation invitation = invitationRepo.lockById(invitationId)
                 .orElseThrow(() -> new NotFoundException("Invitation not found: " + invitationId));
         if (user.getId() == null || !invitation.getInvitee().getId().equals(user.getId())) {
             throw new NotFoundException("Invitation not found: " + invitationId);
         }
+        return invitation;
+    }
+
+    private static Invitation requirePending(Invitation invitation) {
         if (!invitation.getStatus().isPending()) {
-            throw new NotFoundException("Invitation already resolved: " + invitationId);
+            throw new NotFoundException("Invitation already resolved: " + invitation.getId());
         }
         return invitation;
     }

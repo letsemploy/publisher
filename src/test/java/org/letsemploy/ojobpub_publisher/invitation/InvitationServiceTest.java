@@ -157,6 +157,16 @@ class InvitationServiceTest {
                 .get().extracting(m -> m.getRole()).isEqualTo(MembershipRole.EDITOR);
     }
 
+    /** A double click answers once: the second lands in the employer too, nothing fails. */
+    @Test
+    void acceptingTwiceJoinsOnce() {
+        Invitation pending = pendingForInvitee();
+        invitationService.accept(pending.getId(), asUser(invitee));
+
+        assertThat(invitationService.accept(pending.getId(), asUser(invitee)).getId()).isEqualTo(employer.getId());
+        assertThat(membershipRepo.findByUserIdAndEmployerId(invitee.getId(), employer.getId())).isPresent();
+    }
+
     /** Inviting straight to owner is ordinary: a founder handing over (spec 2.6). */
     @Test
     void invitingStraightToOwnerGrantsOwnership() {

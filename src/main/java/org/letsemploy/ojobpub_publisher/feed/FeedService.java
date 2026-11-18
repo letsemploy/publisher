@@ -138,8 +138,10 @@ public class FeedService {
     public Feed addJob(UUID feedId, UUID jobId, Actor user) {
         Feed feed = findVisible(feedId, user);
         Job job = jobService.findVisible(jobId, user);
+        // Another employer's job is refused like an unknown one (spec 2.4, 3.5): a
+        // field error here was uncaught on the screens, a 500 for a forged request.
         if (!job.getEmployer().getId().equals(feed.getEmployer().getId())) {
-            throw new ValidationFailure("job", "That job belongs to a different employer.");
+            throw new NotFoundException("Job not found: " + jobId);
         }
         if (feed.include(job)) {
             auditLog.record(AuditEvent.of(AuditAction.FEED_JOB_ADDED, user).in(feed.getEmployer())

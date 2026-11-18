@@ -312,7 +312,7 @@ auto-configured bean. `OidcLoginTest` and `LockedChainTest` guard both direction
 - **Deleting one's own account** (§2.13) is `user/AccountDeletionService`, from Settings at
   `/account/delete`, for anyone signed in as themselves (never a token; viewing-as is refused by
   `ImpersonationGuard`). The email is typed back and checked in the service; the **only unsuspended
-  stored `ADMIN`** may not. Employers from `MembershipService.soleOwnershipsOf` are deleted first via
+  stored `ADMIN`** may not, counted by a locking read taken first, as for owners (`LastAdminRaceTest`). Employers from `MembershipService.soleOwnershipsOf` are deleted first via
   `EmployerService.deleteAsDepartingOwner` (no typed name — the email confirmed it), then the
   `local_accounts` row (no FK joins it to `users`), then `UserRepo.deleteWithEverything`, a bulk
   `DELETE` like the employer's: memberships and invitations cascade, and **`service_tokens.created_by_id`

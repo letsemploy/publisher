@@ -150,6 +150,23 @@ class JobFeedChoiceTest {
                 .satisfies(e -> assertThat(((ValidationFailure) e).fields()).containsExactly("feeds"));
     }
 
+    /** Another employer's job is refused like an unknown one: 404, never a 500. */
+    @Test
+    void anotherEmployersJobCannotBeAddedToAFeed() throws Exception {
+        Employer other = new Employer();
+        other.setName("Other AG");
+        other.setSlug("other-ag");
+        other = employerRepo.save(other);
+        JobForm foreign = form(List.of());
+        foreign.setLocations(new ArrayList<>());
+        Job job = jobService.save(foreign, other, Actor.user(UUID.randomUUID(), "Admin", null, true, Map.of()));
+
+        mvc.perform(post("/feeds/" + ALL + "/jobs/" + job.getId() + "/add")).andExpect(status().isNotFound());
+        mvc.perform(post("/jobs/" + job.getId() + "/feeds").param("feed", ALL.toString()))
+                .andExpect(status().isNotFound());
+        assertThat(jobRepo.findFeedIds(job.getId())).isEmpty();
+    }
+
     @Test
     void aReadyJobInNoFeedSaysSoAndCanBeAddedFromItsScreen() throws Exception {
         Job job = jobService.save(form(List.of()), acme(), editor);

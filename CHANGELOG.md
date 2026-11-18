@@ -59,6 +59,15 @@ Section numbers such as §5.6 refer to the specification in [`docs/SPEC.md`](doc
   500, and no longer writes a stack trace to the log.
 - Saving an employer, feed, permalink or job without changing anything no longer adds an
   *updated* row to the activity log (§3.12).
+- The last two admins deleting their accounts at the same moment can no longer leave the
+  installation without one (§2.13).
+- Accepting an invitation twice, as a double click does, joins once and lands in the employer,
+  instead of failing with a server error.
+- Adding another employer's job to a feed answers 404 instead of a server error.
+- The API names `headquartersId` when `updateEmployer` refuses a headquarters, not the form's
+  `headquarters` (§11.4).
+- A member's employers in the switcher and on Employers sort without regard to case, as an admin's
+  already did.
 
 ## [1.8.1] - 2026-11-11
 

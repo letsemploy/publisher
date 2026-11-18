@@ -1,5 +1,6 @@
 package org.letsemploy.ojobpub_publisher.security;
 
+import jakarta.persistence.LockModeType;
 import java.time.Instant;
 import java.util.List;
 import org.springframework.data.domain.Page;
@@ -9,6 +10,7 @@ import java.util.UUID;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -58,6 +60,15 @@ public interface UserRepo extends JpaRepository<UserEntity, UUID>, JpaSpecificat
 
     /** Who could still act as an admin: the only-admin rule of spec 2.13 counts these. */
     long countByRoleAndSuspendedAtIsNull(UserEntity.Role role);
+
+    /**
+     * The same, locked ({@code FOR UPDATE}) so two admins deleting themselves at once
+     * cannot both count the other. Take it as the transaction's first read: MariaDB
+     * 11.6+ refuses a locking read after an earlier one (see LastOwnerRaceTest).
+     */
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT u FROM UserEntity u WHERE u.role = :role AND u.suspendedAt IS NULL ORDER BY u.id")
+    List<UserEntity> lockByRoleAndSuspendedAtIsNull(@Param("role") UserEntity.Role role);
 
     /**
      * Deletes the account alone and lets the database's foreign keys take the
