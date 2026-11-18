@@ -28,8 +28,9 @@ public interface FeedRepo extends JpaRepository<Feed, UUID> {
      * Loads a feed with its jobs and each job's locations and tags in a bounded
      * number of queries: an N+1 on the serving path is a defect (spec 9.3).
      */
-    @EntityGraph(attributePaths = {"employer", "employer.headquarters", "jobs",
-            "jobs.locations", "jobs.tags"})
+    // Not the jobs' locations and tags: joined too, every job row repeats per location
+    // times tag. Batch fetching (default_batch_fetch_size) loads them in a few queries.
+    @EntityGraph(attributePaths = {"employer", "employer.headquarters", "jobs"})
     Optional<Feed> findWithJobsById(UUID id);
 
     /** The feeds with a job carrying this tag, whose documents name it (spec 6). */

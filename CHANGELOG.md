@@ -24,6 +24,9 @@ Section numbers such as §5.6 refer to the specification in [`docs/SPEC.md`](doc
   client could pick its address and step round the sign-in throttles (§2.12). A deployment copied
   from the example should change it too; a proxy on a public address then needs
   `server.tomcat.remoteip.internal-proxies`.
+- A feed fetch loads its jobs' locations and tags in batches instead of one query joining both,
+  which returned every job once per location and tag.
+- "Feed … omits N job(s)" is logged at DEBUG, not INFO: it was written on nearly every public fetch.
 
 ### Fixed
 

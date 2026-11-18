@@ -22,7 +22,7 @@ public interface PermalinkRepo extends JpaRepository<Permalink, UUID> {
      * The public path: the permalink, its feed, and the feed's jobs with their
      * locations and tags in a bounded number of queries, as for a feed (spec 9.3).
      */
-    @EntityGraph(attributePaths = {"employer", "employer.headquarters", "feed", "feed.jobs",
-            "feed.jobs.locations", "feed.jobs.tags"})
+    // Locations and tags by batch fetching, as in FeedRepo.findWithJobsById.
+    @EntityGraph(attributePaths = {"employer", "employer.headquarters", "feed", "feed.jobs"})
     Optional<Permalink> findWithFeedById(UUID id);
 }

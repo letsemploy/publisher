@@ -74,7 +74,8 @@ public class OjobpubService {
                 employer(feed.getEmployer()), jobs);
 
         if (!exclusions.isEmpty()) {
-            log.info("Feed {} omits {} job(s) from its published document", feed.getId(), exclusions.size());
+            // Debug: most all feeds hold a draft, and this runs on every public fetch.
+            log.debug("Feed {} omits {} job(s) from its published document", feed.getId(), exclusions.size());
         }
         return new Result(doc, exclusions);
     }

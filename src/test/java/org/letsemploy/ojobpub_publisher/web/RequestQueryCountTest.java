@@ -6,6 +6,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import java.util.Arrays;
 import java.util.List;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.letsemploy.ojobpub_publisher.TestProfiles;
@@ -62,5 +63,22 @@ class RequestQueryCountTest {
                 .as("%s: the actor's memberships", path).isEqualTo(1);
         assertThat(matching(statements, "from employers", "order by"))
                 .as("%s: the employers the actor sees", path).isEqualTo(1);
+    }
+
+    /**
+     * A feed fetch loads its jobs' locations and tags in a few batched queries, never
+     * one joining both, which repeats every job per location times tag.
+     */
+    @Test
+    void aFeedFetchJoinsNoCrossProduct() throws Exception {
+        String feed = mvc.perform(get("/ojobpub/v1/x_003d6aec-021b-11f1-aefa-f649a5d91690"
+                        + "/x_cd58289d-022e-4a1e-df83-7e5f60718293/ojobpub.json"))
+                .andReturn().getResponse().getHeader("Location");
+        RecordingStatementInspector.STATEMENTS.clear();
+        mvc.perform(get(feed)).andExpect(status().isOk());
+        List<String> statements = List.copyOf(RecordingStatementInspector.STATEMENTS);
+
+        assertThat(matching(statements, "job_locations", "job_tags")).isZero();
+        assertThat(statements).hasSizeLessThanOrEqualTo(10);
     }
 }
