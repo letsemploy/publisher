@@ -8,6 +8,8 @@ Section numbers such as §5.6 refer to the specification in [`docs/SPEC.md`](doc
 
 ## [Unreleased]
 
+## [1.9.0] - 2026-11-18
+
 ### Added
 
 - The job form has a *Feeds* section to choose which feeds a job is in, and the job's page can add
@@ -418,7 +420,8 @@ Section numbers such as §5.6 refer to the specification in [`docs/SPEC.md`](doc
 - MariaDB, or SQLite for a single instance.
 - English and German.
 
-[Unreleased]: https://github.com/letsemploy/publisher/compare/v1.8.1...HEAD
+[Unreleased]: https://github.com/letsemploy/publisher/compare/v1.9.0...HEAD
+[1.9.0]: https://github.com/letsemploy/publisher/compare/v1.8.1...v1.9.0
 [1.8.1]: https://github.com/letsemploy/publisher/compare/v1.8.0...v1.8.1
 [1.8.0]: https://github.com/letsemploy/publisher/compare/v1.7.1...v1.8.0
 [1.7.1]: https://github.com/letsemploy/publisher/compare/v1.7.0...v1.7.1
