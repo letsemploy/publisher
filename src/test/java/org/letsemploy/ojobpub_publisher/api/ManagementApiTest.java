@@ -297,6 +297,26 @@ class ManagementApiTest {
         assertThat(created.path("job").path("locations")).isNotEmpty();
     }
 
+    /** A job created through the API is in the employer's all feed, and only there (spec 3.5, 11). */
+    @Test
+    void aCreatedJobJoinsTheAllFeed() throws Exception {
+        String secret = tokenWith(TokenScope.JOBS_WRITE, TokenScope.FEEDS_READ);
+        String id = query(secret,
+                "mutation { createJob(input: { title: \"API written\", "
+                        + "url: \"https://www.acme.example/jobs/API-2\", language: \"en\", "
+                        + "jobType: PERMANENT }) { job { id } userErrors { field } } }")
+                .path("data").path("createJob").path("job").path("id").asString();
+        assertThat(id).isNotBlank();
+
+        JsonNode feeds = query(secret, "{ feeds { id jobs { id } } }").path("data").path("feeds");
+        assertThat(feeds.findValuesAsString("id")).contains(FEED_ALL, FEED_ENGINEERING);
+        for (JsonNode feed : feeds) {
+            assertThat(feed.path("jobs").findValuesAsString("id"))
+                    .as("feed %s", feed.path("id").asString())
+                    .matches(ids -> ids.contains(id) == FEED_ALL.equals(feed.path("id").asString()));
+        }
+    }
+
     // --------------------------------------------------------------- scopes
 
     @Test

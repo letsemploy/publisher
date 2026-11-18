@@ -15,6 +15,9 @@ import java.util.UUID;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Test;
 import org.letsemploy.ojobpub_publisher.TestProfiles;
+import org.letsemploy.ojobpub_publisher.audit.AuditAction;
+import org.letsemploy.ojobpub_publisher.audit.AuditEvent;
+import org.letsemploy.ojobpub_publisher.audit.AuditRepo;
 import org.letsemploy.ojobpub_publisher.common.exception.ValidationFailure;
 import org.letsemploy.ojobpub_publisher.employer.Employer;
 import org.letsemploy.ojobpub_publisher.employer.EmployerRepo;
@@ -61,6 +64,8 @@ class JobFeedChoiceTest {
     private EmployerRepo employerRepo;
     @Autowired
     private LocationRepo locationRepo;
+    @Autowired
+    private AuditRepo auditRepo;
 
     private final Actor editor = Actor.user(UUID.randomUUID(), "Erin Editor", null, false,
             Map.of(ACME, MembershipRole.EDITOR));
@@ -110,6 +115,16 @@ class JobFeedChoiceTest {
 
         assertThat(jobRepo.findFeedIds(job.getId())).containsExactly(ALL);
         assertThat(feedRepo.findById(ENGINEERING).orElseThrow().getLastModifiedAt()).isAfter(before);
+        // Each feed it joined or left is in the employer's log, named by the feed.
+        assertThat(feedEvents(AuditAction.FEED_JOB_ADDED, job)).containsExactlyInAnyOrder("All jobs", "Engineering");
+        assertThat(feedEvents(AuditAction.FEED_JOB_REMOVED, job)).containsExactly("Engineering");
+    }
+
+    private List<String> feedEvents(AuditAction action, Job job) {
+        return auditRepo.findAll().stream()
+                .filter(e -> e.getAction() == action && job.getId().toString().equals(e.getTargetId()))
+                .map(AuditEvent::getDetail)
+                .toList();
     }
 
     /** Someone adds the job to a feed while the form is open: saving it keeps that. */
