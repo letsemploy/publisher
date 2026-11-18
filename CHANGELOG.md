@@ -33,6 +33,10 @@ Section numbers such as §5.6 refer to the specification in [`docs/SPEC.md`](doc
   small container (§7.27).
 - With a captcha configured, failed sign-ins for an address no longer lock its owner out after the
   hard limit; that refusal is only for installations without a captcha (§2.12).
+- Failed sign-ins are counted against the account they reach: on MariaDB an address spelt with
+  accents (`vïctim@…`) reaches the same account, and used to escape the captcha and the limit.
+- Changing only a job's locations or tags now moves its feed's `lastUpdated` and `Last-Modified`
+  (§5.4); a cache revalidating by date kept the old document.
 
 ## [1.8.1] - 2026-11-11
 

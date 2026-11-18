@@ -11,6 +11,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.DisabledIfEnvironmentVariable;
 import org.letsemploy.ojobpub_publisher.TestProfiles;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -113,6 +114,16 @@ class LoginCaptchaTest {
             fail(email, client());
         }
         mvc.perform(login(email, PASSWORD, client(), "solved")).andExpect(redirectedUrl("/"));
+    }
+
+    /** MariaDB's collation ignores accents, so a variant reaches the same account and its count. */
+    @Test
+    @DisabledIfEnvironmentVariable(named = "TEST_DB", matches = "(?i)sqlite")
+    void anAccentedVariantCountsAgainstTheAccount() throws Exception {
+        String variant = email.replace("captcha-", "cäptcha-");
+        fail(variant, client());
+        fail(variant, client());
+        mvc.perform(login(email, PASSWORD, client(), null)).andExpect(redirectedUrl("/login?captcha"));
     }
 
     @Test

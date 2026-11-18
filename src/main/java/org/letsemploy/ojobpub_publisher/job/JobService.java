@@ -22,6 +22,7 @@ import org.letsemploy.ojobpub_publisher.feed.Feed;
 import org.letsemploy.ojobpub_publisher.feed.FeedRepo;
 import org.letsemploy.ojobpub_publisher.location.LocationService;
 import org.letsemploy.ojobpub_publisher.security.Actor;
+import org.letsemploy.ojobpub_publisher.location.Location;
 import org.letsemploy.ojobpub_publisher.tag.Tag;
 import org.letsemploy.ojobpub_publisher.tag.TagService;
 import org.slf4j.Logger;
@@ -171,13 +172,25 @@ public class JobService {
         }
 
         form.trim();
+        List<Object> linksBefore = links(job);
         apply(form, job, actor);
+        if (!links(job).equals(linksBefore)) {
+            // A changed collection alone writes no UPDATE, so @PreUpdate would leave the
+            // date, and with it the feed's lastUpdated (spec 5.4), where it was.
+            job.setLastModifiedAt(Instant.now());
+        }
         validate(form, job);
         Job saved = jobRepo.save(job);
         auditLog.record(AuditEvent.of(form.getId() == null ? AuditAction.JOB_CREATED : AuditAction.JOB_UPDATED,
                 actor).in(saved.getEmployer()).target(saved.getId(), saved.getTitle()));
         syncFeeds(saved, form.getFeeds(), form.getId() == null, actor);
         return saved;
+    }
+
+    /** The job's locations and tags, as ids, to tell whether a save changed them. */
+    private static List<Object> links(Job job) {
+        return List.of(job.getLocations().stream().map(Location::getId).collect(Collectors.toSet()),
+                job.getTags().stream().map(Tag::getId).collect(Collectors.toSet()));
     }
 
     private void apply(JobForm form, Job job, Actor actor) {

@@ -8,10 +8,13 @@ import jakarta.persistence.EntityManager;
 import java.time.Instant;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.Map;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.letsemploy.ojobpub_publisher.TestProfiles;
+import org.letsemploy.ojobpub_publisher.employer.EmployerRepo;
+import org.letsemploy.ojobpub_publisher.job.JobForm;
 import org.letsemploy.ojobpub_publisher.job.JobService;
 import org.letsemploy.ojobpub_publisher.job.JobStatus;
 import org.letsemploy.ojobpub_publisher.membership.MembershipRole;
@@ -54,6 +57,8 @@ class FeedFreshnessTest {
     private JobService jobService;
     @Autowired
     private TagService tagService;
+    @Autowired
+    private EmployerRepo employerRepo;
     @Autowired
     private EntityManager entityManager;
 
@@ -129,6 +134,17 @@ class FeedFreshnessTest {
     void renamingATagMovesTheDate() {
         Instant before = lastUpdated();
         tagService.update(TAG, "renamed-for-the-test", owner);
+        commitLikeARequest();
+        assertThat(lastUpdated()).isAfter(before);
+    }
+
+    /** Only a collection changes, which Hibernate writes without an UPDATE of the job. */
+    @Test
+    void changingOnlyAJobsTagsMovesTheDate() {
+        Instant before = lastUpdated();
+        JobForm form = JobForm.of(jobService.findVisible(SENIOR_ENGINEER, owner));
+        form.setTags(new ArrayList<>());
+        jobService.save(form, employerRepo.findById(ACME).orElseThrow(), owner);
         commitLikeARequest();
         assertThat(lastUpdated()).isAfter(before);
     }

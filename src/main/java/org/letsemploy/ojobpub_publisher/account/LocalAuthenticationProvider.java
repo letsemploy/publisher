@@ -27,6 +27,7 @@ import org.springframework.security.web.authentication.WebAuthenticationDetails;
  */
 public final class LocalAuthenticationProvider extends DaoAuthenticationProvider {
 
+    private final LocalAccountRepo accounts;
     private final LoginAttempts attempts;
     private final CaptchaCheck captcha;
 
@@ -34,13 +35,18 @@ public final class LocalAuthenticationProvider extends DaoAuthenticationProvider
                                        LoginAttempts attempts, CaptchaCheck captcha) {
         super(details(accounts));
         setPasswordEncoder(passwordEncoder);
+        this.accounts = accounts;
         this.attempts = attempts;
         this.captcha = captcha;
     }
 
     @Override
     public Authentication authenticate(Authentication authentication) throws AuthenticationException {
-        String address = authentication.getName() == null ? "" : authentication.getName();
+        String typed = authentication.getName() == null ? "" : authentication.getName().trim();
+        // Counted on the account's stored address: the column's collation ignores accents,
+        // so "vïctim@" signs in as "victim@" and must not open a throttle key of its own.
+        // One lookup whether or not the account exists, so the timing says nothing.
+        String address = accounts.findByEmailIgnoreCase(typed).map(LocalAccount::getEmail).orElse(typed);
         String client = authentication.getDetails() instanceof WebAuthenticationDetails web
                 ? web.getRemoteAddress() : "unknown";
         if (attempts.refused(address, client, captcha.configured())) {
