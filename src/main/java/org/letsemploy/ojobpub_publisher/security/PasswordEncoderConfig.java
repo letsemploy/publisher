@@ -7,9 +7,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 
 /**
  * Hashes the passwords of local accounts (spec 2.12). Service token secrets are
- * random, not chosen, and stored as SHA-256 by {@code ServiceTokenService}; this
- * encoder only still verifies the bcrypt hashes tokens were given before that,
- * each of which is replaced on its first use (spec 2.8).
+ * random, not chosen, and stored as SHA-256 by {@code ServiceTokenService}, which
+ * does not use it (spec 2.8).
  */
 @Configuration
 public class PasswordEncoderConfig {

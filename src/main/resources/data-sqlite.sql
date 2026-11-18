@@ -188,7 +188,7 @@ INSERT INTO service_tokens (id, created_at, last_modified_at, employer_id, name,
                             secret_hash, last_used_at, expires_at, revoked_at, created_by_id) VALUES
   ('77777777-7777-4777-8777-777777777777', strftime('%Y-%m-%d %H:%M:%f', 'now'), strftime('%Y-%m-%d %H:%M:%f', 'now'), '003d6aec-021b-11f1-aefa-f649a5d91690',
    'ats-sync', 'ojp_seedonly01',
-   '{bcrypt}$2a$10$//umO/HMS.9LMIbFuRqerehvXBa1t.SdsgCqpEgTpDAcUmNlxDS22',
+   '{sha256}8ffa7e68c4d37051e096636f9b10bae2c5429589e9314a7fa8703b21cd42f02f',
    NULL, strftime('%Y-%m-%d %H:%M:%f', 'now', '+12 months'), NULL,
    '11111111-1111-4111-8111-111111111111')
 ON CONFLICT DO NOTHING;
@@ -203,7 +203,7 @@ INSERT INTO service_tokens (id, created_at, last_modified_at, employer_id, name,
    strftime('%Y-%m-%d %H:%M:%f', 'now', '-13 months'), strftime('%Y-%m-%d %H:%M:%f', 'now', '-13 months'),
    '003d6aec-021b-11f1-aefa-f649a5d91690',
    'legacy-export', 'ojp_seedexpired',
-   '{bcrypt}$2a$10$//umO/HMS.9LMIbFuRqerehvXBa1t.SdsgCqpEgTpDAcUmNlxDS22',
+   '{sha256}8ffa7e68c4d37051e096636f9b10bae2c5429589e9314a7fa8703b21cd42f02f',
    strftime('%Y-%m-%d %H:%M:%f', 'now', '-12 months'), strftime('%Y-%m-%d %H:%M:%f', 'now', '-1 months'), NULL,
    '11111111-1111-4111-8111-111111111111')
 ON CONFLICT DO NOTHING;

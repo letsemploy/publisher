@@ -22,9 +22,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 /**
  * How a token's secret is stored (spec 2.8): SHA-256, since a random 32-byte
- * secret gains nothing from a slow hash and bcrypt cost every API call. A token
- * from before keeps working with its bcrypt hash, which is replaced on its first
- * use - the same secret, so nothing has to be redeployed.
+ * secret gains nothing from a slow hash and bcrypt cost every API call. A bcrypt
+ * hash from before is refused without being checked.
  */
 @SpringBootTest
 @ActiveProfiles(resolver = TestProfiles.class)
@@ -87,34 +86,17 @@ class ServiceTokenHashTest {
         assertThat(tokens.authenticate(wrong)).isEmpty();
     }
 
-    /** A token from before SHA-256: it still works, and from then on costs no bcrypt. */
+    /**
+     * A bcrypt hash from before SHA-256 is never checked, not even with the right
+     * secret: a known prefix must not buy a slow hash per request. V19 revoked them.
+     */
     @Test
-    void aBcryptTokenWorksAndIsUpgradedOnItsFirstUse() {
-        var created = mint();
-        String secret = secretPart(created.secret());
-        ServiceToken token = tokenRepo.findById(created.token().getId()).orElseThrow();
-        token.setSecretHash(passwordEncoder.encode(secret));
-        tokenRepo.saveAndFlush(token);
-        assertThat(storedHash(token.getId())).startsWith("{bcrypt}");
-
-        assertThat(tokens.authenticate(created.secret())).isPresent();
-
-        assertThat(storedHash(token.getId())).isEqualTo(ServiceTokenService.hash(secret));
-        assertThat(tokens.authenticate(created.secret())).as("the same secret, after the upgrade").isPresent();
-    }
-
-    /** A refusal writes nothing: neither last-used nor an upgraded hash. */
-    @Test
-    void aWrongSecretLeavesABcryptHashAsItWas() {
+    void aBcryptHashIsNeverAccepted() {
         var created = mint();
         ServiceToken token = tokenRepo.findById(created.token().getId()).orElseThrow();
-        String bcrypt = passwordEncoder.encode(secretPart(created.secret()));
-        token.setSecretHash(bcrypt);
+        token.setSecretHash(passwordEncoder.encode(secretPart(created.secret())));
         tokenRepo.saveAndFlush(token);
 
-        String prefix = created.secret().substring(0, created.secret().indexOf('.'));
-        assertThat(tokens.authenticate(prefix + ".not-the-secret")).isEmpty();
-
-        assertThat(storedHash(token.getId())).isEqualTo(bcrypt);
+        assertThat(tokens.authenticate(created.secret())).isEmpty();
     }
 }

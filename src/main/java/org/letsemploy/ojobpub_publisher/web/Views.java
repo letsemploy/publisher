@@ -340,7 +340,7 @@ public class Views {
 
     public PendingInvitationRow pendingInvitationRow(Invitation invitation) {
         return new PendingInvitationRow(invitation.getId().toString(),
-                displayName(invitation.getInvitee()),
+                invitation.getInvitee().getLabel(),
                 invitation.getInvitee().getEmail(),
                 invitation.getRole().name().toLowerCase(),
                 invitation.getInvitedByLabel(),
@@ -349,8 +349,8 @@ public class Views {
 
     public MemberRow memberRow(Membership membership, boolean lastOwner, UUID viewerId, String pictureUrl) {
         UserEntity user = membership.getUser();
-        return new MemberRow(user.getId().toString(), displayName(user),
-                Avatar.of(pictureUrl, displayName(user)), user.getEmail(),
+        return new MemberRow(user.getId().toString(), user.getLabel(),
+                Avatar.of(pictureUrl, user.getLabel()), user.getEmail(),
                 membership.getRole().name().toLowerCase(), lastOwner,
                 membership.isSuspended() ? timestamp(membership.getSuspendedAt()) : null,
                 user.getId().equals(viewerId));
@@ -360,7 +360,7 @@ public class Views {
         return new TokenRow(token.getId().toString(), token.getName(), token.getPrefix(),
                 token.getScopes().stream().map(s -> s.name().toLowerCase()).sorted().toList(),
                 // Null once that account is deleted (spec 2.13); the template says so.
-                token.getCreatedBy() == null ? null : displayName(token.getCreatedBy()),
+                token.getCreatedBy() == null ? null : token.getCreatedBy().getLabel(),
                 timestamp(token.getCreatedAt()),
                 token.getLastUsedAt() == null ? null : timestamp(token.getLastUsedAt()),
                 token.getExpiresAt() == null ? null : timestamp(token.getExpiresAt()),
@@ -368,12 +368,6 @@ public class Views {
                 token.isRevoked());
     }
 
-    private String displayName(UserEntity user) {
-        if (user.getDisplayName() != null && !user.getDisplayName().isBlank()) {
-            return user.getDisplayName();
-        }
-        return user.getEmail() != null ? user.getEmail() : user.getSubject();
-    }
 
     private String text(LocalDate date) {
         return date == null ? null : date.toString();

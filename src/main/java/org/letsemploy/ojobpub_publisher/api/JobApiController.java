@@ -1,7 +1,5 @@
 package org.letsemploy.ojobpub_publisher.api;
 
-import org.letsemploy.ojobpub_publisher.job.Publication;
-
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
@@ -12,6 +10,7 @@ import org.letsemploy.ojobpub_publisher.common.exception.ValidationFailure;
 import org.letsemploy.ojobpub_publisher.employer.Employer;
 import org.letsemploy.ojobpub_publisher.employer.EmployerService;
 import org.letsemploy.ojobpub_publisher.job.*;
+import org.letsemploy.ojobpub_publisher.job.Publication;
 import org.letsemploy.ojobpub_publisher.security.Actor;
 import org.letsemploy.ojobpub_publisher.token.TokenScope;
 import org.springframework.data.domain.Page;

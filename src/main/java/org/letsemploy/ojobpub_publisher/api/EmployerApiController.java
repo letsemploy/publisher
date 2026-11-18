@@ -1,6 +1,7 @@
 package org.letsemploy.ojobpub_publisher.api;
 
 import static org.letsemploy.ojobpub_publisher.api.JobApiController.uuid;
+import static org.letsemploy.ojobpub_publisher.api.JobInputs.str;
 
 import java.util.Map;
 import java.util.UUID;
@@ -87,10 +88,5 @@ public class EmployerApiController {
         } catch (ValidationFailure e) {
             return new EmployerPayload(null, errors.from(e));
         }
-    }
-
-    private static String str(Map<String, Object> input, String key) {
-        Object value = input.get(key);
-        return value == null ? null : value.toString();
     }
 }

@@ -48,7 +48,8 @@ final class JobInputs {
         return form;
     }
 
-    private static String str(Map<String, Object> input, String key) {
+    /** A string input, or null when absent; shared by the API controllers. */
+    static String str(Map<String, Object> input, String key) {
         Object value = input.get(key);
         return value == null ? null : value.toString();
     }

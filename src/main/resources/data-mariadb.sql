@@ -179,7 +179,7 @@ INSERT INTO service_tokens (id, created_at, last_modified_at, employer_id, name,
                             secret_hash, last_used_at, expires_at, revoked_at, created_by_id) VALUES
   ('77777777-7777-4777-8777-777777777777', now(), now(), '003d6aec-021b-11f1-aefa-f649a5d91690',
    'ats-sync', 'ojp_seedonly01',
-   '{bcrypt}$2a$10$//umO/HMS.9LMIbFuRqerehvXBa1t.SdsgCqpEgTpDAcUmNlxDS22',
+   '{sha256}8ffa7e68c4d37051e096636f9b10bae2c5429589e9314a7fa8703b21cd42f02f',
    NULL, DATE_ADD(now(), INTERVAL 12 MONTH), NULL,
    '11111111-1111-4111-8111-111111111111')
 ON DUPLICATE KEY UPDATE id = id;
@@ -194,7 +194,7 @@ INSERT INTO service_tokens (id, created_at, last_modified_at, employer_id, name,
    DATE_SUB(now(), INTERVAL 13 MONTH), DATE_SUB(now(), INTERVAL 13 MONTH),
    '003d6aec-021b-11f1-aefa-f649a5d91690',
    'legacy-export', 'ojp_seedexpired',
-   '{bcrypt}$2a$10$//umO/HMS.9LMIbFuRqerehvXBa1t.SdsgCqpEgTpDAcUmNlxDS22',
+   '{sha256}8ffa7e68c4d37051e096636f9b10bae2c5429589e9314a7fa8703b21cd42f02f',
    DATE_SUB(now(), INTERVAL 12 MONTH), DATE_SUB(now(), INTERVAL 1 MONTH), NULL,
    '11111111-1111-4111-8111-111111111111')
 ON DUPLICATE KEY UPDATE id = id;

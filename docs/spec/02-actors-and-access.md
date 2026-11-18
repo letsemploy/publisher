@@ -355,8 +355,8 @@ owner role beside it.
   recovery: a lost token is revoked and replaced.
 - It is stored **hashed**. A database disclosure must not yield usable credentials. The secret is 32
   random bytes, not chosen by a person, so a fast cryptographic hash (SHA-256) is enough: there is no
-  dictionary to slow down, and a password hash would cost every API call its delay. A token hashed
-  with bcrypt before this rule keeps working, and its hash is replaced on its first use.
+  dictionary to slow down, and a password hash would cost every API call its delay. A token still
+  hashed with bcrypt from before this rule was revoked; an owner creates a new one.
 - It carries a short **public prefix** that identifies which token it is without revealing it, so the
   UI, logs and audit records can name a token unambiguously.
 - Presented as `Authorization: Bearer <token>`. A token in a query string would end up in access logs

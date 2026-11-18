@@ -1,7 +1,5 @@
 package org.letsemploy.ojobpub_publisher.feed;
 
-import org.letsemploy.ojobpub_publisher.job.Publication;
-
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
@@ -17,6 +15,7 @@ import org.letsemploy.ojobpub_publisher.common.exception.ValidationFailure;
 import org.letsemploy.ojobpub_publisher.common.validation.InputValidator;
 import org.letsemploy.ojobpub_publisher.common.validation.NameInput;
 import org.letsemploy.ojobpub_publisher.employer.Employer;
+import org.letsemploy.ojobpub_publisher.job.Publication;
 import org.letsemploy.ojobpub_publisher.ojobpub.v1.dto.OjobpubDto;
 import org.letsemploy.ojobpub_publisher.ojobpub.v1.service.OjobpubService;
 import org.letsemploy.ojobpub_publisher.security.Actor;

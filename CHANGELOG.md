@@ -27,6 +27,10 @@ Section numbers such as §5.6 refer to the specification in [`docs/SPEC.md`](doc
 - A feed fetch loads its jobs' locations and tags in batches instead of one query joining both,
   which returned every job once per location and tag.
 - "Feed … omits N job(s)" is logged at DEBUG, not INFO: it was written on nearly every public fetch.
+- **Service tokens still hashed with bcrypt are revoked** (migration V19). Since 1.5.0 a token's
+  hash was replaced by SHA-256 at its first use; one not used since then cost 50–100 ms of bcrypt
+  for every secret presented with its public prefix, before any rate limit. An integration whose
+  token was revoked needs a new one from an owner (§2.8).
 
 ### Fixed
 

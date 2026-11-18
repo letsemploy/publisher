@@ -1,8 +1,7 @@
 package org.letsemploy.ojobpub_publisher.api;
 
-import org.letsemploy.ojobpub_publisher.job.Publication;
-
 import static org.letsemploy.ojobpub_publisher.api.JobApiController.uuid;
+import static org.letsemploy.ojobpub_publisher.api.JobInputs.str;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -13,6 +12,7 @@ import org.letsemploy.ojobpub_publisher.common.exception.ValidationFailure;
 import org.letsemploy.ojobpub_publisher.employer.EmployerService;
 import org.letsemploy.ojobpub_publisher.feed.Permalink;
 import org.letsemploy.ojobpub_publisher.feed.PermalinkService;
+import org.letsemploy.ojobpub_publisher.job.Publication;
 import org.letsemploy.ojobpub_publisher.security.Actor;
 import org.letsemploy.ojobpub_publisher.token.TokenScope;
 import org.springframework.graphql.data.method.annotation.Argument;
@@ -116,10 +116,5 @@ public class PermalinkApiController {
         } catch (IllegalArgumentException e) {
             throw new ValidationFailure("feed", "Choose one of this employer's feeds.");
         }
-    }
-
-    private static String str(Map<String, Object> input, String key) {
-        Object value = input.get(key);
-        return value == null ? null : value.toString();
     }
 }

@@ -29,7 +29,6 @@ import org.letsemploy.ojobpub_publisher.security.UserEntity;
 import org.letsemploy.ojobpub_publisher.security.UserRepo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -52,7 +51,6 @@ public class ServiceTokenService {
     private final MembershipService membershipService;
     private final EmployerRepo employerRepo;
     private final UserRepo userRepo;
-    private final PasswordEncoder passwordEncoder;
     private final ResourceLimits limits;
     private final AuditLog auditLog;
     private final InputValidator inputs;
@@ -62,7 +60,6 @@ public class ServiceTokenService {
                                MembershipService membershipService,
                                EmployerRepo employerRepo,
                                UserRepo userRepo,
-                               PasswordEncoder passwordEncoder,
                                ResourceLimits limits,
                                AuditLog auditLog,
                                InputValidator inputs,
@@ -75,7 +72,6 @@ public class ServiceTokenService {
         this.membershipService = membershipService;
         this.employerRepo = employerRepo;
         this.userRepo = userRepo;
-        this.passwordEncoder = passwordEncoder;
         this.limits = limits;
         this.auditLog = auditLog;
         this.inputs = inputs;
@@ -229,13 +225,13 @@ public class ServiceTokenService {
         }
     }
 
-    /** In constant time for a SHA-256 form; a bcrypt one, from before, through the encoder. */
-    private boolean matches(String secret, String stored) {
-        if (stored.startsWith(SHA256)) {
-            return MessageDigest.isEqual(hash(secret).getBytes(StandardCharsets.UTF_8),
-                    stored.getBytes(StandardCharsets.UTF_8));
-        }
-        return passwordEncoder.matches(secret, stored);
+    /**
+     * In constant time. Only the SHA-256 form: a bcrypt hash from before 1.5.0 was
+     * revoked by V19, so presenting a secret never costs a slow hash.
+     */
+    private static boolean matches(String secret, String stored) {
+        return MessageDigest.isEqual(hash(secret).getBytes(StandardCharsets.UTF_8),
+                stored.getBytes(StandardCharsets.UTF_8));
     }
 
     /** URL-safe random text; the source of both the prefix and the secret. */
@@ -277,11 +273,6 @@ public class ServiceTokenService {
         // Only a call that actually worked counts as a use: the column answers
         // "when did this last function", and a refusal is not a use.
         token.setLastUsedAt(now);
-        // A hash from before SHA-256 is replaced on its first use: same secret,
-        // so nothing is redeployed, and no request pays for bcrypt again.
-        if (!token.getSecretHash().startsWith(SHA256)) {
-            token.setSecretHash(hash(secret));
-        }
         tokenRepo.save(token);
 
         return Optional.of(Actor.serviceToken(token.getId(), token.getLabel(),

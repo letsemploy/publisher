@@ -559,8 +559,8 @@ that is the whole distinction between the two. `authenticate` refuses expired, r
 identically, and a refused call must **not** stamp `lastUsedAt`: that column answers "when did this last
 work". An expired token still counts toward the per-employer quota (§8.4). The secret is shown once and stored as `{sha256}<hex>`
 (`ServiceTokenService.hash`), compared in constant time. **Not bcrypt:** the secret is 32 random bytes, and
-bcrypt cost every API call 50–100 ms before the rate limit. An older `{bcrypt}` hash still verifies
-through the `PasswordEncoder` and is rewritten on its first successful use — never on a refusal. The
+bcrypt cost every API call 50–100 ms before the rate limit. Tokens still hashed `{bcrypt}` were revoked
+by `V19`, and nothing verifies one any more: a known prefix must not buy a slow hash per request. The
 public `prefix` names the token in logs and the register. Revoking sets
 `revokedAt` and never deletes, so the audit trail still resolves. A token holds a `Membership` of its
 own and never satisfies the last-owner rule — which is why `MembershipRepo` counts owners with

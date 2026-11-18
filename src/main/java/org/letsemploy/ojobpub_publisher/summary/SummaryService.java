@@ -1,7 +1,5 @@
 package org.letsemploy.ojobpub_publisher.summary;
 
-import org.letsemploy.ojobpub_publisher.job.Publication;
-
 import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -16,6 +14,7 @@ import org.letsemploy.ojobpub_publisher.click.JobClickService;
 import org.letsemploy.ojobpub_publisher.employer.Employer;
 import org.letsemploy.ojobpub_publisher.employer.EmployerService;
 import org.letsemploy.ojobpub_publisher.job.JobService;
+import org.letsemploy.ojobpub_publisher.job.Publication;
 import org.letsemploy.ojobpub_publisher.mail.Mail;
 import org.letsemploy.ojobpub_publisher.mail.Mailer;
 import org.letsemploy.ojobpub_publisher.membership.MembershipRole;
