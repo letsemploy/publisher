@@ -29,7 +29,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 public class AccountDeletionController {
 
     /** Where a deleted account lands: the sign-in page, saying it is done. */
-    static final String DELETED = "/login?deleted";
+    public static final String DELETED = "/login?deleted";
 
     private final AccountDeletionService service;
     private final CurrentUserService currentUserService;

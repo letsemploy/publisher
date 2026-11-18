@@ -15,6 +15,7 @@ import org.letsemploy.ojobpub_publisher.audit.AuditEvent;
 import org.letsemploy.ojobpub_publisher.audit.AuditLog;
 import org.letsemploy.ojobpub_publisher.membership.MembershipRole;
 import org.letsemploy.ojobpub_publisher.membership.MembershipService;
+import org.letsemploy.ojobpub_publisher.user.AccountDeletionController;
 import org.letsemploy.ojobpub_publisher.user.PictureService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -60,6 +61,8 @@ public class CurrentUserService {
     private static final String PICTURE_SEEN = CurrentUserService.class.getName() + ".PICTURE_SEEN";
     private static final String RESOLVED = CurrentUserService.class.getName() + ".RESOLVED";
     /** Set on the request whose sign-in created the account (spec 7.30). */
+    /** The account this session signed in as, to end it once that account is deleted (spec 2.13). */
+    private static final String ACCOUNT = CurrentUserService.class.getName() + ".ACCOUNT";
     private static final String CREATED = CurrentUserService.class.getName() + ".CREATED";
 
     /**
@@ -188,7 +191,17 @@ public class CurrentUserService {
             return Actor.anonymous();
         }
         noticePicture(user, identity);
+        rememberAccount(user);
         return toAppUser(user);
+    }
+
+    private static void rememberAccount(UserEntity user) {
+        if (RequestContextHolder.getRequestAttributes() instanceof ServletRequestAttributes attributes) {
+            HttpSession session = attributes.getRequest().getSession(false);
+            if (session != null && !user.getId().equals(session.getAttribute(ACCOUNT))) {
+                session.setAttribute(ACCOUNT, user.getId());
+            }
+        }
     }
 
     /**
@@ -235,6 +248,13 @@ public class CurrentUserService {
     public Optional<String> endOfSession() {
         if (isSuspended()) {
             return Optional.of(SuspendedAccountFilter.SUSPENDED);
+        }
+        // Deleted on another device: without this, signIn would make the account
+        // anew from this session's token, never having signed in again.
+        if (RequestContextHolder.getRequestAttributes() instanceof ServletRequestAttributes attributes
+                && attributes.getRequest().getSession(false) instanceof HttpSession session
+                && session.getAttribute(ACCOUNT) instanceof UUID account && !userRepo.existsById(account)) {
+            return Optional.of(AccountDeletionController.DELETED);
         }
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         if (auth != null && auth.getPrincipal() instanceof LocalUser local) {

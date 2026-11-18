@@ -37,6 +37,10 @@ Section numbers such as §5.6 refer to the specification in [`docs/SPEC.md`](doc
   accents (`vïctim@…`) reaches the same account, and used to escape the captcha and the limit.
 - Changing only a job's locations or tags now moves its feed's `lastUpdated` and `Last-Modified`
   (§5.4); a cache revalidating by date kept the old document.
+- An employer's URL must be an absolute http(s) address, also through the API (§3.1); a
+  `javascript:` link used to be published in its feeds.
+- Deleting one's account ends its sessions on other devices too (§2.13); one signed in through a
+  provider used to create the account anew at its next request.
 
 ## [1.8.1] - 2026-11-11
 

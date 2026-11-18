@@ -30,6 +30,7 @@ import org.springframework.security.oauth2.client.registration.ClientRegistratio
 import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
 import org.springframework.security.oauth2.client.registration.InMemoryClientRegistrationRepository;
 import org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.OidcLoginRequestPostProcessor;
+import org.springframework.mock.web.MockHttpSession;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
@@ -441,6 +442,21 @@ class OidcLoginTest {
 
         assertThat(account("sam-4").getDisplayName()).isEqualTo("Sam");
         assertThat(account("sam-4").getEmail()).isEqualTo("sam4@example.com");
+    }
+
+    /**
+     * Deleted on one device, another session of it ends rather than making the
+     * account anew from its token (spec 2.13).
+     */
+    @Test
+    void anotherSessionOfADeletedAccountEnds() throws Exception {
+        MockHttpSession otherDevice = new MockHttpSession();
+        mvc.perform(get("/").session(otherDevice).with(signedIn("del-1", "Dee", "dee@example.com", true)));
+        userRepo.delete(account("del-1"));
+
+        mvc.perform(get("/jobs").session(otherDevice).with(signedIn("del-1", "Dee", "dee@example.com", true)))
+                .andExpect(redirectedUrl("/login?deleted"));
+        assertThat(userRepo.findByIssuerAndSubject(IDP, "del-1")).isEmpty();
     }
 
     /** Reinstated, the same account signs in again with what it had. */

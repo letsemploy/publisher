@@ -47,7 +47,8 @@ class SuspendedAccountFilter extends OncePerRequestFilter {
             chain.doFilter(request, response);
             return;
         }
-        log.info("Ending a session: {}", end.equals(SUSPENDED) ? "account suspended" : "password changed");
+        log.info("Ending a session: {}", end.equals(SUSPENDED) ? "account suspended"
+                : end.equals(EXPIRED) ? "password changed" : "account deleted");
         new SecurityContextLogoutHandler().logout(request, response,
                 SecurityContextHolder.getContext().getAuthentication());
         String target = request.getContextPath() + end;

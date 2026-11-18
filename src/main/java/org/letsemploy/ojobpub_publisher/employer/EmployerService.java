@@ -12,6 +12,7 @@ import org.letsemploy.ojobpub_publisher.common.exception.NotFoundException;
 import org.letsemploy.ojobpub_publisher.common.exception.ValidationFailure;
 import org.letsemploy.ojobpub_publisher.common.validation.InputValidator;
 import org.letsemploy.ojobpub_publisher.common.validation.NameInput;
+import org.letsemploy.ojobpub_publisher.common.validation.UrlInput;
 import org.letsemploy.ojobpub_publisher.location.LocationService;
 import org.letsemploy.ojobpub_publisher.membership.MembershipService;
 import org.letsemploy.ojobpub_publisher.security.UserEntity;
@@ -101,6 +102,7 @@ public class EmployerService {
     public Employer save(UUID id, String name, String slug, String url, String industry,
                          Headquarters headquarters, Actor actor) {
         inputs.check(new NameInput(name));
+        inputs.check(new UrlInput(blankToNull(url)));
         if (headquarters == null || headquarters.isEmpty()) {
             throw new ValidationFailure("headquarters",
                     "A headquarters location is required; the published document must carry it.");
