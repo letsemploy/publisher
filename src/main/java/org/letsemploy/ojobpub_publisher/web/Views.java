@@ -81,6 +81,12 @@ public class Views {
                 .collect(Collectors.groupingBy(WebserverSnippet::server, LinkedHashMap::new, Collectors.toList()));
     }
 
+    /** Where a permalink's website serves it, or null without a website (spec 7.23). */
+    public static String websiteUrl(Permalink permalink) {
+        return permalink.getWebsiteHost() == null ? null
+                : "https://" + permalink.getWebsiteHost() + WebserverConfig.PATH;
+    }
+
     /**
      * A permalink as the Feeds screen lists it.
      *
@@ -93,7 +99,9 @@ public class Views {
         return new PermalinkRow(permalink.getId().toString(), permalink.getName(),
                 permalink.getDescription(),
                 feed == null ? null : feed.getId().toString(), feed == null ? null : feed.getName(),
-                permalinkUrl(permalink), options);
+                permalinkUrl(permalink), permalink.getWebsiteHost(),
+                permalink.getCheckResult() == null ? null : permalink.getCheckResult().name(),
+                permalink.getCheckResult() != null && permalink.getCheckResult().works(), options);
     }
 
     public PublicationStatus status(Job job, LocalDate today) {

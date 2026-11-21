@@ -135,7 +135,10 @@ public class ApiMapper {
     public PermalinkDto permalink(Permalink permalink, LocalDate today) {
         return new PermalinkDto(permalink.getId().toString(), permalink.getName(),
                 permalink.getDescription(), views.permalinkUrl(permalink),
-                permalink.getFeed() == null ? null : feed(permalink.getFeed(), today));
+                permalink.getFeed() == null ? null : feed(permalink.getFeed(), today),
+                permalink.getWebsiteHost(),
+                permalink.getCheckResult() == null ? null : permalink.getCheckResult().name(),
+                permalink.getCheckedAt() == null ? null : permalink.getCheckedAt().toString());
     }
 
     public MemberDto member(Membership membership) {

@@ -108,6 +108,14 @@ INSERT INTO permalinks (id, created_at, last_modified_at, employer_id, name, des
    'Partner board', NULL, NULL)
 ON CONFLICT DO NOTHING;
 
+-- The careers page is set up on the employer's website and was checked (spec 7.23),
+-- so the Feeds screen shows both states. An UPDATE rather than columns above, so a
+-- database seeded before V20 gets it too; only while unset, so an edit stays.
+-- An apex domain (spec 3.13), so a reserved one; www.acme.example was seeded once.
+UPDATE permalinks SET website_host = 'example.com', check_result = 'PROXY', checked_at = strftime('%Y-%m-%d %H:%M:%f', 'now')
+ WHERE id = '5a5a5a5a-5a5a-4a5a-8a5a-5a5a5a5a5a5a'
+   AND (website_host IS NULL OR website_host = 'www.acme.example');
+
 -- Job-link clicks (spec 3.14), so the dashboard's clicks card has figures: the two
 -- published jobs yesterday, from two countries and one unknown, and the expired
 -- job while it was still published. Dated relative to today (UTC), so they stay

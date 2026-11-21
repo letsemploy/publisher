@@ -177,12 +177,12 @@ class QuotaEnforcementTest {
     @Test
     void aThirdPermalinkIsRefusedUntilOneIsDeleted() {
         assertThat(permalinkRepo.countByEmployerId(acme.getId())).isEqualTo(2);
-        assertThatThrownBy(() -> permalinkService.save(null, acme, "Intranet", null, null, admin))
+        assertThatThrownBy(() -> permalinkService.save(null, acme, "Intranet", null, null, null, admin))
                 .isInstanceOf(ValidationFailure.class)
                 .hasMessageContaining("limit.permalinks");
 
         permalinkService.delete(permalinkRepo.findByEmployerIdOrderByNameAsc(acme.getId()).get(0).getId(), admin);
-        assertThatCode(() -> permalinkService.save(null, acme, "Intranet", null, null, admin))
+        assertThatCode(() -> permalinkService.save(null, acme, "Intranet", null, null, null, admin))
                 .doesNotThrowAnyException();
     }
 

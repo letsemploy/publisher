@@ -12,6 +12,7 @@ import java.util.regex.Pattern;
 import org.letsemploy.ojobpub_publisher.feed.Feed;
 import org.letsemploy.ojobpub_publisher.feed.FeedService;
 import org.letsemploy.ojobpub_publisher.feed.Permalink;
+import org.letsemploy.ojobpub_publisher.feed.PermalinkCheck;
 import org.letsemploy.ojobpub_publisher.feed.PermalinkService;
 import org.letsemploy.ojobpub_publisher.ojobpub.v1.dto.OjobpubDto;
 import org.letsemploy.ojobpub_publisher.ojobpub.v1.service.OjobpubJson;
@@ -115,7 +116,9 @@ public class OjobpubController {
         if (!id.equals(permalinkId.toString())) {
             return movedTo("/ojobpub/v1/permalink/" + permalinkId + "/ojobpub.json");
         }
-        return ok(permalinkService.publish(found.get()));
+        // Names the permalink, so the back-office can tell it behind a website's proxy (spec 7.23).
+        return ok(permalinkService.publish(found.get()),
+                ResponseEntity.ok().header(PermalinkCheck.HEADER, permalinkId.toString()));
     }
 
     /**
@@ -126,8 +129,12 @@ public class OjobpubController {
      * cannot show - and the date of an evaluation day ago is not the same body.
      */
     private ResponseEntity<?> ok(OjobpubDto document) {
+        return ok(document, ResponseEntity.ok());
+    }
+
+    private ResponseEntity<?> ok(OjobpubDto document, ResponseEntity.BodyBuilder response) {
         byte[] body = json.write(document);
-        return ResponseEntity.ok()
+        return response
                 .contentType(MediaType.APPLICATION_JSON)
                 .cacheControl(CacheControl.maxAge(Duration.ofMinutes(5)).cachePublic())
                 .eTag(etag(body))

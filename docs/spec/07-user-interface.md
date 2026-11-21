@@ -667,6 +667,24 @@ a way of publishing them.
   is simpler, but fails a consumer that does not follow one (§5.5).
 - **Delete** — modal confirmation stating that the URL will stop working and consumers will receive
   `404`, and pointing to *No feed* for anyone who meant to stop publishing but keep the URL.
+- **The employer's website** (§3.13) — a field on the form, its apex domain, offered from the
+  employer's own URL (§3.1) when creating. Once saved, the edit page numbers the steps (domain, configuration, check),
+  shows the full address `https://{host}/.well-known/ojobpub.json` with a copy action, and offers
+  **Check setup**. The list says per permalink, in words, whether it is set up on a website and what
+  the last check found.
+- **Checking the setup** asks that address what it serves, on request only — never on a schedule.
+  `https` to public addresses only, port 443, each redirect followed by hand and fenced again (at most
+  five), a time limit, the body never read; fenced like the provider picture (§7.27). One check per
+  person every few seconds, so it cannot be used to scan. What it found, each with what to do:
+  - **served**: the response carries this permalink's header (§5.5) — every consumer gets it;
+  - **redirected**: a redirect reaches this permalink — works for consumers that follow one;
+  - **another document**: another feed's or permalink's URL, or another permalink's header;
+  - **a JSON copy**: JSON without the header — an uploaded copy that will not follow changes, or a
+    proxy that drops it;
+  - **something else**: typically the site's own page, a CMS answering every path;
+  - **not found**, **an error** (another status, too many redirects), **unreachable** (name,
+    connection, certificate, time), **not checkable** (not `https`, or not a public address).
+  The check is a form of its own on the page; the modal, itself a form, links to the page for it.
 
 ## 7.24 Account screens
 

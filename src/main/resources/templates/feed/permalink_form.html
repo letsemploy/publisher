@@ -7,11 +7,11 @@
 <!-- A permalink: a URL that stays while the feed it publishes changes (spec 7.23).
      One form, as a page or a modal (fragments/dialog, spec 7.7). -->
 <div layout:fragment="content">
-    <div th:replace="~{fragments/dialog :: page(${form.id != null} ? @{'/feeds/permalinks/' + ${form.id} + '/update'} : @{/feeds/permalinks/create}, @{/feeds}, ~{feed/permalink_form :: fields}, ~{fragments/dialog :: save}, ${webserver.isEmpty()} ? null : ~{feed/permalink_form :: webserver})}"></div>
+    <div th:replace="~{fragments/dialog :: page(${form.id != null} ? @{'/feeds/permalinks/' + ${form.id} + '/update'} : @{/feeds/permalinks/create}, @{/feeds}, ~{feed/permalink_form :: fields}, ~{fragments/dialog :: save}, ${webserver.isEmpty()} ? null : ~{feed/permalink_form :: webserver(false)})}"></div>
 </div>
 
 <th:block th:fragment="modal">
-    <div th:replace="~{fragments/dialog :: modal(${page.title}, ${form.id != null} ? @{'/feeds/permalinks/' + ${form.id} + '/update'} : @{/feeds/permalinks/create}, ~{feed/permalink_form :: fields}, ~{fragments/dialog :: save}, ${webserver.isEmpty()} ? null : ~{feed/permalink_form :: webserver})}"></div>
+    <div th:replace="~{fragments/dialog :: modal(${page.title}, ${form.id != null} ? @{'/feeds/permalinks/' + ${form.id} + '/update'} : @{/feeds/permalinks/create}, ~{feed/permalink_form :: fields}, ~{fragments/dialog :: save}, ${webserver.isEmpty()} ? null : ~{feed/permalink_form :: webserver(true)})}"></div>
 </th:block>
 
 <th:block th:fragment="fields">
@@ -19,6 +19,7 @@
     <div th:replace="~{fragments/form :: input('name','label.name',${form.name},'text',true,null,${fieldErrors['name']},255)}"></div>
     <div th:replace="~{fragments/form :: input('description','label.description',${form.description},'text',false,null,${fieldErrors['description']},255)}"></div>
     <div th:replace="~{fragments/form :: select('feed','permalink.feed',${form.feedId},${feedOptions},false,'permalink.feed.none',${fieldErrors['feed']})}"></div>
+    <div th:replace="~{fragments/form :: input('websiteHost','permalink.websiteHost',${form.websiteHost},'text',false,'permalink.websiteHost.hint',${fieldErrors['websiteHost']},253)}"></div>
     <div class="mb-3" th:if="${form.publicUrl != null}">
         <label class="form-label" th:text="#{permalink.url}">Permalink URL</label>
         <div class="form-control-plaintext font-monospace text-secondary text-break"
@@ -26,7 +27,56 @@
     </div>
 </th:block>
 
-<th:block th:fragment="webserver">
+<th:block th:fragment="webserver(inModal)">
+    <!-- The employer's website (spec 7.23): the steps, the address it serves the
+         permalink at, and a check of what it really answers there. The check is a
+         form of its own, so it is offered on the page; the modal is itself a form,
+         and links there. -->
+    <div class="card mb-3" id="website">
+        <div class="card-header">
+            <h3 class="card-title" th:text="#{permalink.website.title}">On your website</h3>
+        </div>
+        <div class="card-body">
+            <ol class="mb-3">
+                <li th:text="#{permalink.website.step1}">Enter your website's domain and save.</li>
+                <li th:text="#{permalink.website.step2}">Add a configuration below to your webserver.</li>
+                <li th:text="#{permalink.website.step3}">Check the setup.</li>
+            </ol>
+            <th:block th:if="${form.websiteUrl != null}">
+                <label class="form-label" for="website-url" th:text="#{permalink.website.url}">Address on your website</label>
+                <div class="input-group input-group-flat mb-3">
+                    <input type="text" class="form-control font-monospace" id="website-url" readonly
+                           th:value="${form.websiteUrl}"/>
+                    <span class="input-group-text">
+                        <button type="button" class="btn btn-link link-secondary p-0 border-0"
+                                th:title="#{label.copy}" th:aria-label="#{label.copy}"
+                                th:attr="data-copied-label=#{label.copied}"
+                                data-action="copy" data-enhanced hidden>
+                            <svg th:replace="~{fragments/icon :: i('copy','icon')}"></svg>
+                        </button>
+                    </span>
+                </div>
+                <th:block th:if="${form.checkResult != null}">
+                    <div class="alert" role="status" th:classappend="${form.checkWorks} ? 'alert-success' : 'alert-warning'">
+                        <th:block th:if="${form.checkWorks}"><svg th:replace="~{fragments/icon :: i('circle-check','icon alert-icon flex-shrink-0')}"></svg></th:block>
+                        <th:block th:unless="${form.checkWorks}"><svg th:replace="~{fragments/icon :: i('alert-triangle','icon alert-icon flex-shrink-0')}"></svg></th:block>
+                        <div>
+                            <h4 class="alert-title" th:text="#{'permalink.check.' + ${form.checkResult}}">Served by your website.</h4>
+                            <div th:text="#{'permalink.check.' + ${form.checkResult} + '.hint'}">Every consumer gets it.</div>
+                            <div class="text-secondary small mt-1" th:text="#{permalink.check.checkedAt(${form.checkedAt})}">Checked …</div>
+                        </div>
+                    </div>
+                </th:block>
+                <p class="text-secondary" th:if="${form.checkResult == null}" th:text="#{permalink.check.never}">Not checked yet.</p>
+                <form th:unless="${inModal}" th:action="@{'/feeds/permalinks/' + ${form.id} + '/check'}" method="post">
+                    <button type="submit" class="btn" th:text="#{permalink.check}">Check setup</button>
+                </form>
+                <a th:if="${inModal}" class="btn" th:href="@{'/feeds/permalinks/' + ${form.id} + '/update#website'}"
+                   th:text="#{permalink.check}">Check setup</a>
+            </th:block>
+        </div>
+    </div>
+
     <!-- Webserver configuration for the employer's own domain (spec 7.23): a tab per
          server. The tabs are an enhancement: without JavaScript the bar stays hidden and
          every pane shows, under its own heading (spec 7.1). -->

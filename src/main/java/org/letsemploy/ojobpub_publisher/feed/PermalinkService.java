@@ -1,17 +1,23 @@
 package org.letsemploy.ojobpub_publisher.feed;
 
+import java.net.IDN;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 import org.letsemploy.ojobpub_publisher.audit.AuditAction;
 import org.letsemploy.ojobpub_publisher.audit.AuditEvent;
 import org.letsemploy.ojobpub_publisher.audit.AuditLog;
 import org.letsemploy.ojobpub_publisher.common.ResourceLimits;
 import org.letsemploy.ojobpub_publisher.common.exception.NotFoundException;
 import org.letsemploy.ojobpub_publisher.common.exception.ValidationFailure;
+import org.letsemploy.ojobpub_publisher.common.validation.HostInput;
 import org.letsemploy.ojobpub_publisher.common.validation.InputValidator;
 import org.letsemploy.ojobpub_publisher.common.validation.NameInput;
 import org.letsemploy.ojobpub_publisher.employer.Employer;
@@ -36,19 +42,26 @@ public class PermalinkService {
     private final OjobpubService ojobpubService;
     private final AuditLog auditLog;
     private final InputValidator inputs;
+    private final PermalinkCheck website;
+
+    /** When each person last checked a website: one check per {@link #CHECK_INTERVAL}. */
+    private final Map<UUID, Instant> lastCheck = new ConcurrentHashMap<>();
+    static final Duration CHECK_INTERVAL = Duration.ofSeconds(5);
 
     public PermalinkService(PermalinkRepo permalinkRepo,
                             FeedRepo feedRepo,
                             ResourceLimits limits,
                             OjobpubService ojobpubService,
                             AuditLog auditLog,
-                            InputValidator inputs) {
+                            InputValidator inputs,
+                            PermalinkCheck website) {
         this.permalinkRepo = permalinkRepo;
         this.feedRepo = feedRepo;
         this.limits = limits;
         this.ojobpubService = ojobpubService;
         this.auditLog = auditLog;
         this.inputs = inputs;
+        this.website = website;
     }
 
     @Transactional(readOnly = true)
@@ -99,9 +112,11 @@ public class PermalinkService {
     }
 
     @Transactional
-    public Permalink save(UUID id, Employer employer, String name, String description, UUID feedId,
-                          Actor actor) {
+    public Permalink save(UUID id, Employer employer, String name, String description, String websiteHost,
+                          UUID feedId, Actor actor) {
         inputs.check(new NameInput(name));
+        String host = host(websiteHost);
+        inputs.check(new HostInput(host));
         Permalink permalink;
         if (id == null) {
             // Only for an actor who may work on the employer, as for feeds (spec 2.4).
@@ -125,13 +140,21 @@ public class PermalinkService {
         Feed before = permalink.getFeed();
         String nameBefore = permalink.getName();
         String descriptionBefore = permalink.getDescription();
+        String hostBefore = permalink.getWebsiteHost();
         permalink.setName(name.trim());
         permalink.setDescription(description == null || description.isBlank() ? null : description.trim());
         permalink.setFeed(ownFeed(feedId, permalink.getEmployer()));
+        if (!Objects.equals(hostBefore, host)) {
+            // What was found on another website says nothing about this one.
+            permalink.setWebsiteHost(host);
+            permalink.setCheckedAt(null);
+            permalink.setCheckResult(null);
+        }
         Permalink saved = permalinkRepo.save(permalink);
         // A new target is recorded as a retarget below; this row is for the rest.
         if (id == null || !Objects.equals(nameBefore, saved.getName())
-                || !Objects.equals(descriptionBefore, saved.getDescription())) {
+                || !Objects.equals(descriptionBefore, saved.getDescription())
+                || !Objects.equals(hostBefore, saved.getWebsiteHost())) {
             auditLog.record(AuditEvent.of(id == null ? AuditAction.PERMALINK_CREATED : AuditAction.PERMALINK_UPDATED,
                     actor).in(saved.getEmployer()).target(saved.getId(), saved.getName())
                     .detail(id == null ? label(saved.getFeed()) : null));
@@ -160,6 +183,31 @@ public class PermalinkService {
         Permalink saved = permalinkRepo.save(permalink);
         recordRetarget(saved, before, after, actor);
         return saved;
+    }
+
+    /**
+     * Asks the permalink's website what it serves (spec 7.23) and keeps the
+     * answer. Not transactional: the request may take seconds, and no connection
+     * is held while it does. The result is written without moving the
+     * permalink's date, which dates the served document (spec 5.5).
+     *
+     * @throws ValidationFailure {@code websiteHost} when there is none, or
+     *         {@code check} when this person checked a moment ago - the check
+     *         asks a host someone typed, so it must not become a scanner
+     */
+    public PermalinkCheck.Result check(UUID id, Actor actor) {
+        Permalink permalink = findVisible(id, actor);
+        if (permalink.getWebsiteHost() == null) {
+            throw new ValidationFailure("websiteHost", "Enter your website's domain first.");
+        }
+        Instant now = Instant.now();
+        lastCheck.values().removeIf(at -> at.isBefore(now.minus(CHECK_INTERVAL)));
+        if (lastCheck.putIfAbsent(actor.getId(), now) != null) {
+            throw new ValidationFailure("check", "Wait a moment before checking again.");
+        }
+        PermalinkCheck.Result result = website.check(permalink.getWebsiteHost(), permalink.getId());
+        permalinkRepo.recordCheck(permalink.getId(), permalink.getWebsiteHost(), result, Instant.now());
+        return result;
     }
 
     @Transactional
@@ -202,6 +250,37 @@ public class PermalinkService {
         return feedRepo.findById(feedId)
                 .filter(feed -> feed.getEmployer().getId().equals(employer.getId()))
                 .orElseThrow(() -> new ValidationFailure("feed", "Choose one of this employer's feeds."));
+    }
+
+    /**
+     * The host of what was typed: a whole URL is accepted and cut down to it,
+     * lower-cased and in ASCII. Null for nothing; anything left that is no host
+     * name is refused by {@link HostInput}.
+     */
+    static String host(String input) {
+        if (input == null || input.isBlank()) {
+            return null;
+        }
+        String host = input.trim();
+        int scheme = host.indexOf("://");
+        if (scheme >= 0) {
+            host = host.substring(scheme + 3);
+        }
+        for (char end : new char[] {'/', '?', '#'}) {
+            int at = host.indexOf(end);
+            if (at >= 0) {
+                host = host.substring(0, at);
+            }
+        }
+        if (host.endsWith(".")) {
+            host = host.substring(0, host.length() - 1);
+        }
+        try {
+            host = IDN.toASCII(host, IDN.ALLOW_UNASSIGNED);
+        } catch (IllegalArgumentException e) {
+            // Left as typed, for HostInput to refuse.
+        }
+        return host.toLowerCase(Locale.ROOT);
     }
 
     private void recordRetarget(Permalink permalink, Feed before, Feed after, Actor actor) {

@@ -128,6 +128,14 @@
                                     </button>
                                 </span>
                             </div>
+                            <!-- Whether the employer's website serves it, in words (spec 7.23). -->
+                            <div class="small mt-1 text-secondary" th:if="${p.websiteHost == null}"
+                                 th:text="#{permalink.website.notSetUp}">Not set up on your website yet.</div>
+                            <div class="small mt-1" th:if="${p.websiteHost != null}"
+                                 th:classappend="${p.checkResult == null} ? 'text-secondary' : (${p.checkWorks} ? 'text-success' : 'text-warning')">
+                                <span class="font-monospace" th:text="${p.websiteHost}">acme.example</span> —
+                                <span th:text="${p.checkResult == null} ? #{permalink.check.never} : #{'permalink.check.' + ${p.checkResult}}">Not checked yet.</span>
+                            </div>
                         </td>
                         <td class="text-nowrap">
                             <a class="btn btn-sm" th:href="${p.publicUrl}" target="_blank" rel="noopener">

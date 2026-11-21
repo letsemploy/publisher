@@ -138,6 +138,13 @@
 			<artifactId>captcha-spring-boot-starter</artifactId>
 			<version>0.1.0</version>
 		</dependency>
+		<!-- The Public Suffix List, so a permalink's website is an apex domain (spec 3.13):
+		     acme.co.uk is one, www.acme.ch is not. Only InternetDomainName is used. -->
+		<dependency>
+			<groupId>com.google.guava</groupId>
+			<artifactId>guava</artifactId>
+			<version>33.8.0-jre</version>
+		</dependency>
 		<!-- Password strength for local accounts (spec 2.12): a zxcvbn estimate, not only length. -->
 		<dependency>
 			<groupId>com.nulab-inc</groupId>

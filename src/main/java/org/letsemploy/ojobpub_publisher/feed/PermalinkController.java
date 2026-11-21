@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import org.letsemploy.ojobpub_publisher.common.exception.ValidationFailure;
+import org.letsemploy.ojobpub_publisher.common.validation.ApexDomain;
 import org.letsemploy.ojobpub_publisher.employer.Employer;
 import org.letsemploy.ojobpub_publisher.manual.ManualTopic;
 import org.letsemploy.ojobpub_publisher.web.FormViews;
@@ -57,37 +58,38 @@ public class PermalinkController {
     @GetMapping("/create")
     public String createForm(Model model) {
         Employer employer = scope.requireActiveEmployer();
-        return form(model, employer, new PermalinkFormView(null, null, null, "", null), Map.of(),
-                Map.of());
+        // Most employers have given their website already; its domain is the likeliest.
+        return form(model, employer, formView(null, null, null, "",
+                        ApexDomain.Validator.registrable(PermalinkService.host(employer.getUrl())).orElse(null)),
+                Map.of(), Map.of());
     }
 
     @GetMapping("/{id}/update")
     public String editForm(@PathVariable UUID id, Model model) {
         Permalink permalink = permalinkService.findVisible(id, scope.user());
-        return form(model, permalink.getEmployer(), new PermalinkFormView(id.toString(), permalink.getName(),
+        return form(model, permalink.getEmployer(), formView(permalink, permalink.getName(),
                 permalink.getDescription(),
                 permalink.getFeed() == null ? "" : permalink.getFeed().getId().toString(),
-                views.permalinkUrl(permalink)), views.webserverSnippets(permalink), Map.of());
+                permalink.getWebsiteHost()), views.webserverSnippets(permalink), Map.of());
     }
 
     @PostMapping({"/create", "/{id}/update"})
     public String save(@PathVariable(required = false) UUID id,
                        @RequestParam String name,
                        @RequestParam(required = false) String description,
+                       @RequestParam(required = false) String websiteHost,
                        @RequestParam(required = false) String feed,
                        Model model, RedirectAttributes flash) {
         Permalink existing = id == null ? null : permalinkService.findVisible(id, scope.user());
         Employer employer = existing == null ? scope.requireActiveEmployer() : existing.getEmployer();
         try {
-            permalinkService.save(id, employer, name, description, feedId(feed), scope.user());
+            permalinkService.save(id, employer, name, description, websiteHost, feedId(feed), scope.user());
             flash.addFlashAttribute("successMsg", "msg.success.saved");
             return FormViews.redirect("/feeds");
         } catch (ValidationFailure e) {
             // Back to the form with what was typed (spec 7.7).
-            return form(model, employer, new PermalinkFormView(id == null ? null : id.toString(), name,
-                    description, feed == null ? "" : feed,
-                    existing == null ? null : views.permalinkUrl(existing)),
-                    existing == null ? Map.of() : views.webserverSnippets(existing), e.getFieldErrors());
+            return form(model, employer, formView(existing, name, description, feed == null ? "" : feed,
+                    websiteHost), existing == null ? Map.of() : views.webserverSnippets(existing), e.getFieldErrors());
         }
     }
 
@@ -102,6 +104,22 @@ public class PermalinkController {
             flash.addFlashAttribute("errorMsg", "permalink.feed.invalid");
         }
         return "redirect:/feeds";
+    }
+
+    /**
+     * Asks the permalink's website what it serves (spec 7.23); the edit page
+     * then shows the answer. A plain form, on the page rather than in the modal,
+     * which is itself a form.
+     */
+    @PostMapping("/{id}/check")
+    public String check(@PathVariable UUID id, RedirectAttributes flash) {
+        try {
+            permalinkService.check(id, scope.user());
+        } catch (ValidationFailure e) {
+            flash.addFlashAttribute("errorMsg", e.getFieldErrors().containsKey("check")
+                    ? "permalink.check.wait" : "permalink.check.needsHost");
+        }
+        return "redirect:/feeds/permalinks/" + id + "/update#website";
     }
 
     @GetMapping("/{id}/delete")
@@ -135,6 +153,19 @@ public class PermalinkController {
         model.addAttribute("errors", fieldErrors.entrySet().stream()
                 .map(en -> new FieldError(en.getKey(), en.getValue())).toList());
         return FormViews.view("feed/permalink_form");
+    }
+
+    /** The form with what was typed, and what only an existing permalink has. */
+    private PermalinkFormView formView(Permalink existing, String name, String description, String feedId,
+                                       String websiteHost) {
+        if (existing == null) {
+            return new PermalinkFormView(null, name, description, feedId, websiteHost, null, null, null, false, null);
+        }
+        PermalinkCheck.Result result = existing.getCheckResult();
+        return new PermalinkFormView(existing.getId().toString(), name, description, feedId, websiteHost,
+                views.permalinkUrl(existing), Views.websiteUrl(existing),
+                result == null ? null : result.name(), result != null && result.works(),
+                existing.getCheckedAt() == null ? null : Views.timestamp(existing.getCheckedAt()));
     }
 
     /** Empty for none; anything that is not an id is refused like a stranger's feed. */

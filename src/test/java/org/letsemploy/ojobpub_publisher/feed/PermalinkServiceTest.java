@@ -2,7 +2,14 @@ package org.letsemploy.ojobpub_publisher.feed;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.flash;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
 
+import jakarta.persistence.EntityManager;
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -20,7 +27,10 @@ import org.letsemploy.ojobpub_publisher.membership.MembershipRole;
 import org.letsemploy.ojobpub_publisher.security.Actor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
@@ -29,6 +39,7 @@ import org.springframework.transaction.annotation.Transactional;
  * changed - once.
  */
 @SpringBootTest
+@AutoConfigureMockMvc
 @ActiveProfiles(resolver = TestProfiles.class)
 @Transactional
 class PermalinkServiceTest {
@@ -49,6 +60,15 @@ class PermalinkServiceTest {
     private EmployerRepo employerRepo;
     @Autowired
     private AuditRepo auditRepo;
+    @Autowired
+    private PermalinkRepo permalinkRepo;
+    @Autowired
+    private EntityManager entityManager;
+    @Autowired
+    private MockMvc mvc;
+    /** No website is asked from a test. */
+    @MockitoBean
+    private PermalinkCheck website;
 
     private Employer acme;
     private final Actor editor = Actor.user(UUID.randomUUID(), "Editor", "editor@example.com", false,
@@ -82,7 +102,7 @@ class PermalinkServiceTest {
 
     @Test
     void anEditorCreatesOneAndItIsRecorded() {
-        Permalink created = permalinkService.save(null, acme, "  Intranet  ", "  For staff ", FEED_ALL, editor);
+        Permalink created = permalinkService.save(null, acme, "  Intranet  ", "  For staff ", null, FEED_ALL, editor);
 
         assertThat(created.getName()).isEqualTo("Intranet");
         assertThat(created.getDescription()).isEqualTo("For staff");
@@ -101,7 +121,7 @@ class PermalinkServiceTest {
         ValidationFailure unknown = org.junit.jupiter.api.Assertions.assertThrows(ValidationFailure.class,
                 () -> permalinkService.retarget(CAREERS, UUID.randomUUID(), editor));
         assertThat(foreign.getFieldErrors()).isEqualTo(unknown.getFieldErrors()).containsKey("feed");
-        assertThatThrownBy(() -> permalinkService.save(null, acme, "Sneaky", null, theirs.getId(), editor))
+        assertThatThrownBy(() -> permalinkService.save(null, acme, "Sneaky", null, null, theirs.getId(), editor))
                 .isInstanceOf(ValidationFailure.class);
         assertThat(permalinkService.findVisible(CAREERS, editor).getFeed().getId()).isEqualTo(FEED_ENGINEERING);
     }
@@ -119,11 +139,11 @@ class PermalinkServiceTest {
 
     @Test
     void namesAreUniqueWithinAnEmployer() {
-        assertThatThrownBy(() -> permalinkService.save(null, acme, "careers PAGE", null, null, editor))
+        assertThatThrownBy(() -> permalinkService.save(null, acme, "careers PAGE", null, null, null, editor))
                 .isInstanceOf(ValidationFailure.class)
                 .satisfies(e -> assertThat(((ValidationFailure) e).getFieldErrors()).containsKey("name"));
         // Keeping one's own name on an edit is not a duplicate.
-        permalinkService.save(CAREERS, acme, "Careers page", "new text", FEED_ENGINEERING, editor);
+        permalinkService.save(CAREERS, acme, "Careers page", "new text", "example.com", FEED_ENGINEERING, editor);
     }
 
     @Test
@@ -152,5 +172,75 @@ class PermalinkServiceTest {
 
         assertThat(permalinkService.findForPublishing(CAREERS)).isEmpty();
         assertThat(events(AuditAction.PERMALINK_DELETED, CAREERS)).hasSize(1);
+    }
+
+    /** A whole URL is cut down to its host; anything that is no host name is refused (spec 7.23). */
+    @Test
+    void theWebsiteIsAHost() {
+        assertThat(PermalinkService.host(" https://WWW.Acme.example/careers?x#y ")).isEqualTo("www.acme.example");
+        assertThat(PermalinkService.host("bücher.example.")).isEqualTo("xn--bcher-kva.example");
+        assertThat(PermalinkService.host("  ")).isNull();
+        // The apex domain only, by the Public Suffix List: no www., no other subdomain, no public suffix.
+        for (String bad : new String[] {"localhost", "example.com:8443", "10.0.0.1", "me@example.com", "example..com",
+                "www.example.com", "jobs.example.com", "www.acme.co.uk", "co.uk", "acme.example"}) {
+            assertThatThrownBy(() -> permalinkService.save(null, acme, "Intranet", null, bad, null, editor))
+                    .as(bad).isInstanceOf(ValidationFailure.class)
+                    .satisfies(e -> assertThat(((ValidationFailure) e).getFieldErrors()).containsKey("websiteHost"));
+        }
+        Permalink saved = permalinkService.save(null, acme, "Intranet", null, "https://Acme.co.UK/jobs", null, editor);
+        assertThat(saved.getWebsiteHost()).isEqualTo("acme.co.uk");
+    }
+
+    /**
+     * The answer is kept without moving the permalink's date, which dates the
+     * served document; a new host forgets what was found on the old one.
+     */
+    @Test
+    void aCheckIsKeptUntilTheHostChanges() {
+        Instant dated = permalinkRepo.findById(CAREERS).orElseThrow().getLastModifiedAt();
+        when(website.check(eq("example.com"), eq(CAREERS))).thenReturn(PermalinkCheck.Result.NOT_FOUND);
+
+        assertThat(permalinkService.check(CAREERS, editor)).isEqualTo(PermalinkCheck.Result.NOT_FOUND);
+        // The answer is written by a bulk UPDATE, past the entity this transaction holds.
+        entityManager.flush();
+        entityManager.clear();
+        Permalink checked = permalinkRepo.findById(CAREERS).orElseThrow();
+        assertThat(checked.getCheckResult()).isEqualTo(PermalinkCheck.Result.NOT_FOUND);
+        assertThat(checked.getCheckedAt()).isNotNull();
+        assertThat(checked.getLastModifiedAt()).isEqualTo(dated);
+
+        // Once a moment per person: the check asks a host someone typed.
+        assertThatThrownBy(() -> permalinkService.check(CAREERS, editor))
+                .isInstanceOf(ValidationFailure.class)
+                .satisfies(e -> assertThat(((ValidationFailure) e).getFieldErrors()).containsKey("check"));
+        assertThatThrownBy(() -> permalinkService.check(CAREERS, stranger)).isInstanceOf(NotFoundException.class);
+
+        Permalink moved = permalinkService.save(CAREERS, employerRepo.findById(ACME).orElseThrow(), checked.getName(), checked.getDescription(),
+                "example.org", FEED_ENGINEERING, editor);
+        assertThat(moved.getCheckResult()).isNull();
+        assertThat(moved.getCheckedAt()).isNull();
+    }
+
+    @Test
+    void withoutAWebsiteThereIsNothingToCheck() {
+        UUID partner = UUID.fromString("5b5b5b5b-5b5b-4b5b-8b5b-5b5b5b5b5b5b");
+        assertThatThrownBy(() -> permalinkService.check(partner, editor))
+                .isInstanceOf(ValidationFailure.class)
+                .satisfies(e -> assertThat(((ValidationFailure) e).getFieldErrors()).containsKey("websiteHost"));
+    }
+
+    /** From the edit page: the check runs and the page shows it; without a website it says why. */
+    @Test
+    void theEditPageChecksAndComesBack() throws Exception {
+        when(website.check(eq("example.com"), eq(CAREERS))).thenReturn(PermalinkCheck.Result.REDIRECT);
+        mvc.perform(post("/feeds/permalinks/" + CAREERS + "/check"))
+                .andExpect(redirectedUrl("/feeds/permalinks/" + CAREERS + "/update#website"));
+        entityManager.clear();
+        assertThat(permalinkRepo.findById(CAREERS).orElseThrow().getCheckResult())
+                .isEqualTo(PermalinkCheck.Result.REDIRECT);
+
+        UUID partner = UUID.fromString("5b5b5b5b-5b5b-4b5b-8b5b-5b5b5b5b5b5b");
+        mvc.perform(post("/feeds/permalinks/" + partner + "/check"))
+                .andExpect(flash().attribute("errorMsg", "permalink.check.needsHost"));
     }
 }

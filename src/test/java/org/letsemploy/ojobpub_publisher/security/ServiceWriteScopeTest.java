@@ -83,7 +83,7 @@ class ServiceWriteScopeTest {
                 .isInstanceOf(NotFoundException.class);
         assertThatThrownBy(() -> tagService.create(acme, "theirs", stranger))
                 .isInstanceOf(NotFoundException.class);
-        assertThatThrownBy(() -> permalinkService.save(null, acme, "Theirs", null, null, stranger))
+        assertThatThrownBy(() -> permalinkService.save(null, acme, "Theirs", null, null, null, stranger))
                 .isInstanceOf(NotFoundException.class);
     }
 
@@ -93,6 +93,6 @@ class ServiceWriteScopeTest {
         assertThat(jobService.save(newJob(), acme, editor).getEmployer().getId()).isEqualTo(ACME);
         assertThat(feedService.save(null, acme, "Ours", null, null, editor).getId()).isNotNull();
         assertThat(tagService.create(acme, "ours", editor).getId()).isNotNull();
-        assertThat(permalinkService.save(null, acme, "Ours", null, null, editor).getId()).isNotNull();
+        assertThat(permalinkService.save(null, acme, "Ours", null, null, null, editor).getId()).isNotNull();
     }
 }

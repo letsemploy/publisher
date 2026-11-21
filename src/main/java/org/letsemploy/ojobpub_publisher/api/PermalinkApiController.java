@@ -62,7 +62,8 @@ public class PermalinkApiController {
         Actor actor = api.requireScope(TokenScope.FEEDS_WRITE);
         try {
             return ok(permalinkService.save(null, employerService.findVisible(api.employerId(), actor),
-                    str(input, "name"), str(input, "description"), feedId(str(input, "feedId")), actor), actor);
+                    str(input, "name"), str(input, "description"), str(input, "websiteHost"),
+                    feedId(str(input, "feedId")), actor), actor);
         } catch (ValidationFailure e) {
             return new PermalinkPayload(null, errors.from(e));
         }
@@ -75,7 +76,8 @@ public class PermalinkApiController {
         Permalink permalink = permalinkService.findVisible(uuid(id, "permalink"), actor);
         try {
             return ok(permalinkService.save(permalink.getId(), permalink.getEmployer(), str(input, "name"),
-                    str(input, "description"), feedId(str(input, "feedId")), actor), actor);
+                    str(input, "description"), str(input, "websiteHost"), feedId(str(input, "feedId")), actor),
+                    actor);
         } catch (ValidationFailure e) {
             return new PermalinkPayload(null, errors.from(e));
         }

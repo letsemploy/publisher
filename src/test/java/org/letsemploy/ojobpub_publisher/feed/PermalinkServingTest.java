@@ -91,6 +91,11 @@ class PermalinkServingTest {
         assertThat(objectMapper.readTree(result.getResponse().getContentAsString()).get("jobs"))
                 .isEqualTo(objectMapper.readTree(feed).get("jobs"));
         assertThat(document(result).jobs()).hasSize(1);
+        // Names the permalink, so a check of the employer's website can tell it behind a proxy
+        // (spec 7.23); the feed's own URL does not.
+        assertThat(result.getResponse().getHeader(PermalinkCheck.HEADER)).isEqualTo(CAREERS.toString());
+        assertThat(mvc.perform(get(feedPath(FEED_ENGINEERING))).andReturn().getResponse()
+                .getHeader(PermalinkCheck.HEADER)).isNull();
         mvc.perform(get(url(CAREERS)).header("Origin", "https://example.org"))
                 .andExpect(header().string("Access-Control-Allow-Origin", "*"))
                 .andExpect(header().string("Cache-Control", "max-age=300, public"));

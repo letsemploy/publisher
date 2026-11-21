@@ -44,7 +44,8 @@ public final class ApiTypes {
                           List<JobDto> jobs) {
     }
 
-    public record PermalinkDto(String id, String name, String description, String url, FeedDto feed) {
+    public record PermalinkDto(String id, String name, String description, String url, FeedDto feed,
+                               String websiteHost, String checkResult, String checkedAt) {
     }
 
     public record MemberDto(String userId, String displayName, String email, String role,

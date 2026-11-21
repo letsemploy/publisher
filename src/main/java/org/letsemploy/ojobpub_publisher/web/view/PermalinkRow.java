@@ -11,6 +11,11 @@ public record PermalinkRow(
         String feedId,
         String feedName,
         String publicUrl,
+        /** The employer's website, or null for none (spec 7.23). */
+        String websiteHost,
+        /** The last check's result as its name, or null when never checked. */
+        String checkResult,
+        boolean checkWorks,
         /** The employer's feeds, id to name, for the switch. */
         Map<String, String> feedOptions) {
 }

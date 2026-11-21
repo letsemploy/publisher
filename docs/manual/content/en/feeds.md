@@ -42,5 +42,11 @@ ready-made **webserver configuration** for Apache, nginx and Caddy, so the feed 
 - a **redirect** is the simpler setup, but a consumer that does not follow redirects will fail;
 - a **reverse proxy** serves the document from your domain directly.
 
+Enter **your website**'s domain on the permalink — the domain itself, such as `example.com`, without
+`www.` or another subdomain. When you create one, the domain of your employer's website is offered. The edit page then shows the full address on your
+website and **Check setup**, which asks that address what it really serves: this permalink, a
+redirect to it, another feed, a copy of the file, your site's own page, or nothing. Each answer says
+what to do next. The Feeds page shows, for each permalink, whether it is set up on your website.
+
 Deleting a permalink makes its URL answer *not found*. To stop publishing but keep the URL, switch it
 to *No feed* instead.

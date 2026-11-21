@@ -1,6 +1,7 @@
 package org.letsemploy.ojobpub_publisher.feed;
 
 import jakarta.persistence.*;
+import java.time.Instant;
 import lombok.Getter;
 import lombok.Setter;
 import org.letsemploy.ojobpub_publisher.common.Base;
@@ -32,4 +33,16 @@ public class Permalink extends Base {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "feed_id")
     private Feed feed;
+
+    /**
+     * The employer's website that serves this permalink under its own domain, a
+     * host only (spec 7.23); null until someone says which.
+     */
+    private String websiteHost;
+
+    /** When the website was last checked; written by {@link PermalinkRepo#recordCheck}. */
+    private Instant checkedAt;
+
+    @Enumerated(EnumType.STRING)
+    private PermalinkCheck.Result checkResult;
 }

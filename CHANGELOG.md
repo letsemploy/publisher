@@ -8,6 +8,16 @@ Section numbers such as §5.6 refer to the specification in [`docs/SPEC.md`](doc
 
 ## [Unreleased]
 
+### Added
+
+- A permalink takes the employer's website domain - the apex domain, such as `example.com`, never
+  `www.` or another subdomain - offered from the employer's profile. Its edit
+  page shows the full address on that website and a *Check setup* button that asks what the website
+  really serves there and says what to do if it is not the permalink; the Feeds list shows per
+  permalink whether it is set up (§7.23). Management API: `websiteHost` on `PermalinkInput`, and
+  `websiteHost`, `checkResult` and `checkedAt` on `Permalink`.
+- The permalink document carries the header `OJobPub-Permalink` with the permalink's id (§5.5).
+
 ## [1.9.0] - 2026-11-18
 
 ### Added

@@ -148,6 +148,12 @@ type Permalink {
     url: String!
     "What it publishes; null publishes the employer with no jobs."
     feed: Feed
+    "The employer's website serving it at /.well-known/ojobpub.json, an apex domain only (spec 3.13, 7.23)."
+    websiteHost: String
+    "What the website served when last checked from the back-office; null if never, or since the host changed."
+    checkResult: PermalinkCheckResult
+    "ISO-8601 instant of that check."
+    checkedAt: String
 }
 
 type Member {
@@ -198,7 +204,13 @@ input JobInput {
 input FeedInput { name: String!, slug: String, description: String }
 
 "A null or absent feedId publishes no jobs."
-input PermalinkInput { name: String!, description: String, feedId: ID }
+input PermalinkInput {
+    name: String!
+    description: String
+    feedId: ID
+    "The registrable domain itself, such as example.com - never www. or another subdomain; a whole URL is cut down to its host. Absent or null for none."
+    websiteHost: String
+}
 
 input EmployerInput { name: String!, slug: String, url: String, industry: String, headquartersId: ID }
 
@@ -211,5 +223,7 @@ enum SalaryInterval { HOURLY, DAILY, WEEKLY, MONTHLY, YEARLY }
 enum JobStatus { DRAFT, ACTIVE, INACTIVE }
 enum Presentation { PUBLISHED, EXPIRED, INCOMPLETE, DRAFT, INACTIVE }
 enum MembershipRole { OWNER, EDITOR }
+"PROXY and REDIRECT mean the website serves this permalink (spec 7.23)."
+enum PermalinkCheckResult { PROXY, REDIRECT, OTHER_DOCUMENT, STATIC_COPY, NOT_OJOBPUB, NOT_FOUND, HTTP_ERROR, UNREACHABLE, NOT_ALLOWED }
 enum InvitationStatus { PENDING, ACCEPTED, DECLINED, REVOKED }
 enum InviteOutcome { SENT, ALREADY_MEMBER, ALREADY_INVITED }

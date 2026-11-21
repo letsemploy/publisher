@@ -127,6 +127,9 @@ selection, with one switch.
 - **Under the employer's own domain**, a website may redirect a path of its own to the permalink, or
   reverse-proxy it, which serves every consumer. The back-office offers the configuration for both
   (§7.23).
+- **The response names the permalink** in the header `OJobPub-Permalink: {permalinkId}`, which a
+  reverse proxy passes on, so checking the website can tell this permalink from another document
+  (§7.23). It names the permalink only, never the feed; the feed URL sends no such header.
 
 ## 5.6 Job links
 

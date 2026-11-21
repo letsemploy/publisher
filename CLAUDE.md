@@ -200,6 +200,18 @@ website configures once while the feed behind it is switched.
   Hibernate throws.
 - Managed on the Feeds list (`PermalinkController`, `/feeds/permalinks/...`), with the switch as a
   plain form per row; in the API under the feed scopes.
+- **The employer's website** (`websiteHost`, §3.13, §7.23): the **apex domain** only, normalised by
+  `PermalinkService.host` and checked by `HostInput` — its `@ApexDomain` asks Guava's Public
+  Suffix List (`InternetDomainName.isTopPrivateDomain`), so `acme.co.uk` passes and `www.acme.ch`
+  does not; Guava is on the classpath for that alone. **Check setup** (`PermalinkCheck`) asks
+  `https://{host}/.well-known/ojobpub.json` and tells the answer apart by status, `Location` and the
+  `OJobPub-Permalink` header the permalink route sends — never by the body, which may be minutes
+  stale behind a cache. It is an SSRF surface fenced by `common/PublicAddresses`, the provider
+  picture's fence: redirects followed by hand and re-fenced, one check per person per 5 s, no
+  connection held while it waits. On request only — **not a scheduled task**. The answer is written by
+  `PermalinkRepo.recordCheck`, a bulk `UPDATE`, so `last_modified_at`, which dates the served
+  document, does not move; a new host clears it. The check is a form of its own on the page; the
+  modal, itself a form, links there.
 
 ### Job links and clicks (`click/`, §5.6, §3.14)
 
@@ -1052,7 +1064,8 @@ TEST_DB=sqlite ./mvnw test                   # all, on SQLite; no server
 ./mvnw test -Dtest=InputValidatorTest        # Bean Validation: field keys, localized messages; no database
 ./mvnw test -Dtest=TokenLifecycleTest        # the expiry boundaries; no Spring, no database
 ./mvnw test -Dtest=PermalinkServingTest      # the permalink URL: switched, empty, dated forward, 404/301
-./mvnw test -Dtest=PermalinkServiceTest      # own feeds only, members only, what the log records
+./mvnw test -Dtest=PermalinkServiceTest      # own feeds only, members only, what the log records, the website
+./mvnw test -Dtest=PermalinkCheckTest        # what a website serves: proxy, redirect, copy, CMS, fenced; no Spring
 ./mvnw test -Dtest=ServiceTokenExpiryTest    # expiry, renewal and what renewal must not touch
 ./mvnw test -Dtest=JobLinkTest               # /go/{id}: redirect, 410, what counts, country, no session
 ./mvnw test -Dtest=JobClickServiceTest       # the dashboard's click figures, scoped to the employers asked

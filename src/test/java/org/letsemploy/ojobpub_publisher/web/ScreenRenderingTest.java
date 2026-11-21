@@ -360,7 +360,23 @@ class ScreenRenderingTest {
                 .contains("data-bs-target=\"#webserver-apache\"", "data-bs-target=\"#webserver-nginx\"",
                         "data-bs-target=\"#webserver-caddy\"")
                 .containsPattern("<ul class=\"nav nav-tabs[^\"]*\" role=\"tablist\" data-enhanced hidden");
-        assertThat(html("/feeds/permalinks/create")).doesNotContain("/.well-known/ojobpub.json");
+        assertThat(html("/feeds/permalinks/create")).doesNotContain("Redirect 302")
+                // The domain field. The seeded employer's www.acme.example has no public suffix, so nothing is offered.
+                .contains("name=\"websiteHost\"");
+    }
+
+    /**
+     * The edit page names the address on the employer's website, what the last
+     * check found there, and offers the check as a form of its own (spec 7.23).
+     */
+    @Test
+    void thePermalinkEditPageChecksTheWebsite() throws Exception {
+        assertThat(html("/feeds/permalinks/" + PERMALINK + "/update"))
+                .contains("https://example.com/.well-known/ojobpub.json")
+                .contains("Your website serves this permalink.")
+                .contains("action=\"/feeds/permalinks/" + PERMALINK + "/check\"");
+        // The list says it too, in words.
+        assertThat(html("/feeds")).contains("example.com", "Not set up on your website yet.");
     }
 
     /**

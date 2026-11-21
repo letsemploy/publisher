@@ -47,5 +47,13 @@ Feed auch unter `/.well-known/ojobpub.json` auf Ihrer eigenen Domain zu finden i
   scheitert daran;
 - ein **Reverse Proxy** liefert das Dokument direkt von Ihrer Domain aus.
 
+Tragen Sie beim Permalink die Domain **Ihrer Website** ein — die Domain selbst, etwa `example.com`, ohne
+`www.` oder eine andere Subdomain. Beim Erstellen wird die Domain der Website Ihres Arbeitgebers
+vorgeschlagen. Die Bearbeitungsseite zeigt dann
+die vollständige Adresse auf Ihrer Website und **Einrichtung prüfen**: Dabei wird diese Adresse
+gefragt, was sie wirklich ausliefert — diesen Permalink, eine Umleitung darauf, einen anderen Feed,
+eine Kopie der Datei, die eigene Seite Ihrer Website oder nichts. Jede Antwort sagt, was zu tun ist.
+Die Seite Feeds zeigt bei jedem Permalink, ob er auf Ihrer Website eingerichtet ist.
+
 Wird ein Permalink gelöscht, antwortet seine URL mit *nicht gefunden*. Um nicht mehr zu veröffentlichen,
 die URL aber zu behalten, wechseln Sie stattdessen auf *Kein Feed*.

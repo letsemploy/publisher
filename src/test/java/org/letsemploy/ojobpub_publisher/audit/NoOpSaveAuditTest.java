@@ -90,9 +90,9 @@ class NoOpSaveAuditTest {
         Permalink link = permalinkRepo.findByEmployerIdOrderByNameAsc(ACME).getFirst();
         UUID feedId = link.getFeed() == null ? null : link.getFeed().getId();
         long rows = auditRepo.count();
-        permalinkService.save(link.getId(), acme(), link.getName(), link.getDescription(), feedId, owner);
+        permalinkService.save(link.getId(), acme(), link.getName(), link.getDescription(), link.getWebsiteHost(), feedId, owner);
         assertThat(auditRepo.count()).isEqualTo(rows);
-        permalinkService.save(link.getId(), acme(), "Renamed link", link.getDescription(), feedId, owner);
+        permalinkService.save(link.getId(), acme(), "Renamed link", link.getDescription(), link.getWebsiteHost(), feedId, owner);
         assertThat(auditRepo.count()).isEqualTo(rows + 1);
     }
 
