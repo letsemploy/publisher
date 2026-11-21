@@ -315,7 +315,7 @@
                         <span class="text-secondary" th:if="${p.feedId == null}" th:text="#{permalink.feed.none}">No feed</span>
                     </td>
                     <td>
-                        <div class="input-group input-group-flat">
+                        <div class="input-group input-group-flat input-group-sm">
                             <input type="text" class="form-control form-control-sm font-monospace" readonly
                                    th:value="${p.publicUrl}" th:aria-label="#{permalink.url}"/>
                             <span class="input-group-text">
