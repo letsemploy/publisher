@@ -8,15 +8,21 @@ Section numbers such as §5.6 refer to the specification in [`docs/SPEC.md`](doc
 
 ## [Unreleased]
 
+## [1.10.0] - 2026-11-21
+
 ### Added
 
 - A permalink takes the employer's website domain - the apex domain, such as `example.com`, never
-  `www.` or another subdomain - offered from the employer's profile. Its edit
-  page shows the full address on that website and a *Check setup* button that asks what the website
-  really serves there and says what to do if it is not the permalink; the Feeds list shows per
-  permalink whether it is set up (§7.23). Management API: `websiteHost` on `PermalinkInput`, and
+  `www.` or another subdomain - offered from the employer's profile. Its edit page shows the full
+  address on that website and a *Check setup* button that asks what the website really serves there
+  and says what to do if it is not the permalink; the Feeds list shows per permalink whether it is
+  set up (§7.23). Management API: `websiteHost` on `PermalinkInput`, and
   `websiteHost`, `checkResult` and `checkedAt` on `Permalink`.
 - The permalink document carries the header `OJobPub-Permalink` with the permalink's id (§5.5).
+
+### Changed
+
+- The permalink cards on the Feeds list and the dashboard are titled *oJobPub permalinks*.
 
 ## [1.9.0] - 2026-11-18
 
@@ -430,7 +436,8 @@ Section numbers such as §5.6 refer to the specification in [`docs/SPEC.md`](doc
 - MariaDB, or SQLite for a single instance.
 - English and German.
 
-[Unreleased]: https://github.com/letsemploy/publisher/compare/v1.9.0...HEAD
+[Unreleased]: https://github.com/letsemploy/publisher/compare/v1.10.0...HEAD
+[1.10.0]: https://github.com/letsemploy/publisher/compare/v1.9.0...v1.10.0
 [1.9.0]: https://github.com/letsemploy/publisher/compare/v1.8.1...v1.9.0
 [1.8.1]: https://github.com/letsemploy/publisher/compare/v1.8.0...v1.8.1
 [1.8.0]: https://github.com/letsemploy/publisher/compare/v1.7.1...v1.8.0
