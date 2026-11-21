@@ -26,6 +26,34 @@ enableGitInfo = false
   label = "Deutsch"
   weight = 2
   contentDir = "content/de"
+[languages.fr]
+  label = "Français"
+  weight = 3
+  contentDir = "content/fr"
+[languages.it]
+  label = "Italiano"
+  weight = 4
+  contentDir = "content/it"
+[languages.es]
+  label = "Español"
+  weight = 5
+  contentDir = "content/es"
+[languages.pt]
+  label = "Português"
+  weight = 6
+  contentDir = "content/pt"
+[languages.ja]
+  label = "日本語"
+  weight = 7
+  contentDir = "content/ja"
+[languages.ru]
+  label = "Русский"
+  weight = 8
+  contentDir = "content/ru"
+[languages.zh]
+  label = "中文"
+  weight = 9
+  contentDir = "content/zh"
 
 [markup.goldmark.renderer]
   # Raw HTML in Markdown is dropped: the CSP forbids inline script and style anyway.

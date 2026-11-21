@@ -849,7 +849,8 @@ template). Miss the second source and the nav icons vanish;
 
 ### User manual (`docs/manual/`, §7.29)
 
-A Hugo site, English and German, built by the same `frontend-maven-plugin` run: `hugo-extended` is
+A Hugo site in **every language of `WebLangConfig.LANGUAGES`** (`ManualHandler.LANGUAGES` is that
+list, and `hugo.toml` names each), built by the same `frontend-maven-plugin` run: `hugo-extended` is
 pinned in `package.json` (its postinstall fetches the binary, allowed by `allowScripts`), and the
 `build-manual` execution runs `npm run manual -- target/classes/static/docs`. Nothing generated is
 committed. Preview with `npx hugo server --source docs/manual`.
@@ -864,11 +865,12 @@ committed. Preview with `npx hugo server --source docs/manual`.
   `baseURL` is counted twice (`../docs/en/…`).
 - **No theme, no inline script or style, no highlighter** (`codeFences = false`: Chroma writes style
   attributes), because the strict CSP applies. `ManualTest` scans the build output for all of that,
-  follows every link and asset, and requires each page in both languages; a new page needs its
-  counterpart. Use the screens' wording from the bundles (German: Swiss spelling, "Sie").
+  follows every link and asset, and requires each page in every language; a new page or section
+  needs its nine counterparts, and a new application language its manual. Use the screens' wording
+  from the bundles, in their register (German: Swiss spelling, "Sie"; Italian "Lei").
 - **Help icons** (§7.29): a controller adds `.help(ManualTopic.X)` to its `PageMeta`, and `layout.html`
   renders the icon beside the title. `ManualTopic` is page + heading id. The ids are written into
-  the Markdown (`## Creating a job {#create}`), **identical in both languages**, so a reworded or
+  the Markdown (`## Creating a job {#create}`), **identical in every language**, so a reworded or
   translated heading keeps its link. Removing or renaming an id fails
   `ManualTest.everyHelpTopicExistsInEveryLanguage`. A new screen picks a topic, or a new section
   gets one.
@@ -986,7 +988,7 @@ the whole page. Keep that default.
 
 i18n: `messages.properties` (English, the original and the fallback) plus one bundle per language in
 `WebLangConfig.LANGUAGES` — en, de, fr, it, es, pt, ja, ru, zh. That list is the only one: Settings, the
-sign-in page's language links and `JobLinkHandler` all read it. A new key goes into **every** bundle.
+sign-in page's language links, `JobLinkHandler` and the manual all read it. A new key goes into **every** bundle.
 `MessageBundleTest` asserts them at parity, no empty value, and that every message with arguments
 still shows each argument when formatted by MessageFormat — where a lone ASCII `'` swallows text, so
 translations use ’ or `''`. `ScreenRenderingTest` renders every screen in every language.
@@ -1077,7 +1079,7 @@ TEST_DB=sqlite ./mvnw test                   # all, on SQLite; no server
 ./mvnw test -Dtest=PictureScreenTest         # Settings upload, served from here, People and Users
 ./mvnw test -Dtest=WeeklySummaryTest         # what one employer's summary says, and when it is empty; no Spring
 ./mvnw test -Dtest=WeeklySummaryMailTest     # the weekly mail: who gets one, in which language, once a week
-./mvnw test -Dtest=ManualTest                # the user manual: both languages, strict-CSP markup, links resolve, no session
+./mvnw test -Dtest=ManualTest                # the user manual: every language, strict-CSP markup, links resolve, no session
 ./mvnw test -Dtest=WelcomeTest               # the first sign-in lands on the Welcome, later ones do not; links follow reach
 make assets                                  # rebuild target/classes/static/vendor (Maven fetches Node)
 ```

@@ -8,6 +8,12 @@ Section numbers such as §5.6 refer to the specification in [`docs/SPEC.md`](doc
 
 ## [Unreleased]
 
+### Added
+
+- The user manual in every language of the application: French, Italian, Spanish, Portuguese,
+  Japanese, Russian and Chinese join English and German, and `/docs` and the help icons open it in
+  the language shown (§7.29).
+
 ## [1.10.0] - 2026-11-21
 
 ### Added

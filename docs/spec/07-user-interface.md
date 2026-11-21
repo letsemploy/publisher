@@ -832,10 +832,11 @@ settings.
   version's manual describes that version, and served at `/docs/`, needing nothing at run time.
 - **Public and stateless**, like the feed (§5.1): no sign-in, no session. It holds nothing an
   installation does not already show its users, and a visitor deciding whether to sign up may read it.
-- **English and German.** `/docs` sends a visitor to the language the page linking to it shows, else
-  the browser's, else English, which stands in for every language the manual lacks. Each page links to
-  its counterpart in the other language, offered as a dropdown that works without JavaScript, and every
-  page exists in both.
+- **In every language of the application** (§7.26): English, German, French, Italian, Spanish,
+  Portuguese, Japanese, Russian and Chinese. `/docs` sends a visitor to the language the page linking
+  to it shows, else the browser's, else English, which stands in for any other. Each page links to its
+  counterparts in the other languages, offered as a dropdown that works without JavaScript, and every
+  page exists in every language.
 - **Reached from the user menu** (§7.3) and from the sign-in page (§7.19), in the language shown there.
   It opens as a page of its own, not in the shell, and links back to the application.
 - **A help icon beside each screen's title** opens the manual's section on that screen, in the language

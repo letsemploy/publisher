@@ -4,6 +4,7 @@ import java.net.URI;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
+import org.letsemploy.ojobpub_publisher.config.WebLangConfig;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.function.RouterFunction;
@@ -25,8 +26,12 @@ import org.springframework.web.servlet.function.ServerResponse;
 @Configuration
 public class ManualHandler {
 
-    /** The manual's languages; the first, English, stands in for every other one. */
-    public static final List<String> LANGUAGES = List.of("en", "de");
+    /**
+     * The manual's languages: the application's own (spec 7.29), so every language
+     * a screen can be shown in has its manual. The first, English, stands in for any
+     * other a browser asks for.
+     */
+    public static final List<String> LANGUAGES = WebLangConfig.LANGUAGES;
 
     private static final List<Locale> LOCALES = LANGUAGES.stream().map(Locale::forLanguageTag).toList();
 

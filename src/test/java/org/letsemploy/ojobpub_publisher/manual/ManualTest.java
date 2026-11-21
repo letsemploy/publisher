@@ -14,7 +14,9 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -85,23 +87,22 @@ class ManualTest {
     }
 
     @Test
-    void theBuildProducesTheManualInBothLanguages() throws IOException {
-        List<String> pages = pages();
-        assertThat(pages).contains("en/index.html", "de/index.html");
-
-        Set<String> english = new TreeSet<>();
-        Set<String> german = new TreeSet<>();
-        for (String page : pages) {
-            if (page.startsWith("en/")) {
-                english.add(page.substring(3));
-            } else if (page.startsWith("de/")) {
-                german.add(page.substring(3));
-            } else {
+    void theBuildProducesTheManualInEveryLanguage() throws IOException {
+        Map<String, Set<String>> byLanguage = new TreeMap<>();
+        for (String page : pages()) {
+            int slash = page.indexOf('/');
+            String language = slash < 0 ? "" : page.substring(0, slash);
+            if (!ManualHandler.LANGUAGES.contains(language)) {
                 throw new AssertionError("a page outside the language folders: " + page);
             }
+            byLanguage.computeIfAbsent(language, l -> new TreeSet<>()).add(page.substring(language.length() + 1));
         }
-        assertThat(german).as("every page in both languages").isEqualTo(english);
-        assertThat(english).hasSizeGreaterThan(1);
+        assertThat(byLanguage.keySet()).as("a manual in every language of the application")
+                .containsExactlyInAnyOrderElementsOf(ManualHandler.LANGUAGES);
+        Set<String> english = byLanguage.get("en");
+        assertThat(english).contains("index.html").hasSizeGreaterThan(1);
+        byLanguage.forEach((language, pages) ->
+                assertThat(pages).as("every page in %s", language).isEqualTo(english));
     }
 
     /**
@@ -161,10 +162,12 @@ class ManualTest {
             "/docs, , , /docs/en/index.html",
             "/docs/, , , /docs/en/index.html",
             "/docs, , 'de-CH,de;q=0.9,en;q=0.8', /docs/de/index.html",
-            "/docs, , 'fr-FR,fr;q=0.9', /docs/en/index.html",
+            "/docs, , 'fr-FR,fr;q=0.9', /docs/fr/index.html",
+            "/docs, , 'nl-NL,nl;q=0.9', /docs/en/index.html",
             "/docs, de, 'en', /docs/de/index.html",
             // A language the manual does not have falls back to English, not to the header.
-            "/docs, fr, 'de', /docs/en/index.html",
+            "/docs, nl, 'de', /docs/en/index.html",
+            "/docs, ja, 'de', /docs/ja/index.html",
             "/docs, '../x', , /docs/en/index.html",
     })
     void theEntryPicksTheLanguage(String path, String lang, String acceptLanguage, String target) throws Exception {
@@ -211,7 +214,8 @@ class ManualTest {
     @CsvSource({
             "/jobs, en, /docs/en/jobs.html#shown-as",
             "/jobs, de, /docs/de/jobs.html#shown-as",
-            "/jobs, fr, /docs/en/jobs.html#shown-as",
+            "/jobs, fr, /docs/fr/jobs.html#shown-as",
+            "/jobs, zh, /docs/zh/jobs.html#shown-as",
             "/jobs/create, de, /docs/de/jobs.html#create",
             "/feeds, en, /docs/en/feeds.html#feeds",
             "/settings, en, /docs/en/settings.html",
