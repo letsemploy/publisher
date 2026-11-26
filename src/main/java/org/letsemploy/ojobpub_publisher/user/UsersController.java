@@ -1,8 +1,10 @@
 package org.letsemploy.ojobpub_publisher.user;
 
+import java.util.List;
 import java.util.UUID;
 import org.letsemploy.ojobpub_publisher.common.exception.ValidationFailure;
 import org.letsemploy.ojobpub_publisher.web.Scope;
+import org.letsemploy.ojobpub_publisher.web.view.Crumb;
 import org.letsemploy.ojobpub_publisher.web.view.PageMeta;
 import org.springframework.context.MessageSource;
 import org.springframework.context.i18n.LocaleContextHolder;
@@ -40,6 +42,17 @@ public class UsersController {
         model.addAttribute("suspendedOnly", suspended);
         model.addAttribute("page", PageMeta.of(message("nav.users")));
         return "user/list";
+    }
+
+    /** Every active owner's address, to copy into a mail client (spec 7.20). */
+    @GetMapping("/users/owners")
+    public String ownerEmails(Model model) {
+        List<String> emails = userService.ownerEmails(scope.user());
+        model.addAttribute("emails", String.join(", ", emails));
+        model.addAttribute("count", emails.size());
+        model.addAttribute("page", new PageMeta(message("users.owners.title"), null, List.of(
+                new Crumb(message("nav.users"), "/users"), new Crumb(message("users.owners.title"), null))));
+        return "user/owners";
     }
 
     @GetMapping("/users/{id}/suspend")

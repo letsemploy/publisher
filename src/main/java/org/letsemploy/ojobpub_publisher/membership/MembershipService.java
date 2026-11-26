@@ -103,6 +103,16 @@ public class MembershipService {
                 });
     }
 
+    /**
+     * Every active owner's address, once each - also when it differs only in case -
+     * sorted (spec 7.20). Not a check of who may see them: that is the caller's.
+     */
+    public List<String> activeOwnerEmails() {
+        java.util.TreeSet<String> emails = new java.util.TreeSet<>(String.CASE_INSENSITIVE_ORDER);
+        emails.addAll(membershipRepo.activeEmailsWithRole(MembershipRole.OWNER));
+        return List.copyOf(emails);
+    }
+
     /** How many employers each of these people belongs to, in one query (spec 7.20). */
     public Map<UUID, Long> countsByUser(Collection<UUID> userIds) {
         if (userIds.isEmpty()) {

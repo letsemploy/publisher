@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout}">
+<head><title th:text="#{users.owners.title}">Owner addresses</title></head>
+<body>
+<div layout:fragment="content">
+    <!-- Every active owner's address, for an admin writing to all of them from a
+         mail client (spec 7.20). Showing it is recorded in the admin's own log. -->
+    <div class="card">
+        <div class="card-body">
+            <p class="text-secondary" th:text="#{users.owners.intro}">Every active owner, once each.</p>
+            <!-- The one sentence that matters before pasting: everyone sees To and Cc. -->
+            <div class="alert alert-warning" role="alert">
+                <svg th:replace="~{fragments/icon :: i('alert-triangle','icon alert-icon flex-shrink-0')}"></svg>
+                <div th:text="#{users.owners.bcc}">Paste them into BCC.</div>
+            </div>
+            <p class="text-secondary" th:if="${count == 0}" th:text="#{users.owners.empty}">No owners.</p>
+            <th:block th:unless="${count == 0}">
+                <label class="form-label" for="owner-emails" th:text="#{users.owners.count(${count})}">3 addresses</label>
+                <div class="input-group input-group-flat">
+                    <textarea class="form-control font-monospace" id="owner-emails" rows="6" readonly spellcheck="false"
+                              th:text="${emails}">a@example.com, b@example.com</textarea>
+                    <span class="input-group-text align-items-start">
+                        <!-- Hidden until app.js reveals it; without JavaScript the text is selectable. -->
+                        <button type="button" class="btn btn-link link-secondary p-0 border-0"
+                                th:title="#{label.copy}" th:aria-label="#{label.copy}"
+                                th:attr="data-copied-label=#{label.copied}"
+                                data-action="copy" data-enhanced hidden>
+                            <svg th:replace="~{fragments/icon :: i('copy','icon')}"></svg>
+                        </button>
+                    </span>
+                </div>
+            </th:block>
+        </div>
+    </div>
+</div>
+</body>
+</html>

@@ -4,6 +4,13 @@
       layout:decorate="~{layout}">
 <head><title th:text="#{nav.users}">Users</title></head>
 <body>
+<div layout:fragment="page-actions">
+    <!-- For writing to every owner from a mail client (spec 7.20). -->
+    <a class="btn" th:href="@{/users/owners}">
+        <svg th:replace="~{fragments/icon :: i('mail','icon')}"></svg>
+        <span th:text="#{users.owners.title}">Owner addresses</span>
+    </a>
+</div>
 <div layout:fragment="content">
     <!-- Everyone who has signed in, for platform staff (spec 7.20); "View as" shows
          the application as that person sees it, read-only (spec 2.9), and an

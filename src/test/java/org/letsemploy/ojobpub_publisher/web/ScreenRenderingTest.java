@@ -70,7 +70,7 @@ class ScreenRenderingTest {
                 "/employers/" + EMPLOYER + "/update", "/employers/" + EMPLOYER + "/delete",
                 "/locations", "/locations/create",
                 "/tags", "/tags/create", "/tags?q=jav",
-                "/invitations", "/people", "/tokens", "/users", "/users?q=mara", "/users?suspended=true",
+                "/invitations", "/people", "/tokens", "/users", "/users?q=mara", "/users?suspended=true", "/users/owners",
                 "/users/" + MEMBER + "/suspend",
                 // The seeded admin is the only one: this renders the refusal (spec 2.13).
                 "/account/delete", "/settings", "/settings/display", "/settings/notifications", "/welcome",

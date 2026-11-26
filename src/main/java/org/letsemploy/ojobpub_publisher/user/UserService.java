@@ -147,6 +147,22 @@ public class UserService {
         log.info("Admin {} reinstated the account of user {}", actor.getId(), target.getId());
     }
 
+    /**
+     * Every active owner's address, for an admin writing to all of them from a
+     * mail client (spec 7.20). A list of everyone's customers' addresses, so the
+     * admin's own log records each time it is shown, with how many.
+     */
+    @Transactional
+    public List<String> ownerEmails(Actor actor) {
+        requireAdmin(actor);
+        List<String> emails = membershipService.activeOwnerEmails();
+        UserEntity admin = find(actor.getId());
+        auditLog.record(AuditEvent.of(AuditAction.OWNER_EMAILS_VIEWED, actor).about(admin)
+                .target(admin.getId(), admin.getLabel()).detail(String.valueOf(emails.size())));
+        log.info("Admin {} viewed the addresses of {} owners", actor.getId(), emails.size());
+        return emails;
+    }
+
     /** Nobody else learns these screens or accounts exist (spec 2.4). */
     private static void requireAdmin(Actor actor) {
         if (actor.isToken() || !actor.isAdmin()) {

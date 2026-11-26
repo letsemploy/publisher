@@ -53,6 +53,15 @@ public interface MembershipRepo extends JpaRepository<Membership, UUID> {
      */
     long countByEmployerIdAndUserIsNotNull(UUID employerId);
 
+    /**
+     * The addresses of every active owner - neither the membership nor the account
+     * suspended - for an admin writing to all of them (spec 7.20). People only: a
+     * token's membership has no user.
+     */
+    @Query("SELECT DISTINCT m.user.email FROM Membership m WHERE m.role = :role AND m.suspendedAt IS NULL"
+            + " AND m.user.suspendedAt IS NULL AND m.user.email IS NOT NULL")
+    List<String> activeEmailsWithRole(@Param("role") MembershipRole role);
+
     /** Memberships per person for a page of users, in one query (spec 7.20). */
     @Query("SELECT m.user.id, COUNT(m) FROM Membership m WHERE m.user.id IN :userIds GROUP BY m.user.id")
     List<Object[]> countByUserIds(@Param("userIds") Collection<UUID> userIds);

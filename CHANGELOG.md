@@ -24,6 +24,9 @@ Section numbers such as §5.6 refer to the specification in [`docs/SPEC.md`](doc
 - A feed that no permalink with a domain publishes is on no website: its screen warns, and the Feeds
   list and the dashboard mark it *no domain*. The dashboard's domain hint becomes a warning once jobs
   are published (§7.10, §7.12).
+- **Owner addresses** for platform admins, from the Users screen: every active owner's email address,
+  once each, to copy into a mail client and paste into BCC. Showing it is recorded in the admin's own
+  log (§7.20, §3.12).
 
 ### Changed
 

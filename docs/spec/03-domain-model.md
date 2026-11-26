@@ -281,7 +281,7 @@ that is refused or rolled back is not recorded, and neither is one that changes 
 | Field | Notes |
 |---|---|
 | `occurredAt` | When. |
-| `action` | What kind of event, from a fixed catalogue: an employer, job, feed, location or tag created, edited or deleted; a job's status changed; a job added to or removed from a feed; a permalink created, edited, switched or deleted (§3.13); a member joined, changed role, suspended, reinstated or removed; an invitation sent, withdrawn or declined; a token created, renewed or revoked; an account created, suspended or reinstated (§2.11), or deleted by its holder (§2.13); admin granted or removed by the configured rules (§2.2); viewing as a user started or stopped (§2.9); admin mode switched on or off (§2.10). |
+| `action` | What kind of event, from a fixed catalogue: an employer, job, feed, location or tag created, edited or deleted; a job's status changed; a job added to or removed from a feed; a permalink created, edited, switched or deleted (§3.13); a member joined, changed role, suspended, reinstated or removed; an invitation sent, withdrawn or declined; a token created, renewed or revoked; an account created, suspended or reinstated (§2.11), or deleted by its holder (§2.13); admin granted or removed by the configured rules (§2.2); viewing as a user started or stopped (§2.9); admin mode switched on or off (§2.10); every owner's email address shown to an admin (§7.20). |
 | actor | A user, a token (§3.11) — or **the application itself**, for what nobody did by hand, such as the admin rules applied at sign-in. |
 | `employer` | Nullable. Which employer's log it belongs to. |
 | `subject` | Nullable. The person it is about, whose own log it belongs to. |

@@ -635,6 +635,14 @@ what stays, what keeps working, the employers left without an active owner, and 
 A suspended row offers **Reinstate** instead, without confirmation. Admins and the viewer's own row
 offer neither, for the reason they cannot be viewed as.
 
+**Owner addresses** — from the Users screen, for platform admins only (a `404` for anyone else, as
+for the screen itself): the email address of every **active owner** of every employer — neither the
+membership nor the account suspended — once each, as one comma-separated, copyable text, with how
+many. It is for writing to all of them from the admin's own mail client; the application sends no
+such mail itself. The page says, before the list, to paste them into **BCC**, since every recipient
+sees the To and Cc of a mail. Showing it is recorded in the admin's own log (§3.12), with how many
+addresses it showed.
+
 ## 7.21 Activity
 
 The audit log (§3.12) of the **active employer** (§2.5), newest first, in pages of 50 (§8.3). It is

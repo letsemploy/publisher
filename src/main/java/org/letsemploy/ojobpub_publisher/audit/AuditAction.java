@@ -76,6 +76,8 @@ public enum AuditAction {
     PICTURE_REMOVED(Audience.PERSONAL),
     ADMIN_MODE_ENTERED(Audience.PERSONAL),
     ADMIN_MODE_LEFT(Audience.PERSONAL),
+    // A list of every owner's address, for writing to them all (spec 7.20).
+    OWNER_EMAILS_VIEWED(Audience.PERSONAL),
     VIEW_AS_STARTED(Audience.PERSONAL),
     VIEW_AS_STOPPED(Audience.PERSONAL);
 
