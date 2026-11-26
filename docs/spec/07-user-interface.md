@@ -356,7 +356,8 @@ each thing a newcomer has yet to create, with the way to do it:
 - **No job yet** — for an active employer without any job: create the first one.
 - **Not on your website yet** — for an active employer none of whose domains has passed its check
   (§7.23), served or redirected: the jobs reach no one who looks for them at the employer's own
-  domain. It leads to Domains.
+  domain. It leads to Domains. **Once a job is published it is a warning**, not a note: jobs are live
+  and reach no one.
 
 Each is shown on every visit while it applies and disappears once the gap is filled; there is nothing
 to dismiss and nothing stored. Each also links to the Welcome page (§7.30). There is no location message: every employer has its headquarters
@@ -407,6 +408,10 @@ whose URL stays when the feed behind it is switched.
 
 **Detail** — the operational centre of the product:
 
+- **A warning, when no permalink with a domain publishes it**, above everything else: the feed is on
+  no website, so its jobs reach no job board looking for them at the employer's domain. It leads to
+  Domains. The list says the same per feed, in words (*no domain*), and so does the dashboard's list
+  of feeds (§7.10).
 - **The permalinks publishing this feed** lead the screen, each with its URL as one copyable string and
   an *Open* link. With none, the screen says that a website should use a permalink and offers to create
   one.

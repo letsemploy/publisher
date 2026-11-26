@@ -21,6 +21,9 @@ Section numbers such as §5.6 refer to the specification in [`docs/SPEC.md`](doc
 - The domain is asked for: the first page after signing in is the domain form while the active
   employer has a permalink without one, once per session, and creating an employer leads there. The
   dashboard says so until a domain passes its check (§7.10, §7.23).
+- A feed that no permalink with a domain publishes is on no website: its screen warns, and the Feeds
+  list and the dashboard mark it *no domain*. The dashboard's domain hint becomes a warning once jobs
+  are published (§7.10, §7.12).
 
 ### Changed
 

@@ -8,5 +8,7 @@ public record FeedRow(
         int publishedCount,
         int memberCount,
         String lastChanged,
-        int excludedCount) {
+        int excludedCount,
+        /** Whether a permalink with a domain publishes it, so it is on a website (spec 7.12). */
+        boolean onDomain) {
 }

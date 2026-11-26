@@ -4,6 +4,7 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import org.letsemploy.ojobpub_publisher.common.exception.ValidationFailure;
 import org.letsemploy.ojobpub_publisher.employer.Employer;
@@ -66,11 +67,14 @@ public class FeedController {
         LocalDate today = Publication.today();
         List<FeedRow> rows = new ArrayList<>();
         for (Employer employer : scope.employers()) {
+            // A feed no domain publishes reaches no one; the list says so (spec 7.12).
+            Set<UUID> onDomain = PermalinkService.feedsOnADomain(permalinkService.findByEmployer(employer.getId()));
             for (Feed feed : feedService.findByEmployer(employer.getId())) {
                 Feed loaded = feedService.findForPublishing(feed.getId()).orElse(feed);
                 int published = (int) loaded.getJobs().stream()
                         .filter(j -> Publication.isPublishable(j, today)).count();
-                rows.add(views.feedRow(loaded, published, loaded.getJobs().size() - published));
+                rows.add(views.feedRow(loaded, published, loaded.getJobs().size() - published,
+                        onDomain.contains(feed.getId())));
             }
         }
         model.addAttribute("page", PageMeta.of(message("nav.feeds")).help(ManualTopic.FEEDS));
@@ -83,8 +87,10 @@ public class FeedController {
                          @RequestParam(required = false) String q) {
         model.addAttribute("feed", detailView(id, q));
         Feed feed = feedService.findVisible(id, scope.user());
-        model.addAttribute("permalinks", permalinkService.pointingAt(id).stream()
-                .map(p -> views.permalinkRow(p, List.of())).toList());
+        List<Permalink> pointing = permalinkService.pointingAt(id);
+        model.addAttribute("permalinks", pointing.stream().map(p -> views.permalinkRow(p, List.of())).toList());
+        // Published by no permalink with a domain, it is on no website (spec 7.12).
+        model.addAttribute("onDomain", !PermalinkService.feedsOnADomain(pointing).isEmpty());
         model.addAttribute("page", new PageMeta(feed.getName(), null,
                 List.of(new Crumb(message("nav.feeds"), "/feeds"), new Crumb(feed.getName(), null))).help(ManualTopic.FEEDS));
         return "feed/detail";

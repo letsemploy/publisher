@@ -317,11 +317,11 @@ public class Views {
         return max == 0 ? 0 : (int) Math.round(value * 100.0 / max);
     }
 
-    public FeedRow feedRow(Feed feed, int publishedCount, int excludedCount) {
+    public FeedRow feedRow(Feed feed, int publishedCount, int excludedCount, boolean onDomain) {
         return new FeedRow(feed.getId().toString(), feed.getName(), feed.getSlug(),
                 feedUrl(feed), publishedCount, feed.getJobs().size(),
                 feed.getLastModifiedAt() == null ? "-" : timestamp(feed.getLastModifiedAt()),
-                excludedCount);
+                excludedCount, onDomain);
     }
 
     public EmployerRow employerRow(Employer employer, long jobCount, long feedCount) {

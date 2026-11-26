@@ -42,6 +42,8 @@
                         <td>
                             <a th:href="@{'/feeds/' + ${f.id}}" class="text-reset fw-bold" th:text="${f.name}">Feed</a>
                             <div class="text-secondary small" th:text="${f.slug}">slug</div>
+                            <!-- In words: no domain publishes it, so it is on no website (spec 7.12). -->
+                            <span class="badge bg-yellow-lt" th:unless="${f.onDomain}" th:text="#{feed.noDomain.badge}">no domain</span>
                         </td>
                         <td>
                             <span class="badge bg-green-lt" th:text="${f.publishedCount}">0</span>

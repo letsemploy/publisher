@@ -4,6 +4,8 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
+import java.util.UUID;
 import jakarta.servlet.http.HttpSession;
 import org.letsemploy.ojobpub_publisher.audit.AuditService;
 import org.letsemploy.ojobpub_publisher.click.JobClickService;
@@ -90,8 +92,9 @@ public class IndexController {
         List<PermalinkRow> permalinks = new ArrayList<>();
         for (Employer employer : scope.employers()) {
             // The URLs a website uses; a feed's own URL is for testing (spec 7.10).
-            permalinkService.findByEmployer(employer.getId())
-                    .forEach(p -> permalinks.add(views.permalinkRow(p, List.of())));
+            List<Permalink> own = permalinkService.findByEmployer(employer.getId());
+            own.forEach(p -> permalinks.add(views.permalinkRow(p, List.of())));
+            Set<UUID> onDomain = PermalinkService.feedsOnADomain(own);
             for (Feed feed : feedService.findByEmployer(employer.getId())) {
                 Feed loaded = feedService.findForPublishing(feed.getId()).orElse(feed);
                 int published = 0;
@@ -103,7 +106,7 @@ public class IndexController {
                         excluded++;
                     }
                 }
-                feedRows.add(views.feedRow(loaded, published, excluded));
+                feedRows.add(views.feedRow(loaded, published, excluded, onDomain.contains(feed.getId())));
             }
         }
 

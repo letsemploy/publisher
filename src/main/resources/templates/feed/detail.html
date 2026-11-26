@@ -20,6 +20,19 @@
 
 <div layout:fragment="content">
 
+    <!-- Published by no permalink with a domain, the feed reaches no job board that
+         looks at the employer's website (spec 7.12). A warning, not a note. -->
+    <div class="alert alert-warning" role="alert" th:unless="${onDomain}" id="feed-no-domain">
+        <svg th:replace="~{fragments/icon :: i('alert-triangle','icon alert-icon flex-shrink-0')}"></svg>
+        <div class="flex-fill">
+            <h4 class="alert-title" th:text="#{feed.noDomain.title}">Not on any of your domains</h4>
+            <div class="text-secondary" th:text="#{feed.noDomain.text}">No domain publishes this feed.</div>
+            <div class="btn-list mt-2">
+                <a class="btn btn-sm" th:href="@{/domains}" th:text="#{nav.domains}">Domains</a>
+            </div>
+        </div>
+    </div>
+
     <!-- The URL a website is configured with is a permalink's, not the feed's own:
          it stays while the feed behind it is switched (spec 5.5, 7.12). Naming them here
          also means editing or deleting the feed holds no surprise. -->

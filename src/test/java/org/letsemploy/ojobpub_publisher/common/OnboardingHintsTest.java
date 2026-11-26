@@ -109,6 +109,34 @@ class OnboardingHintsTest {
         assertThat(dashboard(session)).doesNotContain("id=\"hint-domain\"");
     }
 
+    /**
+     * With jobs live and no domain that passed its check, the hint is a warning:
+     * the jobs reach no one (spec 7.10). The seed's careers page passed; here it
+     * has not.
+     */
+    @Test
+    void liveJobsOnNoWebsiteAreAWarning() throws Exception {
+        Permalink careers = permalinkRepo.findById(UUID.fromString("5a5a5a5a-5a5a-4a5a-8a5a-5a5a5a5a5a5a")).orElseThrow();
+        careers.setCheckResult(PermalinkCheck.Result.NOT_FOUND);
+        permalinkRepo.saveAndFlush(careers);
+
+        String html = dashboard(new MockHttpSession());
+        String hint = html.substring(html.indexOf("id=\"hint-domain\"") - 200, html.indexOf("id=\"hint-domain\"") + 600);
+        assertThat(hint).contains("alert-warning", "Your jobs are live, but on no website").doesNotContain("alert-info");
+    }
+
+    /** A new employer has no live job yet: a note, like the other hints. */
+    @Test
+    void withoutLiveJobsItIsANote() throws Exception {
+        MockHttpSession session = new MockHttpSession();
+        createEmptyEmployer(session);
+        mvc.perform(get("/").session(session)).andExpect(status().is3xxRedirection());
+
+        String html = dashboard(session);
+        String hint = html.substring(html.indexOf("id=\"hint-domain\"") - 200, html.indexOf("id=\"hint-domain\"") + 600);
+        assertThat(hint).contains("alert-info", "Not on your website yet").doesNotContain("alert-warning");
+    }
+
     private static String createdIn(MockHttpSession session) {
         return Collections.list(session.getAttributeNames()).stream()
                 .map(session::getAttribute)

@@ -9,6 +9,8 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import org.letsemploy.ojobpub_publisher.audit.AuditAction;
@@ -67,6 +69,17 @@ public class PermalinkService {
     @Transactional(readOnly = true)
     public List<Permalink> findByEmployer(UUID employerId) {
         return permalinkRepo.findByEmployerIdOrderByNameAsc(employerId);
+    }
+
+    /**
+     * The feeds that a permalink with a domain publishes: the ones a website can
+     * serve. Any other feed reaches no one (spec 7.10, 7.12).
+     */
+    public static Set<UUID> feedsOnADomain(List<Permalink> permalinks) {
+        return permalinks.stream()
+                .filter(p -> p.getWebsiteHost() != null && p.getFeed() != null)
+                .map(p -> p.getFeed().getId())
+                .collect(Collectors.toSet());
     }
 
     /** What points at a feed, for its screen and its delete confirmation (spec 7.12). */

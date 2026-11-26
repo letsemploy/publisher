@@ -463,6 +463,21 @@ class ScreenRenderingTest {
         assertThat(html("/feeds/" + FEED_ALL)).contains("No permalink publishes this feed");
     }
 
+    /**
+     * A feed no permalink with a domain publishes is on no website: its screen
+     * warns, and the lists say it in words (spec 7.10, 7.12). In the seed the
+     * careers page, on example.com, publishes Engineering; nothing publishes all.
+     */
+    @Test
+    void aFeedOnNoDomainIsWarnedAbout() throws Exception {
+        assertThat(html("/feeds/" + FEED_ALL)).contains("id=\"feed-no-domain\"", "Not on any of your domains");
+        assertThat(html("/feeds/de69390e-133f-4b2f-e094-8f6071829304")).doesNotContain("id=\"feed-no-domain\"");
+        for (String page : new String[] {"/feeds", "/"}) {
+            String body = html(page);
+            assertThat(body.split(">no domain<", -1)).as(page + ": one feed of two").hasSize(2);
+        }
+    }
+
     /** Owners get the API tokens destination; the sidebar is where it is found. */
     @Test
     void theSidebarOffersApiTokensToAnOwner() throws Exception {

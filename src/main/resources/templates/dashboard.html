@@ -31,11 +31,16 @@
             </div>
         </div>
     </div>
-    <div class="alert alert-info" role="status" th:if="${dashboard.hintDomain}" id="hint-domain">
-        <svg th:replace="~{fragments/icon :: i('info-circle','icon alert-icon flex-shrink-0')}"></svg>
+    <!-- A warning once jobs are live: published, yet reaching no one who looks at the
+         employer's website (spec 7.10). Before that, a note like the others. -->
+    <div class="alert" th:if="${dashboard.hintDomain}" id="hint-domain"
+         th:classappend="${dashboard.published > 0} ? 'alert-warning' : 'alert-info'"
+         th:attr="role=${dashboard.published > 0} ? 'alert' : 'status'">
+        <th:block th:if="${dashboard.published > 0}"><svg th:replace="~{fragments/icon :: i('alert-triangle','icon alert-icon flex-shrink-0')}"></svg></th:block>
+        <th:block th:unless="${dashboard.published > 0}"><svg th:replace="~{fragments/icon :: i('info-circle','icon alert-icon flex-shrink-0')}"></svg></th:block>
         <div class="flex-fill">
-            <h4 class="alert-title" th:text="#{dashboard.hint.domain.title}">Not on your website yet</h4>
-            <div class="text-secondary" th:text="#{dashboard.hint.domain.text}">Set up your domain.</div>
+            <h4 class="alert-title" th:text="${dashboard.published > 0} ? #{dashboard.hint.domain.live.title} : #{dashboard.hint.domain.title}">Not on your website yet</h4>
+            <div class="text-secondary" th:text="${dashboard.published > 0} ? #{dashboard.hint.domain.live.text} : #{dashboard.hint.domain.text}">Set up your domain.</div>
             <div class="btn-list mt-2">
                 <a class="btn btn-primary btn-sm" th:href="@{/domains}"
                    th:text="#{dashboard.hint.domain.action}">Set up your domain</a>
@@ -284,7 +289,10 @@
                         </thead>
                         <tbody>
                         <tr th:each="f : ${dashboard.feeds}">
-                            <td><a th:href="@{'/feeds/' + ${f.id}}" th:text="${f.name}">Feed</a></td>
+                            <td>
+                                <a th:href="@{'/feeds/' + ${f.id}}" th:text="${f.name}">Feed</a>
+                                <span class="badge bg-yellow-lt ms-1" th:unless="${f.onDomain}" th:text="#{feed.noDomain.badge}">no domain</span>
+                            </td>
                             <td>
                                 <span class="badge bg-green-lt" th:text="${f.publishedCount}">0</span>
                                 <span class="text-secondary ms-1" th:text="#{feed.ofMembers(${f.memberCount})}">of 0</span>
