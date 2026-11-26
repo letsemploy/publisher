@@ -1,0 +1,17 @@
+// Renovate, through the GitHub app. Weekly, like Dependabot before it.
+// Patches are grouped into one PR and auto-merged once CI passes; minors and
+// majors arrive one PR each and are merged by hand — a Tabler or htmx minor can
+// change what the screens look like.
+{
+  $schema: 'https://docs.renovatebot.com/renovate-schema.json',
+  extends: ['config:recommended'],
+  timezone: 'Europe/Zurich',
+  schedule: ['before 6am on monday'],
+  packageRules: [
+    {
+      matchUpdateTypes: ['patch'],
+      groupName: 'patch updates',
+      automerge: true,
+    },
+  ],
+}

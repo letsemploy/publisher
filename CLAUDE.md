@@ -852,7 +852,7 @@ the only committed record** (§9.1). `frontend-maven-plugin` in `generate-resour
 pinned as `node.version` in `pom.xml` into `target/`, runs `npm ci`, then `npm run vendor`, which
 writes into **`target/classes/static/vendor/`** — never into `src/`, and `.gitignore` refuses the old
 path. So `./mvnw package` still needs no Node on the machine, every build (tests, `spring-boot:run`,
-the container) gets the files, and a Dependabot bump needs nothing pushed by hand. Running from an
+the container) gets the files, and a Renovate bump needs nothing pushed by hand. Running from an
 IDE after a `clean`, rebuild them with:
 
 ```bash
@@ -895,9 +895,9 @@ committed. Preview with `npx hugo server --source docs/manual`.
 - The language choice is a `<details>` dropdown (`manual.css`), so the manual loads no script but
   `theme.js`.
 
-**Dependabot** groups npm **patches** only and `dependabot-automerge.yml` auto-merges those; an npm
-minor arrives as its own PR for review, since a Tabler minor can change how the screens look. Other
-ecosystems auto-merge minor and patch.
+**Renovate** (the GitHub app, `renovate.json5`) groups **patches** of every ecosystem into one weekly
+PR and auto-merges it once CI passes; minors and majors arrive one PR each for review, since a Tabler
+minor can change how the screens look.
 
 **Charts are Tabler's sparkline and tracking**, no chart library (§7.2, §7.10). `tabler.min.js` draws
 sparklines only on page load, so `app.js` draws those an htmx swap brings in (`drawSparklines` on
