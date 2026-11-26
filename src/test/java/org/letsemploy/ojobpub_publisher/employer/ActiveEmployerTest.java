@@ -70,9 +70,10 @@ class ActiveEmployerTest {
                         .param("name", "Freshly Made AG").param("hqCity", "Basel").param("hqCountry", "CH"))
                 .andExpect(status().is3xxRedirection())
                 .andReturn().getResponse().getRedirectedUrl();
-        UUID created = UUID.fromString(location.substring(location.lastIndexOf('/') + 1));
+        // Straight on to the domain, on its default permalink (spec 7.23).
+        assertThat(location).matches("/domains/[0-9a-f-]{36}/update");
 
-        assertThat(activeEmployer(session)).isEqualTo(created);
+        assertThat(activeEmployer(session)).isNotEqualTo(UUID.fromString(ACME));
         // And the next create form says whose row it will be.
         assertThat(mvc.perform(get("/locations/create").session(session))
                 .andReturn().getResponse().getContentAsString()).contains("Freshly Made AG");
@@ -85,10 +86,10 @@ class ActiveEmployerTest {
     @Test
     void editingAnEmployerLeavesTheScopeAlone() throws Exception {
         MockHttpSession session = new MockHttpSession();
-        String location = mvc.perform(post("/employers/create").session(session)
+        mvc.perform(post("/employers/create").session(session)
                         .param("name", "Working On This AG").param("hqCity", "Bern").param("hqCountry", "CH"))
-                .andReturn().getResponse().getRedirectedUrl();
-        UUID workingOn = UUID.fromString(location.substring(location.lastIndexOf('/') + 1));
+                .andExpect(status().is3xxRedirection());
+        UUID workingOn = activeEmployer(session);
 
         mvc.perform(post("/employers/" + ACME + "/update").session(session)
                         .param("name", "Acme AG").param("headquarters", "2c2e59d5-0b1a-11f1-938c-42a3421a666f"))
@@ -99,11 +100,10 @@ class ActiveEmployerTest {
 
     /** An employer that sorts before every other, so it is the first by name. */
     private String createFirst(MockHttpSession session) throws Exception {
-        String location = mvc.perform(post("/employers/create").session(session)
+        mvc.perform(post("/employers/create").session(session)
                         .param("name", "0 First AG").param("hqCity", "Bern").param("hqCountry", "CH"))
-                .andExpect(status().is3xxRedirection())
-                .andReturn().getResponse().getRedirectedUrl();
-        return location.substring(location.lastIndexOf('/') + 1);
+                .andExpect(status().is3xxRedirection());
+        return activeEmployer(session).toString();
     }
 
     @Test

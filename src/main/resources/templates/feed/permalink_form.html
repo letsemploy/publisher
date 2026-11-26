@@ -7,19 +7,28 @@
 <!-- A permalink: a URL that stays while the feed it publishes changes (spec 7.23).
      One form, as a page or a modal (fragments/dialog, spec 7.7). -->
 <div layout:fragment="content">
-    <div th:replace="~{fragments/dialog :: page(${form.id != null} ? @{'/feeds/permalinks/' + ${form.id} + '/update'} : @{/feeds/permalinks/create}, @{/feeds}, ~{feed/permalink_form :: fields}, ~{fragments/dialog :: save}, ${webserver.isEmpty()} ? null : ~{feed/permalink_form :: webserver(false)})}"></div>
+    <div th:replace="~{fragments/dialog :: page(${form.id != null} ? @{'/domains/' + ${form.id} + '/update'} : @{/domains/create}, @{/domains}, ~{feed/permalink_form :: fields}, ~{fragments/dialog :: save}, ${webserver.isEmpty()} ? null : ~{feed/permalink_form :: webserver(false)})}"></div>
 </div>
 
 <th:block th:fragment="modal">
-    <div th:replace="~{fragments/dialog :: modal(${page.title}, ${form.id != null} ? @{'/feeds/permalinks/' + ${form.id} + '/update'} : @{/feeds/permalinks/create}, ~{feed/permalink_form :: fields}, ~{fragments/dialog :: save}, ${webserver.isEmpty()} ? null : ~{feed/permalink_form :: webserver(true)})}"></div>
+    <div th:replace="~{fragments/dialog :: modal(${page.title}, ${form.id != null} ? @{'/domains/' + ${form.id} + '/update'} : @{/domains/create}, ~{feed/permalink_form :: fields}, ~{fragments/dialog :: save}, ${webserver.isEmpty()} ? null : ~{feed/permalink_form :: webserver(true)})}"></div>
 </th:block>
 
 <th:block th:fragment="fields">
-    <p class="text-secondary" th:text="#{permalink.intro}">A URL that stays the same.</p>
-    <div th:replace="~{fragments/form :: input('name','label.name',${form.name},'text',true,null,${fieldErrors['name']},255)}"></div>
-    <div th:replace="~{fragments/form :: input('description','label.description',${form.description},'text',false,null,${fieldErrors['description']},255)}"></div>
+    <!-- A permalink without a domain - the default one, or one from before domains
+         were required - is asked for it here, after signing in (spec 7.23). -->
+    <div class="alert alert-info" role="status" th:if="${form.id != null and form.websiteUrl == null}" id="domain-asked">
+        <svg th:replace="~{fragments/icon :: i('info-circle','icon alert-icon flex-shrink-0')}"></svg>
+        <div>
+            <h4 class="alert-title" th:text="#{permalink.asked.title}">Which domain are your jobs for?</h4>
+            <div class="text-secondary" th:text="#{permalink.asked.text}">Job boards look for them at your own domain.</div>
+        </div>
+    </div>
+    <p class="text-secondary" th:text="#{permalink.intro}">Your jobs are found at your own domain.</p>
+    <div th:replace="~{fragments/form :: input('websiteHost','permalink.websiteHost',${form.websiteHost},'text',true,'permalink.websiteHost.hint',${fieldErrors['websiteHost']},253)}"></div>
     <div th:replace="~{fragments/form :: select('feed','permalink.feed',${form.feedId},${feedOptions},false,'permalink.feed.none',${fieldErrors['feed']})}"></div>
-    <div th:replace="~{fragments/form :: input('websiteHost','permalink.websiteHost',${form.websiteHost},'text',false,'permalink.websiteHost.hint',${fieldErrors['websiteHost']},253)}"></div>
+    <div th:replace="~{fragments/form :: input('name','label.name',${form.name},'text',false,'permalink.name.hint',${fieldErrors['name']},255)}"></div>
+    <div th:replace="~{fragments/form :: input('description','label.description',${form.description},'text',false,null,${fieldErrors['description']},255)}"></div>
     <div class="mb-3" th:if="${form.publicUrl != null}">
         <label class="form-label" th:text="#{permalink.url}">Permalink URL</label>
         <div class="form-control-plaintext font-monospace text-secondary text-break"
@@ -68,10 +77,10 @@
                     </div>
                 </th:block>
                 <p class="text-secondary" th:if="${form.checkResult == null}" th:text="#{permalink.check.never}">Not checked yet.</p>
-                <form th:unless="${inModal}" th:action="@{'/feeds/permalinks/' + ${form.id} + '/check'}" method="post">
+                <form th:unless="${inModal}" th:action="@{'/domains/' + ${form.id} + '/check'}" method="post">
                     <button type="submit" class="btn" th:text="#{permalink.check}">Check setup</button>
                 </form>
-                <a th:if="${inModal}" class="btn" th:href="@{'/feeds/permalinks/' + ${form.id} + '/update#website'}"
+                <a th:if="${inModal}" class="btn" th:href="@{'/domains/' + ${form.id} + '/update#website'}"
                    th:text="#{permalink.check}">Check setup</a>
             </th:block>
         </div>

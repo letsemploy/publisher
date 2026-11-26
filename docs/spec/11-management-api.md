@@ -60,6 +60,9 @@ wrong layer.
   `FEEDS_WRITE`. `setPermalinkFeed` with no `feedId` publishes no jobs; a feed that is not the
   employer's is refused in `userErrors` on `feedId`, like an unknown one. It is how a deployment
   script switches what a website shows without touching the website.
+  `createPermalink` and `updatePermalink` require `websiteHost`, the domain the permalink is for
+  (§3.13): without one, or with one another of the employer's permalinks has, they answer in
+  `userErrors` on `websiteHost`. `name` may be left out, and is then the domain.
 - Enum values are the **published** spellings where one exists (§6.5), so `jobType: PERMANENT` in the
   API and `"permanent"` in the document are visibly the same thing.
 

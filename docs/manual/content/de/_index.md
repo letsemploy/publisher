@@ -18,4 +18,4 @@ Der übliche Weg:
 2. Stellen erfassen und aktivieren, sobald sie vollständig sind.
 3. Festlegen, welche Stellen ein Feed veröffentlicht. Jeder Arbeitgeber beginnt mit einem Feed, der
    alle enthält.
-4. Einen **Permalink** erstellen und seine URL allen geben, die Ihre Stellen lesen.
+4. Unter **Domains** die Domain Ihrer Website eintragen und einrichten, damit Jobbörsen Ihre Stellen dort finden.

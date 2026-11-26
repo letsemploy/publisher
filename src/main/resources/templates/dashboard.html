@@ -31,6 +31,19 @@
             </div>
         </div>
     </div>
+    <div class="alert alert-info" role="status" th:if="${dashboard.hintDomain}" id="hint-domain">
+        <svg th:replace="~{fragments/icon :: i('info-circle','icon alert-icon flex-shrink-0')}"></svg>
+        <div class="flex-fill">
+            <h4 class="alert-title" th:text="#{dashboard.hint.domain.title}">Not on your website yet</h4>
+            <div class="text-secondary" th:text="#{dashboard.hint.domain.text}">Set up your domain.</div>
+            <div class="btn-list mt-2">
+                <a class="btn btn-primary btn-sm" th:href="@{/domains}"
+                   th:text="#{dashboard.hint.domain.action}">Set up your domain</a>
+                <a class="btn btn-sm btn-ghost-secondary" th:href="@{/welcome}"
+                   th:text="#{dashboard.hint.welcome}">New here? Read the introduction</a>
+            </div>
+        </div>
+    </div>
     <div class="alert alert-info" role="status" th:if="${dashboard.hintJob}" id="hint-job">
         <svg th:replace="~{fragments/icon :: i('info-circle','icon alert-icon flex-shrink-0')}"></svg>
         <div class="flex-fill">
@@ -287,9 +300,9 @@
     <!-- The URLs a website is configured with: a permalink's, not a feed's own (spec 7.10). -->
     <div class="card mt-3">
         <div class="card-header">
-            <h3 class="card-title" th:text="#{permalink.title}">Permalinks</h3>
+            <h3 class="card-title"><a class="text-reset" th:href="@{/domains}" th:text="#{nav.domains}">Domains</a></h3>
             <div class="card-actions">
-                <a class="btn btn-sm" th:href="@{/feeds/permalinks/create}" th:attr="hx-get=@{/feeds/permalinks/create},hx-target='#modal-container'">
+                <a class="btn btn-sm" th:href="@{/domains/create}" th:attr="hx-get=@{/domains/create},hx-target='#modal-container'">
                     <svg th:replace="~{fragments/icon :: i('plus','icon')}"></svg>
                     <span th:text="#{permalink.create}">New permalink</span>
                 </a>
@@ -301,14 +314,18 @@
             <table class="table table-vcenter card-table">
                 <thead>
                 <tr>
-                    <th th:text="#{label.name}">Name</th>
+                    <th th:text="#{permalink.websiteHost}">Domain</th>
                     <th th:text="#{permalink.feed}">Publishes</th>
                     <th th:text="#{permalink.url}">URL</th>
                 </tr>
                 </thead>
                 <tbody>
                 <tr th:each="p : ${dashboard.permalinks}">
-                    <td class="fw-bold" th:text="${p.name}">Careers page</td>
+                    <td>
+                        <span class="fw-bold font-monospace" th:if="${p.websiteHost != null}" th:text="${p.websiteHost}">example.com</span>
+                        <!-- In words (spec 7.9, 7.10). -->
+                        <span class="fw-bold text-warning" th:if="${p.websiteHost == null}" th:text="#{permalink.noDomain}">No domain</span>
+                    </td>
                     <td>
                         <a th:if="${p.feedId != null}" th:href="@{'/feeds/' + ${p.feedId}}" th:text="${p.feedName}">Feed</a>
                         <!-- In words, not only by absence (spec 7.9). -->

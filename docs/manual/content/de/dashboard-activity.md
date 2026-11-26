@@ -15,7 +15,7 @@ Die **Übersicht** gilt dem Arbeitgeber, an dem Sie gerade arbeiten:
 - **was Aufmerksamkeit braucht**: veröffentlichte Stellen, die in den nächsten 14 Tagen enden, aktive
   Stellen, die nicht veröffentlicht werden können, und Entwürfe, die seit 30 Tagen niemand angefasst
   hat;
-- die neueste **Aktivität**, Ihre **Feeds** und Ihre **Permalinks** mit ihren URLs.
+- die neueste **Aktivität**, Ihre **Feeds** und Ihre **Domains** mit ihren URLs.
 
 ## Aktivität {#activity}
 

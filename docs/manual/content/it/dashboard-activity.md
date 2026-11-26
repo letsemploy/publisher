@@ -14,7 +14,7 @@ La **Dashboard** riguarda il datore di lavoro su cui sta lavorando:
   giorno e per paese, e gli annunci più cliccati;
 - **richiede attenzione**: annunci pubblicati che chiudono entro 14 giorni, annunci attivi che non
   possono essere pubblicati e bozze che nessuno tocca da 30 giorni;
-- le ultime **attività**, i Suoi **feed** e i Suoi **permalink** con i loro URL.
+- le ultime **attività**, i Suoi **feed** e i Suoi **domini** con i loro URL.
 
 ## Attività {#activity}
 

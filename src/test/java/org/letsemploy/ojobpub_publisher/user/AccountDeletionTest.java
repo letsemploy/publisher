@@ -174,7 +174,8 @@ class AccountDeletionTest {
         assertThat(html)
                 .contains("data-confirm-name=\"leaver@example.com\"")
                 .contains("name=\"confirmEmail\"")
-                .contains("public feed URLs")
+                // The public URLs are the permalinks' (spec 5.5).
+                .contains("permalink URLs")
                 .doesNotContain("id=\"only-admin\"");
     }
 

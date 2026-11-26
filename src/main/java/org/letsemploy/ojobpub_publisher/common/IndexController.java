@@ -3,11 +3,14 @@ package org.letsemploy.ojobpub_publisher.common;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
+import jakarta.servlet.http.HttpSession;
 import org.letsemploy.ojobpub_publisher.audit.AuditService;
 import org.letsemploy.ojobpub_publisher.click.JobClickService;
 import org.letsemploy.ojobpub_publisher.employer.Employer;
 import org.letsemploy.ojobpub_publisher.feed.Feed;
 import org.letsemploy.ojobpub_publisher.feed.FeedService;
+import org.letsemploy.ojobpub_publisher.feed.Permalink;
 import org.letsemploy.ojobpub_publisher.feed.PermalinkService;
 import org.letsemploy.ojobpub_publisher.job.DashboardJobs;
 import org.letsemploy.ojobpub_publisher.job.Job;
@@ -35,6 +38,9 @@ public class IndexController {
     /** Rows per "needs attention" group, and events of recent activity (spec 7.10). */
     private static final int ATTENTION_ROWS = 5;
     private static final int ACTIVITY_ROWS = 5;
+
+    /** Set once this session's first dashboard visit has asked for the domain (spec 7.23). */
+    static final String DOMAIN_ASKED = IndexController.class.getName() + ".domainAsked";
 
     private final Scope scope;
     private final JobService jobService;
@@ -67,11 +73,15 @@ public class IndexController {
     }
 
     @GetMapping("/")
-    public String index(Model model) {
+    public String index(Model model, HttpSession session) {
         // Every sign-in lands here; the one that created the account lands on the
         // Welcome instead (spec 7.30). Nothing is stored, so it happens once.
         if (currentUserService.accountCreatedNow()) {
             return "redirect:/welcome";
+        }
+        Optional<String> askDomain = askForDomain(session);
+        if (askDomain.isPresent()) {
+            return "redirect:" + askDomain.get();
         }
         LocalDate today = Publication.today();
         DashboardJobs jobs = jobService.dashboard(scope.employerIds());
@@ -103,6 +113,8 @@ public class IndexController {
         boolean hasEmployer = scope.activeEmployer().isPresent();
         boolean hintEmployer = !actor.isAdmin() && !hasEmployer;
         boolean hintJob = !actor.isAdmin() && hasEmployer && jobs.total() == 0;
+        boolean hintDomain = !actor.isAdmin() && hasEmployer
+                && permalinks.stream().noneMatch(PermalinkRow::checkWorks);
 
         model.addAttribute("page", PageMeta.of(message("nav.dashboard")).help(ManualTopic.DASHBOARD));
         // Every figure covers the employers in scope, and the activity is the log
@@ -114,8 +126,33 @@ public class IndexController {
                 views.attention(jobs, ATTENTION_ROWS),
                 auditService.latest(scope.employerIds(), scope.user(), ACTIVITY_ROWS).stream()
                         .map(views::activityRow).toList(),
-                feedRows, permalinks, hintEmployer, hintJob));
+                feedRows, permalinks, hintEmployer, hintJob, hintDomain));
         return "dashboard";
+    }
+
+    /**
+     * The first dashboard visit of a session - where every sign-in lands - asks
+     * for the domain instead, while the active employer has a permalink without
+     * one, or none at all (spec 7.23). Once per session, so the dashboard is the
+     * next page whatever the person does. Not in admin mode, which is the staff's
+     * view, nor while viewing as someone, which is read-only (spec 2.9, 2.10).
+     */
+    private Optional<String> askForDomain(HttpSession session) {
+        if (session.getAttribute(DOMAIN_ASKED) != null || scope.user().isAdmin()
+                || currentUserService.isImpersonating()) {
+            return Optional.empty();
+        }
+        Optional<Employer> employer = scope.activeEmployer();
+        if (employer.isEmpty()) {
+            return Optional.empty();
+        }
+        session.setAttribute(DOMAIN_ASKED, Boolean.TRUE);
+        List<Permalink> permalinks = permalinkService.findByEmployer(employer.get().getId());
+        if (permalinks.isEmpty()) {
+            return Optional.of("/domains/create");
+        }
+        return permalinks.stream().filter(p -> p.getWebsiteHost() == null).findFirst()
+                .map(p -> "/domains/" + p.getId() + "/update");
     }
 
     private String message(String key) {

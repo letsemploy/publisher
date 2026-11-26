@@ -158,8 +158,14 @@ carries field errors back to a form; `NotFoundException` is unchecked and handle
 
 ### Published feed
 
-`GET /ojobpub/v1/{employerSlug}_{employerId}/{feedSlug}_{feedId}/ojobpub.json` — public, anonymous,
-`GET` only. Identity is the UUID; the slug is decorative, so a stale slug still resolves and answers
+`GET /ojobpub/v1/{employerSlug}_{employerId}/{feedSlug}_{feedId}/ojobpub.json` — **for the employer's
+members only** (§5.1), `GET` only. **The permalink is the one public URL** (§5.5): the stateless public chain
+matches `/ojobpub/v1/permalink/**` alone, so a feed URL falls to the back-office chain, where
+`SecurityConfig.PUBLIC` permits it *with* the session. `OjobpubController.publish` then answers
+everyone who is not a member (`canActOn`) — anonymous included — the unknown feed's JSON `404`, whose
+message points to permalinks, **before** the stale-slug `301`, which would confirm the feed. Never a
+login page: old feed URLs are held by machines. It is `private, no-cache` and
+sends no CORS header; the permalink stays anonymous, `public, max-age=300`, CORS `*`. Identity is the UUID; the slug is decorative, so a stale slug still resolves and answers
 `301` to the canonical URL. Slug and UUID are separated by an **underscore**, the one character neither
 side may contain. Malformed segments answer `404`, never `400`.
 
@@ -198,8 +204,19 @@ website configures once while the feed behind it is switched.
   `FeedService.delete` before the delete. The FK's `ON DELETE SET NULL` is only the backstop for bulk
   deletes: left to the database, the loaded permalinks still reference the removed feed at flush and
   Hibernate throws.
-- Managed on the Feeds list (`PermalinkController`, `/feeds/permalinks/...`), with the switch as a
-  plain form per row; in the API under the feed scopes.
+- Managed on **Domains** (`PermalinkController`, `/domains/...`, §7.23), a sidebar destination: the UI
+  calls a permalink a *domain*, the model and API keep `Permalink`. The switch and the check are plain
+  forms per row; in the API under the feed scopes.
+- **One permalink, one domain** (§3.13): `save` requires `websiteHost`, unique within the employer
+  (not beyond — no claim), and an empty name becomes the domain. It authorises and checks the quota
+  *before* the input, as feeds do. **Every employer gets a default permalink** (`createDefault`,
+  called by `EmployerService.save` with the `all` feed): no domain, no quota, not through `save` —
+  the same structural exemption as `createDefaultFeed`. `V21` gave one to existing employers.
+- **The domain is asked for** by `IndexController.askForDomain`: the first `GET /` of a session
+  (where sign-ins land) redirects to the active employer's first permalink without a domain, behind
+  the session attribute `DOMAIN_ASKED`, never in admin mode or viewing-as. Creating an employer
+  redirects there too. The dashboard's `hintDomain` stays until a check `works()`. Seeded
+  permalinks all have a domain, or every user-view test of `/` would be redirected.
 - **The employer's website** (`websiteHost`, §3.13, §7.23): the **apex domain** only, normalised by
   `PermalinkService.host` and checked by `HostInput` — its `@ApexDomain` asks Guava's Public
   Suffix List (`InternetDomainName.isTopPrivateDomain`), so `acme.co.uk` passes and `www.acme.ch`
@@ -245,8 +262,8 @@ A published job's `url` is `{app.base-url}/go/{jobId}`, not `Job.url` (`OjobpubS
 ### Authentication and roles
 
 OIDC via Spring Security, authorization code **with PKCE** (§2.2). `SecurityConfig` has four chains, in
-order: the **management API** (`/graphql`, bearer token, stateless, no CSRF); the public feed; a
-**dev-profile bypass** (no identity provider needed); and the back-office. The API chain is `@Order(0)`
+order: the **management API** (`/graphql`, bearer token, stateless, no CSRF); the public permalink and
+job links; a **dev-profile bypass** (no identity provider needed); and the back-office. The API chain is `@Order(0)`
 on purpose — the dev bypass must never reach `/graphql`, so the API is token-authenticated even locally.
 `DevBypassGuard` refuses to start if `dev` is combined with `prod`.
 
@@ -720,9 +737,10 @@ the employer's log and the member's — so the two logs cannot disagree.
 ### Resource limits (`common/ResourceLimits.java`, §8.4)
 
 Seven configurable creation quotas under `app.limits.*`, defaults in `application.properties`, `0` =
-unlimited. Checked in the services at the single creation method for each resource. Two exemptions that
-must stay: `FeedService.createDefaultFeed` (an employer without its `all` feed is broken) and every
-edit path — only creation is refused.
+unlimited. Checked in the services at the single creation method for each resource. Exemptions that
+must stay: `FeedService.createDefaultFeed` (an employer without its `all` feed is broken),
+`PermalinkService.createDefault` (where the domain is asked for, §3.13) and every edit path — only
+creation is refused.
 
 **The invitation quota is checked before the email is looked up, and that ordering is the rule.**
 Checked after, an employer at its cap would answer `SENT` for an unregistered address and refuse a
@@ -947,10 +965,10 @@ advice would fail to render and turn every 404 into a 500.
 `ScreenRenderingTest.notFoundRendersTheErrorPage` guards it.
 
 **The shell is for pages only.** `UiContextAdvice` returns no `ui` for a `@ResponseBody` handler,
-because building it resolves the user and opens a session, and the public feed must open none (§5.1).
+because building it resolves the user and opens a session, and the public permalink must open none (§5.5).
 For the same reason `OjobpubController` has its own `@ExceptionHandler` answering JSON, ahead of
-`GlobalErrorHandler`'s HTML page. `FeedStatelessTest` asserts no answer of the feed opens a session;
-it once did on every fetch.
+`GlobalErrorHandler`'s HTML page. `FeedStatelessTest` asserts no answer of the permalink opens a
+session; it once did on every fetch.
 
 Each controller supplies its own `page` (`PageMeta`); one that forgets it will not render.
 
@@ -958,9 +976,9 @@ Each controller supplies its own `page` (`PageMeta`); one that forgets it will n
 `NavItem` lists, whose icon names the sprite scanner reads too:
 - **Sidebar** (`navItems`): the employer switcher first — a `<select>` posting to `/context/employer`,
   shown even with one employer, submitted by `app.js` on change (`data-auto-submit`) and by a button
-  without JavaScript (`data-without-js`, which `app.js` hides) — then Dashboard, Jobs, Feeds, People,
-  API tokens, Profile (`/employers/{active}`), Locations, Tags, Activity. With no employer, "New
-  employer" replaces the switcher and Profile is absent.
+  without JavaScript (`data-without-js`, which `app.js` hides) — then Dashboard, Jobs, Feeds,
+  Domains, People, API tokens, Profile (`/employers/{active}`), Locations, Tags, Activity. With no
+  employer, "New employer" replaces the switcher and Profile is absent.
 - **Top bar** (`topNavItems`): Employers, Invitations (with the pending badge), Users; the user menu on
   the right. A new destination goes in whichever bar matches whether it belongs to an employer.
 
@@ -1071,7 +1089,7 @@ TEST_DB=sqlite ./mvnw test                   # all, on SQLite; no server
 ./mvnw test -Dtest=ServiceTokenExpiryTest    # expiry, renewal and what renewal must not touch
 ./mvnw test -Dtest=JobLinkTest               # /go/{id}: redirect, 410, what counts, country, no session
 ./mvnw test -Dtest=JobClickServiceTest       # the dashboard's click figures, scoped to the employers asked
-./mvnw test -Dtest=FeedStatelessTest         # no feed answer opens a session; a failure is JSON
+./mvnw test -Dtest=FeedStatelessTest         # no permalink answer opens a session; the feed URL is private
 ./mvnw test -Dtest=DatabaseInitOrderTest     # Flyway, then the seed, then Hibernate, whatever the classpath
 ./mvnw test -Dtest=PictureProcessorTest      # crop, size, metadata stripped, refused before decoding; no Spring
 ./mvnw test -Dtest=ProviderPictureFetcherTest # the fetch fence: https, public addresses, no redirects, size; no Spring

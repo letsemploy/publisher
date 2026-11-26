@@ -5,6 +5,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doThrow;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -23,9 +24,11 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 
 /**
- * The published feed is anonymous and stateless (spec 5.1): no answer - served,
- * redirected, refused or failed - opens a session. It once did on every fetch,
- * because the back-office shell was built for the feed controller too.
+ * The published document - the permalink, the public URL - is anonymous and
+ * stateless (spec 5.5): no answer - served, redirected, refused or failed - opens a
+ * session. It once did on every fetch, because the back-office shell was built for
+ * the feed controller too. A feed's own URL is for members, in their session, and
+ * so kept out of shared caches (spec 5.1).
  */
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -48,16 +51,25 @@ class FeedStatelessTest {
 
     @ParameterizedTest
     @CsvSource({
-            FEED + ", 200",
             PERMALINK + ", 200",
-            // A stale slug is nudged to the canonical URL.
-            "/ojobpub/v1/old_003d6aec-021b-11f1-aefa-f649a5d91690/all_cd58289d-022e-4a1e-df83-7e5f60718293/ojobpub.json, 301",
+            // An upper-case id is nudged to the canonical URL.
+            "/ojobpub/v1/permalink/5A5A5A5A-5A5A-4A5A-8A5A-5A5A5A5A5A5A/ojobpub.json, 301",
             "/ojobpub/v1/permalink/00000000-0000-4000-8000-000000000000/ojobpub.json, 404",
             "/ojobpub/v1/permalink/not-a-uuid/ojobpub.json, 404",
     })
     void noAnswerOpensASession(String url, int expected) throws Exception {
         MvcResult result = mvc.perform(get(url)).andExpect(status().is(expected)).andReturn();
         assertNoSession(result);
+    }
+
+    @Test
+    void theFeedIsPrivateAndThePermalinkPublic() throws Exception {
+        mvc.perform(get(FEED)).andExpect(status().isOk())
+                .andExpect(header().string("Cache-Control", "no-cache, private"))
+                .andExpect(header().doesNotExist("Access-Control-Allow-Origin"));
+        mvc.perform(get(PERMALINK).header("Origin", "https://board.example")).andExpect(status().isOk())
+                .andExpect(header().string("Cache-Control", "max-age=300, public"))
+                .andExpect(header().string("Access-Control-Allow-Origin", "*"));
     }
 
     /** A failure is JSON for the machine asking, not the back-office error page (spec 8.2). */

@@ -19,10 +19,12 @@ public record DashboardView(
         /** The latest events of the employers in scope, as the Activity screen shows them (spec 7.21). */
         List<ActivityRow> activity,
         List<FeedRow> feeds,
-        /** Permalinks with their URLs, the ones a website is configured with. */
+        /** Domains - permalinks - with their URLs, the ones a website is configured with. */
         List<PermalinkRow> permalinks,
         /** Getting started: the user belongs to no employer yet (not in admin mode). */
         boolean hintEmployer,
         /** Getting started: the active employer has no job yet (not in admin mode). */
-        boolean hintJob) {
+        boolean hintJob,
+        /** Getting started: none of the active employer's domains passed its check (not in admin mode). */
+        boolean hintDomain) {
 }

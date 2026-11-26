@@ -116,6 +116,12 @@ UPDATE permalinks SET website_host = 'example.com', check_result = 'PROXY', chec
  WHERE id = '5a5a5a5a-5a5a-4a5a-8a5a-5a5a5a5a5a5a'
    AND (website_host IS NULL OR website_host = 'www.acme.example');
 
+-- Every permalink is for a domain (spec 3.13), and one without is asked for after
+-- signing in (spec 7.23); the partner board has one, never checked, so the screens
+-- show that state too and the dashboard is not replaced by the question.
+UPDATE permalinks SET website_host = 'example.org'
+ WHERE id = '5b5b5b5b-5b5b-4b5b-8b5b-5b5b5b5b5b5b' AND website_host IS NULL;
+
 -- Job-link clicks (spec 3.14), so the dashboard's clicks card has figures: the two
 -- published jobs yesterday, from two countries and one unknown, and the expired
 -- job while it was still published. Dated relative to today (UTC), so they stay

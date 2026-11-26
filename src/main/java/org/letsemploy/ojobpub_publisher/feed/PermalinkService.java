@@ -114,28 +114,34 @@ public class PermalinkService {
     @Transactional
     public Permalink save(UUID id, Employer employer, String name, String description, String websiteHost,
                           UUID feedId, Actor actor) {
-        inputs.check(new NameInput(name));
-        String host = host(websiteHost);
-        inputs.check(new HostInput(host));
         Permalink permalink;
         if (id == null) {
             // Only for an actor who may work on the employer, as for feeds (spec 2.4).
             if (!actor.canActOn(employer.getId())) {
                 throw new NotFoundException("Employer not found: " + employer.getId());
             }
-            // Before the name check, as for feeds (spec 8.4).
+            // Before the input checks, as for feeds (spec 8.4).
             limits.requireRoomForPermalinks(() -> permalinkRepo.countByEmployerId(employer.getId()));
-            if (permalinkRepo.existsByEmployerIdAndNameIgnoreCase(employer.getId(), name.trim())) {
-                throw new ValidationFailure("name", "This employer already has a permalink with that name.");
-            }
             permalink = new Permalink();
             permalink.setEmployer(employer);
         } else {
             permalink = findVisible(id, actor);
-            if (!permalink.getName().equalsIgnoreCase(name.trim())
-                    && permalinkRepo.existsByEmployerIdAndNameIgnoreCase(employer.getId(), name.trim())) {
-                throw new ValidationFailure("name", "This employer already has a permalink with that name.");
-            }
+        }
+        // The domain is required (spec 3.13), and an empty name is the domain.
+        String host = host(websiteHost);
+        inputs.check(new HostInput(host));
+        if (name == null || name.isBlank()) {
+            name = host;
+        }
+        inputs.check(new NameInput(name));
+        UUID employerId = permalink.getEmployer().getId();
+        if (!name.trim().equalsIgnoreCase(permalink.getName())
+                && permalinkRepo.existsByEmployerIdAndNameIgnoreCase(employerId, name.trim())) {
+            throw new ValidationFailure("name", "This employer already has a permalink with that name.");
+        }
+        if (!host.equals(permalink.getWebsiteHost())
+                && permalinkRepo.existsByEmployerIdAndWebsiteHost(employerId, host)) {
+            throw new ValidationFailure("websiteHost", "This employer already has a permalink for that domain.");
         }
         Feed before = permalink.getFeed();
         String nameBefore = permalink.getName();
@@ -166,6 +172,24 @@ public class PermalinkService {
     }
 
     /**
+     * The permalink every employer is created with (spec 3.13): its {@code all}
+     * feed, no domain yet - the back-office asks for it (spec 7.23).
+     *
+     * <p>Deliberately not routed through {@link #save}, which requires a domain,
+     * and deliberately not subject to the permalink quota, like
+     * {@link FeedService#createDefaultFeed}: it is where the domain is asked for.
+     * Not audited apart: the employer's creation is.
+     */
+    @Transactional
+    public Permalink createDefault(Employer employer, Feed all) {
+        Permalink permalink = new Permalink();
+        permalink.setEmployer(employer);
+        permalink.setName("Default");
+        permalink.setFeed(all);
+        return permalinkRepo.save(permalink);
+    }
+
+    /**
      * The quick switch (spec 5.5): point the permalink at another of the
      * employer's feeds, or at none. Changes what the URL publishes, never the URL.
      */
@@ -191,7 +215,7 @@ public class PermalinkService {
      * is held while it does. The result is written without moving the
      * permalink's date, which dates the served document (spec 5.5).
      *
-     * @throws ValidationFailure {@code websiteHost} when there is none, or
+     * @throws ValidationFailure {@code websiteHost} when there is none yet, or
      *         {@code check} when this person checked a moment ago - the check
      *         asks a host someone typed, so it must not become a scanner
      */

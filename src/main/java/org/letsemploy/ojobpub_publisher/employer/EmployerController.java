@@ -7,6 +7,7 @@ import java.util.UUID;
 import org.letsemploy.ojobpub_publisher.common.exception.NotFoundException;
 import org.letsemploy.ojobpub_publisher.common.exception.ValidationFailure;
 import org.letsemploy.ojobpub_publisher.feed.FeedService;
+import org.letsemploy.ojobpub_publisher.feed.PermalinkService;
 import org.letsemploy.ojobpub_publisher.job.JobService;
 import org.letsemploy.ojobpub_publisher.location.Countries;
 import org.letsemploy.ojobpub_publisher.location.Location;
@@ -35,6 +36,7 @@ public class EmployerController {
     private final EmployerService employerService;
     private final LocationService locationService;
     private final FeedService feedService;
+    private final PermalinkService permalinkService;
     private final MembershipService membershipService;
     private final JobService jobService;
     private final Scope scope;
@@ -46,6 +48,7 @@ public class EmployerController {
     public EmployerController(EmployerService employerService,
                               LocationService locationService,
                               FeedService feedService,
+                              PermalinkService permalinkService,
                               MembershipService membershipService,
                               JobService jobService,
                               Scope scope,
@@ -56,6 +59,7 @@ public class EmployerController {
         this.employerService = employerService;
         this.locationService = locationService;
         this.feedService = feedService;
+        this.permalinkService = permalinkService;
         this.membershipService = membershipService;
         this.jobService = jobService;
         this.scope = scope;
@@ -142,6 +146,13 @@ public class EmployerController {
                 employerContext.setActiveEmployerId(saved.getId());
             }
             flash.addFlashAttribute("successMsg", "msg.success.saved");
+            if (id == null) {
+                // Straight on to the domain its jobs are for, on its default permalink (spec 7.23).
+                return FormViews.redirect(permalinkService.findByEmployer(saved.getId()).stream()
+                        .filter(p -> p.getWebsiteHost() == null).findFirst()
+                        .map(p -> "/domains/" + p.getId() + "/update")
+                        .orElse("/employers/" + saved.getId()));
+            }
             return FormViews.redirect("/employers/" + saved.getId());
         } catch (ValidationFailure e) {
             model.addAttribute("page", PageMeta.of(

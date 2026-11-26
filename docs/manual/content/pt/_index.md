@@ -16,4 +16,4 @@ O caminho habitual:
 1. Entre e crie o seu empregador, ou aceite um convite para um já existente.
 2. Crie as suas vagas e ative-as quando estiverem completas.
 3. Escolha quais vagas um feed publica. Todo empregador começa com um feed que contém todas elas.
-4. Crie um **link permanente** e passe a URL dele a quem lê as suas vagas.
+4. Em **Domínios**, indique o domínio do seu site e configure-o, para que os portais de emprego encontrem as suas vagas lá.

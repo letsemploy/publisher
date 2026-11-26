@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout}">
+<head><title th:text="#{nav.domains}">Domains</title></head>
+<body>
+<div layout:fragment="page-actions">
+    <!-- Nothing to create into without an employer (spec 2.5): the content says how to get one. -->
+    <a class="btn btn-primary" th:href="@{/domains/create}" th:attr="hx-get=@{/domains/create},hx-target='#modal-container'" th:if="${ui.activeEmployer != null}">
+        <svg th:replace="~{fragments/icon :: i('plus','icon')}"></svg>
+        <span th:text="#{permalink.create}">New domain</span>
+    </a>
+</div>
+<div layout:fragment="content">
+
+    <th:block th:if="${ui.activeEmployer == null}">
+        <div class="card">
+            <div th:replace="~{fragments/empty :: state('world','feed.noEmployer.title','feed.noEmployer.subtitle','/employers/create','employer.create')}"></div>
+        </div>
+    </th:block>
+
+    <!-- Domains (spec 7.23): each a permalink for one website. The switch and the
+         check are plain forms, so both work without JavaScript. -->
+    <div class="card" id="permalinks" th:if="${ui.activeEmployer != null}">
+        <div class="card-body">
+            <p class="text-secondary mb-0" th:text="#{permalink.intro}">Your jobs are found at your own domain.</p>
+        </div>
+        <div class="card-body border-top text-secondary" th:if="${permalinks.isEmpty()}"
+             th:text="#{permalink.empty}">No domains yet.</div>
+        <div class="table-responsive" th:unless="${permalinks.isEmpty()}">
+            <table class="table table-vcenter card-table">
+                <thead>
+                <tr>
+                    <th th:text="#{permalink.websiteHost}">Domain</th>
+                    <th th:text="#{permalink.feed}">Publishes</th>
+                    <th th:text="#{permalink.url}">URL</th>
+                    <th class="w-1"></th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="p : ${permalinks}">
+                    <td>
+                        <!-- The domain and what its check found, in words (spec 7.9, 7.23). -->
+                        <span class="fw-bold font-monospace" th:if="${p.websiteHost != null}" th:text="${p.websiteHost}">example.com</span>
+                        <span class="fw-bold text-warning" th:if="${p.websiteHost == null}" th:text="#{permalink.noDomain}">No domain</span>
+                        <div class="small mt-1 text-secondary" th:if="${p.websiteHost == null}"
+                             th:text="#{permalink.website.notSetUp}">Not set up on your website yet.</div>
+                        <th:block th:if="${p.websiteHost != null}">
+                            <div class="small mt-1"
+                                 th:classappend="${p.checkResult == null} ? 'text-secondary' : (${p.checkWorks} ? 'text-success' : 'text-warning')"
+                                 th:text="${p.checkResult == null} ? #{permalink.check.never} : #{'permalink.check.' + ${p.checkResult}}">Not checked yet.</div>
+                            <div class="small text-secondary" th:if="${p.checkedAt != null}"
+                                 th:text="#{permalink.check.checkedAt(${p.checkedAt})}">Checked …</div>
+                            <form class="mt-1" th:action="@{'/domains/' + ${p.id} + '/check'}" method="post">
+                                <input type="hidden" name="from" value="list"/>
+                                <button type="submit" class="btn btn-sm" th:text="#{permalink.check}">Check setup</button>
+                            </form>
+                        </th:block>
+                    </td>
+                    <td>
+                        <form class="d-flex gap-2" th:action="@{'/domains/' + ${p.id} + '/target'}" method="post">
+                            <label class="visually-hidden" th:for="'feed-' + ${p.id}" th:text="#{permalink.feed}">Publishes</label>
+                            <select class="form-select form-select-sm" name="feed" th:id="'feed-' + ${p.id}">
+                                <option value="" th:selected="${p.feedId == null}" th:text="#{permalink.feed.none}">No feed</option>
+                                <option th:each="o : ${p.feedOptions}" th:value="${o.key}" th:text="${o.value}"
+                                        th:selected="${o.key == p.feedId}">Feed</option>
+                            </select>
+                            <button type="submit" class="btn btn-sm" th:text="#{permalink.switch}">Switch</button>
+                        </form>
+                        <!-- In words, not only as a selected option (spec 7.9). -->
+                        <div class="text-secondary small mt-1" th:if="${p.feedId == null}"
+                             th:text="#{permalink.publishesNothing}">Publishes no jobs.</div>
+                    </td>
+                    <td>
+                        <div class="text-secondary small mb-1" th:text="${p.name}">Default</div>
+                        <div class="input-group input-group-flat input-group-sm">
+                            <input type="text" class="form-control form-control-sm font-monospace" readonly
+                                   th:value="${p.publicUrl}" th:aria-label="#{permalink.url}"/>
+                            <span class="input-group-text">
+                                <button type="button" class="btn btn-link link-secondary p-0 border-0"
+                                        th:title="#{label.copy}" th:aria-label="#{label.copy}"
+                                        th:attr="data-copied-label=#{label.copied}"
+                                        data-action="copy" data-enhanced hidden>
+                                    <svg th:replace="~{fragments/icon :: i('copy','icon')}"></svg>
+                                </button>
+                            </span>
+                        </div>
+                    </td>
+                    <td class="text-nowrap">
+                        <a class="btn btn-sm" th:href="${p.publicUrl}" target="_blank" rel="noopener">
+                            <svg th:replace="~{fragments/icon :: i('external-link','icon')}"></svg>
+                            <span th:text="#{label.open}">Open</span>
+                        </a>
+                        <a class="btn btn-sm" th:href="@{'/domains/' + ${p.id} + '/update'}" th:attr="hx-get=@{'/domains/' + ${p.id} + '/update'},hx-target='#modal-container'">
+                            <svg th:replace="~{fragments/icon :: i('pencil','icon')}"></svg>
+                            <span th:text="#{label.edit}">Edit</span>
+                        </a>
+                        <button class="btn btn-sm btn-ghost-danger"
+                                th:attr="hx-get=@{'/domains/' + ${p.id} + '/delete'},hx-target='#modal-container'"
+                                th:text="#{label.delete}">Delete</button>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+</body>
+</html>

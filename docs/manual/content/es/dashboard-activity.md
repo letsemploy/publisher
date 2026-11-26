@@ -13,7 +13,7 @@ El **Panel** abarca la empresa en la que está trabajando:
   día y por país, y las ofertas con más clics;
 - **Requiere atención**: ofertas publicadas que cierran en los próximos 14 días, ofertas activas que no
   pueden publicarse y borradores que nadie ha tocado en 30 días;
-- la **actividad** más reciente, sus **feeds** y sus **enlaces permanentes** con sus URL.
+- la **actividad** más reciente, sus **feeds** y sus **dominios** con sus URL.
 
 ## Actividad {#activity}
 

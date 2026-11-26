@@ -21,6 +21,9 @@ public interface PermalinkRepo extends JpaRepository<Permalink, UUID> {
 
     boolean existsByEmployerIdAndNameIgnoreCase(UUID employerId, String name);
 
+    /** One permalink per domain within an employer (spec 3.13); hosts are stored lower-case. */
+    boolean existsByEmployerIdAndWebsiteHost(UUID employerId, String websiteHost);
+
     long countByEmployerId(UUID employerId);
 
     /**

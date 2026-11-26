@@ -120,8 +120,8 @@ left out when printing.
   to the server, which stores the choice in the session and redirects to the dashboard (§7.10). Not
   back to the current screen: that may show a record of the employer just left, which the new scope
   does not cover. A user with no employer at all sees **New employer** in its place.
-- The destinations of the active employer: **Dashboard, Jobs, Feeds, People, API tokens, Profile,
-  Locations, Tags, Activity**, each with a Tabler icon and label. **Profile** is the active employer's
+- The destinations of the active employer: **Dashboard, Jobs, Feeds, Domains, People, API tokens,
+  Profile, Locations, Tags, Activity**, each with a Tabler icon and label. **Profile** is the active employer's
   own record (§7.13). With no employer the lists stay, showing how to get one; Profile is absent.
 - **People** (§7.18) covers the **active employer** (§2.5), which is why it sits beside Jobs and Feeds
   rather than under Employers: it answers "who am I working with here", the same scope those two
@@ -343,9 +343,10 @@ bottom:
 - **Recent activity:** the five latest events of the log the Activity screen shows this viewer (§7.21),
   with the same audience rules, and a link to it.
 - **Feeds**, each with its published job count.
-- **Permalinks** (§5.5): name, the feed each publishes — or *No feed*, in words — and its URL with a
-  copy action and an *Open* link. These are the URLs a website is configured with, so the dashboard
-  shows them and not the feeds' own URLs, which are for testing (§7.12).
+- **Domains** (§7.23): each permalink's domain — or *No domain*, in words — the feed it publishes —
+  or *No feed* — and its URL with a copy action and an *Open* link. These are the URLs a website is
+  configured with, so the dashboard shows them and not the feeds' own URLs, which are for testing
+  (§7.12).
 
 **Getting started.** Outside admin mode (§2.10), the dashboard opens with an information message for
 each thing a newcomer has yet to create, with the way to do it:
@@ -353,6 +354,9 @@ each thing a newcomer has yet to create, with the way to do it:
 - **No employer yet** — for a user who belongs to none (§2.5): create one, or see the invitations
   (§7.16).
 - **No job yet** — for an active employer without any job: create the first one.
+- **Not on your website yet** — for an active employer none of whose domains has passed its check
+  (§7.23), served or redirected: the jobs reach no one who looks for them at the employer's own
+  domain. It leads to Domains.
 
 Each is shown on every visit while it applies and disappears once the gap is filled; there is nothing
 to dismiss and nothing stored. Each also links to the Welcome page (§7.30). There is no location message: every employer has its headquarters
@@ -397,8 +401,9 @@ will disappear from.
 ## 7.12 Feeds
 
 **List** — every feed of the active employer: name, published job count and last publication change. The
-feed's own URL is offered only as a quiet *Test* link: it is for trying a feed out, while a website is
-configured with a permalink (§5.5, §7.23), whose URL stays when the feed behind it is switched.
+feed's own URL is offered only as a quiet *Test* link: it is for trying a feed out, and only members can
+open it (§5.1), while a website is configured with a permalink, managed under Domains (§5.5, §7.23),
+whose URL stays when the feed behind it is switched.
 
 **Detail** — the operational centre of the product:
 
@@ -440,7 +445,7 @@ which joins them. On **create** there are none yet, so the city and country are 
 admins only**; an editor works on jobs and feeds, not on the employer record.
 **Delete** — **owners and admins** (§2.7), from the employer record. A modal states what goes — the
 number of jobs, feeds, members and API tokens, and its locations, tags and invitations — and that its
-public feed URLs will answer "not found" from then on. The employer's **name must be typed back**. The
+permalink URLs will answer "not found" from then on. The employer's **name must be typed back**. The
 server checks it; the page only keeps the button disabled until it matches, and without JavaScript the
 button works and a wrong name is refused. Afterwards, if it was the active employer, the active employer
 falls back to the first remaining (§2.5).
@@ -647,19 +652,29 @@ admin (§2.9), and what they did. It is reached from the user menu rather than t
 is about the person, not the employer being worked on. The same screen, for any user, is where an admin
 lands from the Users screen (§7.20).
 
-## 7.23 Permalinks
+## 7.23 Domains
 
-Part of the Feeds screen (§7.12), below the feeds, rather than a destination of its own: a permalink is
-a way of publishing them.
+A **sidebar destination** of the active employer (§7.3), placed after Feeds. Each row is a permalink
+(§3.13, §5.5) and the domain it is for: the screen calls the pair a *domain*, because the domain is what
+newcomers missed — jobs reach the job boards that look for them at `https://{domain}/.well-known/ojobpub.json`,
+and nowhere else. The model and the API keep the name *permalink* (§11).
 
-- **A list** of the employer's permalinks: name and description, the feed it publishes, and its URL
+- **A list** of the employer's domains: the domain — or *No domain*, in words — with what its last
+  check found and when, a **Check** button, the feed it publishes, the permalink's name and its URL
   with a copy action and an *Open* link.
 - **The switch is on the list.** Each row carries a select of the employer's feeds plus *No feed*, and
   a *Switch* button, as a plain form: the one thing done here often, and under time pressure, needs no
   second screen and no JavaScript. No feed is also said in words (§7.9). The confirmation says a switch
   reaches consumers within the cache lifetime (§5.5).
-- **Create / edit** — name, description and the feed, on a form of its own. The URL is shown once the
+- **Create / edit** — the domain first and required, then the feed (the `all` feed to begin with),
+  then the name, which is the domain when left empty, and a description. The URL is shown once the
   permalink exists.
+- **The domain is asked for.** The first page after signing in (§7.19) — the dashboard, unless it is
+  the Welcome (§7.30) — is instead the edit page of the active employer's first permalink without a
+  domain, with a message above the form saying why; with no permalink at all, the create page. **Once
+  per session**, so the dashboard is the next page whatever the person does; the dashboard's *Getting
+  started* keeps saying it (§7.10). Not in admin mode (§2.10) nor while viewing as someone (§2.9).
+  Creating an employer leads there too, to its default permalink (§3.13).
 - **Webserver configuration** — on the edit form, once the URL exists: a tab each for Apache, nginx
   and Caddy, holding a redirect and a reverse proxy from `/.well-known/ojobpub.json` on the
   employer's own domain to the permalink, filled in and each with a copy action. Without JavaScript
@@ -667,11 +682,11 @@ a way of publishing them.
   is simpler, but fails a consumer that does not follow one (§5.5).
 - **Delete** — modal confirmation stating that the URL will stop working and consumers will receive
   `404`, and pointing to *No feed* for anyone who meant to stop publishing but keep the URL.
-- **The employer's website** (§3.13) — a field on the form, its apex domain, offered from the
-  employer's own URL (§3.1) when creating. Once saved, the edit page numbers the steps (domain, configuration, check),
-  shows the full address `https://{host}/.well-known/ojobpub.json` with a copy action, and offers
-  **Check setup**. The list says per permalink, in words, whether it is set up on a website and what
-  the last check found.
+- **The domain** (§3.13) — its apex domain, offered from the employer's own URL (§3.1) when creating.
+  Once saved, the edit page numbers the steps (domain, configuration, check), shows the full address
+  `https://{host}/.well-known/ojobpub.json` with a copy action, and offers **Check setup**, as each
+  row of the list does. The list says per domain, in words, whether it is set up and what the last
+  check found.
 - **Checking the setup** asks that address what it serves, on request only — never on a schedule.
   `https` to public addresses only, port 443, each redirect followed by hand and fenced again (at most
   five), a time limit, the body never read; fenced like the provider picture (§7.27). One check per
@@ -862,8 +877,9 @@ to create is the dashboard's to say (§7.10), and this page tracks nothing.
      active one (§2.5). Create one, or accept an invitation (§7.16).
   2. **Jobs** — written as drafts and published when ready and within their dates (§4.3, §4.4); the
      readiness panel says what is missing.
-  3. **Feeds and permalinks** — what a website or job board reads (§5). A permalink is the one address
-     to configure, since the feed behind it can be switched (§5.5).
+  3. **Feeds and domains** — what a website or job board reads (§5). Job boards look for the jobs at
+     the employer's own domain, so each domain gets a permalink, the one address to configure there,
+     since the feed behind it can be switched (§5.5, §7.23).
   4. **People** — owners invite members and decide their role (§2.1, §7.18); API tokens let another
      system do the same work (§2.8).
   5. **Help** — the manual (§7.29) and the help icon beside each screen's title; Settings (§7.26) for

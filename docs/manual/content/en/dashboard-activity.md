@@ -13,7 +13,7 @@ The **Dashboard** covers the employer you are working on:
   and the most clicked jobs;
 - **needs attention**: published jobs closing within 14 days, active jobs that cannot be published, and
   drafts nobody has touched for 30 days;
-- the latest **activity**, your **feeds** and your **permalinks** with their URLs.
+- the latest **activity**, your **feeds** and your **domains** with their URLs.
 
 ## Activity {#activity}
 

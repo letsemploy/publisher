@@ -47,7 +47,7 @@ class FormModalTest {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {"/jobs/create", "/feeds/create", "/feeds/permalinks/create", "/employers/create",
+    @ValueSource(strings = {"/jobs/create", "/feeds/create", "/domains/create", "/employers/create",
             "/tags/create", "/locations/create", "/tags/" + JAVA_TAG + "/update", "/employers/" + ACME + "/update",
             "/employers/" + ACME + "/tokens/create"})
     void aButtonOpensTheFormAsAModal(String path) throws Exception {
@@ -57,7 +57,7 @@ class FormModalTest {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {"/jobs/create", "/feeds/create", "/feeds/permalinks/create", "/employers/create",
+    @ValueSource(strings = {"/jobs/create", "/feeds/create", "/domains/create", "/employers/create",
             "/tags/create", "/locations/create", "/employers/" + ACME + "/tokens/create"})
     void theUrlAskedForDirectlyIsTheWholePage(String path) throws Exception {
         String html = body(get(path));

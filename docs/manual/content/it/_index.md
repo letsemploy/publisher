@@ -17,4 +17,4 @@ Il percorso abituale:
 1. Acceda e crei il Suo datore di lavoro, oppure accetti un invito a uno esistente.
 2. Crei i Suoi annunci e li attivi quando sono completi.
 3. Scelga quali annunci pubblica un feed. Ogni datore di lavoro parte con un feed che li contiene tutti.
-4. Crei un **permalink** e ne fornisca l’URL a chi legge i Suoi annunci.
+4. In **Domini** inserisca il dominio del Suo sito e lo imposti, perché i portali di lavoro vi trovino i Suoi annunci.

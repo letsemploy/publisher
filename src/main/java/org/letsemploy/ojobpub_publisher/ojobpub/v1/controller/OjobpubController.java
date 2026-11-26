@@ -16,6 +16,7 @@ import org.letsemploy.ojobpub_publisher.feed.PermalinkCheck;
 import org.letsemploy.ojobpub_publisher.feed.PermalinkService;
 import org.letsemploy.ojobpub_publisher.ojobpub.v1.dto.OjobpubDto;
 import org.letsemploy.ojobpub_publisher.ojobpub.v1.service.OjobpubJson;
+import org.letsemploy.ojobpub_publisher.security.CurrentUserService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.CacheControl;
@@ -29,12 +30,15 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * The public feed endpoint (spec 5.1):
+ * The feed endpoint (spec 5.1), for the employer's members:
  * {@code /ojobpub/v1/{employerSlug}_{employerId}/{feedSlug}_{feedId}/ojobpub.json},
- * and the permalink endpoint (spec 5.5): {@code /ojobpub/v1/permalink/{id}/ojobpub.json}.
+ * and the permalink endpoint (spec 5.5), the public one:
+ * {@code /ojobpub/v1/permalink/{id}/ojobpub.json}.
  *
- * <p>Anonymous, cacheable, GET only. Identity lives in the UUID; the slug is
- * decorative, so a stale slug still resolves and redirects to the canonical URL.
+ * <p>GET only. The permalink is anonymous and cacheable by anyone; the feed is
+ * served in the back-office session, privately. Identity lives in the UUID; the
+ * slug is decorative, so a stale slug still resolves and redirects to the
+ * canonical URL.
  */
 @RestController
 public class OjobpubController {
@@ -58,32 +62,41 @@ public class OjobpubController {
     private final PermalinkService permalinkService;
     /** What {@code OjobpubValidator} checks with too, so the badge sees the bytes served. */
     private final OjobpubJson json;
+    private final CurrentUserService currentUserService;
 
     public OjobpubController(FeedService feedService, PermalinkService permalinkService,
-                             OjobpubJson json) {
+                             OjobpubJson json, CurrentUserService currentUserService) {
         this.feedService = feedService;
         this.permalinkService = permalinkService;
         this.json = json;
+        this.currentUserService = currentUserService;
     }
 
+    /**
+     * A feed's own URL, for whoever may work on its employer (spec 5.1). Anyone
+     * else - not signed in, or not a member - gets the 404 of an unknown feed,
+     * pointing to the permalink. No CORS: it is not for other sites.
+     */
     @GetMapping(value = "/ojobpub/v1/{employerSegment}/{feedSegment}/ojobpub.json",
             produces = MediaType.APPLICATION_JSON_VALUE)
-    @CrossOrigin(origins = "*")
     public ResponseEntity<?> publish(@PathVariable String employerSegment,
                                      @PathVariable String feedSegment) {
         Matcher employerMatch = SEGMENT.matcher(employerSegment);
         Matcher feedMatch = SEGMENT.matcher(feedSegment);
         // A malformed segment reveals nothing about what does or does not exist.
         if (!employerMatch.matches() || !feedMatch.matches()) {
-            return notFound();
+            return notFound(FEED_NOT_FOUND);
         }
 
         UUID employerId = UUID.fromString(employerMatch.group("id").toLowerCase());
         UUID feedId = UUID.fromString(feedMatch.group("id").toLowerCase());
 
         Optional<Feed> found = feedService.findForPublishing(feedId);
-        if (found.isEmpty() || !found.get().getEmployer().getId().equals(employerId)) {
-            return notFound();
+        // Someone else's feed is answered like an unknown one, and before the
+        // redirect below, which would confirm it exists (spec 2.4, 5.1).
+        if (found.isEmpty() || !found.get().getEmployer().getId().equals(employerId)
+                || !currentUserService.current().canActOn(employerId)) {
+            return notFound(FEED_NOT_FOUND);
         }
         Feed feed = found.get();
 
@@ -92,7 +105,8 @@ public class OjobpubController {
         if (!canonicalEmployer.equals(employerSegment) || !canonicalFeed.equals(feedSegment)) {
             return movedTo("/ojobpub/v1/" + canonicalEmployer + "/" + canonicalFeed + "/ojobpub.json");
         }
-        return ok(feedService.publish(feed).document());
+        // A member's document: no shared cache keeps it, and the browser revalidates (spec 5.1).
+        return ok(feedService.publish(feed).document(), ResponseEntity.ok(), CacheControl.noCache().cachePrivate());
     }
 
     /**
@@ -118,7 +132,8 @@ public class OjobpubController {
         }
         // Names the permalink, so the back-office can tell it behind a website's proxy (spec 7.23).
         return ok(permalinkService.publish(found.get()),
-                ResponseEntity.ok().header(PermalinkCheck.HEADER, permalinkId.toString()));
+                ResponseEntity.ok().header(PermalinkCheck.HEADER, permalinkId.toString()),
+                CacheControl.maxAge(Duration.ofMinutes(5)).cachePublic());
     }
 
     /**
@@ -128,15 +143,11 @@ public class OjobpubController {
      * so a cache that has both validators sees every change, even one the date
      * cannot show - and the date of an evaluation day ago is not the same body.
      */
-    private ResponseEntity<?> ok(OjobpubDto document) {
-        return ok(document, ResponseEntity.ok());
-    }
-
-    private ResponseEntity<?> ok(OjobpubDto document, ResponseEntity.BodyBuilder response) {
+    private ResponseEntity<?> ok(OjobpubDto document, ResponseEntity.BodyBuilder response, CacheControl cache) {
         byte[] body = json.write(document);
         return response
                 .contentType(MediaType.APPLICATION_JSON)
-                .cacheControl(CacheControl.maxAge(Duration.ofMinutes(5)).cachePublic())
+                .cacheControl(cache)
                 .eTag(etag(body))
                 .lastModified(document.lastUpdated())
                 .body(body);
@@ -173,11 +184,22 @@ public class OjobpubController {
                         "reference", correlationId));
     }
 
-    /** Feed callers are machines, so errors are JSON and never an HTML page (spec 8.2). */
+    /**
+     * The one answer of the feed URL to whoever may not have it, the same whether
+     * the feed exists or not, so it discloses nothing; it says where public
+     * documents are now (spec 5.1).
+     */
+    private static final String FEED_NOT_FOUND = "No such feed. Public documents are served at permalink URLs.";
+
     private ResponseEntity<?> notFound() {
+        return notFound("No such feed.");
+    }
+
+    /** Feed callers are machines, so errors are JSON and never an HTML page (spec 8.2). */
+    private ResponseEntity<?> notFound(String message) {
         return ResponseEntity.status(404)
                 .contentType(MediaType.APPLICATION_JSON)
-                .body(java.util.Map.of("error", "not_found",
-                        "message", "No such feed."));
+                .cacheControl(CacheControl.noStore())
+                .body(java.util.Map.of("error", "not_found", "message", message));
     }
 }

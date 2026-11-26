@@ -313,7 +313,7 @@ who decide it is finished, and a platform admin should not have to be asked to c
 destroys is spelled out before it happens (§7.13):
 - its jobs, feeds, locations, tags, invitations and API tokens;
 - every member's access;
-- every public feed URL, which from then on answers `404` to whoever consumes it.
+- every permalink URL, which from then on answers `404` to whoever consumes it.
 
 The confirmation requires the employer's name to be typed back, checked by the server. It cannot be
 undone.
@@ -531,7 +531,7 @@ ends; suspension (§2.11) only stops it.
 - **Employers only they own go with it**, with everything they hold, exactly as if deleted on their
   own (§2.7): an employer is never left without an active owner who is a person. "Only" is the
   last-owner rule's: a suspended co-owner or an owner-role token does not count. The confirmation
-  names these employers, and that their public feed URLs will answer `404`.
+  names these employers, and that their permalink URLs will answer `404`.
 - **Everything else stays without them.** Their memberships end, and invitations they sent or received
   go. Employers someone else owns keep everything, including the API tokens the person created:
   tokens belong to the employer (§2.8), so they keep working, and the register says they were created

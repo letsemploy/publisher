@@ -29,7 +29,7 @@
         </div>
         <div class="card-body" th:if="${permalinks.isEmpty()}">
             <p class="text-secondary mb-2" th:text="#{feed.noPermalink}">No permalink publishes this feed.</p>
-            <a class="btn btn-sm" th:href="@{/feeds/permalinks/create}" th:attr="hx-get=@{/feeds/permalinks/create},hx-target='#modal-container'">
+            <a class="btn btn-sm" th:href="@{/domains/create}" th:attr="hx-get=@{/domains/create},hx-target='#modal-container'">
                 <svg th:replace="~{fragments/icon :: i('plus','icon')}"></svg>
                 <span th:text="#{permalink.create}">New permalink</span>
             </a>

@@ -1,5 +1,5 @@
 ---
-title: "Feeds and permalinks"
+title: "Feeds and domains"
 description: "Choosing what is published, and the URL you give to others."
 weight: 30
 ---
@@ -21,32 +21,41 @@ A feed's page shows:
   against the oJobPub schema.
 
 The feed's own URL is offered quietly as **Test**: it is for trying the feed out. Give others a
-permalink instead.
+permalink instead. Only your employer's members can open it, signed in; for everyone else it does not exist.
 
 Renaming a feed or changing its slug is safe: old links keep working and are forwarded. Deleting a
 feed makes its URL answer *not found*; the jobs are not deleted.
 
-## Permalinks {#permalinks}
+## Domains {#permalinks}
 
-A **permalink** is a URL that stays the same while you change the feed behind it. Configure your
-website or a partner's import with it once; afterwards you switch what it publishes yourself.
+Job boards look for your jobs at **your own domain**, at
+`https://example.com/.well-known/ojobpub.json`. **Domains**, in the sidebar, is where you set that up.
+Each domain has a **permalink**: a URL that stays the same while you change the feed behind it. Your
+website serves it at that address; afterwards you switch what it publishes yourself.
 
-Permalinks are listed on the **Feeds** page, below the feeds. Each row has a select of your feeds and a
-**Switch** button. Choosing *No feed* keeps the URL alive but publishes no jobs — the way to pause
-without losing the URL. Consumers see a switch once their cached copy expires.
+Every employer starts with one permalink, publishing its `all` feed, and without a domain yet. After
+signing in, the first page asks for that domain until it is set, and the dashboard reminds you until a
+check finds your website serving it.
 
-**New permalink** asks for a name, a description and the feed. Once it exists, its edit page offers a
-ready-made **webserver configuration** for Apache, nginx and Caddy, so the feed can also be found at
-`/.well-known/ojobpub.json` on your own domain:
+The list shows, for each domain, what its last check found and a **Check setup** button, a select of
+your feeds with a **Switch** button, and the permalink's URL. Choosing *No feed* keeps the URL alive
+but publishes no jobs — the way to pause without losing the URL. Consumers see a switch once their
+cached copy expires.
+
+**New domain** asks for the domain first — the domain itself, such as `example.com`, without `www.` or
+another subdomain; the domain of your employer's website is offered — then the feed, `all` to begin
+with, and optionally a name and a description. A name left empty is the domain. Each domain is used
+once per employer.
+
+Once saved, the edit page numbers the steps: the domain, a ready-made **webserver configuration** for
+Apache, nginx and Caddy, and the check.
 
 - a **redirect** is the simpler setup, but a consumer that does not follow redirects will fail;
 - a **reverse proxy** serves the document from your domain directly.
 
-Enter **your website**'s domain on the permalink — the domain itself, such as `example.com`, without
-`www.` or another subdomain. When you create one, the domain of your employer's website is offered. The edit page then shows the full address on your
-website and **Check setup**, which asks that address what it really serves: this permalink, a
-redirect to it, another feed, a copy of the file, your site's own page, or nothing. Each answer says
-what to do next. The Feeds page shows, for each permalink, whether it is set up on your website.
+**Check setup** asks the address on your website what it really serves: this permalink, a redirect to
+it, another feed, a copy of the file, your site's own page, or nothing. Each answer says what to do
+next.
 
-Deleting a permalink makes its URL answer *not found*. To stop publishing but keep the URL, switch it
-to *No feed* instead.
+Deleting a domain makes its permalink's URL answer *not found*. To stop publishing but keep the URL,
+switch it to *No feed* instead.

@@ -18,4 +18,4 @@ Le parcours habituel :
 1. Connectez-vous et créez votre employeur, ou acceptez une invitation à rejoindre un employeur existant.
 2. Créez vos offres et activez-les une fois complètes.
 3. Choisissez les offres qu’un feed publie. Chaque employeur commence avec un feed qui les contient toutes.
-4. Créez un **permalien** et donnez son URL à ceux qui lisent vos offres.
+4. Sous **Domaines**, saisissez le domaine de votre site et configurez-le, pour que les portails d’emploi y trouvent vos offres.

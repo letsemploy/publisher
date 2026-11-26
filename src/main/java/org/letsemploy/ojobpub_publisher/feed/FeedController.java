@@ -65,13 +65,8 @@ public class FeedController {
     public String list(Model model) {
         LocalDate today = Publication.today();
         List<FeedRow> rows = new ArrayList<>();
-        List<PermalinkRow> permalinks = new ArrayList<>();
         for (Employer employer : scope.employers()) {
-            List<Feed> feeds = feedService.findByEmployer(employer.getId());
-            // The switch offers the permalink's own employer's feeds only (spec 3.13).
-            permalinkService.findByEmployer(employer.getId())
-                    .forEach(p -> permalinks.add(views.permalinkRow(p, feeds)));
-            for (Feed feed : feeds) {
+            for (Feed feed : feedService.findByEmployer(employer.getId())) {
                 Feed loaded = feedService.findForPublishing(feed.getId()).orElse(feed);
                 int published = (int) loaded.getJobs().stream()
                         .filter(j -> Publication.isPublishable(j, today)).count();
@@ -80,7 +75,6 @@ public class FeedController {
         }
         model.addAttribute("page", PageMeta.of(message("nav.feeds")).help(ManualTopic.FEEDS));
         model.addAttribute("feeds", rows);
-        model.addAttribute("permalinks", permalinks);
         return "feed/list";
     }
 

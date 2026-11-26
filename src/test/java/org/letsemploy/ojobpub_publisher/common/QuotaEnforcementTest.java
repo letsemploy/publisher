@@ -163,6 +163,8 @@ class QuotaEnforcementTest {
         Employer fresh = employerService.save(null, "Quota Co " + UUID.randomUUID(), null, null,
                 null, Headquarters.newLocation("Quotaville", "CH"), admin);
         // Made with the employer; removed here so the quota fills before it comes back.
+        // Its default permalink goes first, as it points at the all feed.
+        permalinkRepo.deleteAll(permalinkRepo.findByEmployerIdOrderByNameAsc(fresh.getId()));
         feedRepo.deleteAll(feedService.findByEmployer(fresh.getId()));
         feedService.save(null, fresh, "One", null, null, admin);
         feedService.save(null, fresh, "Two", null, null, admin);
@@ -177,13 +179,36 @@ class QuotaEnforcementTest {
     @Test
     void aThirdPermalinkIsRefusedUntilOneIsDeleted() {
         assertThat(permalinkRepo.countByEmployerId(acme.getId())).isEqualTo(2);
+        // The quota answers before the input does, as for feeds (spec 8.4).
         assertThatThrownBy(() -> permalinkService.save(null, acme, "Intranet", null, null, null, admin))
                 .isInstanceOf(ValidationFailure.class)
                 .hasMessageContaining("limit.permalinks");
 
         permalinkService.delete(permalinkRepo.findByEmployerIdOrderByNameAsc(acme.getId()).get(0).getId(), admin);
-        assertThatCode(() -> permalinkService.save(null, acme, "Intranet", null, null, null, admin))
+        assertThatCode(() -> permalinkService.save(null, acme, "Intranet", null, "acme.ch", null, admin))
                 .doesNotThrowAnyException();
+    }
+
+    /**
+     * Spec 3.13: every employer gets its default permalink, publishing its
+     * {@code all} feed and without a domain, whatever the permalink quota - like
+     * the all feed, it does not go through {@code save}.
+     */
+    @Test
+    void theDefaultPermalinkIsNeverRefused() {
+        Employer fresh = employerService.save(null, "Quota Co " + UUID.randomUUID(), null, null,
+                null, Headquarters.newLocation("Quotaville", "CH"), admin);
+        assertThat(permalinkRepo.findByEmployerIdOrderByNameAsc(fresh.getId())).singleElement().satisfies(p -> {
+            assertThat(p.getName()).isEqualTo("Default");
+            assertThat(p.getWebsiteHost()).isNull();
+            assertThat(p.getFeed().getSlug()).isEqualTo("all");
+        });
+        permalinkService.save(null, fresh, null, null, "acme.ch", null, admin);
+        assertThatThrownBy(() -> permalinkService.save(null, fresh, null, null, "acme.co.uk", null, admin))
+                .isInstanceOf(ValidationFailure.class)
+                .hasMessageContaining("limit.permalinks");
+
+        assertThatCode(() -> permalinkService.createDefault(fresh, null)).doesNotThrowAnyException();
     }
 
     // ------------------------------------------------------ invitations

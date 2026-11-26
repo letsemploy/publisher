@@ -1,5 +1,5 @@
 ---
-title: "Feed e permalink"
+title: "Feed e domini"
 description: "Scegliere cosa viene pubblicato, e l’URL da fornire ad altri."
 weight: 30
 ---
@@ -21,37 +21,43 @@ La pagina di un feed mostra:
   rispetto allo schema oJobPub.
 
 L’URL proprio del feed è offerto con discrezione come **Prova**: serve per provare il feed. Ad altri
-fornisca invece un permalink.
+fornisca invece un permalink. Possono aprirlo solo i membri del Suo datore di lavoro, con l’accesso effettuato; per tutti gli altri non esiste.
 
 Rinominare un feed o cambiarne lo slug non comporta rischi: i vecchi link continuano a funzionare e
 vengono inoltrati. Eliminando un feed, il suo URL risponde *non trovato*; gli annunci non vengono
 eliminati.
 
-## Permalink {#permalinks}
+## Domini {#permalinks}
 
-Un **permalink** è un URL che resta lo stesso mentre Lei cambia il feed che c’è dietro. Configuri una
-volta con esso il Suo sito web o l’importazione di un partner; in seguito sarà Lei a cambiare ciò che
-pubblica.
+I portali di lavoro cercano i Suoi annunci sul **Suo dominio**, all’indirizzo
+`https://example.com/.well-known/ojobpub.json`. Lo imposta in **Domini**, nella barra laterale. Ogni
+dominio ha un **permalink**: un URL che resta lo stesso mentre Lei cambia il feed che c’è dietro. Il
+Suo sito lo serve a quell’indirizzo; in seguito è Lei a cambiare ciò che pubblica.
 
-I permalink sono elencati nella pagina **Feed**, sotto i feed. Ogni riga ha un elenco di selezione dei
-Suoi feed e un pulsante **Cambia**. Scegliendo *Nessun feed* l’URL resta attivo ma non pubblica alcun
-annuncio: è il modo per fare una pausa senza perdere l’URL. Chi legge il feed vede un cambio non appena
-la sua copia in cache scade.
+Ogni datore di lavoro inizia con un permalink che pubblica il suo feed `all`, ancora senza dominio.
+Dopo l’accesso, la prima pagina chiede quel dominio finché non è inserito, e la dashboard lo ricorda
+finché una verifica non trova il Suo sito che lo serve.
 
-**Nuovo permalink** chiede un nome, una descrizione e il feed. Una volta creato, la sua pagina di
-modifica offre una **Configurazione del server web** già pronta per Apache, nginx e Caddy, in modo che
-il feed si trovi anche su `/.well-known/ojobpub.json` del Suo dominio:
+L’elenco mostra per ogni dominio che cosa ha trovato l’ultima verifica, con un pulsante **Verifica
+configurazione**, un elenco dei Suoi feed con un pulsante **Cambia** e l’URL del permalink. Scegliendo
+*Nessun feed* l’URL resta attivo ma non pubblica alcun annuncio: è il modo di fare una pausa senza
+perdere l’URL. Chi lo utilizza vede un cambio quando scade la sua copia in cache.
 
-- un **reindirizzamento** è la configurazione più semplice, ma un lettore che non segue i
-  reindirizzamenti fallirà;
+**Nuovo dominio** chiede prima il dominio — il dominio stesso, ad esempio `example.com`, senza `www.`
+né altri sottodomini; viene proposto quello del sito del Suo datore di lavoro —, poi il feed, `all`
+all’inizio, e facoltativamente un nome e una descrizione. Un nome lasciato vuoto è il dominio. Ogni
+dominio si usa una sola volta per datore di lavoro.
+
+Dopo il salvataggio, la pagina di modifica numera i passi: il dominio, una **configurazione del server
+web** pronta per Apache, nginx e Caddy, e la verifica.
+
+- un **reindirizzamento** è più semplice da impostare, ma chi non segue i reindirizzamenti non riceverà
+  nulla;
 - un **reverse proxy** serve il documento direttamente dal Suo dominio.
 
-Nel campo **Il Suo sito web** del permalink inserisca il dominio stesso, ad esempio `example.com`,
-senza `www.` o un altro sottodominio. Quando ne crea uno, viene proposto il dominio del sito web del Suo datore di lavoro. La pagina di modifica mostra poi l’indirizzo completo sul Suo
-sito web e **Verifica configurazione**, che chiede a quell’indirizzo cosa serve davvero: questo
-permalink, un reindirizzamento verso di esso, un altro feed, una copia del file, una pagina del Suo
-sito o niente. Ogni risposta indica cosa fare dopo. La pagina Feed mostra, per ogni permalink, se è
-configurato sul Suo sito web.
+**Verifica configurazione** chiede all’indirizzo sul Suo sito che cosa serve davvero: questo permalink,
+un reindirizzamento verso di esso, un altro feed, una copia del file, la pagina del Suo sito o niente.
+Ogni risposta dice che cosa fare dopo.
 
-Eliminando un permalink, il suo URL risponde *non trovato*. Per smettere di pubblicare mantenendo
-l’URL, lo imposti invece su *Nessun feed*.
+Eliminando un dominio, l’URL del suo permalink risponde *non trovato*. Per smettere di pubblicare
+mantenendo l’URL, scelga invece *Nessun feed*.

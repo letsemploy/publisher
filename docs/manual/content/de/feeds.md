@@ -1,5 +1,5 @@
 ---
-title: "Feeds und Permalinks"
+title: "Feeds und Domains"
 description: "Festlegen, was veröffentlicht wird, und die URL, die Sie weitergeben."
 weight: 30
 ---
@@ -22,38 +22,44 @@ Die Seite eines Feeds zeigt:
   oJobPub-Schema entspricht.
 
 Die eigene URL des Feeds wird nur unauffällig als **Testen** angeboten: Sie dient zum Ausprobieren.
-Anderen geben Sie stattdessen einen Permalink.
+Anderen geben Sie stattdessen einen Permalink. Öffnen können sie nur die Mitglieder Ihres Arbeitgebers, angemeldet; für alle anderen gibt es sie nicht.
 
 Einen Feed umzubenennen oder seinen Slug zu ändern ist unbedenklich: Alte Links funktionieren weiter
 und werden umgeleitet. Wird ein Feed gelöscht, antwortet seine URL mit *nicht gefunden*; die Stellen
 bleiben erhalten.
 
-## Permalinks {#permalinks}
+## Domains {#permalinks}
 
-Ein **Permalink** ist eine URL, die gleich bleibt, während Sie den Feed dahinter wechseln. Richten Sie
-Ihre Website oder den Import eines Partners einmal damit ein; danach wechseln Sie selbst, was sie
+Jobbörsen suchen Ihre Stellen unter **Ihrer eigenen Domain**, unter
+`https://example.com/.well-known/ojobpub.json`. Unter **Domains** in der Seitenleiste richten Sie das
+ein. Jede Domain hat einen **Permalink**: eine URL, die gleich bleibt, während Sie den Feed dahinter
+wechseln. Ihre Website stellt ihn unter dieser Adresse bereit; danach wechseln Sie selbst, was er
 veröffentlicht.
 
-Permalinks stehen auf der Seite **Feeds**, unter den Feeds. Jede Zeile hat eine Auswahl Ihrer Feeds und
-eine Schaltfläche **Wechseln**. *Kein Feed* hält die URL am Leben, veröffentlicht aber keine Stellen —
-so pausieren Sie, ohne die URL zu verlieren. Leser sehen einen Wechsel, sobald ihre zwischengespeicherte
-Kopie abläuft.
+Jeder Arbeitgeber beginnt mit einem Permalink, der seinen Feed `all` veröffentlicht, noch ohne Domain.
+Nach der Anmeldung fragt die erste Seite nach dieser Domain, bis sie eingetragen ist, und das Dashboard
+erinnert daran, bis eine Prüfung findet, dass Ihre Website ihn bereitstellt.
 
-**Neuer Permalink** fragt nach Name, Beschreibung und Feed. Sobald er besteht, bietet seine
-Bearbeitungsseite eine fertige **Webserver-Konfiguration** für Apache, nginx und Caddy an, damit der
-Feed auch unter `/.well-known/ojobpub.json` auf Ihrer eigenen Domain zu finden ist:
+Die Liste zeigt für jede Domain, was die letzte Prüfung ergeben hat, mit der Schaltfläche **Einrichtung
+prüfen**, eine Auswahl Ihrer Feeds mit der Schaltfläche **Wechseln** und die URL des Permalinks. *Kein
+Feed* hält die URL am Leben, veröffentlicht aber keine Stellen — so pausieren Sie, ohne die URL zu
+verlieren. Abnehmer sehen einen Wechsel, sobald ihre zwischengespeicherte Kopie abläuft.
 
-- eine **Weiterleitung** ist einfacher einzurichten, aber ein Leser, der Weiterleitungen nicht folgt,
-  scheitert daran;
+**Neue Domain** fragt zuerst nach der Domain — der Domain selbst, etwa `example.com`, ohne `www.` oder
+eine andere Subdomain; angeboten wird die Domain der Website Ihres Arbeitgebers —, dann nach dem Feed,
+zu Beginn `all`, und wahlweise nach einem Namen und einer Beschreibung. Ein leerer Name ist die Domain.
+Jede Domain gibt es pro Arbeitgeber einmal.
+
+Nach dem Speichern nummeriert die Bearbeitungsseite die Schritte: die Domain, eine fertige
+**Webserver-Konfiguration** für Apache, nginx und Caddy, und die Prüfung.
+
+- eine **Weiterleitung** ist einfacher einzurichten, aber ein Abnehmer, der Weiterleitungen nicht
+  folgt, scheitert;
 - ein **Reverse Proxy** liefert das Dokument direkt von Ihrer Domain aus.
 
-Tragen Sie beim Permalink die Domain **Ihrer Website** ein — die Domain selbst, etwa `example.com`, ohne
-`www.` oder eine andere Subdomain. Beim Erstellen wird die Domain der Website Ihres Arbeitgebers
-vorgeschlagen. Die Bearbeitungsseite zeigt dann
-die vollständige Adresse auf Ihrer Website und **Einrichtung prüfen**: Dabei wird diese Adresse
-gefragt, was sie wirklich ausliefert — diesen Permalink, eine Umleitung darauf, einen anderen Feed,
-eine Kopie der Datei, die eigene Seite Ihrer Website oder nichts. Jede Antwort sagt, was zu tun ist.
-Die Seite Feeds zeigt bei jedem Permalink, ob er auf Ihrer Website eingerichtet ist.
+**Einrichtung prüfen** fragt die Adresse auf Ihrer Website, was sie tatsächlich liefert: diesen
+Permalink, eine Weiterleitung dorthin, einen anderen Feed, eine Kopie der Datei, die eigene Seite Ihrer
+Website oder nichts. Jede Antwort sagt, was als Nächstes zu tun ist.
 
-Wird ein Permalink gelöscht, antwortet seine URL mit *nicht gefunden*. Um nicht mehr zu veröffentlichen,
-die URL aber zu behalten, wechseln Sie stattdessen auf *Kein Feed*.
+Wird eine Domain gelöscht, antwortet die URL ihres Permalinks mit *nicht gefunden*. Wer nicht mehr
+veröffentlichen, die URL aber behalten will, wechselt stattdessen auf *Kein Feed*.

@@ -205,10 +205,11 @@ input FeedInput { name: String!, slug: String, description: String }
 
 "A null or absent feedId publishes no jobs."
 input PermalinkInput {
-    name: String!
+    "Left out or empty, the name is the domain."
+    name: String
     description: String
     feedId: ID
-    "The registrable domain itself, such as example.com - never www. or another subdomain; a whole URL is cut down to its host. Absent or null for none."
+    "Required: the domain this permalink is for (spec 3.13), the registrable domain itself, such as example.com - never www. or another subdomain; a whole URL is cut down to its host. Without it, a userError on websiteHost. Unique within the employer."
     websiteHost: String
 }
 

@@ -1,5 +1,5 @@
 ---
-title: "Feeds e links permanentes"
+title: "Feeds e domínios"
 description: "Escolher o que é publicado, e a URL que você passa a outros."
 weight: 30
 ---
@@ -21,36 +21,42 @@ A página de um feed mostra:
   válido segundo o schema oJobPub.
 
 A URL própria do feed é oferecida discretamente como **Testar**: ela serve para experimentar o feed.
-Para outras pessoas, passe um link permanente.
+Para outras pessoas, passe um link permanente. Só os membros do seu empregador, com sessão iniciada, podem abri-la; para os demais, ela não existe.
 
 Renomear um feed ou alterar o slug dele é seguro: os links antigos continuam funcionando e são
 redirecionados. Excluir um feed faz a URL dele responder *não encontrado*; as vagas não são excluídas.
 
-## Links permanentes {#permalinks}
+## Domínios {#permalinks}
 
-Um **link permanente** é uma URL que continua a mesma enquanto você troca o feed por trás dela.
-Configure com ela, uma única vez, o seu site ou a importação de um parceiro; depois, você mesmo troca o
-que ela publica.
+Os portais de emprego procuram as suas vagas no **seu próprio domínio**, em
+`https://example.com/.well-known/ojobpub.json`. Você configura isso em **Domínios**, na barra lateral.
+Cada domínio tem um **link permanente**: uma URL que continua a mesma enquanto você troca o feed por
+trás dela. O seu site a serve nesse endereço; depois, você mesmo troca o que ela publica.
 
-Os links permanentes são listados na página **Feeds**, abaixo dos feeds. Cada linha tem uma seleção dos
-seus feeds e um botão **Trocar**. Escolher *Nenhum feed* mantém a URL ativa, mas não publica nenhuma
-vaga — a forma de pausar sem perder a URL. Os consumidores veem a troca assim que a cópia que guardaram
-em cache expira.
+Cada empregador começa com um link permanente que publica o seu feed `all`, ainda sem domínio. Depois
+de entrar, a primeira página pede esse domínio até ele ser indicado, e o painel lembra você disso até
+que uma verificação encontre o seu site servindo-o.
 
-**Novo link permanente** pede um nome, uma descrição e o feed. Depois de criado, a página de edição dele
-oferece uma **Configuração do servidor web** pronta para Apache, nginx e Caddy, para que o feed também
-possa ser encontrado em `/.well-known/ojobpub.json` no seu próprio domínio:
+A lista mostra, para cada domínio, o que a última verificação encontrou, com um botão **Verificar
+configuração**, uma seleção dos seus feeds com um botão **Trocar** e a URL do link permanente. Escolher
+*Nenhum feed* mantém a URL ativa, mas não publica nenhuma vaga — a forma de pausar sem perder a URL. Os
+consumidores veem uma troca quando a cópia em cache deles expira.
 
-- um **redirecionamento** é a configuração mais simples, mas um consumidor que não segue
+**Novo domínio** pede primeiro o domínio — o próprio domínio, por exemplo `example.com`, sem `www.` nem
+outro subdomínio; é oferecido o do site do seu empregador —, depois o feed, `all` para começar, e, se
+quiser, um nome e uma descrição. Um nome vazio é o domínio. Cada domínio é usado uma só vez por
+empregador.
+
+Depois de salvo, a página de edição numera os passos: o domínio, uma **configuração de servidor web**
+pronta para Apache, nginx e Caddy, e a verificação.
+
+- um **redirecionamento** é mais simples de configurar, mas um consumidor que não segue
   redirecionamentos vai falhar;
-- um **proxy reverso** serve o documento diretamente a partir do seu domínio.
+- um **proxy reverso** serve o documento diretamente do seu domínio.
 
-Informe no link permanente o domínio de **O seu site** — o próprio domínio, como `example.com`, sem
-`www.` nem outro subdomínio. Ao criar um, é sugerido o domínio do site do seu empregador. A página de
-edição mostra então o endereço completo no seu site e **Verificar configuração**, que pergunta a esse
-endereço o que ele realmente serve: este link permanente, um redirecionamento para ele, outro feed, uma
-cópia do arquivo, a própria página do seu site, ou nada. Cada resposta diz o que fazer em seguida. A
-página Feeds mostra, para cada link permanente, se ele está configurado no seu site.
+**Verificar configuração** pergunta ao endereço no seu site o que ele realmente serve: este link
+permanente, um redirecionamento para ele, outro feed, uma cópia do arquivo, a própria página do seu
+site ou nada. Cada resposta diz o que fazer em seguida.
 
-Excluir um link permanente faz a URL dele responder *não encontrado*. Para parar de publicar, mas manter
-a URL, troque-o para *Nenhum feed*.
+Excluir um domínio faz a URL do link permanente dele responder *não encontrado*. Para parar de publicar
+mas manter a URL, troque-o para *Nenhum feed*.

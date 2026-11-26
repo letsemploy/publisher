@@ -1,5 +1,6 @@
 package org.letsemploy.ojobpub_publisher.feed;
 
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -15,6 +16,7 @@ import org.letsemploy.ojobpub_publisher.web.view.Crumb;
 import org.letsemploy.ojobpub_publisher.web.view.FieldError;
 import org.letsemploy.ojobpub_publisher.web.view.PageMeta;
 import org.letsemploy.ojobpub_publisher.web.view.PermalinkFormView;
+import org.letsemploy.ojobpub_publisher.web.view.PermalinkRow;
 import org.letsemploy.ojobpub_publisher.web.view.WebserverSnippet;
 import org.springframework.context.MessageSource;
 import org.springframework.context.i18n.LocaleContextHolder;
@@ -29,12 +31,12 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import org.springframework.web.util.HtmlUtils;
 
 /**
- * Permalinks, managed from the Feeds screen (spec 7.23): creating, editing,
- * switching the feed and deleting. Listed by {@link FeedController}; the rules
- * are in {@link PermalinkService}.
+ * The Domains screen (spec 7.23): the employer's permalinks, each for one domain -
+ * listing, creating, editing, switching the feed, checking the website and
+ * deleting. The rules are in {@link PermalinkService}.
  */
 @Controller
-@RequestMapping("/feeds/permalinks")
+@RequestMapping("/domains")
 public class PermalinkController {
 
     private final PermalinkService permalinkService;
@@ -55,11 +57,27 @@ public class PermalinkController {
         this.messages = messages;
     }
 
+    @GetMapping
+    public String list(Model model) {
+        List<PermalinkRow> rows = new ArrayList<>();
+        for (Employer employer : scope.employers()) {
+            // The switch offers the permalink's own employer's feeds only (spec 3.13).
+            List<Feed> feeds = feedService.findByEmployer(employer.getId());
+            permalinkService.findByEmployer(employer.getId()).forEach(p -> rows.add(views.permalinkRow(p, feeds)));
+        }
+        model.addAttribute("page", PageMeta.of(message("nav.domains")).help(ManualTopic.PERMALINKS));
+        model.addAttribute("permalinks", rows);
+        return "feed/domains";
+    }
+
     @GetMapping("/create")
     public String createForm(Model model) {
         Employer employer = scope.requireActiveEmployer();
         // Most employers have given their website already; its domain is the likeliest.
-        return form(model, employer, formView(null, null, null, "",
+        // The all feed to begin with, as for the default permalink (spec 7.23).
+        String all = feedService.findByEmployer(employer.getId()).stream()
+                .filter(f -> "all".equals(f.getSlug())).findFirst().map(f -> f.getId().toString()).orElse("");
+        return form(model, employer, formView(null, null, null, all,
                         ApexDomain.Validator.registrable(PermalinkService.host(employer.getUrl())).orElse(null)),
                 Map.of(), Map.of());
     }
@@ -75,7 +93,7 @@ public class PermalinkController {
 
     @PostMapping({"/create", "/{id}/update"})
     public String save(@PathVariable(required = false) UUID id,
-                       @RequestParam String name,
+                       @RequestParam(required = false) String name,
                        @RequestParam(required = false) String description,
                        @RequestParam(required = false) String websiteHost,
                        @RequestParam(required = false) String feed,
@@ -83,9 +101,11 @@ public class PermalinkController {
         Permalink existing = id == null ? null : permalinkService.findVisible(id, scope.user());
         Employer employer = existing == null ? scope.requireActiveEmployer() : existing.getEmployer();
         try {
-            permalinkService.save(id, employer, name, description, websiteHost, feedId(feed), scope.user());
+            Permalink saved = permalinkService.save(id, employer, name, description, websiteHost, feedId(feed),
+                    scope.user());
             flash.addFlashAttribute("successMsg", "msg.success.saved");
-            return FormViews.redirect("/feeds");
+            // On to the next steps, configuration and check, which need the saved domain (spec 7.23).
+            return FormViews.redirect("/domains/" + saved.getId() + "/update#website");
         } catch (ValidationFailure e) {
             // Back to the form with what was typed (spec 7.7).
             return form(model, employer, formView(existing, name, description, feed == null ? "" : feed,
@@ -93,7 +113,7 @@ public class PermalinkController {
         }
     }
 
-    /** The quick switch on the Feeds screen: a plain form, so it works without JavaScript. */
+    /** The quick switch on the Domains screen: a plain form, so it works without JavaScript. */
     @PostMapping("/{id}/target")
     public String retarget(@PathVariable UUID id, @RequestParam(required = false) String feed,
                            RedirectAttributes flash) {
@@ -103,23 +123,24 @@ public class PermalinkController {
         } catch (ValidationFailure e) {
             flash.addFlashAttribute("errorMsg", "permalink.feed.invalid");
         }
-        return "redirect:/feeds";
+        return "redirect:/domains";
     }
 
     /**
-     * Asks the permalink's website what it serves (spec 7.23); the edit page
-     * then shows the answer. A plain form, on the page rather than in the modal,
-     * which is itself a form.
+     * Asks the permalink's website what it serves (spec 7.23); the page it was
+     * asked from - the list, or the edit page - then shows the answer. A plain
+     * form, on the page rather than in the modal, which is itself a form.
      */
     @PostMapping("/{id}/check")
-    public String check(@PathVariable UUID id, RedirectAttributes flash) {
+    public String check(@PathVariable UUID id, @RequestParam(required = false) String from,
+                        RedirectAttributes flash) {
         try {
             permalinkService.check(id, scope.user());
         } catch (ValidationFailure e) {
             flash.addFlashAttribute("errorMsg", e.getFieldErrors().containsKey("check")
                     ? "permalink.check.wait" : "permalink.check.needsHost");
         }
-        return "redirect:/feeds/permalinks/" + id + "/update#website";
+        return "list".equals(from) ? "redirect:/domains" : "redirect:/domains/" + id + "/update#website";
     }
 
     @GetMapping("/{id}/delete")
@@ -136,14 +157,14 @@ public class PermalinkController {
     public String delete(@PathVariable UUID id, RedirectAttributes flash) {
         permalinkService.delete(id, scope.user());
         flash.addFlashAttribute("successMsg", "msg.success.deleted");
-        return "redirect:/feeds";
+        return "redirect:/domains";
     }
 
     private String form(Model model, Employer employer, PermalinkFormView form,
                         Map<String, List<WebserverSnippet>> webserver, Map<String, String> fieldErrors) {
         String title = message(form.id() == null ? "permalink.create" : "permalink.edit");
         model.addAttribute("page", new PageMeta(title, null,
-                List.of(new Crumb(message("nav.feeds"), "/feeds"), new Crumb(title, null))).help(ManualTopic.PERMALINKS));
+                List.of(new Crumb(message("nav.domains"), "/domains"), new Crumb(title, null))).help(ManualTopic.PERMALINKS));
         model.addAttribute("form", form);
         model.addAttribute("webserver", webserver);
         Map<String, String> options = new LinkedHashMap<>();

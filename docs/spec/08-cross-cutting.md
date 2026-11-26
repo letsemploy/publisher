@@ -75,6 +75,7 @@ may exist is a question the application has to answer rather than leave to good 
 on a list screen — are what the code must be able to do, and they still hold. The defaults above are
 what a shared installation chooses to allow, and an operator may raise them or switch them off.
 
-Two acts are deliberately exempt. The `all` feed created with an employer (§3.5) is never refused: an
-employer without a working URL is a broken employer. And editing anything is never refused for being at
+Three acts are deliberately exempt. The `all` feed created with an employer (§3.5) is never refused: an
+employer without a working URL is a broken employer. Nor is its default permalink (§3.13), for the same
+reason: it is where the back-office asks for the domain. And editing anything is never refused for being at
 a limit — only creating is.

@@ -64,8 +64,8 @@ class ScreenRenderingTest {
                 "/feeds", "/feeds/create", "/feeds/" + FEED_ALL,
                 "/feeds/" + FEED_ALL + "/update", "/feeds/" + FEED_ALL + "/delete",
                 "/feeds/" + FEED_ALL + "/candidates",
-                "/feeds/permalinks/create", "/feeds/permalinks/" + PERMALINK + "/update",
-                "/feeds/permalinks/" + PERMALINK + "/delete",
+                "/domains", "/domains/create", "/domains/" + PERMALINK + "/update",
+                "/domains/" + PERMALINK + "/delete",
                 "/employers", "/employers/create", "/employers/" + EMPLOYER,
                 "/employers/" + EMPLOYER + "/update", "/employers/" + EMPLOYER + "/delete",
                 "/locations", "/locations/create",
@@ -211,7 +211,7 @@ class ScreenRenderingTest {
         assertThat(sidebar.indexOf("action=\"/context/employer\"")).isPositive()
                 .isLessThan(sidebar.indexOf("class=\"nav-link\" href=\"/\""));
         assertThat(sidebar).contains("selected=\"selected\">Acme AG<")
-                .contains("href=\"/jobs\"", "href=\"/feeds\"", "href=\"/people\"", "href=\"/tokens\"",
+                .contains("href=\"/jobs\"", "href=\"/feeds\"", "href=\"/domains\"", "href=\"/people\"", "href=\"/tokens\"",
                         "href=\"/employers/" + EMPLOYER + "\"", "href=\"/locations\"", "href=\"/tags\"",
                         "href=\"/activity\"")
                 .doesNotContain("href=\"/employers\"", "href=\"/invitations\"", "href=\"/users\"");
@@ -351,7 +351,7 @@ class ScreenRenderingTest {
      */
     @Test
     void thePermalinkEditPageOffersWebserverConfiguration() throws Exception {
-        assertThat(html("/feeds/permalinks/" + PERMALINK + "/update"))
+        assertThat(html("/domains/" + PERMALINK + "/update"))
                 .contains("Webserver configuration")
                 .contains("/.well-known/ojobpub.json")
                 .contains("Redirect 302")
@@ -360,7 +360,7 @@ class ScreenRenderingTest {
                 .contains("data-bs-target=\"#webserver-apache\"", "data-bs-target=\"#webserver-nginx\"",
                         "data-bs-target=\"#webserver-caddy\"")
                 .containsPattern("<ul class=\"nav nav-tabs[^\"]*\" role=\"tablist\" data-enhanced hidden");
-        assertThat(html("/feeds/permalinks/create")).doesNotContain("Redirect 302")
+        assertThat(html("/domains/create")).doesNotContain("Redirect 302")
                 // The domain field. The seeded employer's www.acme.example has no public suffix, so nothing is offered.
                 .contains("name=\"websiteHost\"");
     }
@@ -371,12 +371,17 @@ class ScreenRenderingTest {
      */
     @Test
     void thePermalinkEditPageChecksTheWebsite() throws Exception {
-        assertThat(html("/feeds/permalinks/" + PERMALINK + "/update"))
+        assertThat(html("/domains/" + PERMALINK + "/update"))
                 .contains("https://example.com/.well-known/ojobpub.json")
                 .contains("Your website serves this permalink.")
-                .contains("action=\"/feeds/permalinks/" + PERMALINK + "/check\"");
-        // The list says it too, in words.
-        assertThat(html("/feeds")).contains("example.com", "Not set up on your website yet.");
+                .contains("action=\"/domains/" + PERMALINK + "/check\"")
+                // It has its domain, so it is not asked for.
+                .doesNotContain("id=\"domain-asked\"");
+        // The list says it too, in words, and offers the check on each row.
+        assertThat(html("/domains")).contains("example.com", "Your website serves this permalink.",
+                "example.org", "Not checked yet.", "action=\"/domains/" + PERMALINK + "/check\"");
+        // The Feeds screen leads there.
+        assertThat(html("/feeds")).contains("href=\"/domains\"");
     }
 
     /**
@@ -388,7 +393,8 @@ class ScreenRenderingTest {
         String body = html("/");
         assertThat(body)
                 .contains("/ojobpub/v1/permalink/" + PERMALINK + "/ojobpub.json")
-                .contains("Careers page")
+                // Each by its domain (spec 7.10).
+                .contains("example.com", "example.org")
                 .doesNotContain("acme-ag_" + EMPLOYER);
     }
 

@@ -4,7 +4,7 @@
 <div th:replace="~{fragments/modal :: confirm(
         'permalink.delete.title',
         ${message},
-        @{'/feeds/permalinks/' + ${permalink.id} + '/delete'},
+        @{'/domains/' + ${permalink.id} + '/delete'},
         'label.delete',
         true)}"></div>
 </body>

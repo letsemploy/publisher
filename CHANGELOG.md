@@ -13,6 +13,24 @@ Section numbers such as §5.6 refer to the specification in [`docs/SPEC.md`](doc
 - The user manual in every language of the application: French, Italian, Spanish, Portuguese,
   Japanese, Russian and Chinese join English and German, and `/docs` and the help icons open it in
   the language shown (§7.29).
+- **Domains**, a sidebar destination of its own, where permalinks are managed by the domain each is for:
+  its last check and a *Check setup* button on every row, the feed switch and the permalink URL
+  (§7.23). The Feeds list points there.
+- Every employer has a default permalink, publishing its `all` feed, created with it regardless of the
+  permalink limit; existing employers without a permalink get one (§3.13, §8.4).
+- The domain is asked for: the first page after signing in is the domain form while the active
+  employer has a permalink without one, once per session, and creating an employer leads there. The
+  dashboard says so until a domain passes its check (§7.10, §7.23).
+
+### Changed
+
+- **A feed's own URL is no longer public**: it serves its document only to the employer's members,
+  signed in, as `private, no-cache`, without CORS. Anyone else, signed in or not, gets the `404` of an
+  unknown feed, whose message points to permalink URLs. The permalink is the one public URL. Feed URLs given to job boards or
+  websites stop working: give them a permalink instead (§5.1, §5.5).
+- A permalink requires its domain, unique within the employer; the name may be left empty and is then
+  the domain (§3.13). Management API: `createPermalink` and `updatePermalink` answer a `userError` on
+  `websiteHost` without one, and `PermalinkInput.name` is optional (§11).
 
 ## [1.10.0] - 2026-11-21
 

@@ -41,9 +41,12 @@ class LockedChainTest {
         mvc.perform(get("/login")).andExpect(status().isForbidden());
     }
 
+    /** The permalink, the public URL, stays served; a feed's own is for members, who cannot sign in (spec 5.1). */
     @Test
-    void theFeedAndHealthStayAvailable() throws Exception {
-        mvc.perform(get(FEED)).andExpect(status().isOk());
+    void thePermalinkAndHealthStayAvailable() throws Exception {
+        mvc.perform(get("/ojobpub/v1/permalink/5a5a5a5a-5a5a-4a5a-8a5a-5a5a5a5a5a5a/ojobpub.json"))
+                .andExpect(status().isOk());
+        mvc.perform(get(FEED)).andExpect(status().isNotFound());
         mvc.perform(get("/actuator/health")).andExpect(status().isOk());
         // The user manual is public (spec 7.29), so it stays readable with nobody able to sign in.
         mvc.perform(get("/docs/en/index.html")).andExpect(status().isOk());

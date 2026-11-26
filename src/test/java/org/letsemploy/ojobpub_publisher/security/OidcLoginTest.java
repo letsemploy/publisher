@@ -7,6 +7,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import java.net.URLDecoder;
@@ -270,10 +271,29 @@ class OidcLoginTest {
         assertThat(page("/login?lang=de")).contains("href=\"/docs?lang=de\"").contains("Benutzerhandbuch");
     }
 
-    /** Machines read the feed; it must never see a login page (spec 2.4). */
+    /**
+     * The permalink is the public URL: machines read it, and it never sees a login
+     * page. A feed's own URL is for its employer's members (spec 5.1, 5.5): anyone
+     * else - not signed in, or signed in elsewhere - gets the 404 of an unknown feed,
+     * pointing to permalinks, and before the redirect from a stale slug, which would
+     * confirm it. Never a login page either.
+     */
     @Test
-    void theFeedStaysPublic() throws Exception {
-        mvc.perform(get(FEED)).andExpect(status().isOk());
+    void onlyThePermalinkIsPublic() throws Exception {
+        mvc.perform(get("/ojobpub/v1/permalink/5a5a5a5a-5a5a-4a5a-8a5a-5a5a5a5a5a5a/ojobpub.json"))
+                .andExpect(status().isOk());
+
+        String unknown = FEED.replace("cd58289d-022e-4a1e-df83-7e5f60718293", "00000000-0000-4000-8000-000000000000");
+        String anonymous = mvc.perform(get(FEED)).andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.message").value(org.hamcrest.Matchers.containsString("permalink URLs")))
+                .andReturn().getResponse().getContentAsString();
+        assertThat(mvc.perform(get(unknown)).andExpect(status().isNotFound()).andReturn().getResponse()
+                .getContentAsString()).as("the same answer as for no feed at all").isEqualTo(anonymous);
+        mvc.perform(get(FEED.replace("/all_", "/old_"))).andExpect(status().isNotFound());
+        mvc.perform(get(FEED).with(signedIn("stranger-1", "Stranger", "stranger@example.com", true)))
+                .andExpect(status().isNotFound());
+        mvc.perform(get(FEED.replace("/all_", "/old_")).with(signedIn("stranger-1", "Stranger", "stranger@example.com", true)))
+                .andExpect(status().isNotFound());
     }
 
     // --------------------------------------------------------------- accounts

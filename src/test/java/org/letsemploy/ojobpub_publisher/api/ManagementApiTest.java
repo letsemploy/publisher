@@ -462,10 +462,19 @@ class ManagementApiTest {
     @Test
     void aPermalinkIsCreatedSwitchedAndDeleted() throws Exception {
         String secret = tokenWith(TokenScope.FEEDS_WRITE);
-        JsonNode created = query(secret, "mutation { createPermalink(input: {name: \"API page\", feedId: \""
-                + FEED_ALL + "\"}) { permalink { id feed { name } } userErrors { field } } }")
+        // A permalink is for one domain (spec 3.13): without it, a userError, not a fault.
+        JsonNode refused = query(secret, "mutation { createPermalink(input: {name: \"API page\", feedId: \""
+                + FEED_ALL + "\"}) { permalink { id } userErrors { field } } }")
+                .path("data").path("createPermalink");
+        assertThat(refused.path("userErrors").get(0).path("field").asString()).isEqualTo("websiteHost");
+        assertThat(refused.path("permalink").isNull()).isTrue();
+
+        // The name may be left out: it is the domain.
+        JsonNode created = query(secret, "mutation { createPermalink(input: {websiteHost: \"acme.ch\", feedId: \""
+                + FEED_ALL + "\"}) { permalink { id name feed { name } } userErrors { field } } }")
                 .path("data").path("createPermalink");
         assertThat(created.path("userErrors")).isEmpty();
+        assertThat(created.path("permalink").path("name").asString()).isEqualTo("acme.ch");
         assertThat(created.path("permalink").path("feed").path("name").asString()).isEqualTo("All jobs");
         String id = created.path("permalink").path("id").asString();
 

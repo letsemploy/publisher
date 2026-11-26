@@ -15,6 +15,16 @@ Example:
 https://publisher.example.com/ojobpub/v1/acme-ag_3f2b1c9e-5a7d-11f0-9c3e-0242ac120002/engineering_8d4e6a10-5a7d-11f0-9c3e-0242ac120002/ojobpub.json
 ```
 
+**For the employer's members, not the public.** A feed's own URL serves its document to whoever may
+work on its employer (§2.1, §2.4) — a member in any role, or an admin — signed in to the back-office
+as for any screen, so they can try a feed out before a permalink publishes it. **Anyone else gets `404`**
+— not signed in, or signed in without being a member — the same JSON answer as an unknown feed, so it
+discloses nothing, with a message saying that public documents are served at permalink URLs. Never a
+sign-in page: whoever still holds a feed URL is almost always a machine. **The public
+URL is the permalink** (§5.5): what websites, job boards and every other consumer are given. Feed URLs
+handed out before this rule stopped working with it, deliberately: a URL that names one feed cannot be
+switched, so it was never the one to give away.
+
 Each path segment pairs a **human-readable slug** with the record's **UUID**. The slug makes the URL
 self-describing in a partner's configuration file, in a log line or in a support conversation; the UUID
 guarantees uniqueness and stable identity. The document itself is always the fixed filename
@@ -52,11 +62,14 @@ what does or does not exist.
 
 Further rules:
 
-- Anonymous, cacheable, `GET` only. No cookies, no session, no CSRF token.
+- `GET` only, in the back-office session. `Cache-Control: private, no-cache`: no shared cache may
+  keep a member's document, and the browser revalidates with the `ETag` (§5.4). No CORS header: it is
+  not for other sites.
 - The response `Content-Type` **must** be `application/json; charset=utf-8`.
-- CORS: `Access-Control-Allow-Origin: *` for these endpoints, so browser-side consumers work.
-- An unknown employer or feed UUID, or a feed whose UUID does not belong to the employer in the first
-  segment, **must** return `404` with a JSON error body, never an HTML error page.
+- An unknown employer or feed UUID, a feed whose UUID does not belong to the employer in the first
+  segment, or a feed the signed-in person may not see, **must** return `404` with a JSON error body,
+  never an HTML error page — and before any redirect to the canonical URL, which would confirm the
+  feed exists.
 - The back-office **must** present the canonical URL as a single copyable string. Users should never
   assemble it by hand.
 
@@ -91,7 +104,8 @@ human rather than buried in a log.
 - The response **must** carry a strong `ETag` derived from the serialized document, and
   `Last-Modified` derived from `lastUpdated`.
 - Conditional requests (`If-None-Match`, `If-Modified-Since`) **must** be honoured with `304`.
-- `Cache-Control: public, max-age=300` by default, configurable per deployment.
+- `Cache-Control: public, max-age=300` by default on the permalink (§5.5), the public URL; a feed's own
+  URL is `private, no-cache` (§5.1).
 - Because the date window (§4.4) is time-dependent, cached documents must not be held beyond the end of
   the current day; the cache key **must** include the evaluation date.
 
@@ -111,7 +125,9 @@ selection, with one switch.
   underscore. A malformed segment or an unknown permalink is `404` with the same JSON body as §5.1; an
   upper-case UUID answers `301` to the lower-case form.
 - **Served, not redirected.** The body is the document of the feed it points at, byte for byte in its
-  jobs and employer, with the same headers as §5.1: anonymous, `GET` only, CORS open, cacheable. A
+  jobs and employer, with the headers of §5.1 and §5.4 save that it is the **public** one: anonymous,
+  `GET` only, no cookies, no session, no CSRF token, `Access-Control-Allow-Origin: *` so browser-side
+  consumers work, and cacheable by anyone (`public`). A
   redirect would fail every consumer that does not follow one, and would hand out the feed's own URL.
   Nothing in the document or the headers names the feed.
 - **No feed publishes the employer with no jobs** — a valid document, not an error, so switching

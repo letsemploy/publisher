@@ -14,7 +14,7 @@ Le **Tableau de bord** porte sur l’employeur sur lequel vous travaillez :
   jour et par pays, et les offres les plus cliquées ;
 - **À traiter** : les offres publiées qui se clôturent dans les 14 jours, les offres actives qui ne
   peuvent pas être publiées, et les brouillons que personne n’a touchés depuis 30 jours ;
-- la dernière **activité**, vos **feeds** et vos **permaliens** avec leurs URL.
+- la dernière **activité**, vos **feeds** et vos **domaines** avec leurs URL.
 
 ## Activité {#activity}
 

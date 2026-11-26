@@ -88,7 +88,7 @@ public class Views {
     }
 
     /**
-     * A permalink as the Feeds screen lists it.
+     * A permalink as the Domains screen lists it (spec 7.23).
      *
      * @param feeds the employer's feeds, for the switch
      */
@@ -101,7 +101,8 @@ public class Views {
                 feed == null ? null : feed.getId().toString(), feed == null ? null : feed.getName(),
                 permalinkUrl(permalink), permalink.getWebsiteHost(),
                 permalink.getCheckResult() == null ? null : permalink.getCheckResult().name(),
-                permalink.getCheckResult() != null && permalink.getCheckResult().works(), options);
+                permalink.getCheckResult() != null && permalink.getCheckResult().works(),
+                permalink.getCheckedAt() == null ? null : timestamp(permalink.getCheckedAt()), options);
     }
 
     public PublicationStatus status(Job job, LocalDate today) {

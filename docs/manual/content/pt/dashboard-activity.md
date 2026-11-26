@@ -14,7 +14,7 @@ O **Painel** se refere ao empregador com que você está trabalhando:
   por país, e as vagas mais clicadas;
 - **requer atenção**: vagas publicadas que encerram nos próximos 14 dias, vagas ativas que não podem ser
   publicadas e rascunhos que ninguém altera há 30 dias;
-- a **atividade** mais recente, os seus **feeds** e os seus **links permanentes**, com as URLs deles.
+- a **atividade** mais recente, os seus **feeds** e os seus **domínios**, com as URLs deles.
 
 ## Atividade {#activity}
 

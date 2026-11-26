@@ -1,5 +1,5 @@
 ---
-title: "Feeds et permaliens"
+title: "Feeds et domaines"
 description: "Choisir ce qui est publié, et l’URL que vous transmettez."
 weight: 30
 ---
@@ -21,37 +21,44 @@ La page d’un feed présente :
   au regard du schéma oJobPub.
 
 L’URL propre du feed est proposée discrètement sous **Tester** : elle sert à essayer le feed. Aux
-autres, donnez plutôt un permalien.
+autres, donnez plutôt un permalien. Seuls les membres de votre employeur, connectés, peuvent l’ouvrir ; pour tous les autres, elle n’existe pas.
 
 Renommer un feed ou changer son slug est sans risque : les anciens liens continuent de fonctionner et
 sont redirigés. Supprimer un feed fait répondre son URL *introuvable* ; les offres ne sont pas
 supprimées.
 
-## Permaliens {#permalinks}
+## Domaines {#permalinks}
 
-Un **permalien** est une URL qui reste la même pendant que vous changez le feed derrière elle.
-Configurez-la une fois pour toutes sur votre site web ou dans l’import d’un partenaire ; ensuite, vous
-changez vous-même ce qu’elle publie.
+Les portails d’emploi cherchent vos offres sur **votre propre domaine**, à l’adresse
+`https://example.com/.well-known/ojobpub.json`. C’est sous **Domaines**, dans la barre latérale, que
+vous le configurez. Chaque domaine a un **permalien** : une URL qui reste la même pendant que vous
+changez le feed derrière elle. Votre site la sert à cette adresse ; ensuite, vous changez vous-même ce
+qu’elle publie.
 
-Les permaliens sont listés sur la page **Feeds**, sous les feeds. Chaque ligne comporte une liste de
-vos feeds et un bouton **Changer**. Choisir *Aucun feed* garde l’URL active mais ne publie aucune
-offre — la façon de faire une pause sans perdre l’URL. Les consommateurs voient le changement dès que
-leur copie en cache expire.
+Chaque employeur commence avec un permalien qui publie son feed `all`, encore sans domaine. Après la
+connexion, la première page demande ce domaine tant qu’il n’est pas saisi, et le tableau de bord vous
+le rappelle jusqu’à ce qu’une vérification trouve votre site en train de le servir.
 
-**Nouveau permalien** demande un nom, une description et le feed. Une fois créé, sa page de
-modification propose une **Configuration du serveur web** prête à l’emploi pour Apache, nginx et
-Caddy, afin que le feed soit aussi accessible à `/.well-known/ojobpub.json` sur votre propre domaine :
+La liste indique pour chaque domaine ce qu’a trouvé la dernière vérification, avec un bouton **Vérifier
+l’installation**, une liste de vos feeds avec un bouton **Changer**, et l’URL du permalien. Choisir
+*Aucun feed* garde l’URL active mais ne publie aucune offre — la façon de faire une pause sans perdre
+l’URL. Les consommateurs voient un changement dès que leur copie en cache expire.
 
-- une **Redirection** est la configuration la plus simple, mais un consommateur qui ne suit pas les
+**Nouveau domaine** demande d’abord le domaine — le domaine lui-même, par exemple `example.com`, sans
+`www.` ni autre sous-domaine ; celui du site de votre employeur est proposé —, puis le feed, `all` pour
+commencer, et au besoin un nom et une description. Un nom laissé vide est le domaine. Chaque domaine ne
+sert qu’une fois par employeur.
+
+Une fois enregistrée, la page de modification numérote les étapes : le domaine, une **configuration de
+serveur web** prête à l’emploi pour Apache, nginx et Caddy, et la vérification.
+
+- une **redirection** est plus simple à mettre en place, mais un consommateur qui ne suit pas les
   redirections échouera ;
-- un **Reverse proxy** sert le document directement depuis votre domaine.
+- un **proxy inverse** sert le document directement depuis votre domaine.
 
-Saisissez sur le permalien le domaine de **Votre site web** — le domaine lui-même, par exemple
-`example.com`, sans `www.` ni autre sous-domaine. À la création, le domaine du site web de votre employeur est proposé. La page de modification affiche alors l’adresse complète sur votre
-site web et **Vérifier l’installation**, qui demande à cette adresse ce qu’elle sert réellement : ce
-permalien, une redirection vers lui, un autre feed, une copie du fichier, une page de votre propre
-site, ou rien. Chaque réponse indique la marche à suivre. La page Feeds indique, pour chaque permalien,
-s’il est installé sur votre site web.
+**Vérifier l’installation** demande à l’adresse sur votre site ce qu’elle sert réellement : ce
+permalien, une redirection vers lui, un autre feed, une copie du fichier, la page de votre site ou
+rien. Chaque réponse indique quoi faire ensuite.
 
-Supprimer un permalien fait répondre son URL *introuvable*. Pour cesser de publier tout en gardant
-l’URL, passez-le plutôt sur *Aucun feed*.
+Supprimer un domaine fait répondre l’URL de son permalien *introuvable*. Pour cesser de publier tout en
+gardant l’URL, passez plutôt à *Aucun feed*.

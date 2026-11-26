@@ -321,19 +321,26 @@ A stable public URL that publishes one of its employer's feeds, or none (§5.5).
 |---|---|---|---|
 | `id` | UUID | yes | generated; the whole of the public URL's identity |
 | `employer` | Employer | **yes** | immutable |
-| `name` | string | **yes** | 1..255, unique within the employer (case-insensitive) |
+| `name` | string | **yes** | 1..255, unique within the employer (case-insensitive). Left empty, it is the domain |
 | `description` | string | no | 0..255 |
 | `feed` | Feed | no | the feed it publishes; **one of the employer's own**. None publishes no jobs |
-| `websiteHost` | string | no | the employer's website serving it at `/.well-known/ojobpub.json` (§7.23): the **apex domain**: the registrable domain itself by the Public Suffix List (`acme.ch`, `acme.co.uk`), never `www.` or another subdomain; lower-case and in ASCII, no address, port or path. A URL given is cut down to its host; the form offers the employer's own URL (§3.1) cut down to its domain |
+| `websiteHost` | string | **yes**, but for the default permalink until someone gives it | the **domain** this permalink is for: the website serving it at `/.well-known/ojobpub.json` (§7.23): the **apex domain**: the registrable domain itself by the Public Suffix List (`acme.ch`, `acme.co.uk`), never `www.` or another subdomain; lower-case and in ASCII, no address, port or path. A URL given is cut down to its host; the form offers the employer's own URL (§3.1) cut down to its domain. **Unique within the employer**: a domain serves one document at `/.well-known/ojobpub.json` |
 | `checkedAt`, `checkResult` | instant, enum | no | what the last check of that website found (§7.23). Cleared when the host changes; written without changing the permalink's own date, which dates the document (§5.5) |
 
+- **One permalink, one domain.** A permalink is for exactly one website, the one at its domain, and
+  saving one without a domain is refused. The back-office calls the pair a *domain* (§7.23).
+- **Every employer has a default permalink**, created with it in the same transaction, named
+  *Default*, publishing its `all` feed (§3.5) and without a domain, which the back-office then asks
+  for (§7.23). Like the `all` feed it is created **regardless of the permalink limit** (§8.4), and
+  counts towards it thereafter; it may be edited or deleted like any other. Employers that existed
+  before it and had no permalink got one, publishing their `all` feed if they still had it.
 - **Only the employer's own feeds.** Another employer's feed is refused exactly like one that does not
   exist, so the refusal discloses nothing.
 - **Deleting the feed clears it**, and deleting the employer deletes its permalinks.
 - Created, edited, switched and deleted by the employer's members, owners and editors alike, like
   feeds (§2.1), and counted against their own quota (§8.4).
 - **The website is not a claim.** Nothing checks that the employer owns the host, and it is unique
-  nowhere: pointing a website at a public URL grants nothing, and the host is published nowhere.
+  nowhere beyond its employer: pointing a website at a public URL grants nothing, and the host is published nowhere.
 
 ## 3.14 JobClick
 

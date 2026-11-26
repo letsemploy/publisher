@@ -107,9 +107,10 @@ class EmployerDeleteTest {
         assertThat(modal)
                 .contains("Delete Doomed Ltd?")
                 .contains("no jobs")
-                .contains("1 feed and its public URL")
+                .contains("1 feed")
                 .contains("1 member, who loses access")
-                .contains("public feed URLs")
+                // The public URLs are the permalinks' (spec 5.5).
+                .contains("permalink URLs")
                 .contains("data-confirm-name=\"Doomed Ltd\"")
                 .contains("name=\"confirmName\"");
     }

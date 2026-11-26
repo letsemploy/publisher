@@ -14,9 +14,10 @@ job boards and aggregators can read without an API key.
 - **Jobs** with locations, tags, salary and an application window. A job appears in a feed only
   while it is active, complete and inside its dates, and the job screen says what is missing.
 - **Feeds**: you choose which jobs each feed publishes, for example one per job board. Each feed
-  shows whether it validates against the schema.
-- **Permalinks**: one stable URL to put on your website, whose feed you can switch later without
-  touching the website.
+  shows whether it validates against the schema. A feed's own URL is for your members to try it out.
+- **Domains**: each of your website's domains gets a permalink, the one public URL. Serve it at
+  `https://<your-domain>/.well-known/ojobpub.json` - the publisher writes the Apache, nginx or Caddy
+  configuration and checks it - and switch its feed later without touching the website.
 - **Click counting**: job links in the feed go through the publisher, which counts clicks per job,
   day and country, and answers "no longer available" once a job is gone. No visitor address is
   stored. Can be switched off.
@@ -51,7 +52,7 @@ docker run -d --name ojobpub -p 8080:8080 -v ojobpub-data:/data \
   ghcr.io/letsemploy/publisher:latest
 ```
 
-- **`APP_BASE_URL`** is the public address people and job boards use. Feed URLs are built from it,
+- **`APP_BASE_URL`** is the public address people and job boards use. Permalink URLs are built from it,
   so set it correctly behind a reverse proxy.
 - **Your identity provider** needs a confidential client with the redirect URI
   `https://<your-host>/login/oauth2/code/oidc` and the post-logout redirect

@@ -16,4 +16,4 @@ El recorrido habitual:
 1. Inicie sesión y cree su empresa, o acepte una invitación a una existente.
 2. Cree sus ofertas y actívelas cuando estén completas.
 3. Elija qué ofertas publica un feed. Cada empresa empieza con un feed que las contiene todas.
-4. Cree un **enlace permanente** y entregue su URL a quien lea sus ofertas.
+4. En **Dominios**, introduzca el dominio de su sitio y configúrelo, para que los portales de empleo encuentren allí sus ofertas.

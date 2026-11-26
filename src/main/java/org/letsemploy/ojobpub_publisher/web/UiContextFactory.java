@@ -74,6 +74,7 @@ public class UiContextFactory {
                 new NavItem("layout-dashboard", "nav.dashboard", "/", path.equals("/")),
                 new NavItem("briefcase", "nav.jobs", "/jobs", path.startsWith("/jobs")),
                 new NavItem("rss", "nav.feeds", "/feeds", path.startsWith("/feeds")),
+                new NavItem("world", "nav.domains", "/domains", path.startsWith("/domains")),
                 new NavItem("users", "nav.people", "/people",
                         path.startsWith("/people") || path.equals(profile + "/people"))));
         // The one entry whose visibility depends on the membership role: holding the

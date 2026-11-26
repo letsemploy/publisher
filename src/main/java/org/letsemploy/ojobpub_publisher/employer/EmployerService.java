@@ -15,6 +15,7 @@ import org.letsemploy.ojobpub_publisher.common.exception.ValidationFailure;
 import org.letsemploy.ojobpub_publisher.common.validation.InputValidator;
 import org.letsemploy.ojobpub_publisher.common.validation.NameInput;
 import org.letsemploy.ojobpub_publisher.feed.FeedService;
+import org.letsemploy.ojobpub_publisher.feed.PermalinkService;
 import org.letsemploy.ojobpub_publisher.common.validation.UrlInput;
 import org.letsemploy.ojobpub_publisher.location.LocationService;
 import org.letsemploy.ojobpub_publisher.membership.MembershipService;
@@ -41,6 +42,7 @@ public class EmployerService {
     private final AuditLog auditLog;
     private final InputValidator inputs;
     private final FeedService feedService;
+    private final PermalinkService permalinkService;
 
     public EmployerService(EmployerRepo employerRepo,
                            LocationService locationService,
@@ -49,7 +51,8 @@ public class EmployerService {
                            UserRepo userRepo,
                            AuditLog auditLog,
                            InputValidator inputs,
-                           FeedService feedService) {
+                           FeedService feedService,
+                           PermalinkService permalinkService) {
         this.employerRepo = employerRepo;
         this.locationService = locationService;
         this.membershipService = membershipService;
@@ -58,6 +61,7 @@ public class EmployerService {
         this.auditLog = auditLog;
         this.inputs = inputs;
         this.feedService = feedService;
+        this.permalinkService = permalinkService;
     }
 
     /** Editors see only their employers; an admin sees all (spec 2.1). */
@@ -160,7 +164,8 @@ public class EmployerService {
             membershipService.createOwner(creator, saved);
             // Every employer gets a working URL the moment it exists (spec 3.5), in
             // this transaction: committed apart, a failure left one without it.
-            feedService.createDefaultFeed(saved);
+            // And the permalink a website will use, where the domain is asked for (spec 3.13).
+            permalinkService.createDefault(saved, feedService.createDefaultFeed(saved));
         }
         if (creating || !Objects.equals(before, saved.getLastModifiedAt())) {
             auditLog.record(AuditEvent.of(creating ? AuditAction.EMPLOYER_CREATED : AuditAction.EMPLOYER_UPDATED,

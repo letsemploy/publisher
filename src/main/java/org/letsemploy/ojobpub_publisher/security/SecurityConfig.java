@@ -62,7 +62,11 @@ public class SecurityConfig {
     };
 
     private static final String[] PUBLIC = {
-            "/ojobpub/**", "/go/**", "/graphql/schema", "/actuator/health/**", "/actuator/info",
+            // The permalink is the public URL; a feed's own is for its members (spec 5.1, 5.5).
+            // Reached by anyone all the same, in the session, so the controller can answer
+            // 404 in JSON to whoever is not a member - signed in or not - and no machine
+            // holding an old feed URL ever sees a login page.
+            "/ojobpub/v1/permalink/**", "/ojobpub/v1/*/*/ojobpub.json", "/go/**", "/graphql/schema", "/actuator/health/**", "/actuator/info",
             "/css/**", "/js/**", "/vendor/**", "/images/**", "/favicon.ico", "/error",
             // The user manual (spec 7.29): static, public, under the same strict policy.
             "/docs", "/docs/**"
@@ -101,8 +105,11 @@ public class SecurityConfig {
     }
 
     /**
-     * Order 1: the published feed, and the job links in it (spec 5.6). Machines call
-     * the one and anyone follows the other; neither may ever see a login page. Also
+     * Order 1: the published document - the permalink, the one public URL (spec
+     * 5.5) - and the job links in it (spec 5.6). Machines call the one and anyone
+     * follows the other; neither may ever see a login page. A feed's own URL is not
+     * here: it is for the employer's members, so it needs the back-office session,
+     * where it is permitted to all and refused by its controller (spec 5.1). Also
      * the management API's schema (spec 11.2): the API chain matches /graphql
      * exactly, so without this the schema would fall through to the back-office.
      */
@@ -110,7 +117,7 @@ public class SecurityConfig {
     @org.springframework.core.annotation.Order(1)
     SecurityFilterChain publicFeedChain(HttpSecurity http) throws Exception {
         http.securityMatcher(new OrRequestMatcher(
-                        PathPatternRequestMatcher.withDefaults().matcher("/ojobpub/**"),
+                        PathPatternRequestMatcher.withDefaults().matcher("/ojobpub/v1/permalink/**"),
                         PathPatternRequestMatcher.withDefaults().matcher("/go/**"),
                         PathPatternRequestMatcher.withDefaults().matcher(
                                 org.springframework.http.HttpMethod.GET, "/graphql/schema")))
