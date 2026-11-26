@@ -49,6 +49,15 @@ class OwnerEmailsTest {
                 .andReturn().getResponse().getContentAsString();
     }
 
+    /**
+     * Counted rather than asserted absent: other classes render the page outside a
+     * test transaction, so their rows may already be there.
+     */
+    private long viewed() {
+        return auditRepo.findAll().stream().filter(e -> e.getAction() == AuditAction.OWNER_EMAILS_VIEWED
+                && DEV_ADMIN.equals(e.getSubjectUserId())).count();
+    }
+
     private String emails(String html) {
         int start = html.indexOf("id=\"owner-emails\"");
         return html.substring(html.indexOf('>', start) + 1, html.indexOf("</textarea>", start));
@@ -56,6 +65,7 @@ class OwnerEmailsTest {
 
     @Test
     void anAdminSeesEveryActiveOwnerOnceAndItIsRecorded() throws Exception {
+        long before = viewed();
         String html = page(new MockHttpSession());
 
         // The seed's owner; its editor is no owner.
@@ -64,10 +74,8 @@ class OwnerEmailsTest {
         // Reached from the Users screen.
         assertThat(mvc.perform(get("/users")).andReturn().getResponse().getContentAsString())
                 .contains("href=\"/users/owners\"");
-        assertThat(auditRepo.findAll()).anySatisfy(e -> {
-            assertThat(e.getAction()).isEqualTo(AuditAction.OWNER_EMAILS_VIEWED);
-            assertThat(e.getSubjectUserId()).isEqualTo(DEV_ADMIN);
-        });
+        // In the admin's own log, once per showing.
+        assertThat(viewed()).isEqualTo(before + 1);
     }
 
     /** An owner counts while active: a suspended membership leaves the list (spec 2.7). */
@@ -88,8 +96,9 @@ class OwnerEmailsTest {
     void outsideAdminModeItDoesNotExist() throws Exception {
         MockHttpSession session = new MockHttpSession();
         mvc.perform(post("/admin-mode/leave").session(session)).andExpect(status().is3xxRedirection());
+        long before = viewed();
 
         mvc.perform(get("/users/owners").session(session)).andExpect(status().isNotFound());
-        assertThat(auditRepo.findAll()).noneMatch(e -> e.getAction() == AuditAction.OWNER_EMAILS_VIEWED);
+        assertThat(viewed()).as("nothing shown, nothing recorded").isEqualTo(before);
     }
 }
