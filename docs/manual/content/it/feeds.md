@@ -23,6 +23,11 @@ La pagina di un feed mostra:
 L’URL proprio del feed è offerto con discrezione come **Prova**: serve per provare il feed. Ad altri
 fornisca invece un permalink. Possono aprirlo solo i membri del Suo datore di lavoro, con l’accesso effettuato; per tutti gli altri non esiste.
 
+Un feed che nessun permalink con un dominio pubblica non è su alcun sito: i portali di lavoro che
+cercano i Suoi annunci sul Suo sito non li trovano. La sua pagina si apre allora con un avviso, e
+l’elenco dei feed e la dashboard lo segnano con **nessun dominio**. Faccia puntare uno dei Suoi domini
+a esso in **Domini**.
+
 Rinominare un feed o cambiarne lo slug non comporta rischi: i vecchi link continuano a funzionare e
 vengono inoltrati. Eliminando un feed, il suo URL risponde *non trovato*; gli annunci non vengono
 eliminati.

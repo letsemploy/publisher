@@ -23,6 +23,11 @@ La página de un feed muestra:
 La URL propia del feed se ofrece discretamente como **Probar**: sirve para probar el feed. A otros,
 entrégueles en su lugar un enlace permanente. Solo los miembros de su empleador, con la sesión iniciada, pueden abrirla; para los demás no existe.
 
+Un feed que ningún enlace permanente con dominio publica no está en ningún sitio web: los portales de
+empleo que buscan sus ofertas en su sitio no las encuentran. Su página se abre entonces con una
+advertencia, y la lista de feeds y el panel lo marcan con **sin dominio**. Haga que uno de sus dominios
+apunte a él en **Dominios**.
+
 Cambiar el nombre de un feed o su slug no causa problemas: los enlaces antiguos siguen funcionando y se
 redirigen. Al eliminar un feed, su URL responde *no encontrado*; las ofertas no se eliminan.
 

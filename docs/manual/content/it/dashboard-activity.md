@@ -16,6 +16,10 @@ La **Dashboard** riguarda il datore di lavoro su cui sta lavorando:
   possono essere pubblicati e bozze che nessuno tocca da 30 giorni;
 - le ultime **attività**, i Suoi **feed** e i Suoi **domini** con i loro URL.
 
+Finché nessuno dei Suoi domini ha superato la verifica, la dashboard si apre con un suggerimento per
+impostarne uno. Appena ci sono annunci pubblicati diventa un avviso: sono online e non raggiungono
+nessuno che li cerchi sul Suo sito.
+
 ## Attività {#activity}
 
 **Attività** è il registro del datore di lavoro: chi ha fatto cosa e quando, dal più recente. I

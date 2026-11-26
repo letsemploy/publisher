@@ -23,6 +23,10 @@ A feed's page shows:
 The feed's own URL is offered quietly as **Test**: it is for trying the feed out. Give others a
 permalink instead. Only your employer's members can open it, signed in; for everyone else it does not exist.
 
+A feed that no permalink with a domain publishes is on no website: job boards looking for your jobs at
+your website do not find them. Its page then opens with a warning, and the Feeds list and the dashboard
+mark it **no domain**. Point one of your domains at it under **Domains**.
+
 Renaming a feed or changing its slug is safe: old links keep working and are forwarded. Deleting a
 feed makes its URL answer *not found*; the jobs are not deleted.
 

@@ -23,6 +23,11 @@ La page d’un feed présente :
 L’URL propre du feed est proposée discrètement sous **Tester** : elle sert à essayer le feed. Aux
 autres, donnez plutôt un permalien. Seuls les membres de votre employeur, connectés, peuvent l’ouvrir ; pour tous les autres, elle n’existe pas.
 
+Un feed qu’aucun permalien avec un domaine ne publie n’est sur aucun site : les portails d’emploi qui
+cherchent vos offres sur votre site ne les trouvent pas. Sa page s’ouvre alors sur un avertissement, et
+la liste des feeds et le tableau de bord le marquent **aucun domaine**. Faites pointer l’un de vos
+domaines vers lui sous **Domaines**.
+
 Renommer un feed ou changer son slug est sans risque : les anciens liens continuent de fonctionner et
 sont redirigés. Supprimer un feed fait répondre son URL *introuvable* ; les offres ne sont pas
 supprimées.

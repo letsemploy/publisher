@@ -23,6 +23,10 @@ A página de um feed mostra:
 A URL própria do feed é oferecida discretamente como **Testar**: ela serve para experimentar o feed.
 Para outras pessoas, passe um link permanente. Só os membros do seu empregador, com sessão iniciada, podem abri-la; para os demais, ela não existe.
 
+Um feed que nenhum link permanente com domínio publica não está em nenhum site: os portais de emprego
+que procuram suas vagas no seu site não as encontram. A página dele abre então com um aviso, e a lista
+de feeds e o painel o marcam com **sem domínio**. Aponte um dos seus domínios para ele em **Domínios**.
+
 Renomear um feed ou alterar o slug dele é seguro: os links antigos continuam funcionando e são
 redirecionados. Excluir um feed faz a URL dele responder *não encontrado*; as vagas não são excluídas.
 

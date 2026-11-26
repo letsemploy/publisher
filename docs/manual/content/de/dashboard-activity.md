@@ -17,6 +17,10 @@ Die **Übersicht** gilt dem Arbeitgeber, an dem Sie gerade arbeiten:
   hat;
 - die neueste **Aktivität**, Ihre **Feeds** und Ihre **Domains** mit ihren URLs.
 
+Solange keine Ihrer Domains die Prüfung bestanden hat, beginnt das Dashboard mit einem Hinweis, eine
+einzurichten. Sobald Stellen veröffentlicht sind, ist es eine Warnung: Sie sind live und erreichen
+niemanden, der auf Ihrer Website nach ihnen sucht.
+
 ## Aktivität {#activity}
 
 **Aktivität** ist das Protokoll des Arbeitgebers: wer was wann getan hat, das Neueste zuerst.

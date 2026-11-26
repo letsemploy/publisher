@@ -15,6 +15,10 @@ El **Panel** abarca la empresa en la que está trabajando:
   pueden publicarse y borradores que nadie ha tocado en 30 días;
 - la **actividad** más reciente, sus **feeds** y sus **dominios** con sus URL.
 
+Mientras ninguno de sus dominios haya superado la comprobación, el panel se abre con una indicación
+para configurar uno. En cuanto hay ofertas publicadas es una advertencia: están en línea y no llegan a
+nadie que las busque en su sitio.
+
 ## Actividad {#activity}
 
 **Actividad** es el registro de la empresa: quién hizo qué y cuándo, empezando por lo más reciente. Los

@@ -15,6 +15,9 @@ The **Dashboard** covers the employer you are working on:
   drafts nobody has touched for 30 days;
 - the latest **activity**, your **feeds** and your **domains** with their URLs.
 
+While none of your domains has passed its check, the dashboard opens with a hint to set one up. Once
+jobs are published it is a warning: they are live and reach no one who looks for them at your website.
+
 ## Activity {#activity}
 
 **Activity** is the employer's log: who did what, and when, newest first. Owners see all of it; editors

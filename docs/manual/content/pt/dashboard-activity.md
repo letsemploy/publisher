@@ -16,6 +16,10 @@ O **Painel** se refere ao empregador com que você está trabalhando:
   publicadas e rascunhos que ninguém altera há 30 dias;
 - a **atividade** mais recente, os seus **feeds** e os seus **domínios**, com as URLs deles.
 
+Enquanto nenhum dos seus domínios tiver passado na verificação, o painel abre com uma dica para
+configurar um. Assim que houver vagas publicadas, é um aviso: elas estão no ar e não chegam a ninguém
+que as procure no seu site.
+
 ## Atividade {#activity}
 
 **Atividade** é o registro do empregador: quem fez o quê, e quando, do mais recente ao mais antigo. Os

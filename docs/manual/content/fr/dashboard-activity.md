@@ -16,6 +16,10 @@ Le **Tableau de bord** porte sur l’employeur sur lequel vous travaillez :
   peuvent pas être publiées, et les brouillons que personne n’a touchés depuis 30 jours ;
 - la dernière **activité**, vos **feeds** et vos **domaines** avec leurs URL.
 
+Tant qu’aucun de vos domaines n’a réussi sa vérification, le tableau de bord s’ouvre sur une indication
+pour en configurer un. Dès que des offres sont publiées, c’est un avertissement : elles sont en ligne
+et n’atteignent personne qui les cherche sur votre site.
+
 ## Activité {#activity}
 
 **Activité** est le journal de l’employeur : qui a fait quoi, et quand, du plus récent au plus ancien.

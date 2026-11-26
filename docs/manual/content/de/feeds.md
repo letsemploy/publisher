@@ -24,6 +24,11 @@ Die Seite eines Feeds zeigt:
 Die eigene URL des Feeds wird nur unauffällig als **Testen** angeboten: Sie dient zum Ausprobieren.
 Anderen geben Sie stattdessen einen Permalink. Öffnen können sie nur die Mitglieder Ihres Arbeitgebers, angemeldet; für alle anderen gibt es sie nicht.
 
+Ein Feed, den kein Permalink mit Domain veröffentlicht, ist auf keiner Website: Jobbörsen, die auf
+Ihrer Website nach Ihren Stellen suchen, finden sie nicht. Seine Seite beginnt dann mit einer Warnung,
+und die Feed-Liste und das Dashboard kennzeichnen ihn mit **keine Domain**. Lassen Sie unter
+**Domains** eine Ihrer Domains auf ihn zeigen.
+
 Einen Feed umzubenennen oder seinen Slug zu ändern ist unbedenklich: Alte Links funktionieren weiter
 und werden umgeleitet. Wird ein Feed gelöscht, antwortet seine URL mit *nicht gefunden*; die Stellen
 bleiben erhalten.
