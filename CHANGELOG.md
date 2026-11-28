@@ -8,6 +8,14 @@ Section numbers such as §5.6 refer to the specification in [`docs/SPEC.md`](doc
 
 ## [Unreleased]
 
+## [2.1.0] - 2026-11-28
+
+### Changed
+
+- The application and the manual take letsemploy.org's colours: the website's navy as the primary
+  colour, a navy-tinted gray scale, and in the dark theme the website's navy surfaces with a light
+  blue primary instead of Tabler's gray and blue.
+
 ## [2.0.0] - 2026-11-26
 
 ### Added
@@ -468,7 +476,8 @@ Section numbers such as §5.6 refer to the specification in [`docs/SPEC.md`](doc
 - MariaDB, or SQLite for a single instance.
 - English and German.
 
-[Unreleased]: https://github.com/letsemploy/publisher/compare/v2.0.0...HEAD
+[Unreleased]: https://github.com/letsemploy/publisher/compare/v2.1.0...HEAD
+[2.1.0]: https://github.com/letsemploy/publisher/compare/v2.0.0...v2.1.0
 [2.0.0]: https://github.com/letsemploy/publisher/compare/v1.10.0...v2.0.0
 [1.10.0]: https://github.com/letsemploy/publisher/compare/v1.9.0...v1.10.0
 [1.9.0]: https://github.com/letsemploy/publisher/compare/v1.8.1...v1.9.0
