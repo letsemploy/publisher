@@ -932,9 +932,12 @@ and hand them to `fragments/dialog :: page(...)` inside `layout:fragment="conten
   sent a 302 to `htmx:/tags`. `FormModalTest` covers both halves for every form.
 - A new form follows the same pattern, and a new button that opens one gets the `hx-get`.
 
-The dark palette comes from `data-bs-theme-base="gray"` on `<html>` in `layout.html` **and**
-`login.html`, with the vendored `tabler-themes.min.css`. It matches the other letsemploy apps
-(ojobpub-sourcetracker does the same); Tabler 1.6 otherwise defaults to a neutral gray.
+The palette is letsemploy.org's: `data-bs-theme-base="letsemploy"` on `<html>` in every template
+that writes its own (`layout.html`, `login.html`, `click/gone.html`, `account/standalone.html`)
+selects the navy gray scale and primary defined at the end of `static/css/app.css`, which take
+their values from the website's `assets/css/main.css`. ojobpub-sourcetracker carries the same
+block in its `main.css`, and so does the manual's `docs/manual/static/manual.css`; change all
+three together.
 
 **`login.html` is the one standalone template** (§7.19): it does not decorate `layout.html`, which
 assumes a signed-in user's sidebar, switcher and user menu. It is served by `security/LoginController`

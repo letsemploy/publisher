@@ -145,3 +145,35 @@
     background-color: rgba(24, 36, 51, 0.24);
     backdrop-filter: blur(4px);
 }
+
+/* The letsemploy.org palette (website assets/css/main.css), as a Tabler theme base: <html
+   data-bs-theme-base="letsemploy">. Tabler derives every surface, border and text colour from
+   the gray scale, so a navy-tinted scale carries the brand into both themes. Pinned steps are the
+   website's colours: 100/300 its light base-200/-300, 200 its dark text, 700-950 its dark bases. */
+[data-bs-theme-base=letsemploy] {
+    --tblr-gray-50: oklch(97.8% 0.0050 248deg);
+    --tblr-gray-100: oklch(96.15% 0.0076 242deg);  /* #eef3f7 */
+    --tblr-gray-200: oklch(93.38% 0.0121 248deg);  /* #e3eaf1 */
+    --tblr-gray-300: oklch(89.64% 0.0157 248deg);  /* #d5dee7 */
+    --tblr-gray-400: oklch(71.5% 0.0300 249deg);
+    --tblr-gray-500: oklch(55.5% 0.0400 249deg);
+    --tblr-gray-600: oklch(44.6% 0.0450 249deg);
+    --tblr-gray-700: oklch(32.14% 0.0526 250deg); /* #1d354d */
+    --tblr-gray-800: oklch(25.09% 0.0435 251deg); /* #112336 */
+    --tblr-gray-900: oklch(21.28% 0.0341 250deg); /* #0c1a28 */
+    --tblr-gray-950: oklch(17.78% 0.0282 249deg); /* #07121d */
+    /* Website neutral #0f2a44; Tabler also derives the dark theme's borders from it. */
+    --tblr-dark: oklch(27.87% 0.0584 250deg);
+    --tblr-dark-rgb: 15, 42, 68;
+    --tblr-primary: oklch(41.61% 0.0895 248deg); /* #1d4f7a */
+    --tblr-primary-rgb: 29, 79, 122;
+    --tblr-orange: oklch(69.07% 0.1754 50deg);   /* #ee7418, the website's accent */
+}
+
+/* The website lightens its primary in the dark theme, where navy would sink into the surface. */
+[data-bs-theme-base=letsemploy][data-bs-theme=dark] {
+    --tblr-primary: oklch(77.43% 0.0795 247deg); /* #8cbbe6 */
+    --tblr-primary-rgb: 140, 187, 230;
+    --tblr-primary-fg: oklch(21.28% 0.0341 250deg);
+    --tblr-orange: oklch(73.29% 0.1554 54deg);   /* #f28a3b */
+}
